@@ -1,0 +1,47 @@
+name: Refresh CMHC data
+on:
+  schedule:
+    - cron: "0 6 1 * *"   # 06:00 UTC on the 1st of every month
+  workflow_dispatch: {}
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "release"
+
+      - name: Install R packages
+        run: |
+          install.packages(c("cmhc", "dplyr", "tidyr", "purrr", "readr", "jsonlite"),
+                           repos = "https://cloud.r-project.org")
+        shell: Rscript {0}
+
+      - name: Run pipeline
+        env:
+          CMHC_ZONE_CMAS: ALL
+          CMHC_ZONE_DWELLING: ALL
+        run: |
+          Rscript r/00_audit_geographies.R
+          Rscript r/00_build_capabilities.R
+          Rscript r/01_scrape_historical.R
+          Rscript r/02_scrape_zone_snapshots.R
+          Rscript r/03_build_data_files.R
+          Rscript r/04_build_manifest.R
+
+      - name: Commit refreshed data if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add web/public/data
+          if git diff --staged --quiet; then
+            echo "No data changes."
+          else
+            git commit -m "data: monthly refresh ($(date -u +%Y-%m-%d))"
+            git push
+          fi

@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "source": "live",
+  "generated": "2026-05-19T22:22:30Z",
+  "geoLevels": [
+    "province",
+    "cma",
+    "csd",
+    "zone",
+    "neighbourhood"
+  ],
+  "series": {
+    "Availability Rate": {
+      "dimensions": [
+        "Bedroom Type",
+        "Year of Construction",
+        "Structure Size"
+      ],
+      "dwellingTypes": [
+        "All",
+        "Apartment",
+        "Row"
+      ]
+    },
+    "Average Rent": {
+      "dimensions": [
+        "Bedroom Type",
+        "Year of Construction",
+        "Structure Size"
+      ],
+      "dwellingTypes": [
+        "All",
+        "Apartment",
+        "Row"
+      ]
+    },
+    "Average Rent Change": {
+      "dimensions": [
+        "Bedroom Type"
+      ],
+      "dwellingTypes": [
+        "All",
+        "Apartment",
+        "Row"
+      ]
+    },
+    "Median Rent": {
+      "dimensions": [
+        "Bedroom Type",
+        "Year of Construction",
+        "Structure Size"
+      ],
+      "dwellingTypes": [
+        "All",
+        "Apartment",
+        "Row"
+      ]
+    },
+    "Vacancy Rate": {
+      "dimensions": [
+        "Bedroom Type",
+        "Year of Construction",
+        "Structure Size",
+        "Rent Ranges",
+        "Rent Quartiles"
+      ],
+      "dwellingTypes": [
+        "All",
+        "Apartment",
+        "Row"
+      ]
+    }
+  }
+}

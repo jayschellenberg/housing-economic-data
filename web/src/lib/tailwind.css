@@ -1,0 +1,266 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-50:  #f1f5f9;
+  --color-primary-100: #e2e8f0;
+  --color-primary-200: #cbd5e1;
+  --color-primary-300: #94a3b8;
+  --color-primary-400: #64748b;
+  --color-primary-500: #1e293b;
+  --color-primary-600: #172033;
+  --color-primary-700: #0f172a;
+
+  --color-accent-400: #60a5fa;
+  --color-accent-500: #2563eb;
+  --color-accent-600: #1d4ed8;
+  --color-accent-700: #1e40af;
+
+  --color-neutral-50:  #fafafa;
+  --color-neutral-100: #f4f4f5;
+  --color-neutral-200: #e4e4e7;
+  --color-neutral-300: #d4d4d8;
+  --color-neutral-400: #a1a1aa;
+  --color-neutral-500: #71717a;
+  --color-neutral-600: #52525b;
+  --color-neutral-700: #3f3f46;
+  --color-neutral-800: #27272a;
+  --color-neutral-900: #18181b;
+
+  --font-sans:
+    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+}
+
+/*
+ * Chart panel surface — styled to match the firm's reference appraisal
+ * chart: bold dark-red title, subtitle in dark grey, framed plot area with
+ * dashed grid, caption row at the bottom (left = computed note,
+ * right = "Source: CMHC"), and a small actions row below for SVG/PNG export.
+ */
+
+/* Brand red used for titles and captions. Matches the appraisal template. */
+:root {
+  --cmhc-brand-red: #7C1014;
+  --cmhc-grid:      #d4d4d8;
+  --cmhc-frame:     #18181b;
+}
+
+/* Top tab strip. */
+.cmhc-tab {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  color: var(--color-neutral-600);
+  border: 1px solid transparent;
+  border-bottom: none;
+  margin-bottom: -1px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.cmhc-tab:hover {
+  color: var(--color-neutral-900);
+  background: white;
+}
+
+.cmhc-tab-active {
+  color: var(--cmhc-brand-red);
+  background: white;
+  border-color: var(--color-neutral-200);
+  border-bottom-color: white;
+}
+
+/* Comparison-table styling — replicate the appraisal sample workbook:
+   merged title row above each table, dark-red header, bordered cells,
+   left-aligned area names, centred values. */
+.cmhc-table-block {
+  background: white;
+  border: 1px solid var(--color-neutral-200);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.cmhc-table-title {
+  background: var(--color-neutral-50);
+  border-bottom: 1px solid var(--color-neutral-200);
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--cmhc-brand-red);
+}
+
+.cmhc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.cmhc-table thead th {
+  background: var(--cmhc-brand-red);
+  color: white;
+  font-weight: 600;
+  padding: 6px 10px;
+  text-align: center;
+  border: 1px solid var(--cmhc-brand-red);
+}
+
+.cmhc-table tbody td {
+  padding: 5px 10px;
+  border: 1px solid var(--color-neutral-200);
+  text-align: center;
+}
+
+.cmhc-table tbody td:first-child {
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-neutral-900);
+}
+
+.cmhc-table tbody tr:nth-child(odd) td {
+  background: #fafafa;
+}
+
+.cmhc-table .cmhc-table-na {
+  color: var(--color-neutral-400);
+  font-style: italic;
+}
+
+.chart-card {
+  background: white;
+  border: 1px solid var(--color-neutral-200);
+  border-radius: 6px;
+  padding: 16px 18px 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-card .chart-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--cmhc-brand-red);
+  letter-spacing: -0.005em;
+  line-height: 1.15;
+  margin: 0 0 2px;
+}
+
+.chart-card .chart-sub {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-neutral-800);
+  line-height: 1.3;
+  margin: 0 0 2px;
+}
+
+.chart-card [data-role="plot"] {
+  min-height: 260px;
+}
+
+.chart-card .chart-caption {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--cmhc-brand-red);
+  margin-top: 2px;
+  padding-top: 4px;
+  border-top: 1px solid var(--color-neutral-200);
+}
+
+.chart-card .chart-caption .chart-source {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.chart-card .chart-caption .chart-caption-left {
+  text-align: left;
+}
+
+.chart-card .chart-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  justify-content: flex-end;
+}
+
+.chart-card .chart-actions button {
+  font-size: 11px;
+  padding: 3px 10px;
+  border: 1px solid var(--color-neutral-300);
+  border-radius: 4px;
+  background: var(--color-neutral-50);
+  color: var(--color-neutral-800);
+  cursor: pointer;
+}
+
+.chart-card .chart-actions button:hover    { background: var(--color-neutral-100); }
+.chart-card .chart-actions button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* --- Observable Plot tuning ----------------------------------------------- */
+
+.cmhc-plot svg {
+  font-family: var(--font-sans);
+  overflow: visible;
+}
+
+/* Tick labels — small grey */
+.cmhc-plot svg [aria-label="x-axis tick label"] text,
+.cmhc-plot svg [aria-label="y-axis tick label"] text,
+.cmhc-plot svg g[aria-label="x-axis"] text,
+.cmhc-plot svg g[aria-label="y-axis"] text {
+  font-size: 11.5px;
+  fill: var(--color-neutral-600);
+}
+
+/* Axis titles — bold black */
+.cmhc-plot svg [aria-label="x-axis label"],
+.cmhc-plot svg [aria-label="y-axis label"] {
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  fill: var(--cmhc-frame) !important;
+}
+
+/* Right-side vertical legend wrapper — chart on the left, legend stacked
+   vertically on the right. Plot's built-in legend is disabled in chart.js
+   so this is the only legend rendered. */
+.cmhc-plot-wrap {
+  display: flex;
+  align-items: center;  /* vertically centre the legend against the chart */
+  gap: 14px;
+}
+
+.cmhc-plot-wrap > .cmhc-plot {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+}
+
+.cmhc-plot-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--color-neutral-800);
+  flex-shrink: 0;
+  max-width: 140px;
+}
+
+.cmhc-plot-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.2;
+}
+
+.cmhc-plot-legend-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.cmhc-plot-legend-text {
+  word-break: break-word;
+}

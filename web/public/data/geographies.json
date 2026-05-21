@@ -1,0 +1,408 @@
+{
+  "version": 1,
+  "generated": "2026-05-20T15:42:02Z",
+  "levels": {
+    "province": [
+      {
+        "uid": "46",
+        "name": "Manitoba",
+        "yearMin": 1990,
+        "yearMax": 2025
+      }
+    ],
+    "cma": [
+      {
+        "uid": "610",
+        "name": "Brandon",
+        "yearMin": 1990,
+        "yearMax": 2025
+      },
+      {
+        "uid": "607",
+        "name": "Portage la Prairie",
+        "yearMin": 1990,
+        "yearMax": 2025
+      },
+      {
+        "uid": "605",
+        "name": "Steinbach",
+        "yearMin": 2008,
+        "yearMax": 2025
+      },
+      {
+        "uid": "640",
+        "name": "Thompson",
+        "yearMin": 1990,
+        "yearMax": 2025
+      },
+      {
+        "uid": "603",
+        "name": "Winkler",
+        "yearMin": 2013,
+        "yearMax": 2025
+      },
+      {
+        "uid": "602",
+        "name": "Winnipeg",
+        "yearMin": 1990,
+        "yearMax": 2025
+      }
+    ],
+    "csd": [
+      {
+        "uid": "4613047",
+        "name": "Selkirk CY",
+        "yearMin": 2018,
+        "yearMax": 2025
+      }
+    ],
+    "zone": [
+      {
+        "uid": "602-assiniboine-park",
+        "name": "Assiniboine Park",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-centennial",
+        "name": "Centennial",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-east-kildonan",
+        "name": "East Kildonan",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-fort-garry",
+        "name": "Fort Garry",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-fort-rouge",
+        "name": "Fort Rouge",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-lord-selkirk",
+        "name": "Lord Selkirk",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-midland",
+        "name": "Midland",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-outlying-areas",
+        "name": "Outlying Areas",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-st-boniface",
+        "name": "St. Boniface",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-st-james",
+        "name": "St. James",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-st-vital",
+        "name": "St. Vital",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-transcona",
+        "name": "Transcona",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-west-kildonan",
+        "name": "West Kildonan",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      }
+    ],
+    "neighbourhood": [
+      {
+        "uid": "602-charleswood",
+        "name": "Charleswood",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-downtown",
+        "name": "Downtown",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-east-st-boniface",
+        "name": "East St. Boniface",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-elmwood",
+        "name": "Elmwood",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-fort-garry-north",
+        "name": "Fort Garry North",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-fort-richmond",
+        "name": "Fort Richmond",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-fort-rouge-west",
+        "name": "Fort Rouge West",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-garden-city",
+        "name": "Garden City",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-inkster",
+        "name": "Inkster",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-monroe",
+        "name": "Monroe",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-norwood",
+        "name": "Norwood",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-old-st-vital",
+        "name": "Old St. Vital",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-outlying-areas",
+        "name": "Outlying Areas",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-point-douglas",
+        "name": "Point Douglas",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-river-osborne",
+        "name": "River Osborne",
+        "yearMin": 2010,
+        "yearMax": 2015,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-river-osborne",
+        "name": "River-Osborne",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-rossmere-concordia",
+        "name": "Rossmere-Concordia",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-seven-oaks",
+        "name": "Seven Oaks",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-south-osborne",
+        "name": "South Osborne",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-south-st-vital",
+        "name": "South St. Vital",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-spence",
+        "name": "Spence",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-st-boniface",
+        "name": "St. Boniface",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-st-james-east",
+        "name": "St. James East",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-st-james-west",
+        "name": "St. James West",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-transcona",
+        "name": "Transcona",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-tuxedo",
+        "name": "Tuxedo",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-west-alexander-centennial",
+        "name": "West Alexander/Centennial",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-west-broadway",
+        "name": "West Broadway",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-west-end",
+        "name": "West End",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-wolseley",
+        "name": "Wolseley",
+        "yearMin": 2010,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      }
+    ]
+  }
+}
