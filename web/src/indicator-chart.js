@@ -59,7 +59,7 @@ const FRESHNESS_DAYS = {
  * Build an indicator chart panel and append it to `container`.
  * Returns { render(records, seriesMeta[]) }.
  */
-export function buildIndicatorCard(container, { chartId, title, sourceLabel }) {
+export function buildIndicatorCard(container, { chartId, title, sourceLabel, description }) {
   const card = document.createElement('section');
   card.className = 'chart-card cmhc-indicator-card';
   card.dataset.chartId = chartId;
@@ -70,6 +70,12 @@ export function buildIndicatorCard(container, { chartId, title, sourceLabel }) {
     <div data-role="plot" style="min-height:240px"></div>
     <div data-role="empty" class="text-xs text-neutral-500 mt-2" hidden>No data for this filter combination.</div>
     <div data-role="latest" class="cmhc-latest-row"></div>
+    ${description ? `
+      <details class="cmhc-explainer">
+        <summary>What does this mean?</summary>
+        <p data-role="explainer-body"></p>
+      </details>
+    ` : ''}
     <div class="chart-caption">
       <span class="chart-caption-left" data-role="caption-left"></span>
       <span class="chart-source" data-role="source"></span>
@@ -79,6 +85,9 @@ export function buildIndicatorCard(container, { chartId, title, sourceLabel }) {
       <button type="button" data-role="dl-png">Download PNG</button>
     </div>
   `;
+  if (description) {
+    card.querySelector('[data-role="explainer-body"]').textContent = description;
+  }
   container.appendChild(card);
 
   const $sub      = card.querySelector('[data-role="sub"]');

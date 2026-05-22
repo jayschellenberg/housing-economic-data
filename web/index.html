@@ -255,6 +255,16 @@
     <div id="tab-panel-indicators" class="grid md:grid-cols-[320px_1fr] min-h-[calc(100vh-110px)]" role="tabpanel" aria-labelledby="tab-btn-indicators" hidden>
       <aside class="bg-white border-r border-neutral-200 p-4 space-y-4 overflow-y-auto" aria-label="Market Indicators filters">
         <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Geographies</h2>
+          <div id="mi-geo-toggles" class="grid gap-1 text-sm">
+            <label class="flex items-center gap-1"><input type="checkbox" data-geo="CA"           checked /> Canada</label>
+            <label class="flex items-center gap-1"><input type="checkbox" data-geo="MB"           checked /> Manitoba</label>
+            <label class="flex items-center gap-1"><input type="checkbox" data-geo="Winnipeg-CMA" checked /> Winnipeg CMA</label>
+          </div>
+          <p class="text-xs text-neutral-500 mt-1">Strict filter — unchecking Canada also hides national-only charts (mortgage rates, bond yields, SLOS) since their data is published nationally.</p>
+        </section>
+
+        <section>
           <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Year range</h2>
           <div class="flex items-center gap-2 text-sm">
             <input id="mi-year-from" type="number" class="w-20 border border-neutral-300 rounded px-2 py-1" min="1980" max="2100" placeholder="From" />

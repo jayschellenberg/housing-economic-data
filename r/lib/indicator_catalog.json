@@ -11,16 +11,29 @@
     "derived":             { "title": "Derived Indicators",   "order": 7 }
   },
   "charts": {
-    "mortgage_rates":          { "title": "Posted mortgage rates",                  "displayGroup": "mortgage_market",   "order": 1, "snapshotPick": "boc.mortgage5yr" },
-    "goc_yields":              { "title": "Government of Canada bond yields",       "displayGroup": "mortgage_market",   "order": 2, "snapshotPick": "boc.goc_5yr" },
-    "policy_rates":            { "title": "Policy rate + CORRA",                    "displayGroup": "mortgage_market",   "order": 3, "snapshotPick": "boc.policy_target" },
-    "arrears":                 { "title": "Mortgage arrears (90+ days)",            "displayGroup": "mortgage_market",   "order": 4 },
-    "slos_mortgage":           { "title": "SLOS — Mortgage lending conditions","displayGroup": "credit_conditions", "order": 1 },
-    "slos_business":           { "title": "SLOS — Business lending conditions","displayGroup": "credit_conditions", "order": 2 },
-    "nhpi":                    { "title": "New Housing Price Index",                "displayGroup": "prices",            "order": 1, "snapshotPick": "statscan.nhpi.winnipeg" },
-    "cpi_shelter":             { "title": "CPI — Shelter component",           "displayGroup": "prices",            "order": 2, "snapshotPick": "statscan.cpi_shelter.manitoba" },
-    "permits_residential":     { "title": "Residential building permits ($)",       "displayGroup": "supply",            "order": 1, "snapshotPick": "statscan.permits.residential.manitoba" },
-    "permits_nonresidential":  { "title": "Non-residential building permits ($)",   "displayGroup": "supply",            "order": 2, "snapshotPick": "statscan.permits.nonresidential.manitoba" }
+    "mortgage_rates":          { "title": "Posted mortgage rates",                "displayGroup": "mortgage_market",   "order": 1, "snapshotPick": "boc.mortgage5yr",
+      "description": "Posted residential mortgage rates from chartered banks. Rising rates reduce buyer affordability and tighten investment-property cash flows, putting downward pressure on values; falling rates widen affordability, support price growth, and trigger refinancing activity. The variable line (broker average) often leads posted fixed rates by a few months." },
+    "goc_yields":              { "title": "Government of Canada bond yields",     "displayGroup": "mortgage_market",   "order": 2, "snapshotPick": "boc.goc_5yr",
+      "description": "Benchmark Government of Canada bond yields. The 5-year is the canonical cap-rate anchor for multi-family and commercial appraisals — appraisers typically add 200–400 bps to derive an indicative cap rate. Rising yields push cap rates higher and depress property values; falling yields compress cap rates and support valuations." },
+    "policy_rates":            { "title": "Policy rate + CORRA",                  "displayGroup": "mortgage_market",   "order": 3, "snapshotPick": "boc.policy_target",
+      "description": "Bank of Canada policy rate (overnight target) versus CORRA (actual overnight funding cost). Policy changes flow into variable mortgages within weeks and into posted fixed rates within months. Rising policy rates foreshadow softer transaction volumes; cuts often precede a rebound in activity." },
+    "arrears":                 { "title": "Mortgage arrears (90+ days)",          "displayGroup": "mortgage_market",   "order": 4,
+      "description": "Share of residential mortgages 90+ days in arrears. A leading indicator of distressed-sale supply: persistent rises typically precede increased forced sales, which appraisers should consider when bracketing comparable sales. Currently disabled — CBA data source is WAF-blocked; Phase 1.5 will source from CMHC or StatsCan." },
+
+    "slos_mortgage":           { "title": "SLOS — Mortgage lending conditions",   "displayGroup": "credit_conditions", "order": 1,
+      "description": "Bank of Canada Senior Loan Officer Survey, balance-of-opinion index. Positive readings mean lenders are tightening (harder to qualify, lower LTV, stricter stress test); negative readings mean easing. Tightening foreshadows fewer marginal buyers and softer demand at the bottom of the market." },
+    "slos_business":           { "title": "SLOS — Business lending conditions",   "displayGroup": "credit_conditions", "order": 2,
+      "description": "Same survey but for commercial lending — critical for commercial appraisers. Positive readings indicate banks pulling back on CRE lending: deals stall, cap rates drift wider as buyers face tighter financing. Negative readings signal a healthier transaction environment with more comparables to choose from." },
+
+    "nhpi":                    { "title": "New Housing Price Index",              "displayGroup": "prices",            "order": 1, "snapshotPick": "statscan.nhpi.winnipeg",
+      "description": "Statistics Canada's New Housing Price Index — builder list prices for new SFD homes, excluding land. Rising NHPI indicates pricing power on new construction; broader resale market typically follows with a 3–6 month lag. Useful for time-adjusting comparable sales and as a feasibility check against rising construction costs." },
+    "cpi_shelter":             { "title": "CPI — Shelter component",              "displayGroup": "prices",            "order": 2, "snapshotPick": "statscan.cpi_shelter.manitoba",
+      "description": "Shelter component of the Consumer Price Index — captures rented + owned shelter inflation, including operating costs (utilities, insurance, property taxes). Rising values mean operating costs are climbing for landlords; flat nominal rents against rising shelter-CPI imply declining real rents. Useful for stabilising operating-expense assumptions in multi-family pro formas." },
+
+    "permits_residential":     { "title": "Residential building permits ($)",     "displayGroup": "supply",            "order": 1, "snapshotPick": "statscan.permits.residential.manitoba",
+      "description": "Seasonally-adjusted dollar value of residential building permits issued. A leading indicator of supply: surges in permits typically translate to completions 18–36 months out, putting downward pressure on rents and prices in that timeframe. Sustained low permit volumes signal scarcity ahead and support property values." },
+    "permits_nonresidential":  { "title": "Non-residential building permits ($)", "displayGroup": "supply",            "order": 2, "snapshotPick": "statscan.permits.nonresidential.manitoba",
+      "description": "Seasonally-adjusted dollar value of industrial, commercial, and institutional permits. Tracks the commercial development pipeline — strong permits indicate investor confidence and incoming supply for office / retail / industrial space. Weak permits signal caution; useful context when stress-testing absorption assumptions in commercial appraisals." }
   },
   "series": [
     { "id": "boc.mortgage5yr",          "provider": "boc", "seriesId": "V121764",   "expectedTitle": "Conventional mortgage - 5-year",                  "frequency": "weekly", "units": "percent", "geo": "CA", "transform": "monthly_mean",      "displayGroup": "mortgage_market",   "chartId": "mortgage_rates",         "chartLabel": "5-yr fixed",              "sourceUrl": "https://www.bankofcanada.ca/valet/series/V121764" },

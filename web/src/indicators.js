@@ -40,8 +40,23 @@ async function loadJson(path) {
 }
 
 let initialised = false;
-let state = { yearFrom: null, yearTo: null, sectionsHidden: new Set() };
+let state = {
+  yearFrom: null,
+  yearTo: null,
+  sectionsHidden: new Set(),
+  // Geography filter — strict: each series's geo must be in this set to render.
+  // Default: all three on. Adding a geo brings its lines back; removing hides
+  // them (including national-only charts when "CA" is unchecked).
+  geosEnabled: new Set(['CA', 'MB', 'Winnipeg-CMA']),
+};
 let lastRender = { cards: [], shards: {}, catalog: null };
+
+// Geo label helpers — display strings on chips/checkboxes.
+const GEO_LABEL = {
+  'CA':            'Canada',
+  'MB':            'Manitoba',
+  'Winnipeg-CMA':  'Winnipeg',
+};
 
 export async function initIndicators() {
   if (initialised) return;
@@ -80,7 +95,6 @@ function buildSnapshot(catalog, shards) {
   const $bar = document.getElementById('mi-snapshot');
   if (!$bar) return;
   $bar.replaceChildren();
-  // For each chart with a snapshotPick, build a KPI tile.
   Object.entries(catalog.charts || {}).forEach(([chartId, c]) => {
     if (!c.snapshotPick) return;
     const sid = c.snapshotPick;
@@ -88,21 +102,90 @@ function buildSnapshot(catalog, shards) {
     if (!shard) return;
     const meta = (shard.series || []).find(s => s.id === sid);
     if (!meta) return;
+    // Honour the geo filter: if the snapshotPick's geo is disabled, hide
+    // the tile entirely (matches the live-updating chart behaviour below).
+    if (!state.geosEnabled.has(meta.geo)) return;
+
     const tile = document.createElement('div');
     tile.className = 'cmhc-kpi';
     tile.innerHTML = `
       <div class="cmhc-kpi-label">${c.title}</div>
       <div class="cmhc-kpi-value"></div>
       <div class="cmhc-kpi-meta"></div>
+      <div class="cmhc-kpi-deltas"></div>
     `;
-    // Auto-promote dollar values ≥ $1M to dollar_millions for KPI readability.
     const fmtKey = (meta.units === 'dollar' && Math.abs(meta.latestValue ?? 0) >= 1e6)
       ? 'dollar_millions' : meta.units;
     tile.querySelector('.cmhc-kpi-value').textContent = (FMT[fmtKey] || ((v) => String(v)))(meta.latestValue);
     tile.querySelector('.cmhc-kpi-meta').textContent =
       `${meta.chartLabel || meta.id} • as of ${meta.latestDate}`;
+
+    // Compute 90d / 12mo / 24mo deltas from this series's records.
+    const ids = new Set([sid]);
+    const records = (shard.records || []).filter(r => ids.has(r.id))
+      .sort((a, b) => a.date.localeCompare(b.date));
+    const $deltas = tile.querySelector('.cmhc-kpi-deltas');
+    const windows = [
+      { label: '90d',  days: 90 },
+      { label: '12mo', days: 365 },
+      { label: '24mo', days: 730 },
+    ];
+    windows.forEach(w => {
+      const d = computeDelta(records, w.days, meta.units);
+      if (!d) return;
+      const chip = document.createElement('span');
+      chip.className = `cmhc-kpi-delta ${d.direction}`;
+      chip.innerHTML = `<span class="cmhc-kpi-delta-window">${w.label}</span> ${d.arrow} ${d.label}`;
+      $deltas.appendChild(chip);
+    });
+
     $bar.appendChild(tile);
   });
+}
+
+/**
+ * Compute the delta over a target lookback window from a date-sorted records
+ * array. Returns { direction, arrow, label } or null when there's not enough
+ * history. Direction semantics: 'up' / 'down' / 'flat'.
+ *
+ * For percent and balance_of_opinion series we report absolute change in pp.
+ * For dollar / index / units series we report % change.
+ */
+function computeDelta(records, daysBack, units) {
+  if (!records || records.length < 2) return null;
+  const last = records[records.length - 1];
+  const target = new Date(last.date);
+  target.setUTCDate(target.getUTCDate() - daysBack);
+  const targetIso = target.toISOString().slice(0, 10);
+
+  // Find the record nearest to target (linear scan from the end, stop when
+  // we cross the target). Records are date-sorted ascending.
+  let prior = null;
+  for (let i = records.length - 1; i >= 0; i--) {
+    if (records[i].date <= targetIso) { prior = records[i]; break; }
+  }
+  if (!prior || prior.date === last.date) return null;
+
+  const latest = Number(last.value);
+  const prev   = Number(prior.value);
+  if (!Number.isFinite(latest) || !Number.isFinite(prev) || prev === 0) return null;
+
+  let delta, label, threshold;
+  if (units === 'percent' || units === 'balance_of_opinion') {
+    delta = latest - prev;
+    label = `${delta > 0 ? '+' : ''}${delta.toFixed(2)} pp`;
+    threshold = units === 'balance_of_opinion' ? 2 : 0.1;
+  } else {
+    delta = (latest - prev) / Math.abs(prev) * 100;
+    label = `${delta > 0 ? '+' : ''}${delta.toFixed(1)}%`;
+    threshold = 0.5;
+  }
+  const direction = Math.abs(delta) < threshold ? 'flat'
+                  : delta > 0 ? 'up' : 'down';
+  const arrow = direction === 'up' ? '↑'
+              : direction === 'down' ? '↓'
+              : '→';
+  return { direction, arrow, label };
 }
 
 // --- Chart sections ---------------------------------------------------------
@@ -132,25 +215,36 @@ function buildChartSections(catalog, shards) {
       .sort((a, b) => (a[1].order || 99) - (b[1].order || 99));
 
     chartsInGroup.forEach(([chartId, chartCfg]) => {
-      const seriesMeta = (shard.series || []).filter(s => s.chartId === chartId);
-      if (seriesMeta.length === 0) return;
+      const seriesMetaAll = (shard.series || []).filter(s => s.chartId === chartId);
+      if (seriesMetaAll.length === 0) return;
       // Skip charts with no records (e.g. arrears, disabled).
-      const ids = new Set(seriesMeta.map(s => s.id));
-      const records = (shard.records || []).filter(r => ids.has(r.id));
-      if (records.length === 0) return;
+      const idsAll = new Set(seriesMetaAll.map(s => s.id));
+      const recordsAll = (shard.records || []).filter(r => idsAll.has(r.id));
+      if (recordsAll.length === 0) return;
 
-      const sourceLabel = uniqueProviderLabel(seriesMeta);
+      const sourceLabel = uniqueProviderLabel(seriesMetaAll);
       const card = buildIndicatorCard($sectionGrid, {
         chartId,
         title: chartCfg.title,
         sourceLabel,
+        description: chartCfg.description,
       });
+      // Apply current geo filter on initial render.
+      const seriesMeta = seriesMetaAll.filter(s => state.geosEnabled.has(s.geo));
+      const ids = new Set(seriesMeta.map(s => s.id));
+      const records = recordsAll.filter(r => ids.has(r.id));
       card.render(records, seriesMeta, {
         subtitle: subtitleFor(seriesMeta),
         yearFrom: state.yearFrom,
         yearTo:   state.yearTo,
       });
-      lastRender.cards.push({ chartId, group: g.id, card, seriesMeta, records, chartCfg });
+      // Stash the unfiltered set so rerenderCards() can re-apply the filter
+      // without having to re-walk the shard each time.
+      lastRender.cards.push({
+        chartId, group: g.id, card,
+        seriesMetaAll, recordsAll,
+        chartCfg,
+      });
     });
 
     if ($sectionGrid.childElementCount > 0) $grid.appendChild(section);
@@ -222,6 +316,16 @@ function wireSidebar(catalog, manifest) {
     state.yearTo = Number.isFinite(v) ? v : null;
     schedule();
   });
+
+  // Geography toggles — live-update charts + KPI tiles.
+  document.querySelectorAll('#mi-geo-toggles input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const geo = cb.dataset.geo;
+      if (cb.checked) state.geosEnabled.add(geo);
+      else            state.geosEnabled.delete(geo);
+      schedule();
+    });
+  });
 }
 
 function applySectionVisibility() {
@@ -233,13 +337,20 @@ function applySectionVisibility() {
 }
 
 function rerenderCards() {
-  lastRender.cards.forEach(({ card, records, seriesMeta }) => {
+  lastRender.cards.forEach(({ card, seriesMetaAll, recordsAll }) => {
+    const seriesMeta = seriesMetaAll.filter(s => state.geosEnabled.has(s.geo));
+    const ids = new Set(seriesMeta.map(s => s.id));
+    const records = recordsAll.filter(r => ids.has(r.id));
     card.render(records, seriesMeta, {
       subtitle: subtitleFor(seriesMeta),
       yearFrom: state.yearFrom,
       yearTo:   state.yearTo,
     });
   });
+  // Re-render the KPI bar too — geo filter affects which tiles are visible.
+  if (lastRender.catalog && lastRender.shards) {
+    buildSnapshot(lastRender.catalog, lastRender.shards);
+  }
 }
 
 // --- Excel export -----------------------------------------------------------
