@@ -31,6 +31,10 @@
         class="cmhc-tab" data-tab="starts" aria-selected="false">
         Housing Starts
       </button>
+      <button type="button" role="tab" id="tab-btn-snapshot"
+        class="cmhc-tab" data-tab="snapshot" aria-selected="false">
+        Current Snapshot
+      </button>
       <button type="button" role="tab" id="tab-btn-indicators"
         class="cmhc-tab" data-tab="indicators" aria-selected="false">
         Market Indicators
@@ -294,17 +298,29 @@
       </aside>
 
       <main class="p-4 space-y-4 overflow-x-hidden">
-        <section class="cmhc-snapshot-wrap">
-          <h2 class="cmhc-snapshot-title">Current Snapshot</h2>
-          <div id="mi-snapshot" class="cmhc-snapshot-grid"></div>
-        </section>
-
         <section id="mi-chart-grid" class="space-y-6"></section>
 
         <footer class="text-xs text-neutral-500 pt-4 border-t border-neutral-200" id="mi-footer">
           Sources: Bank of Canada Valet, Statistics Canada Web Data Service. <span id="mi-data-as-of">—</span>
         </footer>
       </main>
+    </div>
+
+    <!-- ============================================================
+         Current Snapshot tab — at-a-glance KPI grid of the latest
+         market indicator readings, with 90d / 12mo / 24mo delta
+         chips. Reuses the data and DOM that the Market Indicators
+         tab already loads; just rendered into its own panel.
+         ============================================================ -->
+    <div id="tab-panel-snapshot" class="p-4 space-y-4" role="tabpanel" aria-labelledby="tab-btn-snapshot" hidden>
+      <section class="cmhc-snapshot-wrap">
+        <h2 class="cmhc-snapshot-title">Current Snapshot</h2>
+        <p class="text-xs text-neutral-500 mb-3">Latest reading per indicator with 90-day / 12-month / 24-month change chips. Tap an indicator name in the Market Indicators tab for the underlying chart.</p>
+        <div id="mi-snapshot" class="cmhc-snapshot-grid"></div>
+        <p class="text-xs text-neutral-500 mt-4">
+          Green chips = favourable direction for the indicator; red = unfavourable; grey = unchanged. Direction semantics follow the catalog's <code>goodDirection</code> per chart. National-only indicators (mortgage rates, bond yields, SLOS) always show; multi-geo indicators respect the Geography filter on the Market Indicators tab.
+        </p>
+      </section>
     </div>
 
     <script type="module" src="./src/main.js"></script>
