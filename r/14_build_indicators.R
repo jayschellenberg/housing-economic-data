@@ -75,21 +75,25 @@ for (g in groups) {
   meta <- lapply(series_in_group, function(sid) {
     s <- cat_by_id[[sid]]
     last <- sub %>% filter(id == sid) %>% slice_tail(n = 1)
-    list(
+    item <- list(
       id            = sid,
       provider      = s$provider,
-      seriesId      = s$seriesId %||% s$vectorId %||% NULL,
+      seriesId      = s$seriesId %||% s$vectorId,
       title         = s$expectedTitle,
       frequency     = s$frequency,
       units         = s$units,
-      indexBase     = s$indexBase %||% NULL,
+      indexBase     = s$indexBase,
       geo           = s$geo,
       transform     = s$transform,
       displayGroup  = s$displayGroup,
+      chartId       = s$chartId,
+      chartLabel    = s$chartLabel,
       sourceUrl     = s$sourceUrl,
       latestDate    = if (nrow(last)) last$date  else NA,
       latestValue   = if (nrow(last)) last$value else NA
     )
+    # Strip NULL and zero-length entries so jsonlite doesn't render them as `{}`.
+    Filter(function(x) !is.null(x) && length(x) > 0, item)
   })
   payload <- list(
     group   = g,
@@ -123,3 +127,9 @@ writeLines(jsonlite::toJSON(manifest, auto_unbox = TRUE, pretty = TRUE, na = "nu
            imf_path, useBytes = TRUE)
 message(sprintf("[14] Wrote %s (%d groups, %d series, %d records)",
                 imf_path, length(shard_meta), manifest$totalSeries, manifest$totalRecords))
+
+# --- Copy the catalog into the public data tree so the frontend can read --
+# the charts / displayGroups / snapshotPick metadata without a separate API.
+catalog_out <- file.path(INDICATORS_DIR, "_catalog.json")
+file.copy(CATALOG_PATH, catalog_out, overwrite = TRUE)
+message(sprintf("[14] Copied catalog to %s", catalog_out))

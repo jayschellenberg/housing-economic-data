@@ -94,6 +94,121 @@ export async function exportTablesToExcel(built, { filename, maxYear }) {
   const buf = await wb.xlsx.writeBuffer();
   const blob = new Blob([buf],
     { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  triggerDownload(blob, filename);
+}
+
+/**
+ * Export every loaded Market-Indicators shard into one workbook. One sheet
+ * per displayGroup. Plus a Metadata sheet listing source URLs, vintages,
+ * units, and notes — for appraisal defensibility.
+ */
+export async function exportIndicatorsToExcel({ catalog, shards }) {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'CMHC Charts';
+  wb.created = new Date();
+
+  const FMT_NUMBER = {
+    percent: '0.00"%"',
+    dollar:  '#,##0',
+    dollar_millions: '#,##0',
+    index:   '0.00',
+    units:   '#,##0',
+    persons: '#,##0',
+    ratio:   '0.00',
+    balance_of_opinion: '0',
+  };
+
+  // One sheet per group, in catalog order.
+  const groupOrder = Object.entries(catalog.displayGroups || {})
+    .sort((a, b) => (a[1].order || 99) - (b[1].order || 99))
+    .map(([id]) => id);
+
+  for (const groupId of groupOrder) {
+    const shard = shards[groupId];
+    if (!shard || !shard.series?.length) continue;
+    const ws = wb.addWorksheet(catalog.displayGroups[groupId].title.slice(0, 31), {
+      properties: { defaultColWidth: 14 },
+    });
+
+    // Header row: Date | series1 | series2 | ...
+    const seriesIds = shard.series.map(s => s.id);
+    const headers = ['Date', ...shard.series.map(s => `${s.chartLabel || s.id}\n(${s.title})`)];
+    const headerRow = ws.addRow(headers);
+    headerRow.eachCell((c) => {
+      c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND_RED } };
+      c.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+      c.alignment = { vertical: 'top', horizontal: 'center', wrapText: true };
+      c.border = { top: BORDER_THIN, left: BORDER_THIN, right: BORDER_THIN, bottom: BORDER_THIN };
+    });
+    headerRow.height = 36;
+
+    // Pivot records by date.
+    const byDate = new Map();
+    (shard.records || []).forEach(r => {
+      if (!byDate.has(r.date)) byDate.set(r.date, {});
+      byDate.get(r.date)[r.id] = r.value;
+    });
+    const sortedDates = [...byDate.keys()].sort();
+
+    sortedDates.forEach(d => {
+      const row = [d, ...seriesIds.map(id => byDate.get(d)?.[id] ?? null)];
+      const r = ws.addRow(row);
+      r.getCell(1).alignment = { horizontal: 'left' };
+      r.eachCell((cell, colNumber) => {
+        cell.font = { name: 'Calibri', size: 10 };
+        cell.border = { top: BORDER_THIN, left: BORDER_THIN, right: BORDER_THIN, bottom: BORDER_THIN };
+        if (colNumber > 1) {
+          cell.alignment = { horizontal: 'right' };
+          const s = shard.series[colNumber - 2];
+          if (s) cell.numFmt = FMT_NUMBER[s.units] || '0.00';
+        }
+      });
+    });
+    ws.getColumn(1).width = 12;
+    for (let c = 2; c <= headers.length; c++) ws.getColumn(c).width = 16;
+  }
+
+  // Metadata sheet — appraiser defensibility.
+  const meta = wb.addWorksheet('Metadata', { properties: { defaultColWidth: 22 } });
+  const metaHeaders = ['Group', 'Series ID', 'Title', 'Provider', 'Geo', 'Frequency', 'Units', 'Latest date', 'Source URL'];
+  const mh = meta.addRow(metaHeaders);
+  mh.eachCell(c => {
+    c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND_RED } };
+    c.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+    c.alignment = { horizontal: 'center', wrapText: true };
+    c.border = { top: BORDER_THIN, left: BORDER_THIN, right: BORDER_THIN, bottom: BORDER_THIN };
+  });
+  groupOrder.forEach(groupId => {
+    const shard = shards[groupId];
+    if (!shard) return;
+    (shard.series || []).forEach(s => {
+      meta.addRow([
+        catalog.displayGroups[groupId]?.title || groupId,
+        s.id,
+        s.title,
+        s.provider,
+        s.geo,
+        s.frequency,
+        s.units,
+        s.latestDate ?? '',
+        s.sourceUrl ?? '',
+      ]);
+    });
+  });
+  meta.getColumn(3).width = 50;
+  meta.getColumn(9).width = 70;
+  meta.addRow([]);
+  meta.addRow(['Exported', new Date().toISOString().slice(0, 10)]);
+  meta.addRow(['App', 'https://cmhc-charts.vercel.app/']);
+  meta.addRow(['Caveats', 'Public data, see source URLs for definitions. Verify before relying on for appraisals.']);
+
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf],
+    { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  triggerDownload(blob, `CMHC_MarketIndicators_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+function triggerDownload(blob, filename) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = filename;

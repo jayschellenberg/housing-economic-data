@@ -11,6 +11,7 @@ import { buildChartCard } from './chart.js';
 import { decodeState, syncURL } from './state.js';
 import { initTables } from './tables.js';
 import { initStarts } from './starts.js';
+import { initIndicators } from './indicators.js';
 
 const SERIES_PANELS = [
   'Median Rent',
@@ -83,9 +84,10 @@ function setDataAsOf(text) {
 
 function setupTabs(initial) {
   const tabs = {
-    charts: { btn: document.getElementById('tab-btn-charts'), panel: document.getElementById('tab-panel-charts') },
-    tables: { btn: document.getElementById('tab-btn-tables'), panel: document.getElementById('tab-panel-tables') },
-    starts: { btn: document.getElementById('tab-btn-starts'), panel: document.getElementById('tab-panel-starts') },
+    charts:     { btn: document.getElementById('tab-btn-charts'),     panel: document.getElementById('tab-panel-charts') },
+    tables:     { btn: document.getElementById('tab-btn-tables'),     panel: document.getElementById('tab-panel-tables') },
+    starts:     { btn: document.getElementById('tab-btn-starts'),     panel: document.getElementById('tab-panel-starts') },
+    indicators: { btn: document.getElementById('tab-btn-indicators'), panel: document.getElementById('tab-panel-indicators') },
   };
 
   function activate(name) {
@@ -150,13 +152,14 @@ async function bootstrap() {
 
   // ── Tab switching ──
   const hashTab = window.location.hash.replace('#', '');
-  const initialTab = ['charts', 'tables', 'starts'].includes(hashTab) ? hashTab : 'charts';
+  const initialTab = ['charts', 'tables', 'starts', 'indicators'].includes(hashTab) ? hashTab : 'charts';
   setupTabs(initialTab);
 
-  // Bootstrap the other two views (idempotent — no DOM rendered until the
+  // Bootstrap the other views (idempotent — no DOM rendered until the
   // user lands on that tab and the filter state is non-empty).
   initTables({ geographies, manifest, loadShard });
   initStarts({ manifest });
+  initIndicators().catch(err => console.error('[indicators bootstrap]', err));
 
   await renderAll(filters.getState());
 

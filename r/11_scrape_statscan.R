@@ -51,7 +51,9 @@ results <- lapply(stc_series, function(s) {
   # cansim returns columns: REF_DATE, VALUE, VECTOR, etc. Normalise to our
   # long-form schema: id / date / value / units / geo / frequency.
   date_col  <- intersect(c("REF_DATE", "Date"), names(df))[1]
-  value_col <- intersect(c("VALUE", "val_norm", "value"), names(df))[1]
+  # Prefer val_norm — that's cansim's already-scaled (by SCALAR_FACTOR) value.
+  # VALUE is the raw column where dollar amounts are typically in thousands.
+  value_col <- intersect(c("val_norm", "VALUE", "value"), names(df))[1]
   slim <- df %>%
     transmute(
       id        = s$id,
