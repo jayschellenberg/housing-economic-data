@@ -29,6 +29,7 @@ const FMT = {
   index:             (v) => v == null ? '—' : Number(v).toFixed(1),
   units:             (v) => v == null ? '—' : Math.round(Number(v)).toLocaleString(),
   persons:           (v) => v == null ? '—' : Math.round(Number(v)).toLocaleString(),
+  persons_thousands: (v) => v == null ? '—' : `${(Number(v) / 1e6).toFixed(1)}M`,
   ratio:             (v) => v == null ? '—' : Number(v).toFixed(2),
   balance_of_opinion:(v) => v == null ? '—' : `${Number(v).toFixed(0)}`,
 };

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated": "2026-05-22T14:43:30Z",
+  "generated": "2026-05-22T14:55:04Z",
   "groups": [
     {
       "group": "mortgage_market",
@@ -29,8 +29,15 @@
       "seriesCount": 4,
       "recordCount": 396,
       "latestDate": "2026-03-01"
+    },
+    {
+      "group": "demand",
+      "file": "demand.json",
+      "seriesCount": 6,
+      "recordCount": 3036,
+      "latestDate": "2026-04-01"
     }
   ],
-  "totalSeries": 23,
-  "totalRecords": 34070
+  "totalSeries": 29,
+  "totalRecords": 37106
 }

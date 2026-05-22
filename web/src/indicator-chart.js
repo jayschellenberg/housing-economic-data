@@ -26,6 +26,10 @@ const FMT = {
   index:             (v) => Number(v).toFixed(1),
   units:             (v) => Math.round(Number(v)).toLocaleString(),
   persons:           (v) => Math.round(Number(v)).toLocaleString(),
+  // StatsCan's "Persons in thousands" series — cansim's val_norm has already
+  // applied the ×1000 scalar, so the value is in raw persons. Render as
+  // millions for readability (e.g. 21,034,500 → "21.0M").
+  persons_thousands: (v) => `${(Number(v) / 1e6).toFixed(1)}M`,
   ratio:             (v) => Number(v).toFixed(2),
   balance_of_opinion:(v) => `${Number(v).toFixed(0)}`,
 };
