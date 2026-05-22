@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "generated": "2026-05-22T13:59:00Z",
+  "groups": [
+    {
+      "group": "mortgage_market",
+      "file": "mortgage_market.json",
+      "seriesCount": 9,
+      "recordCount": 31082,
+      "latestDate": "2026-05-21"
+    },
+    {
+      "group": "credit_conditions",
+      "file": "credit_conditions.json",
+      "seriesCount": 6,
+      "recordCount": 360,
+      "latestDate": "2025-10-01"
+    },
+    {
+      "group": "prices",
+      "file": "prices.json",
+      "seriesCount": 4,
+      "recordCount": 2232,
+      "latestDate": "2026-04-01"
+    },
+    {
+      "group": "supply",
+      "file": "supply.json",
+      "seriesCount": 4,
+      "recordCount": 396,
+      "latestDate": "2026-03-01"
+    }
+  ],
+  "totalSeries": 23,
+  "totalRecords": 34070
+}
