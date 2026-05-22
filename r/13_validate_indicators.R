@@ -128,16 +128,21 @@ results <- lapply(series, function(row) {
                   ok = TRUE, actualTitle = NA, latest = NA, reason = "")))
   }
   # Derived series are computed at build time from another series's records.
-  # Validate that the upstream source exists; nothing else to check.
+  # Validate that every upstream source exists in the catalog. derivedFrom is
+  # either a scalar id (yoy / shift ops) or an array of ids (ratio op).
   if (identical(row$provider, "derived")) {
     src_ids <- vapply(series, function(s) s$id %||% "", character(1))
-    src_ok <- !is.null(row$derivedFrom) && row$derivedFrom %in% src_ids
+    needed <- if (is.list(row$derivedFrom)) unlist(row$derivedFrom)
+              else as.character(row$derivedFrom)
+    src_ok <- length(needed) > 0 && all(needed %in% src_ids)
     cat(sprintf("  [%s] %-44s derived from %s\n",
                 if (src_ok) "OK  " else "FAIL",
-                row$id, row$derivedFrom %||% "(missing)"))
+                row$id, paste(needed, collapse = " + ")))
     return(list(id = row$id, provider = row$provider,
                 ok = src_ok, actualTitle = row$expectedTitle, latest = NA,
-                reason = if (src_ok) "" else "derivedFrom not found in catalog"))
+                reason = if (src_ok) ""
+                         else sprintf("derivedFrom not found: %s",
+                                      paste(setdiff(needed, src_ids), collapse=", "))))
   }
   res <- switch(row$provider,
                 boc      = validate_boc(row),

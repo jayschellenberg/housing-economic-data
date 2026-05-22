@@ -41,34 +41,83 @@ cba <- read_safe(file.path(DATA_DIR, "cba_arrears.csv"))   # not yet produced; h
 all_obs <- bind_rows(boc, stc, cba)
 if (nrow(all_obs) == 0) stop("[14] no indicator data found — run the scrape scripts first.")
 
-# --- Derived series: compute YoY % change for catalog entries with
-#     provider="derived" and derivedOp="yoy". The lag depends on the
-#     source series's frequency (monthly = 12, quarterly = 4, annual = 1).
-derived_series <- Filter(function(s) identical(s$provider, "derived") &&
-                                       identical(s$derivedOp, "yoy"),
+# --- Derived series ---------------------------------------------------------
+# Catalog rows with provider="derived" carry a derivedOp + derivedFrom that
+# tell the builder how to compute the new values from existing records.
+#
+# Supported ops:
+#   yoy     — year-over-year % change of a single source series (lag matched
+#              to its native frequency)
+#   shift   — single-source value + offset (e.g. 5-yr GoC + 300 bps for a
+#              representative cap rate)
+#   ratio   — ratio of two source series aligned by date (inner join), times
+#              the catalog row's `multiplier` so the result is a usable index
+# ---------------------------------------------------------------------------
+derived_series <- Filter(function(s) identical(s$provider, "derived"),
                          catalog$series)
+
+compute_yoy <- function(s) {
+  src <- all_obs %>% filter(id == s$derivedFrom) %>% arrange(date)
+  if (nrow(src) == 0) return(NULL)
+  src_freq <- cat_by_id[[s$derivedFrom]]$frequency
+  lag_n <- switch(src_freq, monthly = 12L, quarterly = 4L, annual = 1L, 12L)
+  v <- (src$value / dplyr::lag(src$value, n = lag_n) - 1) * 100
+  keep <- !is.na(v)
+  tibble::tibble(
+    id = s$id, seriesId = s$id,
+    date = src$date[keep], value = v[keep],
+    units = "percent", geo = s$geo,
+    frequency = src_freq, transform = "yoy"
+  )
+}
+
+compute_shift <- function(s) {
+  src <- all_obs %>% filter(id == s$derivedFrom) %>% arrange(date)
+  if (nrow(src) == 0) return(NULL)
+  off <- as.numeric(s$shiftBy %||% 0)
+  tibble::tibble(
+    id = s$id, seriesId = s$id,
+    date = src$date, value = src$value + off,
+    units = cat_by_id[[s$derivedFrom]]$units,
+    geo = s$geo,
+    frequency = cat_by_id[[s$derivedFrom]]$frequency,
+    transform = "shift"
+  )
+}
+
+compute_ratio <- function(s) {
+  # derivedFrom must be a length-2 array of source IDs.
+  ids <- unlist(s$derivedFrom)
+  if (length(ids) != 2) return(NULL)
+  a <- all_obs %>% filter(id == ids[1]) %>% select(date, va = value)
+  b <- all_obs %>% filter(id == ids[2]) %>% select(date, vb = value)
+  if (nrow(a) == 0 || nrow(b) == 0) return(NULL)
+  joined <- inner_join(a, b, by = "date") %>% arrange(date)
+  if (nrow(joined) == 0) return(NULL)
+  mult <- as.numeric(s$multiplier %||% 100)
+  v <- joined$va / joined$vb * mult
+  tibble::tibble(
+    id = s$id, seriesId = s$id,
+    date = joined$date, value = v,
+    units = s$units %||% "index", geo = s$geo,
+    frequency = cat_by_id[[ids[1]]]$frequency,
+    transform = "ratio"
+  )
+}
+
 if (length(derived_series) > 0) {
-  message(sprintf("[14] computing %d YoY derived series", length(derived_series)))
+  message(sprintf("[14] computing %d derived series", length(derived_series)))
   derived_rows <- bind_rows(lapply(derived_series, function(s) {
-    src <- all_obs %>% filter(id == s$derivedFrom) %>% arrange(date)
-    if (nrow(src) == 0) {
-      message(sprintf("  [14] %s — source '%s' missing, skipped", s$id, s$derivedFrom))
+    res <- switch(s$derivedOp %||% "",
+                  yoy   = compute_yoy(s),
+                  shift = compute_shift(s),
+                  ratio = compute_ratio(s),
+                  NULL)
+    if (is.null(res) || nrow(res) == 0) {
+      message(sprintf("  [14] %s — could not compute (op=%s)", s$id, s$derivedOp))
       return(NULL)
     }
-    src_freq <- cat_by_id[[s$derivedFrom]]$frequency
-    lag_n <- switch(src_freq, monthly = 12L, quarterly = 4L, annual = 1L, 12L)
-    yoy <- (src$value / dplyr::lag(src$value, n = lag_n) - 1) * 100
-    keep <- !is.na(yoy)
-    tibble::tibble(
-      id        = s$id,
-      seriesId  = s$id,
-      date      = src$date[keep],
-      value     = yoy[keep],
-      units     = "percent",
-      geo       = s$geo,
-      frequency = src_freq,
-      transform = "yoy"
-    )
+    res
   }))
   if (nrow(derived_rows) > 0) {
     all_obs <- bind_rows(all_obs, derived_rows)
