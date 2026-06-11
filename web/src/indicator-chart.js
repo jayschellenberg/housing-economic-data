@@ -82,10 +82,17 @@ export function buildIndicatorCard(container, { chartId, title, sourceLabel, des
   const card = document.createElement('section');
   card.className = 'chart-card cmhc-indicator-card';
   card.dataset.chartId = chartId;
+  // Card layout:
+  //   title / subtitle / plot / latest-values / caption  ← captured in PNG
+  //   actions row (Download)                             ← excluded from PNG
+  //   stale-data banner                                  ← excluded from PNG
+  //   "What does this mean?" explainer                   ← excluded from PNG
+  // The stale banner is meta info for the appraiser, not part of the chart
+  // they're embedding in a report — keep it visible on screen but out of the
+  // exported image (see filter in exportCard).
   card.innerHTML = `
     <header class="chart-title">${title}</header>
     <p class="chart-sub" data-role="sub"></p>
-    <div data-role="stale" class="cmhc-stale-warning" hidden></div>
     <div data-role="plot" style="min-height:240px"></div>
     <div data-role="empty" class="text-xs text-neutral-500 mt-2" hidden>No data for this filter combination.</div>
     <div data-role="latest" class="cmhc-latest-row"></div>
@@ -96,6 +103,7 @@ export function buildIndicatorCard(container, { chartId, title, sourceLabel, des
     <div class="chart-actions">
       <button type="button" data-role="dl-png">Download PNG</button>
     </div>
+    <div data-role="stale" class="cmhc-stale-warning" hidden></div>
     ${description ? `
       <details class="cmhc-explainer">
         <summary>What does this mean?</summary>
@@ -283,9 +291,14 @@ async function exportCard(card, filename, kind) {
       backgroundColor: '#ffffff',
       pixelRatio: kind === 'png' ? 3 : 1,
       cacheBust: true,
-      // Drop both the action row and the explainer details from the export
-      // so the rendered image stays scoped to title → chart → caption.
-      filter: (n) => !(n.classList && (n.classList.contains('chart-actions') || n.classList.contains('cmhc-explainer'))),
+      // Drop the action row, stale-data banner, and explainer from the export
+      // so the rendered image stays scoped to title → chart → latest values →
+      // caption. These are on-screen helpers, not part of the chart someone
+      // embeds in an appraisal report.
+      filter: (n) => !(n.classList && (
+        n.classList.contains('chart-actions') ||
+        n.classList.contains('cmhc-stale-warning') ||
+        n.classList.contains('cmhc-explainer'))),
     };
     const dataUrl = await toPng(card, opts);
     const blob = await (await fetch(dataUrl)).blob();

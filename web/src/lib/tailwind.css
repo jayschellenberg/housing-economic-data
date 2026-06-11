@@ -330,7 +330,10 @@
   font-size: 11px;
   padding: 4px 8px;
   border-radius: 4px;
-  margin-bottom: 6px;
+  /* Banner now sits below the chart-actions row and above the explainer,
+     so the gap belongs above (separating it from the Download button row),
+     not below. */
+  margin-top: 6px;
 }
 
 .cmhc-latest-row {
