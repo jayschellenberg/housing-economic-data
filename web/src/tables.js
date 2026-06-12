@@ -160,6 +160,8 @@ export function initTables({ geographies, manifest, loadShard }) {
   const $mode     = document.querySelectorAll('input[name="tblDwellingMode"]');
   const $tables   = document.querySelectorAll('#tbl-tables input[type=checkbox]');
   const $download = document.getElementById('tbl-download-xlsx');
+  const $copy     = document.getElementById('tbl-copy-clipboard');
+  const $docx     = document.getElementById('tbl-download-docx');
   const $output   = document.getElementById('tbl-output');
   const $empty    = document.getElementById('tbl-empty');
   const $vintage  = document.getElementById('tbl-vintage');
@@ -315,11 +317,40 @@ export function initTables({ geographies, manifest, loadShard }) {
     el.addEventListener('change', scheduleRender);
   });
 
+  // Flash a transient status label on an export button, then restore it.
+  function flashLabel(btn, label) {
+    if (btn.dataset.flashing) return;
+    btn.dataset.flashing = '1';
+    const original = btn.textContent;
+    btn.textContent = label;
+    setTimeout(() => { btn.textContent = original; delete btn.dataset.flashing; }, 2000);
+  }
+
   $download.addEventListener('click', async () => {
     if (!lastRenderState || !lastRenderState.built.length) return;
     const { exportTablesToExcel } = await import('./excel-export.js');
     const filename = `CMHC_Tables_${lastRenderState.maxYear}_${new Date().toISOString().slice(0,10)}.xlsx`;
     await exportTablesToExcel(lastRenderState.built, { filename, maxYear: lastRenderState.maxYear });
+  });
+
+  $copy.addEventListener('click', async () => {
+    if (!lastRenderState || !lastRenderState.built.length) return;
+    const { copyTablesToClipboard } = await import('./clipboard-export.js');
+    const status = await copyTablesToClipboard(lastRenderState.built,
+      { maxYear: lastRenderState.maxYear });
+    flashLabel($copy, {
+      success:  'Copied — paste into Word',
+      legacy:   'Copied — paste into Word',
+      fallback: 'Copied as plain text',
+      failed:   'Copy failed',
+    }[status] || 'Copy failed');
+  });
+
+  $docx.addEventListener('click', async () => {
+    if (!lastRenderState || !lastRenderState.built.length) return;
+    const { exportTablesToWord } = await import('./word-export.js');
+    const filename = `CMHC_Tables_${lastRenderState.maxYear}_${new Date().toISOString().slice(0,10)}.docx`;
+    await exportTablesToWord(lastRenderState.built, { filename, maxYear: lastRenderState.maxYear });
   });
 
   render();

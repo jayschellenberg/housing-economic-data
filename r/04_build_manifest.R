@@ -66,6 +66,14 @@ starts_meta <- lapply(starts_files, function(f) {
   )
 })
 
+# Srms secondary-rental shard (single file written by 06_scrape_secondary.R).
+secondary_path <- file.path(WEB_DATA, "secondary.json")
+secondary_records <- if (file.exists(secondary_path)) {
+  payload <- fromJSON(secondary_path, simplifyVector = TRUE, simplifyDataFrame = TRUE)
+  recs <- payload$records
+  if (is.data.frame(recs)) nrow(recs) else length(recs)
+} else 0L
+
 manifest <- list(
   version       = 1,
   lastUpdated   = format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
@@ -75,7 +83,8 @@ manifest <- list(
   shards        = shard_meta,
   startsShardCount = length(starts_meta),
   startsTotalRecords = sum(vapply(starts_meta, function(m) m$recordCount, integer(1))),
-  startsShards  = starts_meta
+  startsShards  = starts_meta,
+  secondaryTotalRecords = as.integer(secondary_records)
 )
 
 out_path <- file.path(WEB_DATA, "manifest.json")

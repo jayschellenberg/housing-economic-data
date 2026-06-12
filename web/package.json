@@ -12,19 +12,21 @@
     "data:historical": "Rscript ../r/01_scrape_historical.R",
     "data:zones": "Rscript ../r/02_scrape_zone_snapshots.R",
     "data:starts": "Rscript ../r/05_scrape_starts.R",
+    "data:secondary": "Rscript ../r/06_scrape_secondary.R",
     "data:shards": "Rscript ../r/03_build_data_files.R",
     "data:manifest": "Rscript ../r/04_build_manifest.R",
     "data:verify": "Rscript ../r/99_verify_samples.R",
     "data:indicators:validate": "Rscript ../r/13_validate_indicators.R",
-    "data:indicators:boc":      "Rscript ../r/10_scrape_boc.R",
+    "data:indicators:boc": "Rscript ../r/10_scrape_boc.R",
     "data:indicators:statscan": "Rscript ../r/11_scrape_statscan.R",
-    "data:indicators:build":    "Rscript ../r/14_build_indicators.R",
-    "data:indicators":          "Rscript ../r/13_validate_indicators.R && Rscript ../r/10_scrape_boc.R && Rscript ../r/11_scrape_statscan.R && Rscript ../r/14_build_indicators.R",
-    "data:all": "Rscript ../r/00_audit_geographies.R && Rscript ../r/00_build_capabilities.R && Rscript ../r/01_scrape_historical.R && Rscript ../r/02_scrape_zone_snapshots.R && Rscript ../r/05_scrape_starts.R && Rscript ../r/03_build_data_files.R && Rscript ../r/04_build_manifest.R && Rscript ../r/13_validate_indicators.R && Rscript ../r/10_scrape_boc.R && Rscript ../r/11_scrape_statscan.R && Rscript ../r/14_build_indicators.R"
+    "data:indicators:build": "Rscript ../r/14_build_indicators.R",
+    "data:indicators": "Rscript ../r/13_validate_indicators.R && Rscript ../r/10_scrape_boc.R && Rscript ../r/11_scrape_statscan.R && Rscript ../r/14_build_indicators.R",
+    "data:all": "Rscript ../r/00_audit_geographies.R && Rscript ../r/00_build_capabilities.R && Rscript ../r/01_scrape_historical.R && Rscript ../r/02_scrape_zone_snapshots.R && Rscript ../r/05_scrape_starts.R && Rscript ../r/06_scrape_secondary.R && Rscript ../r/03_build_data_files.R && Rscript ../r/04_build_manifest.R && Rscript ../r/13_validate_indicators.R && Rscript ../r/10_scrape_boc.R && Rscript ../r/11_scrape_statscan.R && Rscript ../r/14_build_indicators.R"
   },
   "dependencies": {
     "@observablehq/plot": "^0.6.16",
     "d3": "^7.9.0",
+    "docx": "^9.7.1",
     "exceljs": "^4.4.0",
     "html-to-image": "^1.11.13"
   },

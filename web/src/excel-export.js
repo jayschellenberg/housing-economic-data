@@ -208,6 +208,45 @@ export async function exportIndicatorsToExcel({ catalog, shards }) {
   triggerDownload(blob, `CMHC_MarketIndicators_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
+/**
+ * Embed captured chart images (from doc-image-export.js) into an .xlsx, one
+ * worksheet per chart, named from the chart title. Images are anchored at A1
+ * at their on-screen CSS size (the 3x raster keeps them crisp when zoomed).
+ * @param {Array<{dataUrl, width, height, title}>} captures
+ * @param {Object} opts  { filename }
+ */
+export async function exportChartsToExcel(captures, { filename }) {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'CMHC Charts';
+  wb.created = new Date();
+
+  const used = new Set();
+  captures.forEach((c, i) => {
+    // Excel sheet names: max 31 chars, no \ / ? * [ ] : — and must be unique.
+    let base = (c.title || `Chart ${i + 1}`)
+      .replace(/[\\\/\?\*\[\]:]/g, ' ').replace(/\s+/g, ' ').trim()
+      .slice(0, 28).trim() || `Chart ${i + 1}`;
+    let name = base, k = 2;
+    while (used.has(name.toLowerCase())) name = `${base} ${k++}`;
+    used.add(name.toLowerCase());
+
+    const ws = wb.addWorksheet(name);
+    const imgId = wb.addImage({
+      base64: c.dataUrl.split(',')[1],
+      extension: 'png',
+    });
+    ws.addImage(imgId, {
+      tl: { col: 0, row: 0 },
+      ext: { width: c.width, height: c.height },
+    });
+  });
+
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf],
+    { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  triggerDownload(blob, filename);
+}
+
 function triggerDownload(blob, filename) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

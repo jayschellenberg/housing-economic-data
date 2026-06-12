@@ -9,15 +9,21 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (!id.includes('node_modules')) return undefined;
+          const p = id.replace(/\\/g, '/');
+          if (!p.includes('node_modules')) return undefined;
           // Split heavy libs into their own lazy-loadable chunks so the
           // eager vendor bundle stays small. ExcelJS in particular is only
           // referenced via dynamic import() from the three Download buttons,
           // so it should only land on the wire when the user clicks one.
-          if (id.includes('exceljs') || id.includes('archiver') || id.includes('saxes') || id.includes('xmlbuilder')) return 'exceljs';
-          if (id.includes('html-to-image')) return 'html-to-image';
-          if (id.includes('@observablehq/plot')) return 'plot';
-          if (id.includes('d3-')) return 'd3';
+          if (p.includes('exceljs') || p.includes('archiver') || p.includes('saxes') || p.includes('xmlbuilder')) return 'exceljs';
+          // docx (Word export) is likewise only reached via dynamic import().
+          if (p.includes('node_modules/docx/') || p.includes('xml-js') || p.includes('node_modules/xml/') || p.includes('hash.js') || p.includes('nanoid')) return 'docx';
+          // jszip is shared by exceljs and docx — its own chunk keeps it out
+          // of the eager vendor bundle without binding it to either consumer.
+          if (p.includes('jszip')) return 'jszip';
+          if (p.includes('html-to-image')) return 'html-to-image';
+          if (p.includes('@observablehq/plot')) return 'plot';
+          if (p.includes('d3-')) return 'd3';
           return 'vendor';
         },
       },

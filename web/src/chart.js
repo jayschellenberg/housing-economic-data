@@ -17,17 +17,28 @@ import { toPng } from 'html-to-image';
 import { themed, fmt, PALETTE, gridMarks, frameMark } from './plot-theme.js';
 
 const Y_FMT = {
-  'Vacancy Rate':         fmt.percent,
-  'Average Rent':         fmt.dollar,
-  'Median Rent':          fmt.dollar,
-  'Average Rent Change':  fmt.pctChange,
+  'Vacancy Rate':                    fmt.percent,
+  'Average Rent':                    fmt.dollar,
+  'Median Rent':                     fmt.dollar,
+  'Average Rent Change':             fmt.pctChange,
+  // Secondary Rental Market (Srms)
+  'Condo Vacancy Rate':              fmt.percent,
+  'Condo Average Rent':              fmt.dollar,
+  'Condo Universe':                  (v) => Number(v).toLocaleString(),
+  'Rental Condo Universe':           (v) => Number(v).toLocaleString(),
+  'Percentage Condo used as Rental': fmt.percent,
 };
 
 const Y_LABEL = {
-  'Vacancy Rate':        'Vacancy Rate (%)',
-  'Average Rent':        'Average Rent ($)',
-  'Median Rent':         'Median Rent ($)',
-  'Average Rent Change': 'Avg Rent Change (%)',
+  'Vacancy Rate':                    'Vacancy Rate (%)',
+  'Average Rent':                    'Average Rent ($)',
+  'Median Rent':                     'Median Rent ($)',
+  'Average Rent Change':             'Avg Rent Change (%)',
+  'Condo Vacancy Rate':              'Vacancy Rate (%)',
+  'Condo Average Rent':              'Average Rent ($)',
+  'Condo Universe':                  'Units',
+  'Rental Condo Universe':           'Units',
+  'Percentage Condo used as Rental': '% of Universe',
 };
 
 /**

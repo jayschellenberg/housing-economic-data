@@ -84,7 +84,9 @@ if (!is.null(prev_m)) {
     check_one("starts.totalRecords",        metric(prev_m, "startsTotalRecords"),
                                             metric(curr_m, "startsTotalRecords")),
     check_one("starts.shardCount",          metric(prev_m, "startsShardCount"),
-                                            metric(curr_m, "startsShardCount"))
+                                            metric(curr_m, "startsShardCount")),
+    check_one("secondary.totalRecords",     metric(prev_m, "secondaryTotalRecords"),
+                                            metric(curr_m, "secondaryTotalRecords"))
   ))
 } else {
   cat("[sanity] no prior manifest.json on HEAD — first-run mode.\n")

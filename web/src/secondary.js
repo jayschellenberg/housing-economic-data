@@ -1,0 +1,264 @@
+/*
+ * Secondary Rental Market view — Srms (condo + other secondary rental) data
+ * loaded from web/public/data/secondary.json. CMHC publishes Srms for
+ * Winnipeg only in Manitoba, so the view skips the geography picker entirely
+ * and goes straight to year range + per-dimension category toggles.
+ *
+ * Layout mirrors Housing Starts:
+ *   - 5 chart cards (one per series) reusing buildChartCard from chart.js
+ *   - 5 data tables below (rows = year, cols = category)
+ *   - Excel (data) button + Word/Excel (charts) buttons wired from main.js
+ */
+
+import { buildChartCard } from './chart.js';
+
+// Series we show, grouped by which dimension CMHC publishes them under.
+// Two of them — Condo Vacancy Rate and Condo Average Rent — are commonly
+// pulled into appraisal reports; the others are listed for context.
+const SERIES_DEFS = [
+  { name: 'Condo Vacancy Rate',              dim: 'Structure Size' },
+  { name: 'Condo Average Rent',              dim: 'Bedroom Type'   },
+  { name: 'Percentage Condo used as Rental', dim: 'Structure Size' },
+  { name: 'Rental Condo Universe',           dim: 'Structure Size' },
+  { name: 'Condo Universe',                  dim: 'Structure Size' },
+];
+
+const CATEGORY_ORDER = {
+  'Bedroom Type':   ['Studio', '1 Bedroom', '2 Bedroom', '3 Bedroom +', 'Total'],
+  // Srms uses "3-19 Units" instead of the Rms "3-5"+"6-19" split, so this
+  // list is intentionally Srms-specific.
+  'Structure Size': ['3-19 Units', '20-49 Units', '50-99 Units', '100+ Units', 'Total'],
+};
+
+const FMT = {
+  'Condo Vacancy Rate':              (v) => `${Number(v).toFixed(1)}%`,
+  'Condo Average Rent':              (v) => `$${Math.round(Number(v)).toLocaleString()}`,
+  'Percentage Condo used as Rental': (v) => `${Number(v).toFixed(1)}%`,
+  'Rental Condo Universe':           (v) => Number(v).toLocaleString(),
+  'Condo Universe':                  (v) => Number(v).toLocaleString(),
+};
+
+export async function initSecondary({ manifest }) {
+  const payload = await fetch('./data/secondary.json')
+    .then(r => r.ok ? r.json() : { records: [] })
+    .catch(() => ({ records: [] }));
+  const records = Array.isArray(payload.records) ? payload.records : [];
+
+  const $yFrom    = document.getElementById('sr-year-from');
+  const $yTo      = document.getElementById('sr-year-to');
+  const $catBed   = document.getElementById('sr-cat-bedroom');
+  const $catSize  = document.getElementById('sr-cat-size');
+  const $empty    = document.getElementById('sr-empty');
+  const $charts   = document.getElementById('sr-chart-grid');
+  const $tables   = document.getElementById('sr-table-grid');
+  const $dl       = document.getElementById('sr-download-xlsx');
+  const $asOf     = document.getElementById('sr-data-as-of');
+  const $geo      = document.getElementById('sr-geo-name');
+
+  if (!records.length) {
+    if ($empty) {
+      $empty.hidden = false;
+      $empty.classList.remove('hidden');
+      $empty.textContent = 'No Secondary Rental Market data available.';
+    }
+    return;
+  }
+
+  // The single-geo guarantee from the R pipeline lets us short-circuit any
+  // geography filter. Show what we got, in case CMHC ever starts publishing
+  // a second centre and we want it visible without code changes.
+  const geos = [...new Set(records.map(r => r.geoName))];
+  if ($geo) $geo.textContent = geos.join(', ');
+
+  // Year range — start with the last 10 years by default.
+  const years = records.map(r => Number(r.year)).filter(Number.isFinite);
+  const yMin = Math.min(...years), yMax = Math.max(...years);
+
+  const state = {
+    yearFrom: Math.max(yMin, yMax - 9),
+    yearTo:   yMax,
+    hidden: { 'Bedroom Type': new Set(), 'Structure Size': new Set() },
+  };
+  $yFrom.min = yMin; $yFrom.max = yMax; $yFrom.value = state.yearFrom;
+  $yTo  .min = yMin; $yTo  .max = yMax; $yTo  .value = state.yearTo;
+
+  // Footer "as of" — Srms is annual, refresh date comes from manifest.
+  if ($asOf && manifest?.lastUpdated) {
+    const d = new Date(manifest.lastUpdated);
+    $asOf.textContent = `${yMax} (refreshed ${d.toISOString().slice(0,10)})`;
+  }
+
+  // Category toggle groups — one per dimension because Bedroom Type and
+  // Structure Size don't share categories.
+  function renderCatToggles($box, dim, presentCats) {
+    const ordered = orderedCategories(dim, presentCats);
+    $box.innerHTML = ordered.map(cat => `
+      <label class="flex items-center gap-1">
+        <input type="checkbox" data-cat="${escapeHtml(cat)}" checked />
+        <span>${escapeHtml(cat)}</span>
+      </label>
+    `).join('');
+    $box.querySelectorAll('input[type=checkbox]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const cat = cb.dataset.cat;
+        if (cb.checked) state.hidden[dim].delete(cat);
+        else            state.hidden[dim].add(cat);
+        scheduleRender();
+      });
+    });
+  }
+
+  // Pre-compute the categories actually present per dimension so the toggle
+  // box doesn't show options that have no data.
+  const presentBedroom = new Set(
+    records.filter(r => r.dimension === 'Bedroom Type').map(r => r.category));
+  const presentSize = new Set(
+    records.filter(r => r.dimension === 'Structure Size').map(r => r.category));
+  renderCatToggles($catBed,  'Bedroom Type',   presentBedroom);
+  renderCatToggles($catSize, 'Structure Size', presentSize);
+
+  // Build chart cards once.
+  $charts.replaceChildren();
+  const cards = SERIES_DEFS.map(def =>
+    ({ ...def, ...buildChartCard($charts, { series: def.name }) }));
+
+  let pendingRender = null;
+  function scheduleRender() {
+    if (pendingRender) clearTimeout(pendingRender);
+    pendingRender = setTimeout(() => { pendingRender = null; render(); }, 120);
+  }
+
+  let lastExport = null;
+
+  function render() {
+    $tables.replaceChildren();
+    let anyData = false;
+    const built = [];
+    const geoLabel = geos[0] || 'Winnipeg';
+
+    for (const card of cards) {
+      const hiddenSet = state.hidden[card.dim];
+      const matching = records.filter(r =>
+        r.series === card.name &&
+        r.dimension === card.dim &&
+        Number(r.year) >= state.yearFrom &&
+        Number(r.year) <= state.yearTo &&
+        !hiddenSet.has(r.category));
+      if (matching.length) anyData = true;
+
+      const sub = `${geoLabel} — Annual, by ${card.dim}`;
+      // chart.js's `dwellingType` isn't present on Srms rows; the renderer
+      // doesn't read it, so passing the records as-is is fine.
+      card.render(matching, sub, CATEGORY_ORDER[card.dim] || [], {});
+
+      built.push(buildSeriesTable(card.name, card.dim, matching));
+    }
+    built.forEach(t => renderTable(t, $tables));
+    $empty.hidden = anyData;
+    $empty.classList.toggle('hidden', anyData);
+    lastExport = built;
+  }
+
+  function buildSeriesTable(seriesName, dim, rows) {
+    const present = [...new Set(rows.map(r => r.category))];
+    const cols = orderedCategories(dim, new Set(present));
+    const periods = [...new Set(rows.map(r => Number(r.year)))].sort((a, b) => a - b);
+    const matrix = new Map();
+    rows.forEach(r => {
+      const y = Number(r.year);
+      if (!matrix.has(y)) matrix.set(y, new Map());
+      matrix.get(y).set(r.category, r.value);
+    });
+    const fmt = FMT[seriesName] || ((v) => String(v));
+    return {
+      title: seriesName,
+      dimension: dim,
+      columns: cols,
+      rows: periods.map(p => ({
+        period: p,
+        rawValues: cols.map(c => matrix.get(p)?.get(c) ?? null),
+        values:    cols.map(c => {
+          const v = matrix.get(p)?.get(c);
+          return v == null ? null : fmt(v);
+        }),
+      })),
+    };
+  }
+
+  function renderTable(table, container) {
+    const block = document.createElement('section');
+    block.className = 'cmhc-table-block';
+    const title = document.createElement('div');
+    title.className = 'cmhc-table-title';
+    title.textContent = `${table.title} — by ${table.dimension}`;
+    block.appendChild(title);
+
+    const tbl = document.createElement('table');
+    tbl.className = 'cmhc-table';
+    const thead = document.createElement('thead');
+    const trh = document.createElement('tr');
+    const blank = document.createElement('th'); blank.textContent = 'Year';
+    trh.appendChild(blank);
+    table.columns.forEach(c => {
+      const th = document.createElement('th'); th.textContent = c; trh.appendChild(th);
+    });
+    thead.appendChild(trh);
+    tbl.appendChild(thead);
+    const tbody = document.createElement('tbody');
+    table.rows.forEach(r => {
+      const tr = document.createElement('tr');
+      const td0 = document.createElement('td'); td0.textContent = r.period;
+      tr.appendChild(td0);
+      r.values.forEach(v => {
+        const td = document.createElement('td');
+        if (v == null) { td.textContent = '**'; td.classList.add('cmhc-table-na'); }
+        else td.textContent = v;
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    tbl.appendChild(tbody);
+    block.appendChild(tbl);
+    container.appendChild(block);
+  }
+
+  // ----- Excel export (data) -------------------------------------------------
+  $dl.addEventListener('click', async () => {
+    if (!lastExport || lastExport.length === 0) return;
+    const { exportTablesToExcel } = await import('./excel-export.js');
+    // exportTablesToExcel expects rows shaped {area, values}; adapt period→area.
+    const stamped = lastExport.map(t => ({
+      ...t,
+      rows: t.rows.map(r => ({ area: String(r.period), values: r.values })),
+      dwellingSuffix: ` — by ${t.dimension}`,
+    }));
+    const filename = `CMHC_SecondaryRental_${new Date().toISOString().slice(0,10)}.xlsx`;
+    await exportTablesToExcel(stamped, {
+      filename, maxYear: manifest?.cmhcMaxYear ?? new Date().getFullYear(),
+    });
+  });
+
+  // ----- Event wiring --------------------------------------------------------
+  $yFrom.addEventListener('change', () => {
+    const v = parseInt($yFrom.value, 10);
+    if (Number.isFinite(v)) { state.yearFrom = v; scheduleRender(); }
+  });
+  $yTo.addEventListener('change', () => {
+    const v = parseInt($yTo.value, 10);
+    if (Number.isFinite(v)) { state.yearTo = v; scheduleRender(); }
+  });
+
+  render();
+}
+
+function orderedCategories(dim, presentSet) {
+  const canonical = CATEGORY_ORDER[dim] || [];
+  return canonical.filter(c => presentSet.has(c))
+    .concat([...presentSet].filter(c => !canonical.includes(c)));
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}

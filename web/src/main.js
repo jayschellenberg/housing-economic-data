@@ -11,7 +11,9 @@ import { buildChartCard } from './chart.js';
 import { decodeState, syncURL } from './state.js';
 import { initTables } from './tables.js';
 import { initStarts } from './starts.js';
+import { initSecondary } from './secondary.js';
 import { initIndicators } from './indicators.js';
+import { wireChartDocExports } from './doc-image-export.js';
 
 const SERIES_PANELS = [
   'Median Rent',
@@ -91,6 +93,7 @@ function setupTabs(initial) {
     charts:     { btn: document.getElementById('tab-btn-charts'),     panel: document.getElementById('tab-panel-charts') },
     tables:     { btn: document.getElementById('tab-btn-tables'),     panel: document.getElementById('tab-panel-tables') },
     starts:     { btn: document.getElementById('tab-btn-starts'),     panel: document.getElementById('tab-panel-starts') },
+    secondary:  { btn: document.getElementById('tab-btn-secondary'),  panel: document.getElementById('tab-panel-secondary') },
     snapshot:   { btn: document.getElementById('tab-btn-snapshot'),   panel: document.getElementById('tab-panel-snapshot') },
     indicators: { btn: document.getElementById('tab-btn-indicators'), panel: document.getElementById('tab-panel-indicators') },
   };
@@ -162,7 +165,7 @@ async function bootstrap() {
   // sidebar TOC work after a hard refresh.
   const rawHash = window.location.hash.replace('#', '');
   let initialTab = 'charts';
-  if (['charts', 'tables', 'starts', 'snapshot', 'indicators'].includes(rawHash)) {
+  if (['charts', 'tables', 'starts', 'secondary', 'snapshot', 'indicators'].includes(rawHash)) {
     initialTab = rawHash;
   } else if (rawHash.startsWith('mi-section-')) {
     initialTab = 'indicators';
@@ -179,7 +182,49 @@ async function bootstrap() {
   // doesn't fetch 7MB of JSON the user may never look at.)
   initTables({ geographies, manifest, loadShard });
   initStarts({ manifest });
+  initSecondary({ manifest }).catch(err => console.error('[secondary bootstrap]', err));
   initIndicators().catch(err => console.error('[indicators bootstrap]', err));
+
+  // Per-tab "Download Word/Excel (charts)" exports — every rendered chart in
+  // the active tab captured as a PNG and embedded one per page / worksheet.
+  // The Tables tab keeps its own table-based exports.
+  const hasPlot = (n) =>
+    (n.querySelector('[data-role="plot"]')?.childElementCount ?? 0) > 0;
+  wireChartDocExports({
+    docxBtnId: 'charts-download-docx',
+    xlsxBtnId: 'charts-download-xlsx',
+    baseName:  'RentalCharts',
+    getNodes:  () => [...document.querySelectorAll('#chart-grid .chart-card')].filter(hasPlot),
+  });
+  wireChartDocExports({
+    docxBtnId: 'hs-download-docx-charts',
+    xlsxBtnId: 'hs-download-xlsx-charts',
+    baseName:  'HousingStarts',
+    getNodes:  () => [...document.querySelectorAll('#hs-chart-grid .chart-card')].filter(hasPlot),
+  });
+  wireChartDocExports({
+    docxBtnId: 'sr-download-docx-charts',
+    xlsxBtnId: 'sr-download-xlsx-charts',
+    baseName:  'SecondaryRental',
+    getNodes:  () => [...document.querySelectorAll('#sr-chart-grid .chart-card')].filter(hasPlot),
+  });
+  wireChartDocExports({
+    docxBtnId: 'mi-download-docx-charts',
+    xlsxBtnId: 'mi-download-xlsx-charts',
+    baseName:  'MarketIndicators',
+    getNodes:  () => [...document.querySelectorAll('#mi-chart-grid .chart-card')].filter(hasPlot),
+  });
+  // Snapshot is a 22-tile KPI grid, not a chart grid — capture each tile
+  // individually so the export stays under a few MB and Excel gets one
+  // sheet per KPI. Lower pixel ratio because each tile is text-heavy and
+  // doesn't benefit from print-grade rasterisation.
+  wireChartDocExports({
+    docxBtnId:  'snap-download-docx',
+    xlsxBtnId:  'snap-download-xlsx',
+    baseName:   'CurrentSnapshot',
+    pixelRatio: 2,
+    getNodes:   () => [...document.querySelectorAll('#mi-snapshot .cmhc-kpi')],
+  });
 
   await renderAll(filters.getState());
 

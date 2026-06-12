@@ -48,6 +48,7 @@ jobs:
           Rscript r/01_scrape_historical.R
           Rscript r/02_scrape_zone_snapshots.R
           Rscript r/05_scrape_starts.R
+          Rscript r/06_scrape_secondary.R
           Rscript r/03_build_data_files.R
           Rscript r/04_build_manifest.R
           Rscript r/13_validate_indicators.R

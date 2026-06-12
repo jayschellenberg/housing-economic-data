@@ -2,6 +2,8 @@
 
 Interactive line charts of CMHC rental and vacancy data for Manitoba, filterable by geography (Province / CMA / CSD / Survey Zone / Neighbourhood), dwelling type (Apartment / Row / All), and a choice of breakdown dimension (Bedroom Type / Year of Construction / Structure Size / Rent Ranges).
 
+The Tables tab generates appraisal-ready comparison tables (vacancy / median rent by bedroom type, rent range, year built) with copy-to-clipboard (rich HTML for pasting into Word), Word (.docx), and Excel (.xlsx) export — this replaces the retired CMHC-VacancyMedianRents Shiny tool. The pipeline also pulls the Secondary Rental Market Survey (Srms — condo rental data) into `web/public/data/secondary.json`, replacing the retired "CMHC Rental Data Scrape" project. Both retired projects are archived under `$Projects in Progress\old projects maybe`.
+
 Built as a Vite + vanilla JS static site, with an R-based data pipeline. Deployed to Vercel from this GitHub repo.
 
 ## Architecture
@@ -48,7 +50,8 @@ All data is from public Canadian sources. Attribution is required by the
 respective publishers' open-data terms and is surfaced in every Excel
 export's Metadata sheet plus the in-app indicator chart captions.
 
-- **CMHC Rental Market Survey (RMS)** and **Starts & Completions Survey (Scss)** via
+- **CMHC Rental Market Survey (RMS)**, **Secondary Rental Market Survey (Srms)**,
+  and **Starts & Completions Survey (Scss)** via
   the [`cmhc`](https://github.com/mountainMath/cmhc) R package (mountainMath).
 - **Statistics Canada Web Data Service** via the [`cansim`](https://github.com/mountainMath/cansim) R package.
   Contains information licensed under the [Statistics Canada Open Licence](https://www.statcan.gc.ca/en/reference/licence).
