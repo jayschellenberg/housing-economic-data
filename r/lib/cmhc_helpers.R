@@ -77,7 +77,7 @@ ZONE_CMAS <- c("Winnipeg" = "602", "Brandon" = "610",
 # this with the live introspection result when available.
 
 RMS_SERIES <- c("Vacancy Rate", "Availability Rate", "Average Rent",
-                "Median Rent", "Average Rent Change")
+                "Median Rent", "Average Rent Change", "Rental Universe")
 
 RMS_DIMENSIONS_BY_SERIES <- list(
   "Vacancy Rate"        = c("Bedroom Type", "Year of Construction",
@@ -88,7 +88,12 @@ RMS_DIMENSIONS_BY_SERIES <- list(
                             "Structure Size"),
   "Median Rent"         = c("Bedroom Type", "Year of Construction",
                             "Structure Size"),
-  "Average Rent Change" = c("Bedroom Type")
+  "Average Rent Change" = c("Bedroom Type"),
+  # Rent Ranges intentionally absent — probed against the live CMHC API
+  # on 2026-06-13 and returns "Dimension Rent Ranges for Rental Universe
+  # and survey Rms does not exist or is not supported."
+  "Rental Universe"     = c("Bedroom Type", "Year of Construction",
+                            "Structure Size")
 )
 
 DWELLING_TYPES <- c("All", "Apartment", "Row")

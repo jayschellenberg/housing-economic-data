@@ -1,16 +1,16 @@
 {
   "version": 1,
-  "lastUpdated": "2026-06-13T14:34:14Z",
+  "lastUpdated": "2026-06-13T15:02:44Z",
   "cmhcMaxYear": 2025,
   "shardCount": 50,
-  "totalRecords": 96863,
+  "totalRecords": 136537,
   "shards": [
     {
       "file": "cma_602.json",
       "geoUid": "602",
       "geoName": "Winnipeg",
       "geoLevel": "cma",
-      "recordCount": 6306,
+      "recordCount": 7998,
       "yearMin": 1990,
       "yearMax": 2025
     },
@@ -19,7 +19,7 @@
       "geoUid": "603",
       "geoName": "Winkler",
       "geoLevel": "cma",
-      "recordCount": 1227,
+      "recordCount": 1710,
       "yearMin": 2013,
       "yearMax": 2025
     },
@@ -28,7 +28,7 @@
       "geoUid": "605",
       "geoName": "Steinbach",
       "geoLevel": "cma",
-      "recordCount": 2172,
+      "recordCount": 2878,
       "yearMin": 2008,
       "yearMax": 2025
     },
@@ -37,7 +37,7 @@
       "geoUid": "607",
       "geoName": "Portage la Prairie",
       "geoLevel": "cma",
-      "recordCount": 4402,
+      "recordCount": 5764,
       "yearMin": 1990,
       "yearMax": 2025
     },
@@ -46,7 +46,7 @@
       "geoUid": "610",
       "geoName": "Brandon",
       "geoLevel": "cma",
-      "recordCount": 5519,
+      "recordCount": 7091,
       "yearMin": 1990,
       "yearMax": 2025
     },
@@ -55,7 +55,7 @@
       "geoUid": "640",
       "geoName": "Thompson",
       "geoLevel": "cma",
-      "recordCount": 4179,
+      "recordCount": 5501,
       "yearMin": 1990,
       "yearMax": 2025
     },
@@ -64,7 +64,7 @@
       "geoUid": "4613047",
       "geoName": "Selkirk CY",
       "geoLevel": "csd",
-      "recordCount": 824,
+      "recordCount": 1163,
       "yearMin": 2018,
       "yearMax": 2025
     },
@@ -73,7 +73,7 @@
       "geoUid": "602-charleswood",
       "geoName": "Charleswood",
       "geoLevel": "neighbourhood",
-      "recordCount": 1057,
+      "recordCount": 1635,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -82,7 +82,7 @@
       "geoUid": "602-downtown",
       "geoName": "Downtown",
       "geoLevel": "neighbourhood",
-      "recordCount": 1564,
+      "recordCount": 2247,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -91,7 +91,7 @@
       "geoUid": "602-east-st-boniface",
       "geoName": "East St. Boniface",
       "geoLevel": "neighbourhood",
-      "recordCount": 1426,
+      "recordCount": 2133,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -100,7 +100,7 @@
       "geoUid": "602-elmwood",
       "geoName": "Elmwood",
       "geoLevel": "neighbourhood",
-      "recordCount": 1266,
+      "recordCount": 1897,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -109,7 +109,7 @@
       "geoUid": "602-fort-garry-north",
       "geoName": "Fort Garry North",
       "geoLevel": "neighbourhood",
-      "recordCount": 1350,
+      "recordCount": 1984,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -118,7 +118,7 @@
       "geoUid": "602-fort-richmond",
       "geoName": "Fort Richmond",
       "geoLevel": "neighbourhood",
-      "recordCount": 1369,
+      "recordCount": 1954,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -127,7 +127,7 @@
       "geoUid": "602-fort-rouge-west",
       "geoName": "Fort Rouge West",
       "geoLevel": "neighbourhood",
-      "recordCount": 1396,
+      "recordCount": 2049,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -136,7 +136,7 @@
       "geoUid": "602-garden-city",
       "geoName": "Garden City",
       "geoLevel": "neighbourhood",
-      "recordCount": 1135,
+      "recordCount": 1601,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -145,7 +145,7 @@
       "geoUid": "602-inkster",
       "geoName": "Inkster",
       "geoLevel": "neighbourhood",
-      "recordCount": 1328,
+      "recordCount": 1992,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -154,7 +154,7 @@
       "geoUid": "602-monroe",
       "geoName": "Monroe",
       "geoLevel": "neighbourhood",
-      "recordCount": 1254,
+      "recordCount": 1900,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -163,7 +163,7 @@
       "geoUid": "602-norwood",
       "geoName": "Norwood",
       "geoLevel": "neighbourhood",
-      "recordCount": 1044,
+      "recordCount": 1614,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -172,7 +172,7 @@
       "geoUid": "602-old-st-vital",
       "geoName": "Old St. Vital",
       "geoLevel": "neighbourhood",
-      "recordCount": 1392,
+      "recordCount": 2081,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -181,7 +181,7 @@
       "geoUid": "602-outlying-areas",
       "geoName": "Outlying Areas",
       "geoLevel": "neighbourhood",
-      "recordCount": 1834,
+      "recordCount": 2776,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -190,7 +190,7 @@
       "geoUid": "602-point-douglas",
       "geoName": "Point Douglas",
       "geoLevel": "neighbourhood",
-      "recordCount": 655,
+      "recordCount": 1235,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -199,7 +199,7 @@
       "geoUid": "602-river-osborne",
       "geoName": "River-Osborne",
       "geoLevel": "neighbourhood",
-      "recordCount": 1385,
+      "recordCount": 1991,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -208,7 +208,7 @@
       "geoUid": "602-rossmere-concordia",
       "geoName": "Rossmere-Concordia",
       "geoLevel": "neighbourhood",
-      "recordCount": 1656,
+      "recordCount": 2403,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -217,7 +217,7 @@
       "geoUid": "602-seven-oaks",
       "geoName": "Seven Oaks",
       "geoLevel": "neighbourhood",
-      "recordCount": 1276,
+      "recordCount": 1866,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -226,7 +226,7 @@
       "geoUid": "602-south-osborne",
       "geoName": "South Osborne",
       "geoLevel": "neighbourhood",
-      "recordCount": 938,
+      "recordCount": 1515,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -235,7 +235,7 @@
       "geoUid": "602-south-st-vital",
       "geoName": "South St. Vital",
       "geoLevel": "neighbourhood",
-      "recordCount": 1321,
+      "recordCount": 1995,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -244,7 +244,7 @@
       "geoUid": "602-spence",
       "geoName": "Spence",
       "geoLevel": "neighbourhood",
-      "recordCount": 953,
+      "recordCount": 1468,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -253,7 +253,7 @@
       "geoUid": "602-st-boniface",
       "geoName": "St. Boniface",
       "geoLevel": "neighbourhood",
-      "recordCount": 3411,
+      "recordCount": 4820,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -262,7 +262,7 @@
       "geoUid": "602-st-james-east",
       "geoName": "St. James East",
       "geoLevel": "neighbourhood",
-      "recordCount": 1341,
+      "recordCount": 2002,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -271,7 +271,7 @@
       "geoUid": "602-st-james-west",
       "geoName": "St. James West",
       "geoLevel": "neighbourhood",
-      "recordCount": 1264,
+      "recordCount": 1884,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -280,7 +280,7 @@
       "geoUid": "602-transcona",
       "geoName": "Transcona",
       "geoLevel": "neighbourhood",
-      "recordCount": 2089,
+      "recordCount": 3337,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -289,7 +289,7 @@
       "geoUid": "602-tuxedo",
       "geoName": "Tuxedo",
       "geoLevel": "neighbourhood",
-      "recordCount": 1076,
+      "recordCount": 1726,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -298,7 +298,7 @@
       "geoUid": "602-west-alexander-centennial",
       "geoName": "West Alexander/Centennial",
       "geoLevel": "neighbourhood",
-      "recordCount": 746,
+      "recordCount": 1351,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -307,7 +307,7 @@
       "geoUid": "602-west-broadway",
       "geoName": "West Broadway",
       "geoLevel": "neighbourhood",
-      "recordCount": 1143,
+      "recordCount": 1771,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -316,7 +316,7 @@
       "geoUid": "602-west-end",
       "geoName": "West End",
       "geoLevel": "neighbourhood",
-      "recordCount": 1343,
+      "recordCount": 1994,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -325,7 +325,7 @@
       "geoUid": "602-wolseley",
       "geoName": "Wolseley",
       "geoLevel": "neighbourhood",
-      "recordCount": 1050,
+      "recordCount": 1686,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -334,7 +334,7 @@
       "geoUid": "46",
       "geoName": "Manitoba",
       "geoLevel": "province",
-      "recordCount": 6476,
+      "recordCount": 8174,
       "yearMin": 1990,
       "yearMax": 2025
     },
@@ -343,7 +343,7 @@
       "geoUid": "602-assiniboine-park",
       "geoName": "Assiniboine Park",
       "geoLevel": "zone",
-      "recordCount": 1696,
+      "recordCount": 2389,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -352,7 +352,7 @@
       "geoUid": "602-centennial",
       "geoName": "Centennial",
       "geoLevel": "zone",
-      "recordCount": 2051,
+      "recordCount": 2775,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -361,7 +361,7 @@
       "geoUid": "602-east-kildonan",
       "geoName": "East Kildonan",
       "geoLevel": "zone",
-      "recordCount": 2231,
+      "recordCount": 2993,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -370,7 +370,7 @@
       "geoUid": "602-fort-garry",
       "geoName": "Fort Garry",
       "geoLevel": "zone",
-      "recordCount": 2015,
+      "recordCount": 2722,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -379,7 +379,7 @@
       "geoUid": "602-fort-rouge",
       "geoName": "Fort Rouge",
       "geoLevel": "zone",
-      "recordCount": 1856,
+      "recordCount": 2557,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -388,7 +388,7 @@
       "geoUid": "602-lord-selkirk",
       "geoName": "Lord Selkirk",
       "geoLevel": "zone",
-      "recordCount": 1645,
+      "recordCount": 2339,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -397,7 +397,7 @@
       "geoUid": "602-midland",
       "geoName": "Midland",
       "geoLevel": "zone",
-      "recordCount": 1917,
+      "recordCount": 2664,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -406,7 +406,7 @@
       "geoUid": "602-outlying-areas",
       "geoName": "Outlying Areas",
       "geoLevel": "zone",
-      "recordCount": 1834,
+      "recordCount": 2776,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -415,7 +415,7 @@
       "geoUid": "602-st-boniface",
       "geoName": "St. Boniface",
       "geoLevel": "zone",
-      "recordCount": 3411,
+      "recordCount": 4820,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -424,7 +424,7 @@
       "geoUid": "602-st-james",
       "geoName": "St. James",
       "geoLevel": "zone",
-      "recordCount": 2119,
+      "recordCount": 2814,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -433,7 +433,7 @@
       "geoUid": "602-st-vital",
       "geoName": "St. Vital",
       "geoLevel": "zone",
-      "recordCount": 2061,
+      "recordCount": 2786,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -442,7 +442,7 @@
       "geoUid": "602-transcona",
       "geoName": "Transcona",
       "geoLevel": "zone",
-      "recordCount": 2089,
+      "recordCount": 3337,
       "yearMin": 2010,
       "yearMax": 2025
     },
@@ -451,7 +451,7 @@
       "geoUid": "602-west-kildonan",
       "geoName": "West Kildonan",
       "geoLevel": "zone",
-      "recordCount": 1771,
+      "recordCount": 2379,
       "yearMin": 2010,
       "yearMax": 2025
     }

@@ -43,7 +43,7 @@ message(sprintf("[02] Scope: CMAs=%s | dwelling=%s | years=%d..%d",
 # Series + dimension combos to pull (snapshot rows are smaller, so we can
 # afford to pull more combos than the historical scrape).
 SNAPSHOT_SERIES <- c("Vacancy Rate", "Average Rent", "Median Rent",
-                     "Average Rent Change")
+                     "Average Rent Change", "Rental Universe")
 
 SNAPSHOT_DIMS_BY_SERIES <- list(
   "Vacancy Rate"        = c("Bedroom Type", "Year of Construction",
@@ -52,7 +52,9 @@ SNAPSHOT_DIMS_BY_SERIES <- list(
                             "Structure Size"),
   "Median Rent"         = c("Bedroom Type", "Year of Construction",
                             "Structure Size"),
-  "Average Rent Change" = c("Bedroom Type")
+  "Average Rent Change" = c("Bedroom Type"),
+  "Rental Universe"     = c("Bedroom Type", "Year of Construction",
+                            "Structure Size")
 )
 
 # Build the (geo x series x dimension x dwelling x year) grid for both

@@ -20,6 +20,7 @@ const SERIES_PANELS = [
   'Average Rent',
   'Vacancy Rate',
   'Average Rent Change',
+  'Rental Universe',
 ];
 
 // Human-readable label for the geo level. Mirrors filters.js LEVEL_LABEL —

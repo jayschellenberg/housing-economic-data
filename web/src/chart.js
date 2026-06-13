@@ -23,6 +23,7 @@ const Y_FMT = {
   'Average Rent':                    fmt.dollar,
   'Median Rent':                     fmt.dollar,
   'Average Rent Change':             fmt.pctChange,
+  'Rental Universe':                 COUNT_FMT,
   // Starts & Completions (Scss)
   'Absorbed Units':                  COUNT_FMT,
   'Unabsorbed Inventory':            COUNT_FMT,
@@ -39,6 +40,7 @@ const Y_LABEL = {
   'Average Rent':                    'Average Rent ($)',
   'Median Rent':                     'Median Rent ($)',
   'Average Rent Change':             'Avg Rent Change (%)',
+  'Rental Universe':                 'Universe (Units)',
   'Absorbed Units':                  'Units',
   'Unabsorbed Inventory':            'Units',
   'Condo Vacancy Rate':              'Vacancy Rate (%)',
