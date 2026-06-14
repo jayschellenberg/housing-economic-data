@@ -13,6 +13,7 @@ import { initTables } from './tables.js';
 import { initStarts } from './starts.js';
 import { initSecondary } from './secondary.js';
 import { initIndicators } from './indicators.js';
+import { initHousing } from './housing.js';
 import { wireChartDocExports } from './doc-image-export.js';
 
 const SERIES_PANELS = [
@@ -95,6 +96,7 @@ function setupTabs(initial) {
     tables:     { btn: document.getElementById('tab-btn-tables'),     panel: document.getElementById('tab-panel-tables') },
     starts:     { btn: document.getElementById('tab-btn-starts'),     panel: document.getElementById('tab-panel-starts') },
     secondary:  { btn: document.getElementById('tab-btn-secondary'),  panel: document.getElementById('tab-panel-secondary') },
+    housing:    { btn: document.getElementById('tab-btn-housing'),    panel: document.getElementById('tab-panel-housing') },
     snapshot:   { btn: document.getElementById('tab-btn-snapshot'),   panel: document.getElementById('tab-panel-snapshot') },
     indicators: { btn: document.getElementById('tab-btn-indicators'), panel: document.getElementById('tab-panel-indicators') },
   };
@@ -183,7 +185,7 @@ async function bootstrap() {
   // sidebar TOC work after a hard refresh.
   const rawHash = window.location.hash.replace('#', '');
   let initialTab = 'charts';
-  if (['charts', 'tables', 'starts', 'secondary', 'snapshot', 'indicators'].includes(rawHash)) {
+  if (['charts', 'tables', 'starts', 'secondary', 'housing', 'snapshot', 'indicators'].includes(rawHash)) {
     initialTab = rawHash;
   } else if (rawHash.startsWith('mi-section-')) {
     initialTab = 'indicators';
@@ -202,6 +204,7 @@ async function bootstrap() {
   initStarts({ manifest });
   initSecondary({ manifest }).catch(err => console.error('[secondary bootstrap]', err));
   initIndicators().catch(err => console.error('[indicators bootstrap]', err));
+  initHousing().catch(err => console.error('[housing bootstrap]', err));
 
   // Per-tab "Download Word/Excel (charts)" exports — every rendered chart in
   // the active tab captured as a PNG and embedded one per page / worksheet.

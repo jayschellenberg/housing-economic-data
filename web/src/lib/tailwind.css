@@ -125,6 +125,29 @@
   font-style: italic;
 }
 
+/* --- Housing Stock tab ---------------------------------------------------- */
+.cmhc-hsk-headline {
+  background: white;
+  border: 1px solid var(--color-neutral-200);
+  border-radius: 6px;
+  padding: 12px 16px;
+}
+.cmhc-hsk-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--cmhc-brand-red);
+}
+.cmhc-hsk-title span { font-weight: 400; color: var(--color-neutral-500); }
+.cmhc-hsk-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--color-neutral-700);
+}
+.cmhc-hsk-stats strong { color: var(--color-neutral-900); font-size: 15px; }
+
 /* Median / Average rows appended after the period rows. */
 .cmhc-table tbody tr.cmhc-table-summary td {
   background: #eef2f7;

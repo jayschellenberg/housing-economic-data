@@ -19,7 +19,7 @@ const BORDER_THIN = { style: 'thin', color: { argb: 'FF595959' } };
  * @param {Array} built  list of rendered tables (output of tables.js render)
  * @param {Object} opts  { filename, maxYear }
  */
-export async function exportTablesToExcel(built, { filename, maxYear }) {
+export async function exportTablesToExcel(built, { filename, maxYear, titleNote }) {
   const wb = new ExcelJS.Workbook();
   wb.creator = 'CMHC Charts';
   wb.created = new Date();
@@ -36,7 +36,8 @@ export async function exportTablesToExcel(built, { filename, maxYear }) {
     // ── Title row (merged across all columns) ──
     ws.mergeCells(row, 1, row, nCols);
     const titleCell = ws.getCell(row, 1);
-    titleCell.value = `${table.title}${table.dwellingSuffix || ''} — CMHC ${maxYear} October`;
+    const note = titleNote != null ? titleNote : `— CMHC ${maxYear} October`;
+    titleCell.value = `${table.title}${table.dwellingSuffix || ''} ${note}`.trim();
     titleCell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: BRAND_RED } };
     titleCell.alignment = { vertical: 'middle', horizontal: 'left' };
     titleCell.border = {

@@ -35,6 +35,10 @@
         class="cmhc-tab" data-tab="starts" aria-selected="false">
         Housing Starts
       </button>
+      <button type="button" role="tab" id="tab-btn-housing"
+        class="cmhc-tab" data-tab="housing" aria-selected="false">
+        Housing Stock
+      </button>
       <button type="button" role="tab" id="tab-btn-snapshot"
         class="cmhc-tab" data-tab="snapshot" aria-selected="false">
         Current Snapshot
@@ -433,6 +437,41 @@
           Green chips = favourable direction for the indicator; red = unfavourable; grey = unchanged. Direction semantics follow the catalog's <code>goodDirection</code> per chart. National-only indicators (mortgage rates, bond yields, SLOS) always show; multi-geo indicators respect the Geography filter on the Market Indicators tab.
         </p>
       </section>
+    </div>
+
+    <!-- ============================================================
+         Housing Stock tab — 2021 Census dwelling condition + age
+         (period of construction) by area. Pick an area → an age
+         profile table + a condition profile table. Canada + all
+         provinces + every Manitoba & Saskatchewan municipality.
+         Data: web/public/data/housing/census_housing.json (r/07).
+         ============================================================ -->
+    <div id="tab-panel-housing" class="grid md:grid-cols-[320px_1fr] min-h-[calc(100vh-110px)]" role="tabpanel" aria-labelledby="tab-btn-housing" hidden>
+      <aside class="bg-white border-r border-neutral-200 p-4 space-y-4 overflow-y-auto" aria-label="Housing Stock filters">
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Area</h2>
+          <select id="hsk-area" class="w-full border border-neutral-300 rounded px-2 py-1 text-sm"></select>
+          <p class="text-xs text-neutral-500 mt-2 leading-snug">2021 Census dwelling condition &amp; age (period of construction). Manitoba &amp; Saskatchewan include every municipality (CSD); other provinces are province-level only.</p>
+        </section>
+        <section class="pt-2 border-t border-neutral-200 space-y-2">
+          <button id="hsk-copy" type="button"
+            class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+            Copy tables (paste into Word)
+          </button>
+          <button id="hsk-download-xlsx" type="button"
+            class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+            Download Excel (.xlsx)
+          </button>
+        </section>
+      </aside>
+
+      <main class="p-4 space-y-4 overflow-x-hidden">
+        <div id="hsk-headline" class="cmhc-hsk-headline"></div>
+        <div id="hsk-tables" class="space-y-4"></div>
+        <footer class="text-xs text-neutral-500 pt-4 border-t border-neutral-200">
+          Source: Statistics Canada, 2021 Census of Population, table 98-10-0233 (dwelling condition by tenure). Contains information licensed under the Statistics Canada Open Licence.
+        </footer>
+      </main>
     </div>
 
     <footer id="site-footer" class="bg-neutral-50 border-t border-neutral-200 text-xs text-neutral-600 px-4 py-3 space-y-2">
