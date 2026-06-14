@@ -74,6 +74,16 @@ const FRESHNESS_DAYS = {
   irregular: 540,
 };
 
+// Per-chart freshness overrides (days), keyed by chartId. Use when a chart's
+// real-world publish cadence doesn't match its series' nominal frequency.
+// Posted mortgage rates: BoC posts the conventional rates weekly (Wednesdays)
+// and the broker variable line lags a few days, so the daily/weekly defaults
+// flag false staleness mid-cycle. 15 days covers the normal weekly cycle plus
+// buffer — the chart only warns if a rate is genuinely more than ~2 weeks old.
+const FRESHNESS_OVERRIDE_DAYS = {
+  mortgage_rates: 15,
+};
+
 /**
  * Build an indicator chart panel and append it to `container`.
  * Returns { render(records, seriesMeta[]) }.
@@ -268,7 +278,7 @@ export function buildIndicatorCard(container, { chartId, title, sourceLabel, des
       $latest.appendChild(chip);
 
       const ageDays = (today - new Date(s.latestDate)) / 86400000;
-      const limit = FRESHNESS_DAYS[s.frequency] || 365;
+      const limit = FRESHNESS_OVERRIDE_DAYS[chartId] ?? (FRESHNESS_DAYS[s.frequency] || 365);
       if (ageDays > limit) staleSeries.push(`${s.chartLabel || s.id} (${Math.round(ageDays)}d old)`);
     });
 
@@ -291,6 +301,9 @@ async function exportCard(card, filename, kind) {
       backgroundColor: '#ffffff',
       pixelRatio: kind === 'png' ? 3 : 1,
       cacheBust: true,
+      // Skip the cross-origin Google Fonts inline attempt (CORS SecurityError,
+      // ~3s stall, system-font fallback regardless) — matches doc-image-export.js.
+      skipFonts: true,
       // Drop the action row, stale-data banner, and explainer from the export
       // so the rendered image stays scoped to title → chart → latest values →
       // caption. These are on-screen helpers, not part of the chart someone

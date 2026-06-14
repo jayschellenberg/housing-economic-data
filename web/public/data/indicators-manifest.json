@@ -1,13 +1,13 @@
 {
   "version": 1,
-  "generated": "2026-06-09T19:49:18Z",
+  "generated": "2026-06-14T04:54:03Z",
   "groups": [
     {
       "group": "mortgage_market",
       "file": "mortgage_market.json",
       "seriesCount": 8,
-      "recordCount": 25796,
-      "latestDate": "2026-06-08"
+      "recordCount": 25812,
+      "latestDate": "2026-06-11"
     },
     {
       "group": "credit_conditions",
@@ -27,8 +27,8 @@
       "group": "supply",
       "file": "supply.json",
       "seriesCount": 4,
-      "recordCount": 396,
-      "latestDate": "2026-03-01"
+      "recordCount": 400,
+      "latestDate": "2026-04-01"
     },
     {
       "group": "demand",
@@ -45,13 +45,20 @@
       "latestDate": "2026-01-01"
     },
     {
+      "group": "commercial_leasing",
+      "file": "commercial_leasing.json",
+      "seriesCount": 8,
+      "recordCount": 328,
+      "latestDate": "2026-01-01"
+    },
+    {
       "group": "derived",
       "file": "derived.json",
       "seriesCount": 9,
-      "recordCount": 22674,
-      "latestDate": "2026-06-08"
+      "recordCount": 22687,
+      "latestDate": "2026-06-11"
     }
   ],
-  "totalSeries": 57,
-  "totalRecords": 58048
+  "totalSeries": 65,
+  "totalRecords": 58409
 }

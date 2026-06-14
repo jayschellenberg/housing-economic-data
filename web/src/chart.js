@@ -83,11 +83,11 @@ export function buildChartCard(container, { series }) {
 
   function render(rows, sub, categoryOrder = [], meta = {}) {
     $plot.replaceChildren();
-    // The capLeft slot is no longer used — the season/year range is now
-    // prepended to the subtitle text below. Keep the element so the
-    // caption row's flex layout (with "Source: CMHC" on the right) stays
-    // visually consistent.
-    $capLeft.textContent = '';
+    // Left caption slot. The season/year range lives in the subtitle; this
+    // slot is opt-in via meta.captionLeft (the Housing Starts tab uses it to
+    // show the aggregate-line Median/Average). Cleared otherwise so the
+    // caption row keeps "Source: CMHC" alone on the right.
+    $capLeft.textContent = meta.captionLeft || '';
 
     if (!rows || rows.length === 0) {
       $sub.textContent = sub || '';
@@ -257,6 +257,12 @@ async function downloadCard(card, filename, kind) {
       backgroundColor: '#ffffff',
       pixelRatio: kind === 'png' ? 3 : 1,
       cacheBust: true,
+      // skipFonts: the only webfont is Inter via the cross-origin Google Fonts
+      // stylesheet, whose cssRules can't be read (CORS) — html-to-image logs a
+      // SecurityError and falls back to system fonts anyway. Skipping the
+      // attempt removes the console noise and the ~3s per-capture stall, with
+      // no change to the rasterised output (matches doc-image-export.js).
+      skipFonts: true,
       // Filter: drop the actions row entirely from the captured DOM.
       filter: (node) => !(node.classList && node.classList.contains('chart-actions')),
     };

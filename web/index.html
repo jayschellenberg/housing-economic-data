@@ -67,14 +67,6 @@
         </section>
 
         <section>
-          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Season</h2>
-          <div id="season" class="flex gap-2 text-sm" role="radiogroup" aria-label="Season">
-            <label class="flex items-center gap-1"><input type="radio" name="season" value="April" /> April</label>
-            <label class="flex items-center gap-1"><input type="radio" name="season" value="October" checked /> October</label>
-          </div>
-        </section>
-
-        <section>
           <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Year range</h2>
           <div class="flex items-center gap-2 text-sm">
             <input id="year-from" type="number" class="w-20 border border-neutral-300 rounded px-2 py-1" min="1990" max="2100" />
@@ -267,7 +259,8 @@
          Housing Starts tab — Scss (Starts/Completions/Under
          Construction) for one geography. Sidebar: level/area, freq
          (Annual/Quarterly), breakdown (Dwelling Type / Intended
-         Market), year range. Main: 3 chart cards + 3 data tables.
+         Market), year range. Main: chart cards (2 per row) + data
+         tables, one per Scss series.
          ============================================================ -->
     <div id="tab-panel-starts" class="grid md:grid-cols-[320px_1fr] min-h-[calc(100vh-110px)]" role="tabpanel" aria-labelledby="tab-btn-starts" hidden>
       <aside class="bg-white border-r border-neutral-200 p-4 space-y-4 overflow-y-auto" aria-label="Housing Starts filters">
@@ -335,7 +328,7 @@
           No data for this filter combination.
         </div>
 
-        <section class="grid md:grid-cols-3 gap-4" id="hs-chart-grid"></section>
+        <section class="grid md:grid-cols-2 gap-4" id="hs-chart-grid"></section>
 
         <section class="space-y-3" id="hs-table-grid"></section>
 

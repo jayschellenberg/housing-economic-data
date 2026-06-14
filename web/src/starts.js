@@ -199,7 +199,20 @@ export async function initStarts({ manifest }) {
         return { ...r, year: xYear };
       });
       const sub = `${LEVEL_LABEL[shard.geoLevel] || shard.geoLevel}: ${shard.geoName} — ${state.frequency}, by ${state.breakdown}`;
-      card.render(enriched, sub, CATEGORY_ORDER[state.breakdown] || [], { season: '' });
+
+      // Caption: Median / Average of the aggregate ("All") line over the
+      // displayed periods. Computed from `matching` so it tracks the active
+      // year range and respects the category toggles (blank when "All" is
+      // hidden or absent), matching the per-column summary rows in the table.
+      const aggVals = matching
+        .filter(r => r.category === 'All')
+        .map(r => Number(r.value))
+        .filter(Number.isFinite);
+      const med = median(aggVals), avg = average(aggVals);
+      const captionLeft = (med != null && avg != null)
+        ? `Median ${Math.round(med).toLocaleString()} · Average ${Math.round(avg).toLocaleString()} (All)`
+        : '';
+      card.render(enriched, sub, CATEGORY_ORDER[state.breakdown] || [], { season: '', captionLeft });
 
       // Build a data table for this series: rows = periods, cols = categories.
       builtTables.push(buildSeriesTable(card.series, matching, state.breakdown, state.frequency));
@@ -230,8 +243,11 @@ export async function initStarts({ manifest }) {
     const cols = canonical.filter(c => present.includes(c))
       .concat(present.filter(c => !canonical.includes(c)));
 
-    // Period rows: sort by year (and quarter for quarterly).
-    const periods = [...new Set(rows.map(r => periodKey(r, freq)))].sort();
+    // Period rows: sort descending so the most recent year/quarter is first.
+    // Period keys are fixed-width ("YYYY" / "YYYY Qn"), so a reverse string
+    // sort orders them correctly newest-to-oldest.
+    const periods = [...new Set(rows.map(r => periodKey(r, freq)))]
+      .sort((a, b) => b.localeCompare(a));
     const matrix = new Map();
     rows.forEach(r => {
       const p = periodKey(r, freq);
@@ -241,10 +257,21 @@ export async function initStarts({ manifest }) {
 
     const tableRows = periods.map(p => ({
       period: p,
+      kind: 'data',
       values: cols.map(c => matrix.get(p)?.get(c) ?? null),
     }));
 
-    return { title: seriesName, columns: cols, rows: tableRows };
+    // Summary rows after the years: per-column Median and Average over the
+    // displayed periods (counts → rounded to whole units).
+    const summarise = (fn) => cols.map((_, ci) => {
+      const vals = tableRows.map(r => r.values[ci]).map(Number).filter(Number.isFinite);
+      const out = fn(vals);
+      return out == null ? null : Math.round(out);
+    });
+    const medianRow  = { period: 'Median',  kind: 'summary', summaryFirst: true, values: summarise(median) };
+    const averageRow = { period: 'Average', kind: 'summary', values: summarise(average) };
+
+    return { title: seriesName, columns: cols, rows: [...tableRows, medianRow, averageRow] };
   }
 
   function periodKey(r, freq) {
@@ -275,6 +302,10 @@ export async function initStarts({ manifest }) {
     const tbody = document.createElement('tbody');
     table.rows.forEach(r => {
       const tr = document.createElement('tr');
+      if (r.kind === 'summary') {
+        tr.classList.add('cmhc-table-summary');
+        if (r.summaryFirst) tr.classList.add('cmhc-table-summary-top');
+      }
       const td0 = document.createElement('td'); td0.textContent = r.period;
       tr.appendChild(td0);
       r.values.forEach(v => {
@@ -328,4 +359,18 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   }[c]));
+}
+
+// --- Summary stats (used by the chart caption + table summary rows) ---------
+function median(nums) {
+  const a = nums.filter(Number.isFinite).slice().sort((x, y) => x - y);
+  if (!a.length) return null;
+  const mid = Math.floor(a.length / 2);
+  return a.length % 2 ? a[mid] : (a[mid - 1] + a[mid]) / 2;
+}
+
+function average(nums) {
+  const a = nums.filter(Number.isFinite);
+  if (!a.length) return null;
+  return a.reduce((s, x) => s + x, 0) / a.length;
 }

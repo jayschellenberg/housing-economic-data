@@ -446,9 +446,9 @@ function wireSidebar(catalog, manifest) {
   if ($sectionsBox) {
     $sectionsBox.innerHTML = '';
     // Only list sections that actually have rendered content (a section's
-    // <section> DOM node carries data-group). Skips Phase-2 groups
-    // (Demand, Construction Cost, Derived) that the catalog declares
-    // but the current data pipeline doesn't yet populate.
+    // <section> DOM node carries data-group). A group the catalog declares
+    // but the pipeline hasn't populated (no shard / no records) renders no
+    // section and is skipped here.
     const renderedGroups = new Set(
       [...document.querySelectorAll('.cmhc-mi-section')].map(s => s.dataset.group)
     );

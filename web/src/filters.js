@@ -16,7 +16,6 @@ export function initFilters({ geographies, capabilities, categoryOrder = {}, ini
   const $level     = document.getElementById('geo-level');
   const $name      = document.getElementById('geo-name');
   const $dwelling  = document.querySelectorAll('input[name="dwellingType"]');
-  const $season    = document.querySelectorAll('input[name="season"]');
   const $yearFrom  = document.getElementById('year-from');
   const $yearTo    = document.getElementById('year-to');
   const $breakdown = document.querySelectorAll('input[name="breakdown"]');
@@ -36,7 +35,6 @@ export function initFilters({ geographies, capabilities, categoryOrder = {}, ini
     geoLevel:     initialState.geoLevel     && availableLevels.includes(initialState.geoLevel) ? initialState.geoLevel : (availableLevels[0] || 'province'),
     geoUid:       initialState.geoUid       || '',
     dwellingType: initialState.dwellingType || 'All',
-    season:       initialState.season       || 'October',
     yearFrom:     initialState.yearFrom     || null,
     yearTo:       initialState.yearTo       || null,
     breakdown:    initialState.breakdown    || 'Bedroom Type',
@@ -59,7 +57,6 @@ export function initFilters({ geographies, capabilities, categoryOrder = {}, ini
       $name.value = state.geoUid;
     }
     setRadio($dwelling, state.dwellingType);
-    setRadio($season,   state.season);
     setRadio($breakdown, state.breakdown);
     if (state.yearFrom) $yearFrom.value = state.yearFrom;
     if (state.yearTo)   $yearTo.value   = state.yearTo;
@@ -173,10 +170,6 @@ export function initFilters({ geographies, capabilities, categoryOrder = {}, ini
 
   $dwelling.forEach(n => n.addEventListener('change', () => {
     if (n.checked) { state.dwellingType = n.value; commit(); }
-  }));
-
-  $season.forEach(n => n.addEventListener('change', () => {
-    if (n.checked) { state.season = n.value; commit(); }
   }));
 
   $yearFrom.addEventListener('change', () => {

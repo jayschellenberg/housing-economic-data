@@ -34,7 +34,6 @@ export const SCHEMA = {
   geoLevel:     { param: 'gl', validate: oneOf(['province','cma','csd','zone','neighbourhood']), format: (v) => v },
   geoUid:       { param: 'gu', validate: cleanString,                  format: (v) => v },
   dwellingType: { param: 'dw', validate: oneOf(['All','Apartment','Row']), format: (v) => v },
-  season:       { param: 's',  validate: oneOf(['April','October']),   format: (v) => v },
   yearFrom:     { param: 'yf', validate: cleanInt(1990, 2100),         format: (v) => String(v) },
   yearTo:       { param: 'yt', validate: cleanInt(1990, 2100),         format: (v) => String(v) },
   breakdown:    { param: 'bd', validate: oneOf(['Bedroom Type','Year of Construction','Structure Size','Rent Ranges']), format: (v) => v },

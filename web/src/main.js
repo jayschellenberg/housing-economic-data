@@ -265,7 +265,11 @@ async function bootstrap() {
         r.series === card.series &&
         r.dimension === dim &&
         r.dwellingType === state.dwellingType &&
-        (r.season === state.season || !state.season) &&
+        // CMHC RMS for these Manitoba geographies is published only for the
+        // October snapshot — the season control was removed, so filter to
+        // October explicitly (guards against any stray April rows a future
+        // refresh might introduce).
+        r.season === 'October' &&
         r.year >= yearFrom && r.year <= yearTo &&
         !hiddenForDim.has(r.category)
       );
@@ -273,7 +277,9 @@ async function bootstrap() {
       const levelLabel = LEVEL_LABEL[shard.geoLevel] || shard.geoLevel;
       const dwellingLabel = DWELLING_LABEL[state.dwellingType] || state.dwellingType;
       const sub = `${levelLabel}: ${shard.geoName} — ${dwellingLabel}, by ${dim}`;
-      card.render(filtered, sub, CATEGORY_ORDER[dim] || [], { season: state.season });
+      // Season is fixed to October (the only RMS snapshot CMHC publishes for
+      // these areas); kept in the caption so the survey vintage stays visible.
+      card.render(filtered, sub, CATEGORY_ORDER[dim] || [], { season: 'October' });
     }
     setEmptyState(!anyData);
   }
