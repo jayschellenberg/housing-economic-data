@@ -1,6 +1,8 @@
 # CMHC Charts
 
-Interactive line charts of CMHC rental and vacancy data for Manitoba, filterable by geography (Province / CMA / CSD / Survey Zone / Neighbourhood), dwelling type (Apartment / Row / All), and a choice of breakdown dimension (Bedroom Type / Year of Construction / Structure Size / Rent Ranges).
+Interactive line charts of CMHC rental and vacancy data for Canada, filterable by geography (Province / CMA / CSD / Survey Zone / Neighbourhood), dwelling type (Apartment / Row / All), and a choice of breakdown dimension (Bedroom Type / Year of Construction / Structure Size / Rent Ranges).
+
+**Geographic coverage.** Manitoba and Saskatchewan carry **full** detail — every level (province, CMA/CA, survey zone, neighbourhood) with complete history. Every other province/territory includes its **major centres** (province + CMA/CA level) for the **most recent 10 years** only (a rolling window that advances each refresh). The rental/starts geography list is config-driven in `r/lib/cmhc_helpers.R` (the `PROVINCES` table, `detail = full | basic`); CMA/CA UIDs are derived from the `cmhc` package's translation table. Saskatchewan has no CSD-level data — CMHC's Census-Subdivision breakdown returns a 500 for SK.
 
 The Tables tab generates appraisal-ready comparison tables (vacancy / median rent by bedroom type, rent range, year built) with copy-to-clipboard (rich HTML for pasting into Word), Word (.docx), and Excel (.xlsx) export — this replaces the retired CMHC-VacancyMedianRents Shiny tool. The pipeline also pulls the Secondary Rental Market Survey (Srms — condo rental data) into `web/public/data/secondary.json`, replacing the retired "CMHC Rental Data Scrape" project. Both retired projects are archived under `$Projects in Progress\old projects maybe`.
 

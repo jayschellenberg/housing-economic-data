@@ -174,7 +174,7 @@ export function initTables({ geographies, manifest, loadShard }) {
     const parts = [];
     if (placeholder !== null) parts.push(`<option value="">${placeholder}</option>`);
     if (Array.isArray(levels.cma)) {
-      parts.push('<optgroup label="Manitoba Centres">');
+      parts.push('<optgroup label="Centres (CMA / CA)">');
       levels.cma.forEach(it => {
         parts.push(`<option value="cma:${it.uid}">${escapeHtml(it.name)}</option>`);
       });
@@ -188,14 +188,14 @@ export function initTables({ geographies, manifest, loadShard }) {
       parts.push('</optgroup>');
     }
     if (Array.isArray(levels.zone) && levels.zone.length) {
-      parts.push('<optgroup label="Winnipeg Survey Zones">');
+      parts.push('<optgroup label="Survey Zones">');
       levels.zone.forEach(it => {
         parts.push(`<option value="zone:${it.uid}">${escapeHtml(it.name)}</option>`);
       });
       parts.push('</optgroup>');
     }
     if (Array.isArray(levels.neighbourhood) && levels.neighbourhood.length) {
-      parts.push('<optgroup label="Winnipeg Neighbourhoods">');
+      parts.push('<optgroup label="Neighbourhoods">');
       levels.neighbourhood.forEach(it => {
         parts.push(`<option value="neighbourhood:${it.uid}">${escapeHtml(it.name)}</option>`);
       });

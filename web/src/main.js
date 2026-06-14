@@ -265,10 +265,10 @@ async function bootstrap() {
         r.series === card.series &&
         r.dimension === dim &&
         r.dwellingType === state.dwellingType &&
-        // CMHC RMS for these Manitoba geographies is published only for the
-        // October snapshot — the season control was removed, so filter to
-        // October explicitly (guards against any stray April rows a future
-        // refresh might introduce).
+        // CMHC RMS for these geographies is published only for the October
+        // snapshot — the season control was removed, so filter to October
+        // explicitly (guards against any stray April rows a future refresh
+        // might introduce).
         r.season === 'October' &&
         r.year >= yearFrom && r.year <= yearTo &&
         !hiddenForDim.has(r.category)

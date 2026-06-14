@@ -1,8 +1,20 @@
 {
   "version": 1,
-  "generated": "2026-06-14T12:34:51Z",
+  "generated": "2026-06-14T14:32:03Z",
   "levels": {
     "province": [
+      {
+        "uid": "48",
+        "name": "Alberta",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "59",
+        "name": "British Columbia",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
       {
         "uid": "46",
         "name": "Manitoba",
@@ -10,13 +22,103 @@
         "yearMax": 2026
       },
       {
+        "uid": "13",
+        "name": "New Brunswick",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "10",
+        "name": "Newfoundland and Labrador",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "61",
+        "name": "Northwest Territories",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "12",
+        "name": "Nova Scotia",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "35",
+        "name": "Ontario",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "11",
+        "name": "Prince Edward Island",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "24",
+        "name": "Quebec",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
         "uid": "47",
         "name": "Saskatchewan",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "60",
+        "name": "Yukon",
         "yearMin": 2016,
         "yearMax": 2026
       }
     ],
     "cma": [
+      {
+        "uid": "932",
+        "name": "Abbotsford - Mission",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "410",
+        "name": "Alma",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "481",
+        "name": "Amos V",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "406",
+        "name": "Baie-Comeau",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "568",
+        "name": "Barrie",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "328",
+        "name": "Bathurst",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "522",
+        "name": "Belleville - Quinte West",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
       {
         "uid": "610",
         "name": "Brandon",
@@ -24,8 +126,374 @@
         "yearMax": 2026
       },
       {
+        "uid": "543",
+        "name": "Brantford",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "512",
+        "name": "Brockville",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "806",
+        "name": "Brooks",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "825",
+        "name": "Calgary",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "944",
+        "name": "Campbell River",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "330",
+        "name": "Campbellton",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "833",
+        "name": "Camrose",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "828",
+        "name": "Canmore",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "225",
+        "name": "Cape Breton",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "531",
+        "name": "Centre Wellington",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "105",
+        "name": "Charlottetown",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "556",
+        "name": "Chatham-Kent",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "930",
+        "name": "Chilliwack",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "527",
+        "name": "Cobourg",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "567",
+        "name": "Collingwood",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "015",
+        "name": "Corner Brook",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "501",
+        "name": "Cornwall",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "943",
+        "name": "Courtenay",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "437",
+        "name": "Cowansville",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "905",
+        "name": "Cranbrook",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "975",
+        "name": "Dawson Creek",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "411",
+        "name": "Dolbeau-Mistassini",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "447",
+        "name": "Drummondville",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "937",
+        "name": "Duncan",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "835",
+        "name": "Edmonton",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "335",
+        "name": "Edmundston",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "582",
+        "name": "Elliot Lake",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
         "uid": "750",
         "name": "Estevan",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "977",
+        "name": "Fort St. John",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "320",
+        "name": "Fredericton",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "011",
+        "name": "Gander",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "24505",
+        "name": "Gatineau",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "450",
+        "name": "Granby",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "010",
+        "name": "Grand Falls-Windsor",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "850",
+        "name": "Grande Prairie",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "580",
+        "name": "Greater Sudbury / Grand Sudbury",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "550",
+        "name": "Guelph",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "205",
+        "name": "Halifax",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "537",
+        "name": "Hamilton",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "502",
+        "name": "Hawkesbury",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "821",
+        "name": "High River",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "533",
+        "name": "Ingersoll",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "456",
+        "name": "Joliette",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "925",
+        "name": "Kamloops",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "530",
+        "name": "Kawartha Lakes",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "915",
+        "name": "Kelowna",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "598",
+        "name": "Kenora",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "210",
+        "name": "Kentville",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "521",
+        "name": "Kingston",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "541",
+        "name": "Kitchener - Cambridge - Waterloo",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "468",
+        "name": "Lachute",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "832",
+        "name": "Lacombe",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "936",
+        "name": "Ladysmith",
+        "yearMin": 2023,
+        "yearMax": 2026
+      },
+      {
+        "uid": "810",
+        "name": "Lethbridge",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "840",
+        "name": "Lloydminster",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "555",
+        "name": "London",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "403",
+        "name": "Matane",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "805",
+        "name": "Medicine Hat",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "571",
+        "name": "Midland",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "329",
+        "name": "Miramichi",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "305",
+        "name": "Moncton",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "462",
+        "name": "Montréal",
         "yearMin": 2016,
         "yearMax": 2026
       },
@@ -36,8 +504,110 @@
         "yearMax": 2026
       },
       {
+        "uid": "938",
+        "name": "Nanaimo",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "907",
+        "name": "Nelson",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "220",
+        "name": "New Glasgow",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "547",
+        "name": "Norfolk",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
         "uid": "735",
         "name": "North Battleford",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "575",
+        "name": "North Bay",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "820",
+        "name": "Okotoks",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "569",
+        "name": "Orillia",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "532",
+        "name": "Oshawa",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "35505",
+        "name": "Ottawa",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "566",
+        "name": "Owen Sound",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "939",
+        "name": "Parksville",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "515",
+        "name": "Pembroke",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "913",
+        "name": "Penticton",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "516",
+        "name": "Petawawa",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "529",
+        "name": "Peterborough",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "940",
+        "name": "Port Alberni",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "528",
+        "name": "Port Hope",
         "yearMin": 2016,
         "yearMax": 2026
       },
@@ -48,8 +618,44 @@
         "yearMax": 2026
       },
       {
+        "uid": "945",
+        "name": "Powell River",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
         "uid": "745",
         "name": "Prince Albert",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "970",
+        "name": "Prince George",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "955",
+        "name": "Prince Rupert",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "952",
+        "name": "Quesnel",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "421",
+        "name": "Québec",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "830",
+        "name": "Red Deer",
         "yearMin": 2016,
         "yearMax": 2026
       },
@@ -60,8 +666,128 @@
         "yearMax": 2026
       },
       {
+        "uid": "404",
+        "name": "Rimouski",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "405",
+        "name": "Rivière-du-Loup",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "485",
+        "name": "Rouyn-Noranda",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "408",
+        "name": "Saguenay",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "310",
+        "name": "Saint John",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "428",
+        "name": "Saint-Georges",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "452",
+        "name": "Saint-Hyacinthe",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "467",
+        "name": "Sainte-Agathe-des-Monts",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "423",
+        "name": "Sainte-Marie",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "465",
+        "name": "Salaberry-de-Valleyfield",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "920",
+        "name": "Salmon Arm",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "562",
+        "name": "Sarnia",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
         "uid": "725",
         "name": "Saskatoon",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "590",
+        "name": "Sault Ste. Marie",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "412",
+        "name": "Sept-Îles",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "444",
+        "name": "Shawinigan",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "433",
+        "name": "Sherbrooke",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "454",
+        "name": "Sorel-Tracy",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "934",
+        "name": "Squamish",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "539",
+        "name": "St. Catharines - Niagara",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "001",
+        "name": "St. John's",
         "yearMin": 2016,
         "yearMax": 2026
       },
@@ -72,8 +798,44 @@
         "yearMax": 2026
       },
       {
+        "uid": "553",
+        "name": "Stratford",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "826",
+        "name": "Strathmore",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "110",
+        "name": "Summerside",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
         "uid": "720",
         "name": "Swift Current",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "831",
+        "name": "Sylvan Lake",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "965",
+        "name": "Terrace",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "430",
+        "name": "Thetford Mines",
         "yearMin": 2016,
         "yearMax": 2026
       },
@@ -84,9 +846,111 @@
         "yearMax": 2026
       },
       {
+        "uid": "595",
+        "name": "Thunder Bay",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "546",
+        "name": "Tillsonburg",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "586",
+        "name": "Timmins",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "535",
+        "name": "Toronto",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "910",
+        "name": "Trail",
+        "yearMin": 2023,
+        "yearMax": 2026
+      },
+      {
+        "uid": "442",
+        "name": "Trois-Rivières",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "215",
+        "name": "Truro",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "480",
+        "name": "Val-d'Or",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "933",
+        "name": "Vancouver",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "918",
+        "name": "Vernon",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "935",
+        "name": "Victoria",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "440",
+        "name": "Victoriaville",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "565",
+        "name": "Wasaga Beach",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "865",
+        "name": "Wetaskiwin",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
         "uid": "755",
         "name": "Weyburn",
         "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "990",
+        "name": "Whitehorse",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "950",
+        "name": "Williams Lake",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "559",
+        "name": "Windsor",
+        "yearMin": 2023,
         "yearMax": 2026
       },
       {
@@ -99,6 +963,24 @@
         "uid": "602",
         "name": "Winnipeg",
         "yearMin": 1990,
+        "yearMax": 2026
+      },
+      {
+        "uid": "860",
+        "name": "Wood Buffalo",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "544",
+        "name": "Woodstock",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "995",
+        "name": "Yellowknife",
+        "yearMin": 2016,
         "yearMax": 2026
       },
       {

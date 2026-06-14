@@ -49,9 +49,19 @@ dir.create(SERIES_DIR, recursive = TRUE, showWarnings = FALSE)
 # only. Scope a run to a subset with the CMHC_PROVINCES env var (comma-separated
 # province UIDs, e.g. "47" for Saskatchewan-only).
 PROVINCES <- tibble::tribble(
-  ~uid,  ~name,          ~detail,
-  "46",  "Manitoba",     "full",
-  "47",  "Saskatchewan", "full"
+  ~uid,  ~name,                         ~detail,
+  "46",  "Manitoba",                    "full",
+  "47",  "Saskatchewan",                "full",
+  "10",  "Newfoundland and Labrador",   "basic",
+  "11",  "Prince Edward Island",        "basic",
+  "12",  "Nova Scotia",                 "basic",
+  "13",  "New Brunswick",               "basic",
+  "24",  "Quebec",                      "basic",
+  "35",  "Ontario",                     "basic",
+  "48",  "Alberta",                     "basic",
+  "59",  "British Columbia",            "basic",
+  "60",  "Yukon",                       "basic",
+  "61",  "Northwest Territories",       "basic"
 )
 .prov_scope <- Sys.getenv("CMHC_PROVINCES", unset = "")
 if (nzchar(.prov_scope)) {
@@ -65,12 +75,21 @@ if (nzchar(.prov_scope)) {
 # legacy Winnipeg="602" convention).
 CMAS <- cmhc::cmhc_cma_translation_data %>%
   dplyr::transmute(
-    uid      = substr(as.character(CMA_UID), 3, 5),
+    full     = as.character(CMA_UID),
+    short    = substr(as.character(CMA_UID), 3, 5),
     name     = as.character(NAME_EN),
     level    = "cma",
     prov_uid = substr(as.character(CMA_UID), 1, 2)
   ) %>%
+  # The 3-digit short form is unique Canada-wide except Ottawa (35505) and
+  # Gatineau (24505), which both reduce to 505. Fall back to the full 5-digit
+  # UID for any colliding short form so the two stay distinct (get_cmhc accepts
+  # both forms). Detection is over the full table, before the province filter.
+  dplyr::group_by(short) %>%
+  dplyr::mutate(uid = if (dplyr::n() > 1) full else short) %>%
+  dplyr::ungroup() %>%
   dplyr::filter(prov_uid %in% PROVINCES$uid) %>%
+  dplyr::select(uid, name, level, prov_uid) %>%
   dplyr::arrange(prov_uid, name)
 
 # Manitoba province UID + named CMAs retained for the Secondary Rental (Srms)
