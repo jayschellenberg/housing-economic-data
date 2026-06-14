@@ -1,12 +1,18 @@
 {
   "version": 1,
-  "generated": "2026-06-13T15:02:35Z",
+  "generated": "2026-06-14T12:34:51Z",
   "levels": {
     "province": [
       {
         "uid": "46",
         "name": "Manitoba",
         "yearMin": 1990,
+        "yearMax": 2026
+      },
+      {
+        "uid": "47",
+        "name": "Saskatchewan",
+        "yearMin": 2016,
         "yearMax": 2026
       }
     ],
@@ -18,9 +24,45 @@
         "yearMax": 2026
       },
       {
+        "uid": "750",
+        "name": "Estevan",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "715",
+        "name": "Moose Jaw",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "735",
+        "name": "North Battleford",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
         "uid": "607",
         "name": "Portage la Prairie",
         "yearMin": 1990,
+        "yearMax": 2026
+      },
+      {
+        "uid": "745",
+        "name": "Prince Albert",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "705",
+        "name": "Regina",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
+        "uid": "725",
+        "name": "Saskatoon",
+        "yearMin": 2016,
         "yearMax": 2026
       },
       {
@@ -30,9 +72,21 @@
         "yearMax": 2026
       },
       {
+        "uid": "720",
+        "name": "Swift Current",
+        "yearMin": 2016,
+        "yearMax": 2026
+      },
+      {
         "uid": "640",
         "name": "Thompson",
         "yearMin": 1990,
+        "yearMax": 2026
+      },
+      {
+        "uid": "755",
+        "name": "Weyburn",
+        "yearMin": 2016,
         "yearMax": 2026
       },
       {
@@ -45,6 +99,12 @@
         "uid": "602",
         "name": "Winnipeg",
         "yearMin": 1990,
+        "yearMax": 2026
+      },
+      {
+        "uid": "710",
+        "name": "Yorkton",
+        "yearMin": 2016,
         "yearMax": 2026
       }
     ],
@@ -72,6 +132,30 @@
         "yearMax": 2026,
         "parentUid": 602,
         "parentName": "Winnipeg"
+      },
+      {
+        "uid": "705-central",
+        "name": "Central",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 705,
+        "parentName": "Regina"
+      },
+      {
+        "uid": "725-central",
+        "name": "Central",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 725,
+        "parentName": "Saskatoon"
+      },
+      {
+        "uid": "705-east",
+        "name": "East",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 705,
+        "parentName": "Regina"
       },
       {
         "uid": "602-east-kildonan",
@@ -114,12 +198,100 @@
         "parentName": "Winnipeg"
       },
       {
+        "uid": "725-north",
+        "name": "North",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 725,
+        "parentName": "Saskatoon"
+      },
+      {
+        "uid": "705-northeast",
+        "name": "Northeast",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 705,
+        "parentName": "Regina"
+      },
+      {
+        "uid": "725-northeast",
+        "name": "Northeast",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 725,
+        "parentName": "Saskatoon"
+      },
+      {
+        "uid": "705-northwest",
+        "name": "Northwest",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 705,
+        "parentName": "Regina"
+      },
+      {
         "uid": "602-outlying-areas",
         "name": "Outlying Areas",
         "yearMin": 2010,
         "yearMax": 2026,
         "parentUid": 602,
         "parentName": "Winnipeg"
+      },
+      {
+        "uid": "705-outlying-areas",
+        "name": "Outlying Areas",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 705,
+        "parentName": "Regina"
+      },
+      {
+        "uid": "725-outlying-areas",
+        "name": "Outlying Areas",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 725,
+        "parentName": "Saskatoon"
+      },
+      {
+        "uid": "725-south",
+        "name": "South",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 725,
+        "parentName": "Saskatoon"
+      },
+      {
+        "uid": "705-south-lakeview-albert-park",
+        "name": "South: Lakeview/Albert Park",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 705,
+        "parentName": "Regina"
+      },
+      {
+        "uid": "705-south-wascana-university",
+        "name": "South: Wascana University",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 705,
+        "parentName": "Regina"
+      },
+      {
+        "uid": "725-southeast",
+        "name": "Southeast",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 725,
+        "parentName": "Saskatoon"
+      },
+      {
+        "uid": "725-southwest",
+        "name": "Southwest",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 725,
+        "parentName": "Saskatoon"
       },
       {
         "uid": "602-st-boniface",
@@ -154,6 +326,22 @@
         "parentName": "Winnipeg"
       },
       {
+        "uid": "705-west",
+        "name": "West",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 705,
+        "parentName": "Regina"
+      },
+      {
+        "uid": "725-west",
+        "name": "West",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 725,
+        "parentName": "Saskatoon"
+      },
+      {
         "uid": "602-west-kildonan",
         "name": "West Kildonan",
         "yearMin": 2010,
@@ -164,6 +352,38 @@
     ],
     "neighbourhood": [
       {
+        "uid": "705-albert-park-north",
+        "name": "Albert Park North",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 705,
+        "parentName": "Regina"
+      },
+      {
+        "uid": "705-albert-park-south",
+        "name": "Albert Park South",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 705,
+        "parentName": "Regina"
+      },
+      {
+        "uid": "705-central",
+        "name": "Central",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 705,
+        "parentName": "Regina"
+      },
+      {
+        "uid": "725-central",
+        "name": "Central",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 725,
+        "parentName": "Saskatoon"
+      },
+      {
         "uid": "602-charleswood",
         "name": "Charleswood",
         "yearMin": 2010,
@@ -172,12 +392,68 @@
         "parentName": "Winnipeg"
       },
       {
+        "uid": "725-confederation-east",
+        "name": "Confederation East",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 725,
+        "parentName": "Saskatoon"
+      },
+      {
+        "uid": "725-confederation-west",
+        "name": "Confederation West",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 725,
+        "parentName": "Saskatoon"
+      },
+      {
+        "uid": "705-coronation-park",
+        "name": "Coronation Park",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 705,
+        "parentName": "Regina"
+      },
+      {
         "uid": "602-downtown",
         "name": "Downtown",
         "yearMin": 2010,
         "yearMax": 2026,
         "parentUid": 602,
         "parentName": "Winnipeg"
+      },
+      {
+        "uid": "705-downtown-east",
+        "name": "Downtown East",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 705,
+        "parentName": "Regina"
+      },
+      {
+        "uid": "705-downtown-west",
+        "name": "Downtown West",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 705,
+        "parentName": "Regina"
+      },
+      {
+        "uid": "705-east",
+        "name": "East",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 705,
+        "parentName": "Regina"
+      },
+      {
+        "uid": "725-east-central",
+        "name": "East Central",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 725,
+        "parentName": "Saskatoon"
       },
       {
         "uid": "602-east-st-boniface",
@@ -228,12 +504,60 @@
         "parentName": "Winnipeg"
       },
       {
+        "uid": "705-hillsdale",
+        "name": "Hillsdale",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 705,
+        "parentName": "Regina"
+      },
+      {
         "uid": "602-inkster",
         "name": "Inkster",
         "yearMin": 2010,
         "yearMax": 2026,
         "parentUid": 602,
         "parentName": "Winnipeg"
+      },
+      {
+        "uid": "705-lakeview-north",
+        "name": "Lakeview North",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 705,
+        "parentName": "Regina"
+      },
+      {
+        "uid": "705-lakeview-south",
+        "name": "Lakeview South",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 705,
+        "parentName": "Regina"
+      },
+      {
+        "uid": "725-lakewood-north",
+        "name": "Lakewood North",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 725,
+        "parentName": "Saskatoon"
+      },
+      {
+        "uid": "725-lakewood-south",
+        "name": "Lakewood South",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 725,
+        "parentName": "Saskatoon"
+      },
+      {
+        "uid": "725-lower-southwest",
+        "name": "Lower Southwest",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 725,
+        "parentName": "Saskatoon"
       },
       {
         "uid": "602-monroe",
@@ -244,12 +568,84 @@
         "parentName": "Winnipeg"
       },
       {
+        "uid": "705-normanview",
+        "name": "Normanview",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 705,
+        "parentName": "Regina"
+      },
+      {
+        "uid": "725-north",
+        "name": "North",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 725,
+        "parentName": "Saskatoon"
+      },
+      {
+        "uid": "705-north-central",
+        "name": "North Central",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 705,
+        "parentName": "Regina"
+      },
+      {
+        "uid": "705-northeast",
+        "name": "Northeast",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 705,
+        "parentName": "Regina"
+      },
+      {
+        "uid": "705-northeast-arcola",
+        "name": "Northeast Arcola",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 705,
+        "parentName": "Regina"
+      },
+      {
+        "uid": "705-northwest",
+        "name": "Northwest",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 705,
+        "parentName": "Regina"
+      },
+      {
+        "uid": "725-northwest",
+        "name": "Northwest",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 725,
+        "parentName": "Saskatoon"
+      },
+      {
         "uid": "602-norwood",
         "name": "Norwood",
         "yearMin": 2010,
         "yearMax": 2026,
         "parentUid": 602,
         "parentName": "Winnipeg"
+      },
+      {
+        "uid": "725-nutana-north",
+        "name": "Nutana North",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 725,
+        "parentName": "Saskatoon"
+      },
+      {
+        "uid": "725-nutana-south",
+        "name": "Nutana South",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 725,
+        "parentName": "Saskatoon"
       },
       {
         "uid": "602-old-st-vital",
@@ -266,6 +662,22 @@
         "yearMax": 2026,
         "parentUid": 602,
         "parentName": "Winnipeg"
+      },
+      {
+        "uid": "705-outlying-areas",
+        "name": "Outlying Areas",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 705,
+        "parentName": "Regina"
+      },
+      {
+        "uid": "725-outlying-areas",
+        "name": "Outlying Areas",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 725,
+        "parentName": "Saskatoon"
       },
       {
         "uid": "602-point-douglas",
@@ -290,6 +702,14 @@
         "yearMax": 2026,
         "parentUid": 602,
         "parentName": "Winnipeg"
+      },
+      {
+        "uid": "705-rosemont-mount-royal",
+        "name": "Rosemont/Mount Royal",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 705,
+        "parentName": "Regina"
       },
       {
         "uid": "602-rossmere-concordia",
@@ -322,6 +742,22 @@
         "yearMax": 2026,
         "parentUid": 602,
         "parentName": "Winnipeg"
+      },
+      {
+        "uid": "705-southeast-arcola",
+        "name": "Southeast Arcola",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 705,
+        "parentName": "Regina"
+      },
+      {
+        "uid": "705-southwest-cathedral-area",
+        "name": "Southwest/Cathedral Area",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 705,
+        "parentName": "Regina"
       },
       {
         "uid": "602-spence",
@@ -372,6 +808,38 @@
         "parentName": "Winnipeg"
       },
       {
+        "uid": "725-university-heights",
+        "name": "University Heights",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 725,
+        "parentName": "Saskatoon"
+      },
+      {
+        "uid": "725-upper-southwest",
+        "name": "Upper Southwest",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 725,
+        "parentName": "Saskatoon"
+      },
+      {
+        "uid": "705-west",
+        "name": "West",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 705,
+        "parentName": "Regina"
+      },
+      {
+        "uid": "725-west",
+        "name": "West",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 725,
+        "parentName": "Saskatoon"
+      },
+      {
         "uid": "602-west-alexander-centennial",
         "name": "West Alexander/Centennial",
         "yearMin": 2010,
@@ -388,12 +856,28 @@
         "parentName": "Winnipeg"
       },
       {
+        "uid": "725-west-central",
+        "name": "West Central",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 725,
+        "parentName": "Saskatoon"
+      },
+      {
         "uid": "602-west-end",
         "name": "West End",
         "yearMin": 2010,
         "yearMax": 2026,
         "parentUid": 602,
         "parentName": "Winnipeg"
+      },
+      {
+        "uid": "705-whitmore-park",
+        "name": "Whitmore Park",
+        "yearMin": 2016,
+        "yearMax": 2026,
+        "parentUid": 705,
+        "parentName": "Regina"
       },
       {
         "uid": "602-wolseley",

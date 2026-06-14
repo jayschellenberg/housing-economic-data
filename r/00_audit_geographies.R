@@ -43,49 +43,56 @@ audit_one <- function(uid, name, level) {
   )
 }
 
-# 1. Province + named CMAs + named centre-CSDs (always attempt these).
+# 1. Provinces + their CMAs/CAs + known centre-CSDs (always attempt these).
 core_geos <- bind_rows(
-  tibble::tibble(uid = MB_PROVINCE_UID, name = "Manitoba", level = "province"),
-  MB_CMAS,
-  MB_CENTRE_CSDS
+  PROVINCES %>% transmute(uid, name, level = "province"),
+  CMAS %>% transmute(uid, name, level),
+  if (nrow(CENTRE_CSDS)) CENTRE_CSDS %>% transmute(uid, name, level) else NULL
 )
 
-# 2. Manitoba CSD list — pulled from CMHC's Census Subdivision breakdown of
-#    the province. This is the canonical list of CSDs CMHC publishes data for.
-message("[audit] Pulling Manitoba CSD list via Census Subdivision breakdown...")
-csd_listing <- safe_get_cmhc(
-  series    = "Vacancy Rate",
-  dimension = "Bedroom Type",
-  breakdown = "Census Subdivision",
-  geo_uid   = MB_PROVINCE_UID,
-  geo_name  = "Manitoba",
-  geo_level = "province",
-  quiet     = TRUE
-)
-
-discovered_csds <- tibble::tibble(uid = character(), name = character(), level = character())
-if (!is.null(csd_listing) && nrow(csd_listing) > 0) {
-  zone_col_name <- extract_zone_name(csd_listing)
+# 2. Dynamic CSD discovery — for every full-detail province, pull the CSDs CMHC
+#    publishes via that province's Census Subdivision breakdown. This is the
+#    canonical list of CSDs CMHC reports data for. basic-detail provinces are
+#    province + CMA only, so they are skipped here.
+discover_csds <- function(prov_uid, prov_name) {
+  message(sprintf("[audit] Discovering CSDs for %s via Census Subdivision breakdown...", prov_name))
+  listing <- safe_get_cmhc(
+    series    = "Vacancy Rate",
+    dimension = "Bedroom Type",
+    breakdown = "Census Subdivision",
+    geo_uid   = prov_uid,
+    geo_name  = prov_name,
+    geo_level = "province",
+    quiet     = TRUE
+  )
+  if (is.null(listing) || nrow(listing) == 0) return(NULL)
+  zone_col_name <- extract_zone_name(listing)
   # The CSD GeoUID column in cmhc varies by version — check several names.
-  uid_col <- intersect(names(csd_listing),
+  uid_col <- intersect(names(listing),
                        c("GeoUID2", "Sub-GeoUID", "SubGeoUID", "geo_uid", "GeoCode"))
-  if (length(uid_col)) {
-    discovered_csds <- csd_listing %>%
-      transmute(uid = as.character(.data[[uid_col[1]]]),
-                name = zone_col_name,
-                level = "csd") %>%
-      distinct(uid, .keep_all = TRUE) %>%
-      filter(!is.na(uid) & uid != "")
-  } else {
-    message("[audit] CSD GeoUID column not found in Census Subdivision breakdown; ",
-            "skipping dynamic CSD discovery. Columns: ",
-            paste(names(csd_listing), collapse = ", "))
+  if (!length(uid_col)) {
+    message("[audit] CSD GeoUID column not found for ", prov_name,
+            "; columns: ", paste(names(listing), collapse = ", "))
+    return(NULL)
   }
+  listing %>%
+    transmute(uid = as.character(.data[[uid_col[1]]]),
+              name = zone_col_name,
+              level = "csd") %>%
+    distinct(uid, .keep_all = TRUE) %>%
+    filter(!is.na(uid) & uid != "")
 }
 
-# Drop the core-list CSDs from the discovered set to avoid double-auditing.
-discovered_csds <- discovered_csds %>%
-  filter(!(uid %in% c(MB_CENTRE_CSDS$uid)))
+full_provs <- PROVINCES %>% filter(detail == "full")
+discovered_csds <- if (nrow(full_provs)) {
+  bind_rows(lapply(seq_len(nrow(full_provs)),
+                   function(i) discover_csds(full_provs$uid[i], full_provs$name[i])))
+} else tibble::tibble(uid = character(), name = character(), level = character())
+
+# Drop the core-list centre CSDs from the discovered set to avoid double-auditing.
+if (nrow(discovered_csds)) {
+  discovered_csds <- discovered_csds %>% filter(!(uid %in% CENTRE_CSDS$uid))
+}
 
 all_geos <- bind_rows(core_geos, discovered_csds) %>%
   distinct(uid, .keep_all = TRUE)

@@ -63,6 +63,36 @@ unify <- function(df) {
 
 all_records <- bind_rows(unify(hist), unify(zone), unify(nbhd))
 
+# --- Non-Manitoba year floor -------------------------------------------------
+# Manitoba keeps full history; every other province is limited to a rolling
+# 10-year window to keep the dataset compact (user decision, 2026-06). The floor
+# is computed from the current year so it advances automatically each refresh.
+# Resolve each record's province from its geo UID / parent CMA (CMAS comes from
+# cmhc_helpers) and drop pre-floor rows for non-MB geos.
+FULL_HISTORY_PROV <- c("46")   # Manitoba province UID
+NONMB_MIN_YEAR    <- as.integer(format(Sys.Date(), "%Y")) - 10L   # rolling 10-yr
+resolve_prov <- function(geoUid, geoLevel, parentUid) {
+  gu <- as.character(geoUid); pu <- as.character(parentUid); lv <- as.character(geoLevel)
+  prov <- rep(NA_character_, length(gu))
+  prov[lv == "province"] <- gu[lv == "province"]
+  m_cma <- lv == "cma";                       prov[m_cma] <- CMAS$prov_uid[match(gu[m_cma], CMAS$uid)]
+  m_zn  <- lv %in% c("zone", "neighbourhood"); prov[m_zn]  <- CMAS$prov_uid[match(pu[m_zn], CMAS$uid)]
+  m_csd <- lv == "csd";                       prov[m_csd] <- substr(gu[m_csd], 1, 2)
+  prov
+}
+apply_year_floor <- function(df, uidCol, levelCol, parentCol, yearCol) {
+  if (nrow(df) == 0) return(df)
+  prov <- resolve_prov(df[[uidCol]], df[[levelCol]], df[[parentCol]])
+  yr   <- suppressWarnings(as.integer(df[[yearCol]]))
+  keep <- (prov %in% FULL_HISTORY_PROV) | (yr >= NONMB_MIN_YEAR)
+  keep[is.na(keep)] <- TRUE   # never drop a row on a parse failure
+  df[keep, , drop = FALSE]
+}
+n_before <- nrow(all_records)
+all_records <- apply_year_floor(all_records, "geoUid", "geoLevel", "parentUid", "year")
+message(sprintf("[03] Year floor: dropped %d non-MB rows before %d",
+                n_before - nrow(all_records), NONMB_MIN_YEAR))
+
 message(sprintf("[03] Combined records: %d (%d distinct geographies)",
                 nrow(all_records), dplyr::n_distinct(all_records$geoUid)))
 
@@ -164,6 +194,11 @@ starts_path <- file.path(DATA_DIR, "housing_starts.csv")
 starts <- read_or_empty(starts_path)
 
 if (nrow(starts) > 0) {
+  # Same non-MB 2015+ floor as the rental records above.
+  n_starts0 <- nrow(starts)
+  starts <- apply_year_floor(starts, "GeoUID", "GeoLevel", "ParentUID", "Year")
+  message(sprintf("[03] Starts year floor: dropped %d non-MB rows before %d",
+                  n_starts0 - nrow(starts), NONMB_MIN_YEAR))
   message(sprintf("[03] Scss records to shard: %d (%d distinct geographies)",
                   nrow(starts), dplyr::n_distinct(starts$GeoUID)))
 

@@ -43,11 +43,39 @@ dir.create(WEB_DATA,   recursive = TRUE, showWarnings = FALSE)
 dir.create(SERIES_DIR, recursive = TRUE, showWarnings = FALSE)
 
 # --- Geographies -------------------------------------------------------------
-# Manitoba province + CMA/CA + the small-centre CSDs CMHC reports separately.
-# (Other Manitoba CSDs are discovered dynamically by 00_audit_geographies.R.)
+# Province coverage is config-driven. detail="full" provinces get dynamic CSD
+# discovery (00_audit_geographies.R) plus Survey-Zone + Neighbourhood snapshots
+# for their primary CMA(s); detail="basic" provinces get province + CMA/CA level
+# only. Scope a run to a subset with the CMHC_PROVINCES env var (comma-separated
+# province UIDs, e.g. "47" for Saskatchewan-only).
+PROVINCES <- tibble::tribble(
+  ~uid,  ~name,          ~detail,
+  "46",  "Manitoba",     "full",
+  "47",  "Saskatchewan", "full"
+)
+.prov_scope <- Sys.getenv("CMHC_PROVINCES", unset = "")
+if (nzchar(.prov_scope)) {
+  .want <- trimws(strsplit(.prov_scope, ",")[[1]])
+  PROVINCES <- PROVINCES[PROVINCES$uid %in% .want, , drop = FALSE]
+}
 
+# CMA/CA list for the in-scope provinces, derived from the cmhc package's
+# built-in translation table so we never hand-maintain UIDs. CMA_UID is
+# province(2)+cma(3); get_cmhc accepts the short 3-digit form (matches the
+# legacy Winnipeg="602" convention).
+CMAS <- cmhc::cmhc_cma_translation_data %>%
+  dplyr::transmute(
+    uid      = substr(as.character(CMA_UID), 3, 5),
+    name     = as.character(NAME_EN),
+    level    = "cma",
+    prov_uid = substr(as.character(CMA_UID), 1, 2)
+  ) %>%
+  dplyr::filter(prov_uid %in% PROVINCES$uid) %>%
+  dplyr::arrange(prov_uid, name)
+
+# Manitoba province UID + named CMAs retained for the Secondary Rental (Srms)
+# scrape (r/06), which CMHC only publishes for Winnipeg in Manitoba.
 MB_PROVINCE_UID <- "46"
-
 MB_CMAS <- tibble::tribble(
   ~uid,  ~name,                 ~level,
   "602", "Winnipeg",            "cma",
@@ -58,18 +86,30 @@ MB_CMAS <- tibble::tribble(
   "603", "Winkler",             "cma"
 )
 
-# CSDs CMHC reports as their own centre on the HMIP portal.
+# CSDs CMHC reports as their own centre on the HMIP portal but dynamic discovery
+# can miss. Manitoba extras; other full provinces rely on 00_audit's Census-
+# Subdivision discovery. MB_CENTRE_CSDS is the 3-col form r/06 expects;
+# CENTRE_CSDS adds a prov_uid so 00_audit can filter to in-scope provinces.
 MB_CENTRE_CSDS <- tibble::tribble(
   ~uid,        ~name,             ~level,
   "4602036",   "Hanover RM",      "csd",
   "4613047",   "Selkirk CY",      "csd",
   "4613043",   "St. Andrews RM",  "csd"
 )
+CENTRE_CSDS <- tibble::tribble(
+  ~uid,        ~name,             ~level,  ~prov_uid,
+  "4602036",   "Hanover RM",      "csd",   "46",
+  "4613047",   "Selkirk CY",      "csd",   "46",
+  "4613043",   "St. Andrews RM",  "csd",   "46"
+) %>% dplyr::filter(prov_uid %in% PROVINCES$uid)
 
-# Survey Zone breakdowns are supported by these CMAs only (rest return empty).
-ZONE_CMAS <- c("Winnipeg" = "602", "Brandon" = "610",
-               "Portage la Prairie" = "607", "Steinbach" = "605",
-               "Thompson" = "640", "Winkler" = "603")
+# CMAs that carry Survey-Zone + Neighbourhood breakdowns. Curated: only each
+# full province's primary CMA(s) actually publish them — verified that in the
+# current data only Winnipeg yields zone/neighbourhood shards (the smaller MB
+# CAs return empty). Regina + Saskatoon are Saskatchewan's equivalents.
+# Filtered to the in-scope provinces' CMA UIDs.
+ZONE_CMAS <- c("Winnipeg" = "602", "Regina" = "705", "Saskatoon" = "725")
+ZONE_CMAS <- ZONE_CMAS[unname(ZONE_CMAS) %in% CMAS$uid]
 
 # --- RMS catalog -------------------------------------------------------------
 # Hand-curated valid (series x dimension) combinations for the Primary Rental
