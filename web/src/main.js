@@ -14,7 +14,6 @@ import { initStarts } from './starts.js';
 import { initSecondary } from './secondary.js';
 import { initIndicators } from './indicators.js';
 import { initHousing } from './housing.js';
-import { initDwelling } from './dwelling.js';
 import { initCensus } from './census.js';
 import { initEconomicUpdate } from './economic-update.js';
 import { wireChartDocExports } from './doc-image-export.js';
@@ -100,7 +99,6 @@ function setupTabs(initial) {
     starts:     { btn: document.getElementById('tab-btn-starts'),     panel: document.getElementById('tab-panel-starts') },
     secondary:  { btn: document.getElementById('tab-btn-secondary'),  panel: document.getElementById('tab-panel-secondary') },
     housing:    { btn: document.getElementById('tab-btn-housing'),    panel: document.getElementById('tab-panel-housing') },
-    dwelling:   { btn: document.getElementById('tab-btn-dwelling'),   panel: document.getElementById('tab-panel-dwelling') },
     census:     { btn: document.getElementById('tab-btn-census'),     panel: document.getElementById('tab-panel-census') },
     snapshot:   { btn: document.getElementById('tab-btn-snapshot'),   panel: document.getElementById('tab-panel-snapshot') },
     indicators: { btn: document.getElementById('tab-btn-indicators'), panel: document.getElementById('tab-panel-indicators') },
@@ -191,7 +189,7 @@ async function bootstrap() {
   // sidebar TOC work after a hard refresh.
   const rawHash = window.location.hash.replace('#', '');
   let initialTab = 'charts';
-  if (['charts', 'tables', 'starts', 'secondary', 'housing', 'dwelling', 'census', 'snapshot', 'indicators', 'economic'].includes(rawHash)) {
+  if (['charts', 'tables', 'starts', 'secondary', 'housing', 'census', 'snapshot', 'indicators', 'economic'].includes(rawHash)) {
     initialTab = rawHash;
   } else if (rawHash.startsWith('mi-section-')) {
     initialTab = 'indicators';
@@ -211,7 +209,6 @@ async function bootstrap() {
   initSecondary({ manifest }).catch(err => console.error('[secondary bootstrap]', err));
   initIndicators().catch(err => console.error('[indicators bootstrap]', err));
   initHousing().catch(err => console.error('[housing bootstrap]', err));
-  initDwelling().catch(err => console.error('[dwelling bootstrap]', err));
   initCensus().catch(err => console.error('[census bootstrap]', err));
   initEconomicUpdate().catch(err => console.error('[economic bootstrap]', err));
 
@@ -231,6 +228,12 @@ async function bootstrap() {
     xlsxBtnId: 'hs-download-xlsx-charts',
     baseName:  'HousingStarts',
     getNodes:  () => [...document.querySelectorAll('#hs-chart-grid .chart-card')].filter(hasPlot),
+  });
+  wireChartDocExports({
+    docxBtnId: 'hsk-download-docx-charts',
+    xlsxBtnId: 'hsk-download-xlsx-charts',
+    baseName:  'HousingStock',
+    getNodes:  () => [...document.querySelectorAll('#hsk-chart-grid .chart-card')].filter(hasPlot),
   });
   wireChartDocExports({
     docxBtnId: 'sr-download-docx-charts',
