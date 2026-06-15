@@ -166,11 +166,15 @@ fetch_level <- function(dataset, level, fields) {
 }
 
 # DA-level fetch for the City of Winnipeg (one row per dissemination area),
-# chunked because CensusMapper caps DA-level (fine-geography) requests at
-# ~750 "cells" (regions x vectors) — much stricter than CSD level. With the 39
-# combined trend+demo vectors that means <=18 DAs/request (18*39=702 < 750).
-# The DA id list comes from the lookup CSV so chunk boundaries are stable across
-# runs; use_cache=TRUE then makes re-runs (and resumes after a quota hit) free.
+# chunked because free CensusMapper keys are capped at 500 region identifiers
+# per day (5,000 per month) — so a single request for all ~1,130 Winnipeg DAs is
+# rejected ("request exceeds API limit"). Small chunks (18 DAs each) maximise the
+# number of chunks that get cached before the daily 500-region cap is hit; with
+# use_cache=TRUE and a persistent cache, re-running on later days replays the
+# cached chunks for free and pushes ~500 more, so the full Winnipeg build
+# completes over ~3 days (1,130 / 500). (Or ask CensusMapper's maintainer for a
+# higher quota to do it in one run.) The DA id list comes from the lookup CSV so
+# chunk boundaries are stable across runs.
 fetch_wpg_das <- function(dataset, fields, chunk_size = 18) {
   vids <- resolve_fields(dataset, fields)
   da_ids <- unique(as.character(read.csv(WPG_LOOKUP, stringsAsFactors = FALSE)$DA_UID))

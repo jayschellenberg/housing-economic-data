@@ -59,12 +59,16 @@ $env:CM_API_KEY="CensusMapper_xxx"; npm --prefix web run data:census
 
 Coverage: all Manitoba PR / CMA-CA / CD / CSD geographies, plus the City of
 Winnipeg virtual geographies (Community Area / Cluster / Neighbourhood,
-dissemination-area aggregated via `r/lib/wpg_geography_lookup.csv`). The DA pull
-is chunked (CensusMapper caps DA-level requests at ~750 cells) and the cache is
-persistent, so the run is **resumable** — re-running picks up cached chunks for
-free. If the CensusMapper monthly quota is exhausted mid-run the script still
-writes all standard Manitoba levels and skips the Winnipeg virtual geos with a
-warning; re-run later to add them.
+dissemination-area aggregated via `r/lib/wpg_geography_lookup.csv`). Free
+CensusMapper keys are capped at **500 region identifiers/day (5,000/month)**, and
+Winnipeg has ~1,130 dissemination areas — more than one day's allowance — so the
+DA pull is chunked (18 DAs/request) and the cache is persistent, making the run
+**resumable**: re-running on later days replays cached chunks for free and pulls
+~500 more, so the full Winnipeg build completes over ~3 days (or in one run with
+a higher quota from CensusMapper's maintainer). If the daily/monthly quota is
+exhausted mid-run the script still writes all standard Manitoba levels and skips
+the Winnipeg virtual geos with a warning; re-run later to add them. Standard
+Manitoba levels are cached after the first build, so those re-runs are free.
 
 ### Refresh schedule
 
