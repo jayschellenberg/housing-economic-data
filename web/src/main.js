@@ -14,6 +14,7 @@ import { initStarts } from './starts.js';
 import { initSecondary } from './secondary.js';
 import { initIndicators } from './indicators.js';
 import { initHousing } from './housing.js';
+import { initDwelling } from './dwelling.js';
 import { wireChartDocExports } from './doc-image-export.js';
 
 const SERIES_PANELS = [
@@ -97,6 +98,7 @@ function setupTabs(initial) {
     starts:     { btn: document.getElementById('tab-btn-starts'),     panel: document.getElementById('tab-panel-starts') },
     secondary:  { btn: document.getElementById('tab-btn-secondary'),  panel: document.getElementById('tab-panel-secondary') },
     housing:    { btn: document.getElementById('tab-btn-housing'),    panel: document.getElementById('tab-panel-housing') },
+    dwelling:   { btn: document.getElementById('tab-btn-dwelling'),   panel: document.getElementById('tab-panel-dwelling') },
     snapshot:   { btn: document.getElementById('tab-btn-snapshot'),   panel: document.getElementById('tab-panel-snapshot') },
     indicators: { btn: document.getElementById('tab-btn-indicators'), panel: document.getElementById('tab-panel-indicators') },
   };
@@ -185,7 +187,7 @@ async function bootstrap() {
   // sidebar TOC work after a hard refresh.
   const rawHash = window.location.hash.replace('#', '');
   let initialTab = 'charts';
-  if (['charts', 'tables', 'starts', 'secondary', 'housing', 'snapshot', 'indicators'].includes(rawHash)) {
+  if (['charts', 'tables', 'starts', 'secondary', 'housing', 'dwelling', 'snapshot', 'indicators'].includes(rawHash)) {
     initialTab = rawHash;
   } else if (rawHash.startsWith('mi-section-')) {
     initialTab = 'indicators';
@@ -205,6 +207,7 @@ async function bootstrap() {
   initSecondary({ manifest }).catch(err => console.error('[secondary bootstrap]', err));
   initIndicators().catch(err => console.error('[indicators bootstrap]', err));
   initHousing().catch(err => console.error('[housing bootstrap]', err));
+  initDwelling().catch(err => console.error('[dwelling bootstrap]', err));
 
   // Per-tab "Download Word/Excel (charts)" exports — every rendered chart in
   // the active tab captured as a PNG and embedded one per page / worksheet.
