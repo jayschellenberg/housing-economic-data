@@ -31,6 +31,7 @@ function money(v) {
   return `$${Math.round(n).toLocaleString()}`;
 }
 const dollars = (v) => (v == null || isNaN(v)) ? '—' : `$${Math.round(Number(v)).toLocaleString()}`;
+const wage = (v) => (v == null || isNaN(v)) ? '—' : `$${Number(v).toFixed(2)}`;   // keep cents
 
 // "increased by 1.2%" / "decreased by 0.7%" / "was essentially unchanged"
 function moveBy(changePct, direction) {
@@ -89,7 +90,8 @@ const T = {
   gdp: (m) => `Preliminary estimates from the ${escapeHtml(m.source || 'Manitoba Bureau of Statistics')} show Manitoba's real Gross Domestic Product grew by approximately ${pct1(m.growthPct)} in ${escapeHtml(m.period)}${m.asOf ? ` (year-over-year average change, as of ${escapeHtml(m.asOf)})` : ''}.`,
   cpi: (m) => `The Manitoba Consumer Price Index (CPI — the inflation rate) is up ${pct1(m.changePct)} as of ${escapeHtml(m.period)} (${escapeHtml(m.comparison)}).`,
   employment: (m) => `Employment in Manitoba ${moveBy(m.changePct, m.direction)} (${escapeHtml(m.comparison)}) as of ${escapeHtml(m.period)}, with ${fmt0(m.value)} persons employed.`,
-  minwage: (m) => `The Manitoba minimum wage rate is ${dollars(m.value)} per hour (effective ${escapeHtml(m.effective)}).`,
+  minwage: (m) => `The Manitoba minimum wage rate is ${wage(m.value)} per hour (effective ${escapeHtml(m.effective)})`
+    + (m.nextValue ? `, scheduled to rise to ${wage(m.nextValue)} on ${escapeHtml(m.nextEffective)}.` : '.'),
   starts: (m) => `Manitoba housing starts (all areas) were ${upDown(m.ytdChangePct)} ${escapeHtml(m.period)} versus the same period a year earlier.`,
   permits: (m) => `The seasonally adjusted value of Manitoba building permits ${moveBy(m.changePct, m.direction)} as of ${escapeHtml(m.period)} (${escapeHtml(m.comparison)}).`,
 
@@ -143,12 +145,15 @@ export async function initEconomicUpdate() {
   if (intro.winnipegCmaPopulation != null) {
     const cas = (intro.comparableAreas || [])
       .map(a => `${escapeHtml(a.name)} (${a.type}: ${fmt0(a.population)})`).join(', ');
-    sections.push({ heading: 'Overview', paras: [
+    const overviewParas = [
       `Manitoba had a population of approximately ${fmt0(intro.provincePopulation)} according to the ${intro.censusYear} Census. `
       + `The Winnipeg Census Metropolitan Area (CMA) is the largest population centre at ${fmt0(intro.winnipegCmaPopulation)}, or roughly ${pct0(intro.winnipegSharePct)} of the province. `
       + (cas ? `Other major centres include ${cas}. ` : '')
       + `The provincial population grew ${pct1(intro.provinceGrowthSince2016Pct)} since the previous census, comparable to the national average (${pct1(intro.canadaGrowthSince2016Pct)}).`,
-    ] });
+    ];
+    if (intro.currentPopEstimate)
+      overviewParas.push(`Statistics Canada's most recent quarterly estimate puts Manitoba's population at ${fmt0(intro.currentPopEstimate)}${intro.currentPopAsOf ? ` (as of ${escapeHtml(intro.currentPopAsOf)})` : ''}.`);
+    sections.push({ heading: 'Overview', paras: overviewParas });
   }
 
   // Economic Overview

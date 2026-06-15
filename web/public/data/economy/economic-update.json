@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated": "2026-06-15T12:35:39Z",
+  "generated": "2026-06-15T13:07:06Z",
   "dataAsOf": "2026-06-15",
   "intro": {
     "censusYear": 2021,
@@ -36,7 +36,9 @@
         "population": 13035
       }
     ],
-    "source": "Statistics Canada, 2021 Census of Population"
+    "source": "Statistics Canada, 2021 Census of Population",
+    "currentPopEstimate": 1505117,
+    "currentPopAsOf": "Q1 2026"
   },
   "indicators": {
     "retail_trade": {
@@ -84,6 +86,8 @@
     "minimum_wage": {
       "value": 16,
       "effective": "October 2025",
+      "nextValue": 16.4,
+      "nextEffective": "October 1, 2026",
       "source": "Province of Manitoba",
       "manual": true
     },

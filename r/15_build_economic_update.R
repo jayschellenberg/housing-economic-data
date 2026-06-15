@@ -142,6 +142,17 @@ if (!is.null(bench)) {
 manual <- read_json_safe(file.path(ROOT, "r", "config", "economic_update_manual.json"))
 if (is.null(manual)) { manual <- list(); message("[15] WARN: manual config not found") }
 
+# Auto-add the latest StatsCan quarterly population estimate to the (otherwise
+# static 2021-census) intro, so the population figure stays current without
+# hand-entry. Quarterly ref dates land on Jan/Apr/Jul/Oct 1 -> label as quarter.
+intro <- manual$intro
+pop <- series_df("statscan.population.manitoba")
+if (!is.null(intro) && !is.null(pop)) {
+  pd <- max(pop$date); q <- (as.integer(format(pd, "%m")) - 1) %/% 3 + 1
+  intro$currentPopEstimate <- pop$value[nrow(pop)]
+  intro$currentPopAsOf <- sprintf("Q%d %s", q, format(pd, "%Y"))
+}
+
 if (!is.null(manual$minimumWage))
   indicators$minimum_wage <- c(manual$minimumWage, list(manual = TRUE))
 if (!is.null(manual$realGdp))
@@ -152,7 +163,7 @@ payload <- list(
   version   = 1,
   generated = format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
   dataAsOf  = as.character(Sys.Date()),
-  intro     = manual$intro,
+  intro     = intro,
   indicators = indicators,
   housing   = housing,
   mls       = mls,

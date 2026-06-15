@@ -1,5 +1,11 @@
 {
-  "_comment": "Manually-maintained inputs for the MB Economic Update tab. Edit this file when these values change, then commit. Numbers that auto-refresh from StatsCan/CMHC/CREA are NOT here — only the values with no clean public feed. Build step: r/15_build_economic_update.R folds this into web/public/data/economy/economic-update.json.",
+  "_comment": "Manually-maintained inputs for the MB Economic Update tab. Edit this file when these values change, then run `npm --prefix web run data:economic` (or let the monthly workflow rebuild) and commit. Numbers that auto-refresh from StatsCan/CMHC/CREA are NOT here. The WRREB MLS headline figures (sales/listings/average prices) are a SEPARATE hand-entry file: web/public/data/economy/mls_winnipeg.json.",
+  "_howToUpdate": {
+    "minimumWage": "Province of Manitoba indexes it every Oct 1. Update value/effective when it changes; nextValue/nextEffective are informational.",
+    "realGdp": "Manitoba Bureau of Statistics preliminary estimate (no clean API). Update growthPct/period/asOf when a new estimate is released, e.g. in the provincial Budget or economic highlights.",
+    "intro": "2021 Census figures — static until the 2026 Census. The current population ESTIMATE is auto-added by r/15 from StatsCan and does not need hand-entry.",
+    "outlook": "Paste/condense the latest TD (or other) provincial forecast each quarter; update source/published."
+  },
   "updated": "2026-06-15",
 
   "intro": {
@@ -22,6 +28,8 @@
   "minimumWage": {
     "value": 16.00,
     "effective": "October 2025",
+    "nextValue": 16.40,
+    "nextEffective": "October 1, 2026",
     "source": "Province of Manitoba"
   },
 
