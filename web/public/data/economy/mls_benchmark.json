@@ -1,0 +1,1311 @@
+{
+  "series": [
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "chartLabel": "Single-family benchmark",
+      "units": "dollar",
+      "geo": "Winnipeg",
+      "frequency": "monthly",
+      "latestDate": "2026-04-01",
+      "latestValue": 424900
+    }
+  ],
+  "records": [
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2005-01-01",
+      "value": 120400
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2005-02-01",
+      "value": 123800
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2005-03-01",
+      "value": 125900
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2005-04-01",
+      "value": 127200
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2005-05-01",
+      "value": 129100
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2005-06-01",
+      "value": 129600
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2005-07-01",
+      "value": 129100
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2005-08-01",
+      "value": 129000
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2005-09-01",
+      "value": 129300
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2005-10-01",
+      "value": 129100
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2005-11-01",
+      "value": 130000
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2005-12-01",
+      "value": 128400
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2006-01-01",
+      "value": 134000
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2006-02-01",
+      "value": 137100
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2006-03-01",
+      "value": 139700
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2006-04-01",
+      "value": 142900
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2006-05-01",
+      "value": 144700
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2006-06-01",
+      "value": 144900
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2006-07-01",
+      "value": 143400
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2006-08-01",
+      "value": 143200
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2006-09-01",
+      "value": 143200
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2006-10-01",
+      "value": 143800
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2006-11-01",
+      "value": 141800
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2006-12-01",
+      "value": 144100
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2007-01-01",
+      "value": 149000
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2007-02-01",
+      "value": 154500
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2007-03-01",
+      "value": 157000
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2007-04-01",
+      "value": 158900
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2007-05-01",
+      "value": 162500
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2007-06-01",
+      "value": 166100
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2007-07-01",
+      "value": 165800
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2007-08-01",
+      "value": 166000
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2007-09-01",
+      "value": 165800
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2007-10-01",
+      "value": 167200
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2007-11-01",
+      "value": 167700
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2007-12-01",
+      "value": 172300
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2008-01-01",
+      "value": 177900
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2008-02-01",
+      "value": 181200
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2008-03-01",
+      "value": 186900
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2008-04-01",
+      "value": 188800
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2008-05-01",
+      "value": 189000
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2008-06-01",
+      "value": 186700
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2008-07-01",
+      "value": 185600
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2008-08-01",
+      "value": 185100
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2008-09-01",
+      "value": 183200
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2008-10-01",
+      "value": 179400
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2008-11-01",
+      "value": 175200
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2008-12-01",
+      "value": 173000
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2009-01-01",
+      "value": 177200
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2009-02-01",
+      "value": 184900
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2009-03-01",
+      "value": 186300
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2009-04-01",
+      "value": 187900
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2009-05-01",
+      "value": 191600
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2009-06-01",
+      "value": 192900
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2009-07-01",
+      "value": 191900
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2009-08-01",
+      "value": 193100
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2009-09-01",
+      "value": 195200
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2009-10-01",
+      "value": 194700
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2009-11-01",
+      "value": 195400
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2009-12-01",
+      "value": 197000
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2010-01-01",
+      "value": 201900
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2010-02-01",
+      "value": 206000
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2010-03-01",
+      "value": 208800
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2010-04-01",
+      "value": 213500
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2010-05-01",
+      "value": 212500
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2010-06-01",
+      "value": 210800
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2010-07-01",
+      "value": 209500
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2010-08-01",
+      "value": 209700
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2010-09-01",
+      "value": 209700
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2010-10-01",
+      "value": 210100
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2010-11-01",
+      "value": 211400
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2010-12-01",
+      "value": 210200
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2011-01-01",
+      "value": 212600
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2011-02-01",
+      "value": 219400
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2011-03-01",
+      "value": 224400
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2011-04-01",
+      "value": 225400
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2011-05-01",
+      "value": 227100
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2011-06-01",
+      "value": 227800
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2011-07-01",
+      "value": 228700
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2011-08-01",
+      "value": 228100
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2011-09-01",
+      "value": 227600
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2011-10-01",
+      "value": 227800
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2011-11-01",
+      "value": 228100
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2011-12-01",
+      "value": 229600
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2012-01-01",
+      "value": 236800
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2012-02-01",
+      "value": 238400
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2012-03-01",
+      "value": 240200
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2012-04-01",
+      "value": 244800
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2012-05-01",
+      "value": 245200
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2012-06-01",
+      "value": 244000
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2012-07-01",
+      "value": 241800
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2012-08-01",
+      "value": 242300
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2012-09-01",
+      "value": 242200
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2012-10-01",
+      "value": 238800
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2012-11-01",
+      "value": 235800
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2012-12-01",
+      "value": 238800
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2013-01-01",
+      "value": 243800
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2013-02-01",
+      "value": 250800
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2013-03-01",
+      "value": 250300
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2013-04-01",
+      "value": 251600
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2013-05-01",
+      "value": 251400
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2013-06-01",
+      "value": 252900
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2013-07-01",
+      "value": 251100
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2013-08-01",
+      "value": 248600
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2013-09-01",
+      "value": 249200
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2013-10-01",
+      "value": 246100
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2013-11-01",
+      "value": 245600
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2013-12-01",
+      "value": 246500
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2014-01-01",
+      "value": 249900
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2014-02-01",
+      "value": 251600
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2014-03-01",
+      "value": 257300
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2014-04-01",
+      "value": 257600
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2014-05-01",
+      "value": 257000
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2014-06-01",
+      "value": 256600
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2014-07-01",
+      "value": 255700
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2014-08-01",
+      "value": 254100
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2014-09-01",
+      "value": 252500
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2014-10-01",
+      "value": 250300
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2014-11-01",
+      "value": 245800
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2014-12-01",
+      "value": 246600
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2015-01-01",
+      "value": 249500
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2015-02-01",
+      "value": 253300
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2015-03-01",
+      "value": 256800
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2015-04-01",
+      "value": 259200
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2015-05-01",
+      "value": 260300
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2015-06-01",
+      "value": 259300
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2015-07-01",
+      "value": 260300
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2015-08-01",
+      "value": 257000
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2015-09-01",
+      "value": 258000
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2015-10-01",
+      "value": 256900
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2015-11-01",
+      "value": 252800
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2015-12-01",
+      "value": 254500
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2016-01-01",
+      "value": 257900
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2016-02-01",
+      "value": 261600
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2016-03-01",
+      "value": 264200
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2016-04-01",
+      "value": 266700
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2016-05-01",
+      "value": 269700
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2016-06-01",
+      "value": 268900
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2016-07-01",
+      "value": 266400
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2016-08-01",
+      "value": 266100
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2016-09-01",
+      "value": 267700
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2016-10-01",
+      "value": 266400
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2016-11-01",
+      "value": 268400
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2016-12-01",
+      "value": 261500
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2017-01-01",
+      "value": 265800
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2017-02-01",
+      "value": 271400
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2017-03-01",
+      "value": 276000
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2017-04-01",
+      "value": 277400
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2017-05-01",
+      "value": 278500
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2017-06-01",
+      "value": 278200
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2017-07-01",
+      "value": 277200
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2017-08-01",
+      "value": 277000
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2017-09-01",
+      "value": 277500
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2017-10-01",
+      "value": 277200
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2017-11-01",
+      "value": 275800
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2017-12-01",
+      "value": 275200
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2018-01-01",
+      "value": 278700
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2018-02-01",
+      "value": 282700
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2018-03-01",
+      "value": 284200
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2018-04-01",
+      "value": 286800
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2018-05-01",
+      "value": 285400
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2018-06-01",
+      "value": 285100
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2018-07-01",
+      "value": 284000
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2018-08-01",
+      "value": 285300
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2018-09-01",
+      "value": 282300
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2018-10-01",
+      "value": 280500
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2018-11-01",
+      "value": 278500
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2018-12-01",
+      "value": 274800
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2019-01-01",
+      "value": 280800
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2019-02-01",
+      "value": 283400
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2019-03-01",
+      "value": 289500
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2019-04-01",
+      "value": 290300
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2019-05-01",
+      "value": 291600
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2019-06-01",
+      "value": 292100
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2019-07-01",
+      "value": 288300
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2019-08-01",
+      "value": 288400
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2019-09-01",
+      "value": 285200
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2019-10-01",
+      "value": 284300
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2019-11-01",
+      "value": 284300
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2019-12-01",
+      "value": 282100
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2020-01-01",
+      "value": 285900
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2020-02-01",
+      "value": 291000
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2020-03-01",
+      "value": 294500
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2020-04-01",
+      "value": 292700
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2020-05-01",
+      "value": 297600
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2020-06-01",
+      "value": 302900
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2020-07-01",
+      "value": 304200
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2020-08-01",
+      "value": 306000
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2020-09-01",
+      "value": 306200
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2020-10-01",
+      "value": 310200
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2020-11-01",
+      "value": 308000
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2020-12-01",
+      "value": 308700
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2021-01-01",
+      "value": 317100
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2021-02-01",
+      "value": 326400
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2021-03-01",
+      "value": 332400
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2021-04-01",
+      "value": 341800
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2021-05-01",
+      "value": 346400
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2021-06-01",
+      "value": 350900
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2021-07-01",
+      "value": 343700
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2021-08-01",
+      "value": 345600
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2021-09-01",
+      "value": 345400
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2021-10-01",
+      "value": 345000
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2021-11-01",
+      "value": 350500
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2021-12-01",
+      "value": 345700
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2022-01-01",
+      "value": 369100
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2022-02-01",
+      "value": 379200
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2022-03-01",
+      "value": 383800
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2022-04-01",
+      "value": 384400
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2022-05-01",
+      "value": 387200
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2022-06-01",
+      "value": 376600
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2022-07-01",
+      "value": 365800
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2022-08-01",
+      "value": 360200
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2022-09-01",
+      "value": 353300
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2022-10-01",
+      "value": 351400
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2022-11-01",
+      "value": 342800
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2022-12-01",
+      "value": 335500
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2023-01-01",
+      "value": 341100
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2023-02-01",
+      "value": 345000
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2023-03-01",
+      "value": 350700
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2023-04-01",
+      "value": 361500
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2023-05-01",
+      "value": 365900
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2023-06-01",
+      "value": 365300
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2023-07-01",
+      "value": 364300
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2023-08-01",
+      "value": 362100
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2023-09-01",
+      "value": 358700
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2023-10-01",
+      "value": 355500
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2023-11-01",
+      "value": 347200
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2023-12-01",
+      "value": 345700
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2024-01-01",
+      "value": 350600
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2024-02-01",
+      "value": 363700
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2024-03-01",
+      "value": 369900
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2024-04-01",
+      "value": 376200
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2024-05-01",
+      "value": 377100
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2024-06-01",
+      "value": 382000
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2024-07-01",
+      "value": 381000
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2024-08-01",
+      "value": 381000
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2024-09-01",
+      "value": 381400
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2024-10-01",
+      "value": 380100
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2024-11-01",
+      "value": 379300
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2024-12-01",
+      "value": 378000
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2025-01-01",
+      "value": 382000
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2025-02-01",
+      "value": 393500
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2025-03-01",
+      "value": 406300
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2025-04-01",
+      "value": 406400
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2025-05-01",
+      "value": 408600
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2025-06-01",
+      "value": 410900
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2025-07-01",
+      "value": 407200
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2025-08-01",
+      "value": 404100
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2025-09-01",
+      "value": 401200
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2025-10-01",
+      "value": 399700
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2025-11-01",
+      "value": 398500
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2025-12-01",
+      "value": 401000
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2026-01-01",
+      "value": 405100
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2026-02-01",
+      "value": 406700
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2026-03-01",
+      "value": 418600
+    },
+    {
+      "id": "mls.hpi.winnipeg.sf",
+      "date": "2026-04-01",
+      "value": 424900
+    }
+  ],
+  "hpi": {
+    "benchmarkLatest": 424900,
+    "benchmarkLatestDate": "April 2026",
+    "isRecordHigh": true,
+    "peakValue": 424900,
+    "peakDate": "April 2026",
+    "pctFromPeak": 0,
+    "recentLowValue": 345700,
+    "recentLowDate": "December 2023",
+    "pctFromRecentLow": 22.9,
+    "fiveYrChangePct": 24.3
+  },
+  "asOf": "April 2026",
+  "source": "CREA MLS® Home Price Index (Winnipeg board) — https://www.crea.ca/files/mls-hpi-data/MLS_HPI_May_2026.zip",
+  "fetched": "2026-06-15",
+  "stale": false
+}

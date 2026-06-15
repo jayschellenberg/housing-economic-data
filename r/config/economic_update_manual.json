@@ -1,0 +1,45 @@
+{
+  "_comment": "Manually-maintained inputs for the MB Economic Update tab. Edit this file when these values change, then commit. Numbers that auto-refresh from StatsCan/CMHC/CREA are NOT here — only the values with no clean public feed. Build step: r/15_build_economic_update.R folds this into web/public/data/economy/economic-update.json.",
+  "updated": "2026-06-15",
+
+  "intro": {
+    "censusYear": 2021,
+    "provincePopulation": 1342153,
+    "winnipegCmaPopulation": 834678,
+    "winnipegSharePct": 62,
+    "provinceGrowthSince2016Pct": 5.0,
+    "canadaGrowthSince2016Pct": 5.2,
+    "comparableAreas": [
+      { "name": "Brandon",            "type": "CA", "population": 54268 },
+      { "name": "Winkler",            "type": "CA", "population": 32655 },
+      { "name": "Steinbach",          "type": "CA", "population": 17806 },
+      { "name": "Portage la Prairie", "type": "CA", "population": 13270 },
+      { "name": "Thompson",           "type": "CA", "population": 13035 }
+    ],
+    "source": "Statistics Canada, 2021 Census of Population"
+  },
+
+  "minimumWage": {
+    "value": 16.00,
+    "effective": "October 2025",
+    "source": "Province of Manitoba"
+  },
+
+  "realGdp": {
+    "growthPct": 1.6,
+    "period": "2025",
+    "asOf": "April 14, 2026",
+    "source": "Manitoba Bureau of Statistics"
+  },
+
+  "outlook": {
+    "source": "TD Economics",
+    "published": "March 26, 2026",
+    "paragraphs": [
+      "The most recent TD Economic Forecast highlights a steep downgrade to their 2026 average Canadian home resale and price-growth forecast due to weak performance in Q4 2025 and Q1 2026. They predict sales will likely take most of the year to recover first-quarter losses, citing a subdued economy, heightened uncertainty, and cost-of-living pressures.",
+      "TD predicts a lower growth rate in Manitoba's real GDP in 2025 on downgraded expectations for utilities and trade-exposed industries like manufacturing. Manitoba is noted as one of the worst-hit provinces from the U.S. trade war, with falling exports of energy, agricultural machinery, and pharmaceutical products.",
+      "TD expects the construction sector to slow its growth this year after gains in 2025, with weakening non-residential investment projected in 2026. Positives noted include increased canola exports as Chinese tariffs ease, potential gains in the goods and utility sector, and new international markets that saw an 8% increase in shipments last year.",
+      "The forecast notes a significant slowdown in public spending for 2026 that will limit growth, with public-debt levels expected to constrain Manitoba government spending. Employment was up 1% year-over-year in February — higher than the Canadian average — though this too is anticipated to slow in 2026."
+    ]
+  }
+}

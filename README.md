@@ -42,6 +42,30 @@ Three options:
    manually.
 3. Local: `npm --prefix web run data:all && git add web/public/data && git commit -m "data: refresh" && git push`.
 
+### Census Profile tab (run-once, separate from `data:all`)
+
+The **Census Profile** tab (Population & Dwelling Trends 2006–2021 + a 2021
+Demographics comparison, the web port of the MBCensusData report) is built by
+`r/12_census_profile.R` into `web/public/data/housing/census_profile.json`. It
+uses StatCan census via **CensusMapper / `cancensus`** (a different source than
+the rest of the pipeline), so it is **deliberately excluded from `data:all`**
+and from the GitHub Actions refresh — census data is 5-yearly, and CI has no
+CensusMapper key. Re-run it manually only when a new census is released:
+
+```pwsh
+# CensusMapper key (see MBCensusData/"Cancensus API Key.R") — pass via env:
+$env:CM_API_KEY="CensusMapper_xxx"; npm --prefix web run data:census
+```
+
+Coverage: all Manitoba PR / CMA-CA / CD / CSD geographies, plus the City of
+Winnipeg virtual geographies (Community Area / Cluster / Neighbourhood,
+dissemination-area aggregated via `r/lib/wpg_geography_lookup.csv`). The DA pull
+is chunked (CensusMapper caps DA-level requests at ~750 cells) and the cache is
+persistent, so the run is **resumable** — re-running picks up cached chunks for
+free. If the CensusMapper monthly quota is exhausted mid-run the script still
+writes all standard Manitoba levels and skips the Winnipeg virtual geos with a
+warning; re-run later to add them.
+
 ### Refresh schedule
 
 | Workflow | Cron (UTC) | What it pulls |

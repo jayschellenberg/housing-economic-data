@@ -37,8 +37,9 @@ read_safe <- function(path) {
 boc <- read_safe(file.path(DATA_DIR, "boc_indicators.csv"))
 stc <- read_safe(file.path(DATA_DIR, "statscan_indicators.csv"))
 cba <- read_safe(file.path(DATA_DIR, "cba_arrears.csv"))   # not yet produced; harmless empty
+osb <- read_safe(file.path(DATA_DIR, "osb_indicators.csv"))
 
-all_obs <- bind_rows(boc, stc, cba)
+all_obs <- bind_rows(boc, stc, cba, osb)
 # Normalise date column to character — read_csv may auto-detect Date type
 # on some columns; downstream binds + JSON serialisation expect ISO strings.
 if (nrow(all_obs) > 0) all_obs$date <- as.character(all_obs$date)

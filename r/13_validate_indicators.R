@@ -68,12 +68,31 @@ validate_statscan <- function(row) {
   if (is.na(vec_id)) return(list(ok = FALSE, actualTitle = NA, latest = NA,
                                   reason = "vectorId not numeric"))
   body <- list(list(vectorId = vec_id))
-  resp <- tryCatch(POST("https://www150.statcan.gc.ca/t1/wds/rest/getSeriesInfoFromVector",
-                        body = body, encode = "json",
-                        add_headers(`Content-Type` = "application/json"),
-                        timeout(20)),
-                   error = function(e) NULL)
+  # WDS rate-limits rapid sequential POSTs with HTTP 429/409; retry with
+  # backoff so a large catalog (many statscan rows) validates reliably.
+  resp <- NULL
+  for (attempt in 1:4) {
+    resp <- tryCatch(POST("https://www150.statcan.gc.ca/t1/wds/rest/getSeriesInfoFromVector",
+                          body = body, encode = "json",
+                          add_headers(`Content-Type` = "application/json"),
+                          timeout(20)),
+                     error = function(e) NULL)
+    code <- if (is.null(resp)) NA_integer_ else status_code(resp)
+    if (!is.null(resp) && code == 200) break
+    if (!is.null(resp) && !(code %in% c(409, 429, 500, 502, 503))) break
+    Sys.sleep(2 * attempt)   # 2s, 4s, 6s backoff
+  }
   if (is.null(resp) || status_code(resp) != 200) {
+    # During a StatsCan release window the metadata endpoint returns HTTP 409
+    # "The product is not released yet" for the cube being updated — even though
+    # cansim still serves the previously-released data the scraper uses. That is
+    # a transient embargo, not a catalog error, so don't abort the whole
+    # pipeline: soft-pass with a warning and let the scraper proceed.
+    body_txt <- if (!is.null(resp)) tryCatch(content(resp, as = "text", encoding = "UTF-8"), error = function(e) "") else ""
+    if (!is.null(resp) && status_code(resp) == 409 && grepl("not released", body_txt, ignore.case = TRUE)) {
+      return(list(ok = TRUE, actualTitle = row$expectedTitle, latest = NA,
+                  reason = "WARN: WDS embargo (product not released yet) — title not verified this run"))
+    }
     return(list(ok = FALSE, actualTitle = NA, latest = NA,
                 reason = sprintf("HTTP %s", if (is.null(resp)) "no response" else status_code(resp))))
   }
@@ -130,6 +149,23 @@ validate_cba <- function(row) {
        reason      = if (!has_link) "expected arrears section not found on page" else "")
 }
 
+validate_osb <- function(row) {
+  # OSB insolvency data has no per-series metadata API; confirm the Open
+  # Government (CKAN) dataset still resolves to a monthly CSV resource.
+  api <- sprintf("https://open.canada.ca/data/api/3/action/package_show?id=%s", row$ckanDataset %||% "")
+  resp <- tryCatch(GET(api, timeout(30)), error = function(e) NULL)
+  if (is.null(resp) || status_code(resp) != 200) {
+    return(list(ok = FALSE, actualTitle = NA, latest = NA,
+                reason = sprintf("CKAN HTTP %s", if (is.null(resp)) "no response" else status_code(resp))))
+  }
+  j <- tryCatch(content(resp, as = "parsed", encoding = "UTF-8"), error = function(e) NULL)
+  res <- if (!is.null(j) && !is.null(j$result)) j$result$resources else list()
+  has_csv <- any(vapply(res, function(r)
+    toupper(r$format %||% "") == "CSV" && grepl("monthly", r$url %||% "", ignore.case = TRUE), logical(1)))
+  list(ok = has_csv, actualTitle = if (has_csv) "CKAN monthly CSV resource present" else NA, latest = NA,
+       reason = if (!has_csv) "no monthly CSV resource on CKAN dataset" else "")
+}
+
 `%||%` <- function(a, b) if (is.null(a)) b else a
 
 cat(sprintf("[validate] checking %d series\n", length(series)))
@@ -162,6 +198,7 @@ results <- lapply(series, function(row) {
                 statscan = validate_statscan(row),
                 cba      = validate_cba(row),
                 cmhc     = validate_cmhc(row),
+                osb      = validate_osb(row),
                 list(ok = FALSE, actualTitle = NA, latest = NA,
                      reason = sprintf("unknown provider '%s'", row$provider)))
   cat(sprintf("  [%s] %-44s %s %s\n",

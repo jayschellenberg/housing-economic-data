@@ -1,0 +1,38 @@
+{
+  "_comment": "Last-good WRREB MLS headline figures. r/16_scrape_mls.R overwrites this on a successful scrape; if scraping fails it is left untouched and r/15 flags the MLS section stale. Seeded from the March 2026 WRREB release.",
+  "asOf": "March 2026",
+  "source": "Winnipeg Regional Real Estate Board (WRREB)",
+  "fetched": "2026-06-15",
+  "stale": true,
+  "sales": {
+    "value": 1135,
+    "vsPriorYearPct": -4,
+    "vs5yrAvgPct": -3
+  },
+  "active_listings": {
+    "value": 2802,
+    "vsPriorYearPct": -10,
+    "vs5yrAvgPct": -4
+  },
+  "sfd_avg_price": {
+    "value": 474567,
+    "vsPriorYearPct": 1,
+    "vs5yrAvgPct": 8,
+    "priorYearValue": 469832,
+    "fiveYrAvg": 437992
+  },
+  "sfa_avg_price": {
+    "value": 393348,
+    "vsPriorYearPct": 5,
+    "vs5yrAvgPct": 8,
+    "priorYearValue": 375785,
+    "fiveYrAvg": 363560
+  },
+  "condo_avg_price": {
+    "value": 292696,
+    "vsPriorYearPct": 6,
+    "vs5yrAvgPct": 9,
+    "priorYearValue": 277068,
+    "fiveYrAvg": 269656
+  }
+}

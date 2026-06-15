@@ -130,6 +130,48 @@ export async function exportChartsToWord(captures, { filename }) {
   triggerDownload(blob, filename);
 }
 
+/**
+ * Export a narrative report (the MB Economic Update tab) to .docx: an ordered
+ * list of blocks mixing prose paragraphs with embedded chart images.
+ * @param {Array<{type:'title'|'meta'|'heading'|'para'|'image', text?:string, capture?:{dataUrl,width,height}}>} blocks
+ * @param {Object} opts  { filename }
+ */
+export async function exportNarrativeToWord(blocks, { filename }) {
+  const PAGE_W = 624;   // 6.5in printable width @ 96dpi
+  const children = [];
+  for (const b of blocks) {
+    if (b.type === 'title') {
+      children.push(new Paragraph({ spacing: { after: 120 },
+        children: [run(b.text, { bold: true, size: 32 })] }));            // 16pt
+    } else if (b.type === 'meta') {
+      children.push(new Paragraph({ spacing: { after: 160 },
+        children: [run(b.text, { italics: true, color: NA_GREY })] }));
+    } else if (b.type === 'heading') {
+      children.push(new Paragraph({ spacing: { before: 240, after: 80 },
+        children: [run(b.text, { bold: true, size: 28, color: ACCENT })] }));  // 14pt accent
+    } else if (b.type === 'para') {
+      children.push(new Paragraph({ spacing: { after: 120 },
+        children: [run(b.text)] }));
+    } else if (b.type === 'image' && b.capture) {
+      const c = b.capture;
+      const scale = Math.min(1, PAGE_W / c.width);
+      const data = await (await fetch(c.dataUrl)).arrayBuffer();
+      children.push(new Paragraph({ spacing: { before: 80, after: 200 },
+        children: [new ImageRun({ type: 'png', data, transformation: {
+          width: Math.round(c.width * scale), height: Math.round(c.height * scale),
+        } })] }));
+    }
+  }
+
+  const doc = new Document({
+    creator: 'CMHC Charts',
+    description: 'Province of Manitoba — Overview and Economic Outlook',
+    sections: [{ children }],
+  });
+  const blob = await Packer.toBlob(doc);
+  triggerDownload(blob, filename);
+}
+
 function triggerDownload(blob, filename) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

@@ -15,6 +15,8 @@ import { initSecondary } from './secondary.js';
 import { initIndicators } from './indicators.js';
 import { initHousing } from './housing.js';
 import { initDwelling } from './dwelling.js';
+import { initCensus } from './census.js';
+import { initEconomicUpdate } from './economic-update.js';
 import { wireChartDocExports } from './doc-image-export.js';
 
 const SERIES_PANELS = [
@@ -99,8 +101,10 @@ function setupTabs(initial) {
     secondary:  { btn: document.getElementById('tab-btn-secondary'),  panel: document.getElementById('tab-panel-secondary') },
     housing:    { btn: document.getElementById('tab-btn-housing'),    panel: document.getElementById('tab-panel-housing') },
     dwelling:   { btn: document.getElementById('tab-btn-dwelling'),   panel: document.getElementById('tab-panel-dwelling') },
+    census:     { btn: document.getElementById('tab-btn-census'),     panel: document.getElementById('tab-panel-census') },
     snapshot:   { btn: document.getElementById('tab-btn-snapshot'),   panel: document.getElementById('tab-panel-snapshot') },
     indicators: { btn: document.getElementById('tab-btn-indicators'), panel: document.getElementById('tab-panel-indicators') },
+    economic:   { btn: document.getElementById('tab-btn-economic'),   panel: document.getElementById('tab-panel-economic') },
   };
 
   function activate(name) {
@@ -187,7 +191,7 @@ async function bootstrap() {
   // sidebar TOC work after a hard refresh.
   const rawHash = window.location.hash.replace('#', '');
   let initialTab = 'charts';
-  if (['charts', 'tables', 'starts', 'secondary', 'housing', 'dwelling', 'snapshot', 'indicators'].includes(rawHash)) {
+  if (['charts', 'tables', 'starts', 'secondary', 'housing', 'dwelling', 'census', 'snapshot', 'indicators', 'economic'].includes(rawHash)) {
     initialTab = rawHash;
   } else if (rawHash.startsWith('mi-section-')) {
     initialTab = 'indicators';
@@ -208,6 +212,8 @@ async function bootstrap() {
   initIndicators().catch(err => console.error('[indicators bootstrap]', err));
   initHousing().catch(err => console.error('[housing bootstrap]', err));
   initDwelling().catch(err => console.error('[dwelling bootstrap]', err));
+  initCensus().catch(err => console.error('[census bootstrap]', err));
+  initEconomicUpdate().catch(err => console.error('[economic bootstrap]', err));
 
   // Per-tab "Download Word/Excel (charts)" exports — every rendered chart in
   // the active tab captured as a PNG and embedded one per page / worksheet.
@@ -237,6 +243,12 @@ async function bootstrap() {
     xlsxBtnId: 'mi-download-xlsx-charts',
     baseName:  'MarketIndicators',
     getNodes:  () => [...document.querySelectorAll('#mi-chart-grid .chart-card')].filter(hasPlot),
+  });
+  wireChartDocExports({
+    docxBtnId: 'census-download-docx-charts',
+    xlsxBtnId: 'census-download-xlsx-charts',
+    baseName:  'CensusProfile',
+    getNodes:  () => [...document.querySelectorAll('#census-chart-grid .chart-card')].filter(hasPlot),
   });
   // Snapshot is a 22-tile KPI grid, not a chart grid — capture each tile
   // individually so the export stays under a few MB and Excel gets one

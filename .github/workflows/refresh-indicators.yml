@@ -38,7 +38,7 @@ jobs:
       - name: Install R packages
         run: |
           install.packages(c("cansim", "httr", "dplyr", "tidyr",
-                             "purrr", "readr", "jsonlite"),
+                             "purrr", "readr", "jsonlite", "readxl", "rvest"),
                            repos = "https://cloud.r-project.org")
         shell: Rscript {0}
 
@@ -47,7 +47,10 @@ jobs:
           Rscript r/13_validate_indicators.R
           Rscript r/10_scrape_boc.R
           Rscript r/11_scrape_statscan.R
+          Rscript r/17_scrape_osb.R
           Rscript r/14_build_indicators.R
+          Rscript r/16_scrape_mls.R
+          Rscript r/15_build_economic_update.R
 
       - name: Sanity check (indicators shrink guard)
         env:

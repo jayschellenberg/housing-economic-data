@@ -1,0 +1,431 @@
+/*
+ * Census Profile view — Population & Dwelling Trends (2006–2021) plus a 2021
+ * Demographics comparison (subject vs a comparison area vs Manitoba), for every
+ * Manitoba geography (province / CMA-CA / census division / municipality) and
+ * the City-of-Winnipeg virtual geographies (Community Area / Cluster /
+ * Neighbourhood). This is the web port of the MBCensusData Shiny app / Excel
+ * report; data is pre-built by r/12_census_profile.R into
+ * web/public/data/housing/census_profile.json.
+ *
+ * Tables mirror the appraisal report layout exactly; two charts per section are
+ * rendered as Observable Plot cards so the tab-level "Download Word/Excel
+ * (charts)" buttons (wired in main.js) capture them.
+ */
+
+import * as Plot from '@observablehq/plot';
+import { themed, gridMarks, frameMark, PALETTE } from './plot-theme.js';
+
+// Geography levels, in dropdown group order.
+const LEVEL_GROUPS = [
+  { tag: 'PR',          label: 'Province' },
+  { tag: 'CMA',         label: 'CMA / CA' },
+  { tag: 'CD',          label: 'Census Divisions' },
+  { tag: 'CSD',         label: 'Municipalities (CSD)' },
+  { tag: 'WPG_CA',      label: 'Winnipeg — Community Areas' },
+  { tag: 'WPG_Cluster', label: 'Winnipeg — Clusters' },
+  { tag: 'WPG_Nbhd',    label: 'Winnipeg — Neighbourhoods' },
+];
+
+// Trends table layout (mirrors MBCensusData display_trends). `key` reads from a
+// year's trend object; `popchg` is computed; `header` is a section divider.
+const TREND_ROWS = [
+  { label: 'Population',                key: 'population', fmt: 'int' },
+  { label: 'Population % Change',       popchg: true,      fmt: 'pct' },
+  { label: 'Total Private Dwellings*',  key: 'households', fmt: 'int' },
+  { header: 'Occupied Dwellings by Type*' },
+  { label: 'Single-Detached House',     key: 'single_detached', fmt: 'int' },
+  { label: 'Apartment (<5 Storeys)',    key: 'apt_lt5',         fmt: 'int' },
+  { label: 'Apartment (5+ Storeys)',    key: 'apt_ge5',         fmt: 'int' },
+  { label: 'Semi-Detached House',       key: 'semi_detached',   fmt: 'int' },
+  { label: 'Row House',                 key: 'row_house',       fmt: 'int' },
+  { label: 'Apt or Flat in a Duplex',   key: 'apt_duplex',      fmt: 'int' },
+  { label: 'Movable Dwelling',          key: 'movable',         fmt: 'int' },
+  { label: 'Other',                     key: 'other_attached',  fmt: 'int' },
+];
+
+// Dwelling-type rows used by the trends stacked-bar chart (short labels).
+const TYPE_SERIES = [
+  ['single_detached', 'Single-detached'], ['apt_lt5', 'Apt <5'],
+  ['apt_ge5', 'Apt 5+'], ['semi_detached', 'Semi-detached'],
+  ['row_house', 'Row'], ['apt_duplex', 'Duplex'],
+  ['movable', 'Movable'], ['other_attached', 'Other'],
+];
+
+// Demographics table layout (mirrors MBCensusData display_demographics).
+const DEMO_SECTIONS = [
+  { header: 'Age Range', rows: [
+    { label: 'Total Counted',           key: 'population',   denom: 'population', fmt: 'int' },
+    { label: '0 to 14 years',           key: 'age_0_14',     denom: 'population', fmt: 'int' },
+    { label: '15 to 64 years',          key: 'age_15_64',    denom: 'population', fmt: 'int' },
+    { label: '65 years and over',       key: 'age_65_plus',  denom: 'population', fmt: 'int' },
+    { label: 'Median Age of Population', key: 'median_age',  denom: null,         fmt: 'dec1' },
+  ]},
+  { header: 'Household Size', rows: [
+    { label: '1 person',             key: 'hh_size_1',     denom: 'hh_size_total', fmt: 'int' },
+    { label: '2 persons',            key: 'hh_size_2',     denom: 'hh_size_total', fmt: 'int' },
+    { label: '3 persons',            key: 'hh_size_3',     denom: 'hh_size_total', fmt: 'int' },
+    { label: '4 persons',            key: 'hh_size_4',     denom: 'hh_size_total', fmt: 'int' },
+    { label: '5 or more persons',    key: 'hh_size_5plus', denom: 'hh_size_total', fmt: 'int' },
+    { label: 'Average household size', key: 'avg_hh_size',  denom: null,           fmt: 'dec1' },
+  ]},
+  { header: 'Occupied Dwellings by Bedrooms (25% Sample)', rows: [
+    { label: 'No bedrooms (bachelor)', key: 'bed_0',     denom: 'bed_total', fmt: 'int' },
+    { label: '1 bedroom',              key: 'bed_1',     denom: 'bed_total', fmt: 'int' },
+    { label: '2 bedrooms',             key: 'bed_2',     denom: 'bed_total', fmt: 'int' },
+    { label: '3 bedrooms',             key: 'bed_3',     denom: 'bed_total', fmt: 'int' },
+    { label: '4 or more bedrooms',     key: 'bed_4plus', denom: 'bed_total', fmt: 'int' },
+  ]},
+  { header: 'Age of Dwellings (25% Sample)', rows: [
+    { label: '1960 or before', key: 'built_1960',      denom: 'period_total', fmt: 'int' },
+    { label: '1961 to 1980',   key: 'built_1961_1980', denom: 'period_total', fmt: 'int' },
+    { label: '1981 to 1990',   key: 'built_1981_1990', denom: 'period_total', fmt: 'int' },
+    { label: '1991 to 2000',   key: 'built_1991_2000', denom: 'period_total', fmt: 'int' },
+    { label: '2001 to 2005',   key: 'built_2001_2005', denom: 'period_total', fmt: 'int' },
+    { label: '2006 to 2010',   key: 'built_2006_2010', denom: 'period_total', fmt: 'int' },
+    { label: '2011 to 2015',   key: 'built_2011_2015', denom: 'period_total', fmt: 'int' },
+    { label: '2016 to 2021',   key: 'built_2016_2021', denom: 'period_total', fmt: 'int' },
+  ]},
+  { header: 'Dwelling Tenure (25% sample)', rows: [
+    { label: 'Owner',  key: 'owner',  denom: 'tenure_total', fmt: 'int' },
+    { label: 'Renter', key: 'renter', denom: 'tenure_total', fmt: 'int' },
+  ]},
+  { header: 'Median Shelter Values/Costs (2020)', rows: [
+    { label: 'Median Value of Dwellings',  key: 'median_dwelling_val', denom: null, fmt: 'usd' },
+    { label: 'Median Monthly Rental Cost', key: 'median_rent',         denom: null, fmt: 'usd' },
+  ]},
+  { header: 'Median Income Levels (2020)', rows: [
+    { label: 'Median Individual Income', key: 'median_ind_income', denom: null, fmt: 'usd' },
+    { label: 'Median Household Income',  key: 'median_hh_income',  denom: null, fmt: 'usd' },
+  ]},
+  { header: 'Shelter-Cost Stress', rows: [
+    { label: 'Tenants spending 30%+ on shelter', key: 'tenant_stir_30', denom: null, fmt: 'stir' },
+  ]},
+];
+
+// ---- formatters ------------------------------------------------------------
+const fInt  = (v) => v == null ? '' : Number(v).toLocaleString();
+const fUsd  = (v) => v == null ? '' : `$${Math.round(Number(v)).toLocaleString()}`;
+const fDec1 = (v) => v == null ? '' : Number(v).toFixed(1);
+const fPct0 = (v) => v == null ? '' : `${Math.round(Number(v) * 100)}%`;          // fraction → "27%"
+const fPct1 = (v) => v == null ? '' : `${(Number(v) * 100).toFixed(1)}%`;         // fraction → "5.2%"
+const fStir = (v) => v == null ? '' : `${Math.round(Number(v))}%`;                // already 0–100
+const fmtVal = (v, kind) => kind === 'usd' ? fUsd(v) : kind === 'dec1' ? fDec1(v)
+                          : kind === 'stir' ? fStir(v) : fInt(v);
+
+export async function initCensus() {
+  const $subject  = document.getElementById('census-subject');
+  const $compare  = document.getElementById('census-compare');
+  const $headline = document.getElementById('census-headline');
+  const $charts   = document.getElementById('census-chart-grid');
+  const $tables   = document.getElementById('census-tables');
+  if (!$subject || !$tables) return;
+
+  const data = await fetch('./data/housing/census_profile.json')
+    .then(r => r.ok ? r.json() : null).catch(() => null);
+  if (!data || !Array.isArray(data.regions)) {
+    $tables.innerHTML = '<p class="text-sm text-red-700">Census profile data not found. Run r/12_census_profile.R.</p>';
+    return;
+  }
+
+  // Clean cancensus type codes for display: "Manitoba (Man.)" → "Manitoba",
+  // "Winnipeg (B)" → "Winnipeg (CMA)", "Brandon (D)" → "Brandon (CA)". CSD codes
+  // ("(RM)", "(CY)", "(T)", "(IRI)"…) are kept — they distinguish same-named
+  // municipalities and match the census naming appraisers expect.
+  for (const r of data.regions) {
+    let n = String(r.name || '').replace(/\s{2,}/g, ' ').trim();
+    if (r.level === 'PR')  n = n.replace(/\s*\(Man\.\)$/, '');
+    if (r.level === 'CMA') n = n.replace(/\s*\(B\)$/, ' (CMA)').replace(/\s*\(D\)$/, ' (CA)');
+    r.name = n;
+  }
+
+  const years  = (data.censusYears || []).map(String);
+  const byUid  = new Map(data.regions.map(r => [r.uid, r]));
+
+  // Build a grouped <select> over all regions.
+  const fillSelect = (sel, defaultUid) => {
+    const opt = (r) => `<option value="${escapeHtml(r.uid)}">${escapeHtml(r.name)}</option>`;
+    sel.innerHTML = LEVEL_GROUPS.map(g => {
+      const arr = data.regions.filter(r => r.level === g.tag)
+        .sort((a, b) => a.name.localeCompare(b.name));
+      return arr.length ? `<optgroup label="${escapeHtml(g.label)}">${arr.map(opt).join('')}</optgroup>` : '';
+    }).join('');
+    if (defaultUid && byUid.has(defaultUid)) sel.value = defaultUid;
+  };
+
+  // Defaults: subject = RM of Springfield (matches the sample report); else first
+  // CSD. Comparison = Winnipeg CMA; else first CMA. Manitoba (PR) is always the
+  // third demographics column.
+  const manitoba = data.regions.find(r => r.level === 'PR');
+  const wpgCma   = data.regions.find(r => r.level === 'CMA' && /^winnipeg/i.test(r.name));
+  const firstCsd = data.regions.find(r => r.level === 'CSD');
+  const subjDefault = byUid.has('4612047') ? '4612047' : firstCsd?.uid;
+  fillSelect($subject, subjDefault);
+  fillSelect($compare, wpgCma?.uid);
+
+  let lastTrendTable = null;
+  let lastDemoTable  = null;
+
+  function render() {
+    const subject = byUid.get($subject.value);
+    let compare   = byUid.get($compare.value);
+    if (!subject) return;
+    // The three demographics columns: subject, comparison, Manitoba — de-duped
+    // so picking Manitoba (or the subject) as the comparison doesn't repeat a column.
+    const cols = [];
+    const pushCol = (r) => { if (r && !cols.some(c => c.uid === r.uid)) cols.push(r); };
+    pushCol(subject); pushCol(compare); pushCol(manitoba);
+
+    renderHeadline(subject);
+    renderCharts(subject, cols);
+    lastTrendTable = renderTrends(subject);
+    lastDemoTable  = renderDemographics(cols);
+  }
+
+  // ---- Headline -----------------------------------------------------------
+  function renderHeadline(subject) {
+    const t = subject.trends || {};
+    const latest = years.filter(y => t[y]?.population != null);
+    const lastY  = latest[latest.length - 1];
+    const prevY  = latest[latest.length - 2];
+    const pop    = lastY ? t[lastY].population : null;
+    let chg = '';
+    if (lastY && prevY && t[prevY].population) {
+      const d = (t[lastY].population - t[prevY].population) / t[prevY].population * 100;
+      chg = ` <span>(${d >= 0 ? '+' : ''}${d.toFixed(1)}% since ${prevY})</span>`;
+    }
+    $headline.innerHTML = `
+      <div class="cmhc-hsk-title">${escapeHtml(subject.name)} — census profile</div>
+      <div class="cmhc-hsk-stats">
+        <span><strong>${pop == null ? '—' : pop.toLocaleString()}</strong> population (${lastY || '—'})${chg}</span>
+        <span><strong>${fInt(subject.demo?.households)}</strong> private dwellings</span>
+      </div>`;
+  }
+
+  // ---- Trends table -------------------------------------------------------
+  function renderTrends(subject) {
+    const t = subject.trends || {};
+    const pop = (y) => t[y]?.population;
+    const cell = (row, y) => {
+      if (row.popchg) {
+        const i = years.indexOf(y);
+        if (i <= 0) return '';
+        const prev = pop(years[i - 1]), cur = pop(y);
+        return (prev && cur != null) ? fPct1((cur - prev) / prev) : '';
+      }
+      return fmtVal(t[y]?.[row.key], row.fmt);
+    };
+
+    let body = '';
+    for (const row of TREND_ROWS) {
+      if (row.header) {
+        body += `<tr><td colspan="${years.length + 1}" style="font-weight:600;background:#f3f4f6">${escapeHtml(row.header)}</td></tr>`;
+        continue;
+      }
+      body += `<tr><td>${escapeHtml(row.label)}</td>${years.map(y => `<td>${cell(row, y)}</td>`).join('')}</tr>`;
+    }
+    $tables.querySelector('#census-trends').innerHTML = `
+      <div class="cmhc-table-title">Population &amp; Dwelling Trends — ${escapeHtml(subject.name)}</div>
+      <table class="cmhc-table">
+        <thead><tr><th></th>${years.map(y => `<th>${y}</th>`).join('')}</tr></thead>
+        <tbody>${body}</tbody>
+      </table>
+      <p class="text-xs text-neutral-500 mt-1">* Occupied by usual residents.${
+        subject.level.startsWith('WPG_') ? ' Winnipeg community/cluster/neighbourhood trends are shown for 2021 only (dissemination-area boundaries differ in earlier censuses).' : ''}</p>`;
+
+    // Export model.
+    const rows = TREND_ROWS.map(row => row.header
+      ? { area: row.header, values: years.map(() => '') }
+      : { area: row.label, values: years.map(y => cell(row, y)) });
+    return { title: `Population & Dwelling Trends — ${subject.name}`, columns: years.slice(), rows };
+  }
+
+  // ---- Demographics comparison table --------------------------------------
+  function renderDemographics(cols) {
+    const val = (r, key) => r.demo?.[key];
+    const amt = (r, row) => fmtVal(val(r, row.key), row.fmt);
+    const pct = (r, row) => {
+      if (!row.denom) return '';
+      const d = val(r, row.denom), v = val(r, row.key);
+      return (d && v != null) ? fPct0(v / d) : '';
+    };
+
+    const nCols = 1 + cols.length * 2;
+    let body = '';
+    for (const sec of DEMO_SECTIONS) {
+      body += `<tr><td colspan="${nCols}" style="font-weight:600;background:#f3f4f6">${escapeHtml(sec.header)}</td></tr>`;
+      for (const row of sec.rows) {
+        body += `<tr><td>${escapeHtml(row.label)}</td>` +
+          cols.map(r => `<td>${amt(r, row)}</td><td>${pct(r, row)}</td>`).join('') + '</tr>';
+      }
+    }
+    const regionHead = cols.map(r => `<th colspan="2">${escapeHtml(r.name)}</th>`).join('');
+    const subHead    = cols.map(() => '<th>Amount</th><th>%</th>').join('');
+    $tables.querySelector('#census-demo').innerHTML = `
+      <div class="cmhc-table-title">Demographics (2021) — ${cols.map(r => escapeHtml(r.name)).join(' vs ')}</div>
+      <table class="cmhc-table">
+        <thead>
+          <tr><th></th>${regionHead}</tr>
+          <tr><th>Category</th>${subHead}</tr>
+        </thead>
+        <tbody>${body}</tbody>
+      </table>`;
+
+    // Export model: paired Amount/% columns per region.
+    const columns = cols.flatMap(r => [r.name, '%']);
+    const rows = [];
+    for (const sec of DEMO_SECTIONS) {
+      rows.push({ area: sec.header, values: columns.map(() => '') });
+      for (const row of sec.rows)
+        rows.push({ area: row.label, values: cols.flatMap(r => [amt(r, row), pct(r, row)]) });
+    }
+    return { title: `Demographics (2021) — ${cols.map(r => r.name).join(' vs ')}`, columns, rows };
+  }
+
+  // ---- Charts -------------------------------------------------------------
+  function renderCharts(subject, cols) {
+    $charts.replaceChildren();
+    const t = subject.trends || {};
+
+    // 1. Population trend line.
+    const popData = years.map(y => ({ year: +y, value: t[y]?.population }))
+      .filter(d => d.value != null);
+    if (popData.length) {
+      const maxV = Math.max(...popData.map(d => d.value));
+      const svg = Plot.plot(themed({
+        height: 250,
+        x: { domain: [popData[0].year - 0.5, popData[popData.length - 1].year + 0.5],
+             ticks: popData.map(d => d.year), tickFormat: 'd' },
+        y: { label: 'Population', tickFormat: v => Number(v).toLocaleString(), domain: [0, maxV * 1.12] },
+        color: { legend: false },
+        marks: [
+          ...gridMarks(),
+          Plot.lineY(popData, { x: 'year', y: 'value', stroke: PALETTE[0], strokeWidth: 1.8 }),
+          Plot.dot(popData,  { x: 'year', y: 'value', fill: PALETTE[0], r: 3 }),
+          Plot.text(popData, { x: 'year', y: 'value', text: d => Number(d.value).toLocaleString(),
+                               dy: -10, fontSize: 10, fill: '#3f3f46' }),
+          frameMark(),
+        ],
+      }));
+      appendCard('Population trend', `${subject.name} — ${years[0]}–${years[years.length - 1]}`, svg);
+    }
+
+    // 2. Occupied dwellings by type — stacked bar by census year.
+    const typeOrder = TYPE_SERIES.map(([, lbl]) => lbl);
+    const barData = [];
+    for (const y of years) {
+      const yr = t[y]; if (!yr) continue;
+      for (const [key, lbl] of TYPE_SERIES) {
+        if (yr[key] != null) barData.push({ year: y, type: lbl, value: yr[key] });
+      }
+    }
+    if (barData.length) {
+      const svg = Plot.plot(themed({
+        height: 250, marginBottom: 30,
+        x: { type: 'band', label: null },
+        y: { label: 'Occupied dwellings', tickFormat: v => Number(v).toLocaleString() },
+        color: { domain: typeOrder, range: categorical(typeOrder.length), legend: true },
+        marks: [
+          Plot.barY(barData, { x: 'year', y: 'value', fill: 'type', order: typeOrder }),
+          frameMark(),
+        ],
+      }));
+      appendCard('Dwelling type mix', `${subject.name} — occupied dwellings by structural type`, svg);
+    }
+
+    // 3 & 4. Comparison grouped bars (% share) across the demographics columns.
+    const regionNames = cols.map(r => r.name);
+    appendGroupedBar('Age structure', '% of population', cols, regionNames, [
+      ['age_0_14', '0–14'], ['age_15_64', '15–64'], ['age_65_plus', '65+'],
+    ], 'population');
+    appendGroupedBar('Household size', '% of households', cols, regionNames, [
+      ['hh_size_1', '1'], ['hh_size_2', '2'], ['hh_size_3', '3'],
+      ['hh_size_4', '4'], ['hh_size_5plus', '5+'],
+    ], 'hh_size_total');
+  }
+
+  function appendGroupedBar(title, yLabel, cols, regionNames, cats, denomKey) {
+    const rows = [];
+    for (const r of cols) {
+      const denom = r.demo?.[denomKey];
+      if (!denom) continue;
+      for (const [key, catLabel] of cats) {
+        const v = r.demo?.[key];
+        if (v != null) rows.push({ region: r.name, cat: catLabel, value: v / denom * 100 });
+      }
+    }
+    if (!rows.length) return;
+    const maxV = Math.max(...rows.map(d => d.value));
+    const svg = Plot.plot(themed({
+      height: 250, marginBottom: 34,
+      fx: { label: null },
+      x: { axis: null, label: null },
+      y: { label: yLabel, tickFormat: v => `${v}%`, domain: [0, maxV * 1.15] },
+      color: { domain: regionNames, range: PALETTE, legend: true },
+      marks: [
+        Plot.barY(rows, { fx: 'cat', x: 'region', y: 'value', fill: 'region' }),
+        frameMark(),
+      ],
+    }));
+    appendCard(title, '2021 — ' + regionNames.join(' vs '), svg);
+  }
+
+  function appendCard(title, sub, svgNode) {
+    const card = document.createElement('section');
+    card.className = 'chart-card';
+    card.innerHTML = `<header class="chart-title">${escapeHtml(title)}</header>
+      <p class="chart-sub">${escapeHtml(sub)}</p>
+      <div data-role="plot"></div>
+      <div class="chart-caption"><span class="chart-caption-left"></span>
+        <span class="chart-source">Source: StatsCan Census</span></div>`;
+    card.querySelector('[data-role="plot"]').appendChild(svgNode);
+    $charts.appendChild(card);
+  }
+
+  // Ensure the two table containers exist.
+  $tables.innerHTML = '<section class="cmhc-table-block" id="census-trends"></section>' +
+                      '<section class="cmhc-table-block" id="census-demo"></section>';
+
+  $subject.addEventListener('change', render);
+  $compare.addEventListener('change', render);
+  render();
+
+  // ---- Exports (tables) ---------------------------------------------------
+  document.getElementById('census-download-xlsx')?.addEventListener('click', async () => {
+    if (!lastTrendTable && !lastDemoTable) return;
+    const { exportTablesToExcel } = await import('./excel-export.js');
+    await exportTablesToExcel(
+      [lastTrendTable, lastDemoTable].filter(Boolean).map(t => ({ ...t, dwellingSuffix: '' })),
+      { filename: `Census_Profile_${new Date().toISOString().slice(0, 10)}.xlsx`,
+        titleNote: '— Census of Population (StatsCan / CensusMapper)' });
+  });
+  document.getElementById('census-copy')?.addEventListener('click', () => {
+    const tbl = (t) => !t ? '' :
+      `<h4>${escapeHtml(t.title)}</h4>` +
+      `<table border="1" cellspacing="0" cellpadding="3"><tr><th></th>${t.columns.map(c => `<th>${escapeHtml(c)}</th>`).join('')}</tr>` +
+      t.rows.map(r => `<tr><td>${escapeHtml(r.area)}</td>${r.values.map(v => `<td>${escapeHtml(v)}</td>`).join('')}</tr>`).join('') +
+      '</table>';
+    copyHtml([tbl(lastTrendTable), tbl(lastDemoTable)].join('<br>'));
+  });
+}
+
+// A categorical palette that stays distinct for up to 8 dwelling types.
+function categorical(n) {
+  const base = ['#1e3a8a', '#dc2626', '#16a34a', '#d97706', '#7c3aed', '#0891b2', '#be185d', '#65a30d'];
+  return base.slice(0, n);
+}
+
+function copyHtml(html) {
+  const text = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  try {
+    navigator.clipboard.write([new ClipboardItem({
+      'text/html':  new Blob([html], { type: 'text/html' }),
+      'text/plain': new Blob([text], { type: 'text/plain' }),
+    })]);
+  } catch { navigator.clipboard?.writeText(text); }
+}
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}

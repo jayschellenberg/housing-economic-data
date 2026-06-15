@@ -37,14 +37,15 @@ export async function initDwelling() {
     group('Saskatchewan CMAs / CAs', pick(a => a.level === 'cma' && a.prov === '47'));
   $area.value = byUid.has('602') ? '602' : (country[0]?.uid || $area.options[0]?.value);
 
-  // Year radios (only shown when there's more than one census year).
+  // Year radios (only shown when there's more than one census year). censusYears
+  // is newest-first, so the first radio (newest census) is the default.
   if (years.length > 1) {
     $year.innerHTML = years.map((y, i) =>
-      `<label class="flex items-center gap-1"><input type="radio" name="dtYear" value="${y}" ${i === years.length - 1 ? 'checked' : ''}/> ${y}</label>`).join('');
+      `<label class="flex items-center gap-1"><input type="radio" name="dtYear" value="${y}" ${i === 0 ? 'checked' : ''}/> ${y}</label>`).join('');
   } else {
     $year.closest('section').hidden = true;
   }
-  const yearVal = () => [...document.querySelectorAll('input[name=dtYear]')].find(r => r.checked)?.value || years[years.length - 1];
+  const yearVal = () => [...document.querySelectorAll('input[name=dtYear]')].find(r => r.checked)?.value || years[0];
 
   let lastTable = null;
   function render() {
@@ -75,12 +76,17 @@ export async function initDwelling() {
 
     const body = rows.map(r =>
       `<tr><td>${escapeHtml(r.label)}</td><td>${fmtN(r.n)}</td><td>${fmtP(r.p)}</td></tr>`).join('');
+    // Some legacy years don't break out every type (e.g. 2006 is a percentage-
+    // based Community Profile with no separate movable / other-attached counts),
+    // so the rows can sum to less than the total. Surface the caveat when shown.
+    const note = (rows.some(r => r.n == null) && data.notes2006)
+      ? `<p class="text-xs text-neutral-500 mt-2">${escapeHtml(data.notes2006)}</p>` : '';
     $tables.innerHTML = `<section class="cmhc-table-block">
       <div class="cmhc-table-title">Structural type of dwelling — ${year}</div>
       <table class="cmhc-table">
         <thead><tr><th>Structural type</th><th>Dwellings</th><th>Share</th></tr></thead>
         <tbody>${body}<tr class="cmhc-table-summary cmhc-table-summary-top"><td>Total</td><td>${fmtN(total)}</td><td>100.0%</td></tr></tbody>
-      </table></section>`;
+      </table>${note}</section>`;
 
     lastTable = {
       title: `${a.name} — dwellings by structural type (${year})`,
