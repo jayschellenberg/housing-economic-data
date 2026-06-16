@@ -56,7 +56,7 @@ metric_yoy <- function(id, comparison = "year-over-year") {
        source = "Statistics Canada", stale = FALSE)
 }
 # Year-to-date change: sum(Jan..latest month this year) vs same span prior year.
-metric_ytd <- function(id) {
+metric_ytd <- function(id, source = "CMHC / Statistics Canada") {
   d <- series_df(id)
   if (is.null(d) || nrow(d) < 13) return(list(stale = TRUE))
   d$yr <- as.integer(format(d$date, "%Y")); d$mo <- as.integer(format(d$date, "%m"))
@@ -66,7 +66,7 @@ metric_ytd <- function(id) {
   chg <- if (ytd_prev != 0) (ytd_now / ytd_prev - 1) * 100 else NA_real_
   list(value = ytd_now, ytdChangePct = round(chg, 1), direction = dir_of(chg),
        period = sprintf("year-to-date to %s", month_label(max(d$date[d$yr == last_yr]))),
-       comparison = "year-to-date change", source = "CMHC / Statistics Canada", stale = FALSE)
+       comparison = "year-to-date change", source = source, stale = FALSE)
 }
 # Annual YoY for farm cash (latest year vs prior year).
 annual_change <- function(id) {
@@ -81,8 +81,23 @@ indicators <- list(
   manufacturing_sales = metric_mom("statscan.manufacturing.manitoba"),
   wholesale_trade     = metric_mom("statscan.wholesale.manitoba"),
   cpi                 = metric_yoy("statscan.cpi_allitems.manitoba"),
-  employment          = metric_yoy("statscan.employment.manitoba")
+  employment          = metric_yoy("statscan.employment.manitoba"),
+  weekly_earnings     = metric_yoy("statscan.weekly_earnings.manitoba")
 )
+
+# Unemployment rate: report the rate + its year-over-year change in PERCENTAGE
+# POINTS (a rate, not a % change). Mirrors the MBS Economic Dashboard headline.
+unemp <- series_df("statscan.unemployment.manitoba")
+indicators$unemployment_rate <- if (is.null(unemp) || nrow(unemp) < 13) list(stale = TRUE) else {
+  n <- nrow(unemp)
+  list(value = unemp$value[n], changePP = round(unemp$value[n] - unemp$value[n - 12], 1),
+       period = month_label(unemp$date[n]), comparison = "year-over-year",
+       source = "Statistics Canada (Labour Force Survey)", stale = FALSE)
+}
+
+# Merchandise exports (MBS Industry/Trade headline) — YTD vs prior year.
+indicators$exports <- metric_ytd("statscan.exports.manitoba",
+                                 source = "Statistics Canada (international merchandise trade, table 12-10-0175)")
 
 # Farm cash receipts (annual; total/crop/livestock).
 fc_total <- series_df("statscan.farm_cash_total.manitoba")

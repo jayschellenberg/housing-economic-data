@@ -58,7 +58,7 @@ function pushLine(arr, line) { if (line) arr.push(line); }
 // Does this metric carry a usable number, or is it an empty/embargoed shell?
 function hasData(m) {
   return m && (m.changePct != null || m.value != null || m.ytdChangePct != null
-    || m.totalChangePct != null || m.growthPct != null);
+    || m.totalChangePct != null || m.growthPct != null || m.changePP != null);
 }
 // Render a metric's sentence, or a clean "not available" line if it has no data.
 function indLine(metric, tmplFn, label) {
@@ -90,6 +90,10 @@ const T = {
   gdp: (m) => `Preliminary estimates from the ${escapeHtml(m.source || 'Manitoba Bureau of Statistics')} show Manitoba's real Gross Domestic Product grew by approximately ${pct1(m.growthPct)} in ${escapeHtml(m.period)}${m.asOf ? ` (year-over-year average change, as of ${escapeHtml(m.asOf)})` : ''}.`,
   cpi: (m) => `The Manitoba Consumer Price Index (CPI — the inflation rate) is up ${pct1(m.changePct)} as of ${escapeHtml(m.period)} (${escapeHtml(m.comparison)}).`,
   employment: (m) => `Employment in Manitoba ${moveBy(m.changePct, m.direction)} (${escapeHtml(m.comparison)}) as of ${escapeHtml(m.period)}, with ${fmt0(m.value)} persons employed.`,
+  unemployment: (m) => `The unemployment rate was ${pct1(m.value)} in ${escapeHtml(m.period)}`
+    + (m.changePP != null ? `, ${m.changePP > 0 ? 'up' : m.changePP < 0 ? 'down' : 'unchanged'} ${Math.abs(m.changePP).toFixed(1)} percentage points ${escapeHtml(m.comparison)}.` : '.'),
+  earnings: (m) => `Average weekly earnings ${moveBy(m.changePct, m.direction)} ${escapeHtml(m.comparison)} to ${dollars(m.value)}.`,
+  exports: (m) => `Manitoba merchandise exports (domestic) were ${upDown(m.ytdChangePct != null ? m.ytdChangePct : m.changePct)} ${escapeHtml(m.period)} versus the same period a year earlier.`,
   minwage: (m) => `The Manitoba minimum wage rate is ${wage(m.value)} per hour (effective ${escapeHtml(m.effective)})`
     + (m.nextValue ? `, scheduled to rise to ${wage(m.nextValue)} on ${escapeHtml(m.nextEffective)}.` : '.'),
   starts: (m) => `Manitoba housing starts (all areas) were ${upDown(m.ytdChangePct)} ${escapeHtml(m.period)} versus the same period a year earlier.`,
@@ -166,6 +170,9 @@ export async function initEconomicUpdate() {
   if (ind.real_gdp) econParas.push(T.gdp(ind.real_gdp));
   pushLine(econParas, indLine(ind.cpi, T.cpi, 'Consumer Price Index'));
   pushLine(econParas, indLine(ind.employment, T.employment, 'Employment'));
+  pushLine(econParas, indLine(ind.unemployment_rate, T.unemployment, 'Unemployment rate'));
+  pushLine(econParas, indLine(ind.weekly_earnings, T.earnings, 'Average weekly earnings'));
+  pushLine(econParas, indLine(ind.exports, T.exports, 'Merchandise exports'));
   if (econParas.length) sections.push({ heading: 'Economic Overview', paras: econParas });
 
   // Housing & Construction

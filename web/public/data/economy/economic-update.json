@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated": "2026-06-15T13:07:06Z",
+  "generated": "2026-06-16T02:57:40Z",
   "dataAsOf": "2026-06-15",
   "intro": {
     "censusYear": 2021,
@@ -51,10 +51,22 @@
       "stale": false
     },
     "manufacturing_sales": {
-      "stale": true
+      "value": 2342096000,
+      "changePct": -6.1,
+      "direction": "down",
+      "period": "April 2026",
+      "comparison": "month-to-month, seasonally adjusted",
+      "source": "Statistics Canada",
+      "stale": false
     },
     "wholesale_trade": {
-      "stale": true
+      "value": 3790722000,
+      "changePct": 6.7,
+      "direction": "up",
+      "period": "April 2026",
+      "comparison": "month-to-month, seasonally adjusted",
+      "source": "Statistics Canada",
+      "stale": false
     },
     "cpi": {
       "value": 170.3,
@@ -72,6 +84,32 @@
       "period": "May 2026",
       "comparison": "year-over-year",
       "source": "Statistics Canada",
+      "stale": false
+    },
+    "weekly_earnings": {
+      "value": 1213.93,
+      "changePct": 5.6,
+      "direction": "up",
+      "period": "March 2026",
+      "comparison": "year-over-year",
+      "source": "Statistics Canada",
+      "stale": false
+    },
+    "unemployment_rate": {
+      "value": 5.5,
+      "changePP": -0.3,
+      "period": "May 2026",
+      "comparison": "year-over-year",
+      "source": "Statistics Canada (Labour Force Survey)",
+      "stale": false
+    },
+    "exports": {
+      "value": 5896488000,
+      "ytdChangePct": -20.1,
+      "direction": "down",
+      "period": "year-to-date to April 2026",
+      "comparison": "year-to-date change",
+      "source": "Statistics Canada (international merchandise trade, table 12-10-0175)",
       "stale": false
     },
     "farm_cash_receipts": {

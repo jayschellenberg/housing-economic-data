@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated": "2026-06-15T12:45:11Z",
+  "generated": "2026-06-16T02:57:39Z",
   "groups": [
     {
       "group": "mortgage_market",
@@ -40,8 +40,8 @@
     {
       "group": "economy",
       "file": "economy.json",
-      "seriesCount": 6,
-      "recordCount": 1788,
+      "seriesCount": 9,
+      "recordCount": 2952,
       "latestDate": "2026-04-01"
     },
     {
@@ -73,6 +73,6 @@
       "latestDate": "2026-06-11"
     }
   ],
-  "totalSeries": 107,
-  "totalRecords": 71756
+  "totalSeries": 110,
+  "totalRecords": 72920
 }
