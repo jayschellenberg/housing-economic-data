@@ -1,8 +1,14 @@
 # =============================================================================
 # r/12_census_profile.R
-# Population & Dwelling Trends (2006/2011/2016/2021) + 2021 Demographics for
-# every Manitoba geography (PR / CMA-CA / CD / CSD) plus the City-of-Winnipeg
-# virtual geographies (Community Area / Cluster / Neighbourhood, DA-aggregated).
+# Population & Dwelling Trends (2006/2011/2016/2021) + Demographics (2021 plus
+# best-effort 2016 & 2011) for every Manitoba geography (PR / CMA-CA / CD / CSD)
+# plus the City-of-Winnipeg virtual geographies (Community Area / Cluster /
+# Neighbourhood, DA-aggregated). `demo` is keyed by census year so the web tab's
+# Census-period selector can switch the Demographics table between censuses.
+# Earlier censuses are fetched leniently: period-of-construction buckets and the
+# income reference year shift each census (and 2011 long-form is the NHS), so any
+# field whose label doesn't resolve for a given year yields NA cells rather than
+# aborting the build. 2021 stays strict so its numbers still match the report.
 #
 # Writes web/public/data/housing/census_profile.json for the "Census Profile"
 # tab. This is the same content the MBCensusData Shiny app / Excel report
@@ -93,6 +99,15 @@ resolve_vector <- function(dataset, label_regex, parent_regex = NA_character_) {
 resolve_fields <- function(dataset, fields)
   map_chr(fields, \(f) resolve_vector(dataset, f$label, f$parent %||% NA))
 
+# Lenient variants: a field that can't be resolved for a given census (a bucket
+# that didn't exist yet, a renamed NHS vector, …) resolves to NA instead of
+# stopping. Used for the earlier-census Demographics pulls only.
+resolve_vector_safe <- function(dataset, label_regex, parent_regex = NA_character_)
+  tryCatch(resolve_vector(dataset, label_regex, parent_regex),
+           error = function(e) NA_character_)
+resolve_fields_lenient <- function(dataset, fields)
+  map_chr(fields, \(f) resolve_vector_safe(dataset, f$label, f$parent %||% NA))
+
 # ---- Field catalogs (ported verbatim) --------------------------------------
 TRENDS_FIELDS <- list(
   single_detached = list(label = "^Single-detached house$",      parent = "structural type"),
@@ -141,15 +156,34 @@ DEMO_FIELDS <- list(
   tenant_stir_30      = list(label = "^% of tenant households spending 30% or more", parent = NA, agg = "wmean_hh")
 )
 
+# Censuses to pull Demographics for. 2021 is the canonical default; 2016 & 2011
+# are best-effort (fetched leniently — see header). The web tab keys its period
+# selector off these years.
+DEMO_DATASETS <- c(`2021` = "CA21", `2016` = "CA16", `2011` = "CA11")
+
+# Income vectors carry the reference year in their label (Census 2021 reports
+# 2020 income, 2016→2015, 2011→2010), so parameterise those two labels per
+# census; every other DEMO_FIELDS label is stable across censuses.
+INCOME_YEAR <- c(`2021` = "2020", `2016` = "2015", `2011` = "2010", `2006` = "2005")
+demo_fields_for <- function(year) {
+  f  <- DEMO_FIELDS
+  iy <- INCOME_YEAR[[year]]
+  if (!is.null(iy)) {
+    f$median_ind_income$label <- sprintf("^Median total income in %s among recipients", iy)
+    f$median_hh_income$label  <- sprintf("^Median total income of household in %s", iy)
+  }
+  f
+}
+
 # =============================================================================
 # Batched fetch: one get_census() per (dataset, level).
 # Returns a data.frame: GeoUID, name, Population, Dwellings, Households, + one
 # column per field (named by the field key), for every region at that level.
 # =============================================================================
-fetch_level <- function(dataset, level, fields) {
-  vids <- resolve_fields(dataset, fields)
+fetch_level <- function(dataset, level, fields, lenient = FALSE) {
+  vids <- if (lenient) resolve_fields_lenient(dataset, fields) else resolve_fields(dataset, fields)
   df <- get_census(dataset = dataset, regions = list(PR = MB_PR), level = level,
-                   vectors = unname(vids), use_cache = TRUE, quiet = TRUE, geo_format = NA)
+                   vectors = unname(vids[!is.na(vids)]), use_cache = TRUE, quiet = TRUE, geo_format = NA)
   out <- data.frame(
     uid        = as.character(df$GeoUID),
     name       = as.character(df$`Region Name` %||% df$name),
@@ -159,6 +193,7 @@ fetch_level <- function(dataset, level, fields) {
     stringsAsFactors = FALSE
   )
   for (nm in names(fields)) {
+    if (is.na(vids[[nm]])) { out[[nm]] <- NA_real_; next }
     col <- grep(sprintf("^%s(:|$)", vids[[nm]]), names(df), value = TRUE)[1]
     out[[nm]] <- if (is.na(col)) NA_real_ else suppressWarnings(as.numeric(df[[col]]))
   }
@@ -236,10 +271,30 @@ trends_raw <- map(names(DATASETS), function(y) {
 })
 names(trends_raw) <- names(DATASETS)
 
-message("[12] Fetching 2021 Demographics for all levels…")
-demo_raw <- setNames(map(STD_LEVELS, \(lv) {
-  message(sprintf("    2021 / %s", lv)); fetch_level("CA21", lv, DEMO_FIELDS)
-}), names(STD_LEVELS))
+message("[12] Fetching Demographics for all levels x ", length(DEMO_DATASETS), " censuses…")
+# demo_raw[[year]][[level]] = data.frame of regions. 2021 strict (canonical),
+# earlier censuses lenient (NA for fields whose labels don't resolve that year).
+# Fetched per census inside tryCatch: 2016/2011 are FRESH pulls (~270 region
+# identifiers each) that can exhaust the free 500-region/day CensusMapper cap, so
+# a failure on one census drops just that census and still writes the rest. The
+# persistent cache replays completed censuses for free on re-run, so the build
+# fills the missing year over a later day. 2021 is required (and cached).
+demo_raw <- list()
+for (y in names(DEMO_DATASETS)) {
+  ds <- DEMO_DATASETS[[y]]; flds <- demo_fields_for(y)
+  lv <- tryCatch(
+    setNames(map(STD_LEVELS, \(level) {
+      message(sprintf("    %s / %s", y, level))
+      fetch_level(ds, level, flds, lenient = (y != "2021"))
+    }), names(STD_LEVELS)),
+    error = function(e) {
+      if (y == "2021") stop(e)   # 2021 is canonical + cached — never mask it
+      message(sprintf("[12] WARNING: %s demographics fetch failed (%s) — skipping this census; re-run later to fill it in.",
+                      y, conditionMessage(e)))
+      NULL
+    })
+  if (!is.null(lv)) demo_raw[[y]] <- lv
+}
 
 message("[12] Fetching Winnipeg DAs (2021, chunked)…")
 COMBINED_FIELDS <- c(TRENDS_FIELDS, DEMO_FIELDS)
@@ -270,15 +325,25 @@ trend_obj_for <- function(level, uid) {
   }
   obj
 }
+# Year-keyed demographics object: { "2021": {…}, "2016": {…}, "2011": {…} }. A
+# census year is omitted for an area when it has no row, or carries no real
+# demographic signal (all fields NA — e.g. a label set that didn't resolve).
 demo_obj_for <- function(level, uid) {
-  r <- demo_raw[[level]][demo_raw[[level]]$uid == uid, ]
-  if (nrow(r) == 0) return(NULL)
-  o <- list(population = round_or_na(r$Population), households = round_or_na(r$Households))
-  for (k in DEMO_KEYS) {
-    agg <- DEMO_FIELDS[[k]]$agg %||% "sum"
-    o[[k]] <- if (grepl("wmean", agg)) round_dec(r[[k]]) else round_or_na(r[[k]])
+  obj <- list()
+  for (y in names(DEMO_DATASETS)) {
+    if (is.null(demo_raw[[y]])) next   # census skipped this run (quota/failure)
+    r <- demo_raw[[y]][[level]]
+    r <- r[r$uid == uid, ]
+    if (nrow(r) == 0) next
+    o <- list(population = round_or_na(r$Population), households = round_or_na(r$Households))
+    for (k in DEMO_KEYS) {
+      agg <- DEMO_FIELDS[[k]]$agg %||% "sum"
+      o[[k]] <- if (grepl("wmean", agg)) round_dec(r[[k]]) else round_or_na(r[[k]])
+    }
+    if (all(vapply(DEMO_KEYS, \(k) is.na(o[[k]]), logical(1)))) next
+    obj[[y]] <- o
   }
-  o
+  if (length(obj) == 0) NULL else obj
 }
 round_or_na <- function(x) if (length(x) == 0 || !is.finite(x)) NA else round(x)
 round_dec   <- function(x) if (length(x) == 0 || !is.finite(x)) NA else round(x, 1)
@@ -286,14 +351,14 @@ round_dec   <- function(x) if (length(x) == 0 || !is.finite(x)) NA else round(x,
 regions_out <- list()
 for (level in names(STD_LEVELS)) {
   # Use the union of uids appearing in 2021 trends + demo for this level.
-  uids <- unique(c(trends_raw[["2021"]][[level]]$uid, demo_raw[[level]]$uid))
+  uids <- unique(c(trends_raw[["2021"]][[level]]$uid, demo_raw[["2021"]][[level]]$uid))
   for (uid in uids) {
     nm <- {
       n <- trends_raw[["2021"]][[level]]$name[trends_raw[["2021"]][[level]]$uid == uid]
-      if (!length(n)) n <- demo_raw[[level]]$name[demo_raw[[level]]$uid == uid]
+      if (!length(n)) n <- demo_raw[["2021"]][[level]]$name[demo_raw[["2021"]][[level]]$uid == uid]
       n[1]
     }
-    pop <- round_or_na(demo_raw[[level]]$Population[demo_raw[[level]]$uid == uid][1] %||% NA)
+    pop <- round_or_na(demo_raw[["2021"]][[level]]$Population[demo_raw[["2021"]][[level]]$uid == uid][1] %||% NA)
     regions_out[[length(regions_out) + 1]] <- list(
       uid = uid, name = nm, level = LEVEL_TAG[[level]], pop = pop,
       trends = trend_obj_for(level, uid),
@@ -329,8 +394,8 @@ if (!is.null(wpg_da)) {
       regions_out[[length(regions_out) + 1]] <<- list(
         uid = paste0(prefix, ":", g), name = g, level = tag,
         pop = round_or_na(da$Population),
-        trends = list(`2021` = yr),   # virtual geos: 2021 only (2021 DA boundaries)
-        demo = demo
+        trends = list(`2021` = yr),          # virtual geos: 2021 only (2021 DA boundaries)
+        demo   = list(`2021` = demo)         # year-keyed to match standard levels
       )
     }
   }
@@ -348,6 +413,7 @@ payload <- list(
   sourceUrl   = "https://censusmapper.ca/",
   generatedBy = "r/12_census_profile.R",
   censusYears = as.list(names(DATASETS)),
+  demoYears   = as.list(names(DEMO_DATASETS)),
   trendKeys   = as.list(TREND_KEYS),
   demoKeys    = as.list(DEMO_KEYS),
   regions     = regions_out

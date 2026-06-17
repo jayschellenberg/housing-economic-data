@@ -44,9 +44,17 @@ Three options:
 
 ### Census Profile tab (run-once, separate from `data:all`)
 
-The **Census Profile** tab (Population & Dwelling Trends 2006–2021 + a 2021
-Demographics comparison, the web port of the MBCensusData report) is built by
-`r/12_census_profile.R` into `web/public/data/housing/census_profile.json`. It
+The **Census Profile** tab (Population & Dwelling Trends 2006–2021 + a
+Demographics comparison across three user-chosen areas at a selectable census
+period, the web port of the MBCensusData report) is built by
+`r/12_census_profile.R` into `web/public/data/housing/census_profile.json`. The
+tab has three free area pickers (any Manitoba geography or Winnipeg Community
+Area / Cluster / Neighbourhood) feeding both tables, and a Census-period
+selector. The period drives only the Demographics table + demographic charts;
+the Trends table/chart always span all censuses. `demo` is keyed by census year
+(2021 plus best-effort 2016 & 2011 — period-of-construction buckets and the
+income reference year shift each census, and 2011 long-form is the NHS, so those
+earlier years are fetched leniently and some rows blank out). It
 uses StatCan census via **CensusMapper / `cancensus`** (a different source than
 the rest of the pipeline), so it is **deliberately excluded from `data:all`**
 and from the GitHub Actions refresh — census data is 5-yearly, and CI has no

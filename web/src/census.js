@@ -112,13 +112,28 @@ const fStir = (v) => v == null ? '' : `${Math.round(Number(v))}%`;              
 const fmtVal = (v, kind) => kind === 'usd' ? fUsd(v) : kind === 'dec1' ? fDec1(v)
                           : kind === 'stir' ? fStir(v) : fInt(v);
 
+// Census periods offered by the Demographics period selector.
+const DEMO_PERIODS = ['2021', '2016', '2011'];
+
+// Read a region's demographics object for a given census period. The rebuilt
+// data keys `demo` by year ({ "2021": {…}, "2016": {…}, "2011": {…} }); the
+// current (pre-rebuild) file ships a single flat object that represents 2021.
+// Handle both so the tab keeps working until r/12_census_profile.R is re-run.
+function demoFor(region, period) {
+  const d = region && region.demo;
+  if (!d) return null;
+  const yearKeyed = ['2006', '2011', '2016', '2021'].some(y => Object.prototype.hasOwnProperty.call(d, y));
+  if (yearKeyed) return d[period] || null;
+  return period === '2021' ? d : null;   // legacy flat shape = 2021 only
+}
+
 export async function initCensus() {
-  const $subject  = document.getElementById('census-subject');
-  const $compare  = document.getElementById('census-compare');
+  const $area    = [1, 2, 3].map(i => document.getElementById(`census-area${i}`));
+  const $period  = document.getElementById('census-period');
   const $headline = document.getElementById('census-headline');
   const $charts   = document.getElementById('census-chart-grid');
   const $tables   = document.getElementById('census-tables');
-  if (!$subject || !$tables) return;
+  if (!$area[0] || !$tables) return;
 
   const data = await fetch('./data/housing/census_profile.json')
     .then(r => r.ok ? r.json() : null).catch(() => null);
@@ -152,57 +167,85 @@ export async function initCensus() {
     if (defaultUid && byUid.has(defaultUid)) sel.value = defaultUid;
   };
 
-  // Defaults: subject = RM of Springfield (matches the sample report); else first
-  // CSD. Comparison = Winnipeg CMA; else first CMA. Manitoba (PR) is always the
-  // third demographics column.
-  const manitoba = data.regions.find(r => r.level === 'PR');
-  const wpgCma   = data.regions.find(r => r.level === 'CMA' && /^winnipeg/i.test(r.name));
-  const firstCsd = data.regions.find(r => r.level === 'CSD');
-  const subjDefault = byUid.has('4612047') ? '4612047' : firstCsd?.uid;
-  fillSelect($subject, subjDefault);
-  fillSelect($compare, wpgCma?.uid);
+  // Defaults mirror the old subject / comparison / Manitoba layout while leaving
+  // all three pickers free: Area 1 = first Winnipeg cluster if the rebuilt data
+  // has them, else RM of Springfield (the sample report) / first CSD; Area 2 =
+  // Winnipeg CMA; Area 3 = Manitoba (PR).
+  const manitoba    = data.regions.find(r => r.level === 'PR');
+  const wpgCma      = data.regions.find(r => r.level === 'CMA' && /^winnipeg/i.test(r.name));
+  const firstCsd    = data.regions.find(r => r.level === 'CSD');
+  const firstClust  = data.regions.filter(r => r.level === 'WPG_Cluster')
+    .sort((a, b) => a.name.localeCompare(b.name))[0];
+  const area1Def = firstClust?.uid || (byUid.has('4612047') ? '4612047' : firstCsd?.uid);
+  fillSelect($area[0], area1Def);
+  fillSelect($area[1], wpgCma?.uid);
+  fillSelect($area[2], manitoba?.uid);
+  if ($period && !DEMO_PERIODS.includes($period.value)) $period.value = '2021';
 
-  let lastTrendTable = null;
-  let lastDemoTable  = null;
+  // Ensure the two table containers exist before the first render.
+  $tables.innerHTML = '<section class="cmhc-table-block" id="census-trends"></section>' +
+                      '<section class="cmhc-table-block" id="census-demo"></section>';
+
+  let lastTrendTables = [];
+  let lastDemoTable   = null;
 
   function render() {
-    const subject = byUid.get($subject.value);
-    let compare   = byUid.get($compare.value);
-    if (!subject) return;
-    // The three demographics columns: subject, comparison, Manitoba — de-duped
-    // so picking Manitoba (or the subject) as the comparison doesn't repeat a column.
+    const period = $period?.value || '2021';
+    // The three chosen areas, de-duped (picking the same area twice collapses
+    // it rather than repeating a table/column).
     const cols = [];
-    const pushCol = (r) => { if (r && !cols.some(c => c.uid === r.uid)) cols.push(r); };
-    pushCol(subject); pushCol(compare); pushCol(manitoba);
+    for (const sel of $area) {
+      const r = byUid.get(sel.value);
+      if (r && !cols.some(c => c.uid === r.uid)) cols.push(r);
+    }
+    if (!cols.length) return;
+    const subject = cols[0];
 
-    renderHeadline(subject);
-    renderCharts(subject, cols);
-    lastTrendTable = renderTrends(subject);
-    lastDemoTable  = renderDemographics(cols);
+    renderHeadline(subject, period);
+    renderCharts(subject, cols, period);
+    lastTrendTables = renderTrends(cols);
+    lastDemoTable   = renderDemographics(cols, period);
   }
 
   // ---- Headline -----------------------------------------------------------
-  function renderHeadline(subject) {
+  function renderHeadline(subject, period) {
     const t = subject.trends || {};
-    const latest = years.filter(y => t[y]?.population != null);
-    const lastY  = latest[latest.length - 1];
-    const prevY  = latest[latest.length - 2];
-    const pop    = lastY ? t[lastY].population : null;
+    const demo = demoFor(subject, period);
+    const trendY = years.filter(y => t[y]?.population != null);
+    const lastY  = trendY[trendY.length - 1];
+    const prevY  = trendY[trendY.length - 2];
+    // Prefer the selected period's population; fall back to the latest census
+    // the area has trend data for (Winnipeg areas only carry 2021).
+    const pop     = demo?.population ?? (lastY ? t[lastY].population : null);
+    const popYear = demo?.population != null ? period : lastY;
     let chg = '';
     if (lastY && prevY && t[prevY].population) {
       const d = (t[lastY].population - t[prevY].population) / t[prevY].population * 100;
-      chg = ` <span>(${d >= 0 ? '+' : ''}${d.toFixed(1)}% since ${prevY})</span>`;
+      chg = ` <span>(${d >= 0 ? '+' : ''}${d.toFixed(1)}% ${prevY}→${lastY})</span>`;
     }
     $headline.innerHTML = `
       <div class="cmhc-hsk-title">${escapeHtml(subject.name)} — census profile</div>
       <div class="cmhc-hsk-stats">
-        <span><strong>${pop == null ? '—' : pop.toLocaleString()}</strong> population (${lastY || '—'})${chg}</span>
-        <span><strong>${fInt(subject.demo?.households)}</strong> private dwellings</span>
+        <span><strong>${pop == null ? '—' : pop.toLocaleString()}</strong> population (${popYear || '—'})${chg}</span>
+        <span><strong>${fInt(demo?.households)}</strong> private dwellings (${escapeHtml(period)})</span>
       </div>`;
   }
 
-  // ---- Trends table -------------------------------------------------------
-  function renderTrends(subject) {
+  // ---- Trends tables (one per area, all stacked) --------------------------
+  function renderTrends(cols) {
+    const models = [];
+    const html = cols.map(subject => {
+      const { tableHtml, model } = trendTableFor(subject);
+      models.push(model);
+      return tableHtml;
+    }).join('');
+    $tables.querySelector('#census-trends').innerHTML = html;
+    return models;
+  }
+
+  // Build one Population & Dwelling Trends table (all censuses) for an area,
+  // returning both the HTML and the export model.
+  function trendTableFor(subject) {
     const t = subject.trends || {};
     const pop = (y) => t[y]?.population;
     const cell = (row, y) => {
@@ -223,25 +266,24 @@ export async function initCensus() {
       }
       body += `<tr><td>${escapeHtml(row.label)}</td>${years.map(y => `<td>${cell(row, y)}</td>`).join('')}</tr>`;
     }
-    $tables.querySelector('#census-trends').innerHTML = `
+    const tableHtml = `
       <div class="cmhc-table-title">Population &amp; Dwelling Trends — ${escapeHtml(subject.name)}</div>
       <table class="cmhc-table">
         <thead><tr><th></th>${years.map(y => `<th>${y}</th>`).join('')}</tr></thead>
         <tbody>${body}</tbody>
       </table>
-      <p class="text-xs text-neutral-500 mt-1">* Occupied by usual residents.${
+      <p class="text-xs text-neutral-500 mt-1 mb-3">* Occupied by usual residents.${
         subject.level.startsWith('WPG_') ? ' Winnipeg community/cluster/neighbourhood trends are shown for 2021 only (dissemination-area boundaries differ in earlier censuses).' : ''}</p>`;
 
-    // Export model.
     const rows = TREND_ROWS.map(row => row.header
       ? { area: row.header, values: years.map(() => '') }
       : { area: row.label, values: years.map(y => cell(row, y)) });
-    return { title: `Population & Dwelling Trends — ${subject.name}`, columns: years.slice(), rows };
+    return { tableHtml, model: { title: `Population & Dwelling Trends — ${subject.name}`, columns: years.slice(), rows } };
   }
 
   // ---- Demographics comparison table --------------------------------------
-  function renderDemographics(cols) {
-    const val = (r, key) => r.demo?.[key];
+  function renderDemographics(cols, period) {
+    const val = (r, key) => demoFor(r, period)?.[key];
     const amt = (r, row) => fmtVal(val(r, row.key), row.fmt);
     const pct = (r, row) => {
       if (!row.denom) return '';
@@ -249,9 +291,20 @@ export async function initCensus() {
       return (d && v != null) ? fPct0(v / d) : '';
     };
 
+    // Income/shelter section headers carry the income reference year, which is
+    // the census year minus one (2021→2020, 2016→2015, 2011→2010) — rewrite the
+    // hardcoded "(2020)" so earlier periods aren't mislabelled.
+    const refYear = { '2021': '2020', '2016': '2015', '2011': '2010' }[period] || period;
+    // Drop any row with no Amount for this period across every chosen area, then
+    // drop any section left with no rows.
+    const rowHasData = (row) => cols.some(r => amt(r, row) !== '');
+    const sections = DEMO_SECTIONS
+      .map(sec => ({ header: sec.header.replace('(2020)', `(${refYear})`), rows: sec.rows.filter(rowHasData) }))
+      .filter(sec => sec.rows.length);
+
     const nCols = 1 + cols.length * 2;
     let body = '';
-    for (const sec of DEMO_SECTIONS) {
+    for (const sec of sections) {
       body += `<tr><td colspan="${nCols}" style="font-weight:600;background:#f3f4f6">${escapeHtml(sec.header)}</td></tr>`;
       for (const row of sec.rows) {
         body += `<tr><td>${escapeHtml(row.label)}</td>` +
@@ -260,56 +313,70 @@ export async function initCensus() {
     }
     const regionHead = cols.map(r => `<th colspan="2">${escapeHtml(r.name)}</th>`).join('');
     const subHead    = cols.map(() => '<th>Amount</th><th>%</th>').join('');
+    // Areas with no demographics for the chosen period (e.g. a Winnipeg cluster
+    // when 2016/2011 is selected, or any area before the data rebuild).
+    const noData = cols.filter(r => !demoFor(r, period)).map(r => r.name);
+    const note = (period !== '2021' || noData.length) ? `
+      <p class="text-xs text-neutral-500 mt-1">Demographics shown for ${escapeHtml(period)}.${
+        period !== '2021' ? ' 2016/2011 are best-effort — rows whose fields differ across censuses (period-of-construction, income) are omitted.' : ''}${
+        noData.length ? ` No ${escapeHtml(period)} demographics for: ${escapeHtml(noData.join(', '))}.` : ''}</p>` : '';
+    const tableHtml = sections.length
+      ? `<table class="cmhc-table">
+          <thead>
+            <tr><th></th>${regionHead}</tr>
+            <tr><th>Category</th>${subHead}</tr>
+          </thead>
+          <tbody>${body}</tbody>
+        </table>`
+      : `<p class="text-sm text-neutral-600">No demographics available for ${escapeHtml(period)} for the selected areas.</p>`;
     $tables.querySelector('#census-demo').innerHTML = `
-      <div class="cmhc-table-title">Demographics (2021) — ${cols.map(r => escapeHtml(r.name)).join(' vs ')}</div>
-      <table class="cmhc-table">
-        <thead>
-          <tr><th></th>${regionHead}</tr>
-          <tr><th>Category</th>${subHead}</tr>
-        </thead>
-        <tbody>${body}</tbody>
-      </table>`;
+      <div class="cmhc-table-title">Demographics (${escapeHtml(period)}) — ${cols.map(r => escapeHtml(r.name)).join(' vs ')}</div>
+      ${tableHtml}${note}`;
 
-    // Export model: paired Amount/% columns per region.
+    // Export model mirrors the visible table — omitted rows/sections excluded.
     const columns = cols.flatMap(r => [r.name, '%']);
     const rows = [];
-    for (const sec of DEMO_SECTIONS) {
+    for (const sec of sections) {
       rows.push({ area: sec.header, values: columns.map(() => '') });
       for (const row of sec.rows)
         rows.push({ area: row.label, values: cols.flatMap(r => [amt(r, row), pct(r, row)]) });
     }
-    return { title: `Demographics (2021) — ${cols.map(r => r.name).join(' vs ')}`, columns, rows };
+    return { title: `Demographics (${period}) — ${cols.map(r => r.name).join(' vs ')}`, columns, rows };
   }
 
   // ---- Charts -------------------------------------------------------------
-  function renderCharts(subject, cols) {
+  function renderCharts(subject, cols, period) {
     $charts.replaceChildren();
     const t = subject.trends || {};
+    const regionNames = cols.map(r => r.name);
 
-    // 1. Population trend line.
-    const popData = years.map(y => ({ year: +y, value: t[y]?.population }))
-      .filter(d => d.value != null);
-    if (popData.length) {
-      const maxV = Math.max(...popData.map(d => d.value));
+    // 1. Population trend — one line per chosen area, across all censuses.
+    const popRows = [];
+    for (const r of cols) {
+      const tr = r.trends || {};
+      for (const y of years) if (tr[y]?.population != null)
+        popRows.push({ region: r.name, year: +y, value: tr[y].population });
+    }
+    if (popRows.length) {
+      const yrs = years.map(Number);
+      const maxV = Math.max(...popRows.map(d => d.value));
+      const single = regionNames.length === 1;
       const svg = Plot.plot(themed({
         height: 250,
-        x: { domain: [popData[0].year - 0.5, popData[popData.length - 1].year + 0.5],
-             ticks: popData.map(d => d.year), tickFormat: 'd' },
+        x: { domain: [Math.min(...yrs) - 0.5, Math.max(...yrs) + 0.5], ticks: yrs, tickFormat: 'd' },
         y: { label: 'Population', tickFormat: v => Number(v).toLocaleString(), domain: [0, maxV * 1.12] },
-        color: { legend: false },
+        color: { domain: regionNames, range: PALETTE, legend: !single },
         marks: [
           ...gridMarks(),
-          Plot.lineY(popData, { x: 'year', y: 'value', stroke: PALETTE[0], strokeWidth: 1.8 }),
-          Plot.dot(popData,  { x: 'year', y: 'value', fill: PALETTE[0], r: 3 }),
-          Plot.text(popData, { x: 'year', y: 'value', text: d => Number(d.value).toLocaleString(),
-                               dy: -10, fontSize: 10, fill: '#3f3f46' }),
+          Plot.lineY(popRows, { x: 'year', y: 'value', stroke: 'region', strokeWidth: 1.8 }),
+          Plot.dot(popRows,  { x: 'year', y: 'value', fill: 'region', r: 3 }),
           frameMark(),
         ],
       }));
-      appendCard('Population trend', `${subject.name} — ${years[0]}–${years[years.length - 1]}`, svg);
+      appendCard('Population trend', `${years[0]}–${years[years.length - 1]} — ${regionNames.join(' vs ')}`, svg);
     }
 
-    // 2. Occupied dwellings by type — stacked bar by census year.
+    // 2. Occupied dwellings by type — stacked bar by census year (Area 1).
     const typeOrder = TYPE_SERIES.map(([, lbl]) => lbl);
     const barData = [];
     for (const y of years) {
@@ -332,24 +399,24 @@ export async function initCensus() {
       appendCard('Dwelling type mix', `${subject.name} — occupied dwellings by structural type`, svg);
     }
 
-    // 3 & 4. Comparison grouped bars (% share) across the demographics columns.
-    const regionNames = cols.map(r => r.name);
+    // 3 & 4. Comparison grouped bars (% share) at the selected period.
     appendGroupedBar('Age structure', '% of population', cols, regionNames, [
       ['age_0_14', '0–14'], ['age_15_64', '15–64'], ['age_65_plus', '65+'],
-    ], 'population');
+    ], 'population', period);
     appendGroupedBar('Household size', '% of households', cols, regionNames, [
       ['hh_size_1', '1'], ['hh_size_2', '2'], ['hh_size_3', '3'],
       ['hh_size_4', '4'], ['hh_size_5plus', '5+'],
-    ], 'hh_size_total');
+    ], 'hh_size_total', period);
   }
 
-  function appendGroupedBar(title, yLabel, cols, regionNames, cats, denomKey) {
+  function appendGroupedBar(title, yLabel, cols, regionNames, cats, denomKey, period) {
     const rows = [];
     for (const r of cols) {
-      const denom = r.demo?.[denomKey];
+      const demo = demoFor(r, period);
+      const denom = demo?.[denomKey];
       if (!denom) continue;
       for (const [key, catLabel] of cats) {
-        const v = r.demo?.[key];
+        const v = demo?.[key];
         if (v != null) rows.push({ region: r.name, cat: catLabel, value: v / denom * 100 });
       }
     }
@@ -366,7 +433,7 @@ export async function initCensus() {
         frameMark(),
       ],
     }));
-    appendCard(title, '2021 — ' + regionNames.join(' vs '), svg);
+    appendCard(title, period + ' — ' + regionNames.join(' vs '), svg);
   }
 
   function appendCard(title, sub, svgNode) {
@@ -381,20 +448,17 @@ export async function initCensus() {
     $charts.appendChild(card);
   }
 
-  // Ensure the two table containers exist.
-  $tables.innerHTML = '<section class="cmhc-table-block" id="census-trends"></section>' +
-                      '<section class="cmhc-table-block" id="census-demo"></section>';
-
-  $subject.addEventListener('change', render);
-  $compare.addEventListener('change', render);
+  $area.forEach(sel => sel.addEventListener('change', render));
+  $period?.addEventListener('change', render);
   render();
 
   // ---- Exports (tables) ---------------------------------------------------
   document.getElementById('census-download-xlsx')?.addEventListener('click', async () => {
-    if (!lastTrendTable && !lastDemoTable) return;
+    const tables = [...lastTrendTables, lastDemoTable].filter(Boolean);
+    if (!tables.length) return;
     const { exportTablesToExcel } = await import('./excel-export.js');
     await exportTablesToExcel(
-      [lastTrendTable, lastDemoTable].filter(Boolean).map(t => ({ ...t, dwellingSuffix: '' })),
+      tables.map(t => ({ ...t, dwellingSuffix: '' })),
       { filename: `Census_Profile_${new Date().toISOString().slice(0, 10)}.xlsx`,
         titleNote: '— Census of Population (StatsCan / CensusMapper)' });
   });
@@ -404,7 +468,7 @@ export async function initCensus() {
       `<table border="1" cellspacing="0" cellpadding="3"><tr><th></th>${t.columns.map(c => `<th>${escapeHtml(c)}</th>`).join('')}</tr>` +
       t.rows.map(r => `<tr><td>${escapeHtml(r.area)}</td>${r.values.map(v => `<td>${escapeHtml(v)}</td>`).join('')}</tr>`).join('') +
       '</table>';
-    copyHtml([tbl(lastTrendTable), tbl(lastDemoTable)].join('<br>'));
+    copyHtml([...lastTrendTables, lastDemoTable].map(tbl).join('<br>'));
   });
 }
 
