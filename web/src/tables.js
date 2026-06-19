@@ -17,6 +17,9 @@
 // Download, not on tab init. Matches the lazy-import pattern in starts.js and
 // indicators.js so the vendor chunk stays lean.
 
+import * as Plot from '@observablehq/plot';
+import { themed, PALETTE, frameMark } from './plot-theme.js';
+
 // Table definitions — series + dimension pair + display label.
 const TABLE_DEFS = {
   vacancy_bedroom: { label: 'Vacancy Rate by Bedroom Type',  series: 'Vacancy Rate', dimension: 'Bedroom Type',         seriesType: 'vacancy' },
@@ -98,7 +101,34 @@ function buildTable({ geoShards, def, dwelling, maxYear, season }) {
 }
 
 /**
- * Render one table block (title bar + HTML table) into a container.
+ * Build a grouped (clustered) bar chart for one table: each breakdown category
+ * is a small group of bars, one bar per area — mirroring the area × category
+ * table. Returns an SVG node, or null if there are no plottable values.
+ */
+function buildComparisonChart(table) {
+  const areas = table.rows.map(r => r.area);
+  const data = [];
+  table.rows.forEach(r => table.columns.forEach((cat, i) => {
+    const v = r.raw?.[i];
+    if (v != null && Number.isFinite(v)) data.push({ area: r.area, cat, value: v });
+  }));
+  if (!data.length) return null;
+  const isVac = table.seriesType === 'vacancy';
+  const yFmt = isVac ? (v => `${v}%`) : (v => `$${Number(v).toLocaleString()}`);
+  const maxV = Math.max(...data.map(d => d.value));
+  return Plot.plot(themed({
+    height: 250, marginBottom: 30, marginLeft: 52,
+    fx: { label: null, domain: table.columns },
+    x: { axis: null, label: null },
+    y: { label: isVac ? 'Vacancy (%)' : 'Median Rent ($)', tickFormat: yFmt, domain: [0, maxV * 1.12] },
+    color: { domain: areas, range: PALETTE, legend: true },
+    marks: [Plot.barY(data, { fx: 'cat', x: 'area', y: 'value', fill: 'area' }), frameMark()],
+  }));
+}
+
+/**
+ * Render one table block: a title bar, then the grouped-bar chart (left) and
+ * the HTML table (right) side by side in one row.
  */
 function renderTable(table, dwellingSuffix, container) {
   const block = document.createElement('section');
@@ -108,6 +138,24 @@ function renderTable(table, dwellingSuffix, container) {
   titleEl.textContent = `${table.title}${dwellingSuffix}`;
   block.appendChild(titleEl);
 
+  const row = document.createElement('div');
+  row.className = 'grid md:grid-cols-2 gap-4 items-start';
+
+  // Chart (left).
+  const chartCell = document.createElement('div');
+  chartCell.className = 'min-w-0';
+  const svg = buildComparisonChart(table);
+  if (svg) {
+    const cap = document.createElement('div');
+    cap.className = 'text-xs text-neutral-500 text-right mt-1';
+    cap.textContent = 'Source: CMHC';
+    chartCell.appendChild(svg);
+    chartCell.appendChild(cap);
+  }
+
+  // Table (right).
+  const tableCell = document.createElement('div');
+  tableCell.className = 'min-w-0 overflow-x-auto';
   const tbl = document.createElement('table');
   tbl.className = 'cmhc-table';
   const thead = document.createElement('thead');
@@ -141,7 +189,11 @@ function renderTable(table, dwellingSuffix, container) {
     tbody.appendChild(tr);
   });
   tbl.appendChild(tbody);
-  block.appendChild(tbl);
+  tableCell.appendChild(tbl);
+
+  row.appendChild(chartCell);
+  row.appendChild(tableCell);
+  block.appendChild(row);
   container.appendChild(block);
 }
 
