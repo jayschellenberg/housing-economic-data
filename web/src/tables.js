@@ -17,8 +17,7 @@
 // Download, not on tab init. Matches the lazy-import pattern in starts.js and
 // indicators.js so the vendor chunk stays lean.
 
-import * as Plot from '@observablehq/plot';
-import { themed, PALETTE, frameMark } from './plot-theme.js';
+import { buildBarCard } from './chart.js';
 
 // Table definitions — series + dimension pair + display label.
 const TABLE_DEFS = {
@@ -101,61 +100,35 @@ function buildTable({ geoShards, def, dwelling, maxYear, season }) {
 }
 
 /**
- * Build a grouped (clustered) bar chart for one table: each breakdown category
- * is a small group of bars, one bar per area — mirroring the area × category
- * table. Returns an SVG node, or null if there are no plottable values.
+ * Render one table row: a Rental-Charts-style grouped-bar chart CARD (its own
+ * object — title, subtitle, plot + right legend, caption, Download PNG) on the
+ * left, and the HTML table as a separate object on the right.
  */
-function buildComparisonChart(table) {
-  const areas = table.rows.map(r => r.area);
+function renderTable(table, dwellingSuffix, container, sub) {
+  const row = document.createElement('div');
+  row.className = 'grid md:grid-cols-2 gap-4 items-start';
+
+  // Chart card (separate object, left).
+  const chartCell = document.createElement('div');
+  chartCell.className = 'min-w-0';
   const data = [];
   table.rows.forEach(r => table.columns.forEach((cat, i) => {
     const v = r.raw?.[i];
     if (v != null && Number.isFinite(v)) data.push({ area: r.area, cat, value: v });
   }));
-  if (!data.length) return null;
-  const isVac = table.seriesType === 'vacancy';
-  const yFmt = isVac ? (v => `${v}%`) : (v => `$${Number(v).toLocaleString()}`);
-  const maxV = Math.max(...data.map(d => d.value));
-  return Plot.plot(themed({
-    height: 250, marginBottom: 30, marginLeft: 52,
-    fx: { label: null, domain: table.columns },
-    x: { axis: null, label: null },
-    y: { label: isVac ? 'Vacancy (%)' : 'Median Rent ($)', tickFormat: yFmt, domain: [0, maxV * 1.12] },
-    color: { domain: areas, range: PALETTE, legend: true },
-    marks: [Plot.barY(data, { fx: 'cat', x: 'area', y: 'value', fill: 'area' }), frameMark()],
-  }));
-}
+  const { render: renderBar } = buildBarCard(chartCell, { title: `${table.title}${dwellingSuffix}` });
+  renderBar({ data, categories: table.columns, areas: table.rows.map(r => r.area),
+              seriesType: table.seriesType, sub });
+  row.appendChild(chartCell);
 
-/**
- * Render one table block: a title bar, then the grouped-bar chart (left) and
- * the HTML table (right) side by side in one row.
- */
-function renderTable(table, dwellingSuffix, container) {
+  // Table (separate object, right).
   const block = document.createElement('section');
-  block.className = 'cmhc-table-block';
+  block.className = 'cmhc-table-block min-w-0 overflow-x-auto';
   const titleEl = document.createElement('div');
   titleEl.className = 'cmhc-table-title';
   titleEl.textContent = `${table.title}${dwellingSuffix}`;
   block.appendChild(titleEl);
 
-  const row = document.createElement('div');
-  row.className = 'grid md:grid-cols-2 gap-4 items-start';
-
-  // Chart (left).
-  const chartCell = document.createElement('div');
-  chartCell.className = 'min-w-0';
-  const svg = buildComparisonChart(table);
-  if (svg) {
-    const cap = document.createElement('div');
-    cap.className = 'text-xs text-neutral-500 text-right mt-1';
-    cap.textContent = 'Source: CMHC';
-    chartCell.appendChild(svg);
-    chartCell.appendChild(cap);
-  }
-
-  // Table (right).
-  const tableCell = document.createElement('div');
-  tableCell.className = 'min-w-0 overflow-x-auto';
   const tbl = document.createElement('table');
   tbl.className = 'cmhc-table';
   const thead = document.createElement('thead');
@@ -189,12 +162,10 @@ function renderTable(table, dwellingSuffix, container) {
     tbody.appendChild(tr);
   });
   tbl.appendChild(tbody);
-  tableCell.appendChild(tbl);
+  block.appendChild(tbl);
 
-  row.appendChild(chartCell);
-  row.appendChild(tableCell);
-  block.appendChild(row);
-  container.appendChild(block);
+  row.appendChild(block);
+  container.appendChild(row);
 }
 
 /**
@@ -206,6 +177,7 @@ function renderTable(table, dwellingSuffix, container) {
  * @param {Function} opts.loadShard   (level, uid) => Promise<shard JSON>
  */
 export function initTables({ geographies, manifest, loadShard }) {
+  const $province = document.getElementById('tbl-province');
   const $second   = document.getElementById('tbl-second-area');
   const $third    = document.getElementById('tbl-third-area');
   const $fourth   = document.getElementById('tbl-fourth-area');
@@ -219,51 +191,51 @@ export function initTables({ geographies, manifest, loadShard }) {
   const $vintage  = document.getElementById('tbl-vintage');
   const $asOf     = document.getElementById('tbl-data-as-of');
 
-  // Build a flat option list across CMA + survey zones (matches the original
-  // tool's "Third Area" dropdown which mixed centres and zones).
   const levels = geographies.levels || {};
-  const buildOptions = (placeholder = null) => {
+  const provinceItems = (levels.province || []).slice().sort((a, b) => a.name.localeCompare(b.name));
+
+  // Option list scoped to one province (its `prov` code). The second–fourth
+  // areas are centres/zones WITHIN the selected province — no cross-province
+  // comparison.
+  const buildOptions = (provUid, placeholder = null) => {
     const parts = [];
     if (placeholder !== null) parts.push(`<option value="">${placeholder}</option>`);
-    if (Array.isArray(levels.cma)) {
-      parts.push('<optgroup label="Centres (CMA / CA)">');
-      levels.cma.forEach(it => {
-        parts.push(`<option value="cma:${it.uid}">${escapeHtml(it.name)}</option>`);
-      });
+    const grp = (label, level) => {
+      const arr = (levels[level] || []).filter(it => it.prov === provUid);
+      if (!arr.length) return;
+      parts.push(`<optgroup label="${escapeHtml(label)}">`);
+      arr.forEach(it => parts.push(`<option value="${level}:${it.uid}">${escapeHtml(it.name)}</option>`));
       parts.push('</optgroup>');
-    }
-    if (Array.isArray(levels.csd) && levels.csd.length) {
-      parts.push('<optgroup label="Census Subdivisions">');
-      levels.csd.forEach(it => {
-        parts.push(`<option value="csd:${it.uid}">${escapeHtml(it.name)}</option>`);
-      });
-      parts.push('</optgroup>');
-    }
-    if (Array.isArray(levels.zone) && levels.zone.length) {
-      parts.push('<optgroup label="Survey Zones">');
-      levels.zone.forEach(it => {
-        parts.push(`<option value="zone:${it.uid}">${escapeHtml(it.name)}</option>`);
-      });
-      parts.push('</optgroup>');
-    }
-    if (Array.isArray(levels.neighbourhood) && levels.neighbourhood.length) {
-      parts.push('<optgroup label="Neighbourhoods">');
-      levels.neighbourhood.forEach(it => {
-        parts.push(`<option value="neighbourhood:${it.uid}">${escapeHtml(it.name)}</option>`);
-      });
-      parts.push('</optgroup>');
-    }
+    };
+    grp('Centres (CMA / CA)', 'cma');
+    grp('Census Subdivisions', 'csd');
+    grp('Survey Zones', 'zone');
+    grp('Neighbourhoods', 'neighbourhood');
     return parts.join('');
   };
 
-  $second.innerHTML = buildOptions();
-  $third.innerHTML  = buildOptions();
-  $fourth.innerHTML = buildOptions('— None —');
-  // Sensible defaults: second = Winnipeg, third = Brandon (typical pair).
-  const winnipegCma = (levels.cma || []).find(it => it.name === 'Winnipeg');
-  const brandonCma  = (levels.cma || []).find(it => it.name === 'Brandon');
-  if (winnipegCma) $second.value = `cma:${winnipegCma.uid}`;
-  if (brandonCma)  $third.value  = `cma:${brandonCma.uid}`;
+  // Province dropdown — the first row + the scope for the other areas.
+  $province.innerHTML = provinceItems.map(it => `<option value="${escapeHtml(it.prov)}">${escapeHtml(it.name)}</option>`).join('');
+  $province.value = provinceItems.some(it => it.prov === '46') ? '46' : provinceItems[0]?.prov || '';
+  const currentProvinceItem = () => provinceItems.find(it => it.prov === $province.value) || provinceItems[0];
+
+  function populateAreaDropdowns() {
+    const prov = $province.value;
+    $second.innerHTML = buildOptions(prov);
+    $third.innerHTML  = buildOptions(prov);
+    $fourth.innerHTML = buildOptions(prov, '— None —');
+    // Defaults: Manitoba → Winnipeg + Brandon (the familiar pair); otherwise the
+    // first two centres in the province.
+    const cmas = (levels.cma || []).filter(it => it.prov === prov);
+    let second = prov === '46' ? cmas.find(c => c.name === 'Winnipeg') : null;
+    let third  = prov === '46' ? cmas.find(c => c.name === 'Brandon')  : null;
+    second = second || cmas[0];
+    third  = third  || cmas[1];
+    $second.value = second ? `cma:${second.uid}` : '';
+    $third.value  = third  ? `cma:${third.uid}`  : '';
+    $fourth.value = '';
+  }
+  populateAreaDropdowns();
 
   // Vintage label.
   const maxYear = manifest?.cmhcMaxYear ?? new Date().getFullYear();
@@ -271,9 +243,6 @@ export function initTables({ geographies, manifest, loadShard }) {
   if ($asOf && manifest?.lastUpdated) {
     $asOf.textContent = `${maxYear} (refreshed ${new Date(manifest.lastUpdated).toISOString().slice(0,10)})`;
   }
-
-  // Always show Manitoba first.
-  const manitobaItem = (levels.province || []).find(it => it.name === 'Manitoba') || levels.province?.[0];
 
   function pickedAreas() {
     const parsed = (v) => {
@@ -311,8 +280,9 @@ export function initTables({ geographies, manifest, loadShard }) {
     }
     $empty.hidden = true;
 
+    const provItem = currentProvinceItem();
     const areas = [
-      manitobaItem && { name: manitobaItem.name, level: 'province', uid: manitobaItem.uid },
+      provItem && { name: provItem.name, level: 'province', uid: provItem.uid },
       second && { level: second.level, uid: second.uid, name: lookupName(levels, second) },
       third  && { level: third.level,  uid: third.uid,  name: lookupName(levels, third)  },
       fourth && { level: fourth.level, uid: fourth.uid, name: lookupName(levels, fourth) },
@@ -343,7 +313,7 @@ export function initTables({ geographies, manifest, loadShard }) {
           maxYear,
           season: 'October',
         });
-        renderTable(table, pass.suffix, $output);
+        renderTable(table, pass.suffix, $output, `${provItem.name} — ${maxYear} October`);
         built.push({ ...table, dwellingSuffix: pass.suffix });
       }
     }
@@ -368,6 +338,9 @@ export function initTables({ geographies, manifest, loadShard }) {
   [...$mode, ...$tables, $second, $third, $fourth].forEach(el => {
     el.addEventListener('change', scheduleRender);
   });
+  // Changing the province re-scopes the second–fourth dropdowns (and resets
+  // their defaults) before re-rendering.
+  $province.addEventListener('change', () => { populateAreaDropdowns(); scheduleRender(); });
 
   // Flash a transient status label on an export button, then restore it.
   function flashLabel(btn, label) {

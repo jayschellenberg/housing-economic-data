@@ -192,34 +192,95 @@ export function buildChartCard(container, { series }) {
 
     const svgEl = Plot.plot(spec);
 
-    // Render a custom legend to the right of the chart, stacked vertically.
-    // Plot's built-in legend renders horizontally above the SVG; building
-    // our own gives full layout control and lets the chart claim the rest
-    // of the card width.
-    const legendEl = document.createElement('div');
-    legendEl.className = 'cmhc-plot-legend';
-    colorDomain.forEach((cat, i) => {
-      const colour = PALETTE[i % PALETTE.length];
-      const item = document.createElement('div');
-      item.className = 'cmhc-plot-legend-item';
-      item.innerHTML =
-        `<span class="cmhc-plot-legend-swatch" style="background:${colour}"></span>` +
-        `<span class="cmhc-plot-legend-text"></span>`;
-      item.querySelector('.cmhc-plot-legend-text').textContent = cat;
-      legendEl.appendChild(item);
-    });
-
-    const wrap = document.createElement('div');
-    wrap.className = 'cmhc-plot-wrap';
-    wrap.appendChild(svgEl);
-    wrap.appendChild(legendEl);
-    $plot.appendChild(wrap);
+    // Custom legend to the right of the chart (see plotWrapWithLegend).
+    $plot.appendChild(plotWrapWithLegend(svgEl, colorDomain));
 
     lastFilename = buildFilename(series, sub);
     // Export the entire card (title + subtitle + chart + legend + caption),
     // not just the chart SVG. We toggle a CSS marker class on the card so
     // the actions row (Download buttons) is hidden during capture.
     $png.onclick = () => downloadCard(card, lastFilename, 'png');
+  }
+
+  return { render, card };
+}
+
+// Build the chart + right-side vertical legend wrapper (shared by the line
+// cards and the bar cards). Plot's built-in legend renders horizontally above
+// the SVG; our own sits beside the plot and matches the appraisal template.
+function plotWrapWithLegend(svgEl, colorDomain) {
+  const legendEl = document.createElement('div');
+  legendEl.className = 'cmhc-plot-legend';
+  colorDomain.forEach((cat, i) => {
+    const colour = PALETTE[i % PALETTE.length];
+    const item = document.createElement('div');
+    item.className = 'cmhc-plot-legend-item';
+    item.innerHTML =
+      `<span class="cmhc-plot-legend-swatch" style="background:${colour}"></span>` +
+      `<span class="cmhc-plot-legend-text"></span>`;
+    item.querySelector('.cmhc-plot-legend-text').textContent = cat;
+    legendEl.appendChild(item);
+  });
+  const wrap = document.createElement('div');
+  wrap.className = 'cmhc-plot-wrap';
+  wrap.appendChild(svgEl);
+  wrap.appendChild(legendEl);
+  return wrap;
+}
+
+/**
+ * Build a grouped-bar chart card (same chrome as buildChartCard — title,
+ * subtitle, plot + right-side area legend, "Source: CMHC" caption, Download
+ * PNG). Used by the Rental Tables tab: each breakdown category is a facet, with
+ * one bar per area. Returns a `render({ data, categories, areas, seriesType,
+ * sub })` function; `data` is rows of `{ area, cat, value }`.
+ */
+export function buildBarCard(container, { title }) {
+  const card = document.createElement('section');
+  card.className = 'chart-card';
+  card.innerHTML = `
+    <header class="chart-title">${title}</header>
+    <p class="chart-sub" data-role="sub"></p>
+    <div data-role="plot"></div>
+    <div data-role="empty" class="text-xs text-neutral-500 mt-2" hidden>No data for this combination.</div>
+    <div class="chart-caption">
+      <span class="chart-caption-left" data-role="caption-left"></span>
+      <span class="chart-source">Source: CMHC</span>
+    </div>
+    <div class="chart-actions">
+      <button type="button" data-role="dl-png">Download PNG</button>
+    </div>
+  `;
+  container.appendChild(card);
+  const $sub   = card.querySelector('[data-role="sub"]');
+  const $plot  = card.querySelector('[data-role="plot"]');
+  const $empty = card.querySelector('[data-role="empty"]');
+  const $png   = card.querySelector('[data-role="dl-png"]');
+
+  function render({ data, categories, areas, seriesType, sub }) {
+    $plot.replaceChildren();
+    $sub.textContent = sub || '';
+    if (!data || data.length === 0) { $empty.hidden = false; $png.disabled = true; return; }
+    $empty.hidden = true; $png.disabled = false;
+
+    const isVac = seriesType === 'vacancy';
+    const yFmt = isVac ? (v) => `${v}%` : (v) => `$${Number(v).toLocaleString()}`;
+    const maxV = Math.max(...data.map(d => d.value));
+    const svgEl = Plot.plot(themed({
+      height: 280, marginTop: 24, marginBottom: 22, marginLeft: 54,
+      fx: { label: null, domain: categories },
+      x: { axis: null, label: null },
+      y: { label: isVac ? 'Vacancy Rate (%)' : 'Median Rent ($)', tickFormat: yFmt, domain: [0, maxV * 1.12] },
+      color: { domain: areas, range: PALETTE, legend: false, label: null },
+      marks: [
+        ...gridMarks(),
+        Plot.barY(data, { fx: 'cat', x: 'area', y: 'value', fill: 'area',
+          title: (d) => `${d.area} · ${d.cat}: ${yFmt(d.value)}` }),
+        frameMark(),
+      ],
+    }));
+    $plot.appendChild(plotWrapWithLegend(svgEl, areas));
+    $png.onclick = () => downloadCard(card, buildFilename(title, sub), 'png');
   }
 
   return { render, card };
