@@ -182,7 +182,6 @@ export function initTables({ geographies, manifest, loadShard }) {
   const $third    = document.getElementById('tbl-third-area');
   const $fourth   = document.getElementById('tbl-fourth-area');
   const $mode     = document.querySelectorAll('input[name="tblDwellingMode"]');
-  const $tables   = document.querySelectorAll('#tbl-tables input[type=checkbox]');
   const $download = document.getElementById('tbl-download-xlsx');
   const $copy     = document.getElementById('tbl-copy-clipboard');
   const $docx     = document.getElementById('tbl-download-docx');
@@ -261,7 +260,7 @@ export function initTables({ geographies, manifest, loadShard }) {
   }
 
   function pickedTables() {
-    return [...$tables].filter(n => n.checked).map(n => n.value);
+    return Object.keys(TABLE_DEFS);   // always all tables
   }
 
   let lastRenderState = null;
@@ -270,11 +269,9 @@ export function initTables({ geographies, manifest, loadShard }) {
     $output.replaceChildren();
     const { second, third, fourth } = pickedAreas();
     const tableIds = pickedTables();
-    if (!third || tableIds.length === 0) {
+    if (!third) {
       $empty.hidden = false;
-      $empty.textContent = !third
-        ? 'Select a Third area to begin.'
-        : 'Tick at least one table on the left.';
+      $empty.textContent = 'Select a Third area to begin.';
       lastRenderState = null;
       return;
     }
@@ -335,7 +332,7 @@ export function initTables({ geographies, manifest, loadShard }) {
     if (pendingRender) clearTimeout(pendingRender);
     pendingRender = setTimeout(() => { pendingRender = null; render(); }, 120);
   }
-  [...$mode, ...$tables, $second, $third, $fourth].forEach(el => {
+  [...$mode, $second, $third, $fourth].forEach(el => {
     el.addEventListener('change', scheduleRender);
   });
   // Changing the province re-scopes the second–fourth dropdowns (and resets

@@ -1,7 +1,8 @@
 /*
  * Compare Areas view — overlay several areas (within one province) as
- * time-series lines for ONE metric and ONE fixed breakdown category, with a
- * matching areas × years table beneath. This is the multi-area counterpart to
+ * time-series lines for a fixed breakdown category, with a matching areas ×
+ * years table beside each chart. One chart+table pair per metric (Median Rent,
+ * Average Rent, Vacancy Rate, Avg Rent Change). The multi-area counterpart to
  * the single-area Rental Charts tab: there you compare categories within one
  * area; here you compare areas for one category.
  *
@@ -14,6 +15,7 @@
 
 import { buildChartCard } from './chart.js';
 
+const METRICS = ['Median Rent', 'Average Rent', 'Vacancy Rate', 'Average Rent Change'];
 const AREA_LEVELS = ['province', 'cma', 'csd', 'zone', 'neighbourhood'];
 const LEVEL_LABEL = {
   province:      'Entire province',
@@ -27,16 +29,14 @@ const DWELLING_LABEL = { All: 'All Types', Apartment: 'Apartments Only', Row: 'R
 export function initCompare({ geographies, capabilities, manifest, categoryOrder = {}, loadShard }) {
   const $province  = document.getElementById('cmp-province');
   const $areas     = document.getElementById('cmp-areas');
-  const $metric    = document.querySelectorAll('input[name="cmpMetric"]');
   const $breakdown = document.querySelectorAll('input[name="cmpBreakdown"]');
   const $category  = document.getElementById('cmp-category');
   const $dwelling  = document.querySelectorAll('input[name="cmpDwelling"]');
   const $yearFrom  = document.getElementById('cmp-year-from');
   const $yearTo    = document.getElementById('cmp-year-to');
-  const $grid      = document.getElementById('cmp-chart-grid');
-  const $table     = document.getElementById('cmp-table');
+  const $output    = document.getElementById('cmp-output');
   const $empty     = document.getElementById('cmp-empty');
-  if (!$province || !$grid) return;
+  if (!$province || !$output) return;
 
   const levels = geographies.levels || {};
   const provinceItems = (levels.province || []).slice().sort((a, b) => a.name.localeCompare(b.name));
@@ -48,15 +48,6 @@ export function initCompare({ geographies, capabilities, manifest, categoryOrder
   const maxYear = manifest?.cmhcMaxYear ?? new Date().getFullYear();
   $yearFrom.value = Math.max(maxYear - 10, 1990);
   $yearTo.value   = maxYear;
-
-  // --- Reusable chart card (rebuilt only when the metric changes) -----------
-  let chartCard = null, cardMetric = null;
-  function ensureCard(metric) {
-    if (chartCard && cardMetric === metric) return;
-    $grid.replaceChildren();
-    chartCard = buildChartCard($grid, { series: metric });
-    cardMetric = metric;
-  }
 
   function areasForProvince(prov) {
     const out = [];
@@ -94,7 +85,6 @@ export function initCompare({ geographies, capabilities, manifest, categoryOrder
     $category.value = cats.includes('Total') ? 'Total' : cats[cats.length - 1] || '';
   }
 
-  const pickedMetric    = () => [...$metric].find(n => n.checked)?.value || 'Median Rent';
   const pickedBreakdown = () => [...$breakdown].find(n => n.checked)?.value || 'Bedroom Type';
   const pickedDwelling  = () => [...$dwelling].find(n => n.checked)?.value || 'All';
   const pickedAreas = () => [...$areas.querySelectorAll('input:checked')].map(c => {
@@ -106,70 +96,81 @@ export function initCompare({ geographies, capabilities, manifest, categoryOrder
     ? (v) => (v == null ? null : `${Number(v).toFixed(1)}%`)
     : (v) => (v == null ? null : `$${Math.round(Number(v)).toLocaleString()}`);
 
-  let lastTable = null;
+  let lastTables = [];
 
   async function render() {
-    const metric = pickedMetric(), dim = pickedBreakdown(), cat = $category.value, dwelling = pickedDwelling();
+    const dim = pickedBreakdown(), cat = $category.value, dwelling = pickedDwelling();
     const yf = parseInt($yearFrom.value, 10) || (maxYear - 10);
     const yt = parseInt($yearTo.value, 10)   || maxYear;
     const areas = pickedAreas();
 
     if (areas.length < 2) {
-      $grid.replaceChildren(); chartCard = null; cardMetric = null;
-      $table.innerHTML = ''; lastTable = null;
+      $output.replaceChildren(); lastTables = [];
       $empty.hidden = false; $empty.textContent = 'Pick at least 2 areas to compare.';
       return;
     }
+    $empty.hidden = true;
 
     const shards = (await Promise.all(areas.map(async (a) => {
       const s = await loadShard(a.level, a.uid);
       return s ? { ...s, _name: a.name } : null;
     }))).filter(Boolean);
 
-    const chartRows = [];
-    const yearsSet = new Set();
-    const byArea = new Map();
-    const order = [];
-    for (const s of shards) {
-      const recs = (s.records || []).filter(r =>
-        r.series === metric && r.dimension === dim && r.category === cat &&
-        r.dwellingType === dwelling && r.season === 'October' &&
-        r.year >= yf && r.year <= yt && r.value != null);
-      const m = new Map();
-      for (const r of recs) { chartRows.push({ category: s._name, year: r.year, value: r.value }); m.set(r.year, r.value); yearsSet.add(r.year); }
-      byArea.set(s._name, m); order.push(s._name);
+    $output.replaceChildren();
+    lastTables = [];
+    const subBase = `by ${cat} — ${DWELLING_LABEL[dwelling] || dwelling}`;
+
+    // One chart + table pair per metric.
+    for (const metric of METRICS) {
+      const chartRows = [];
+      const yearsSet = new Set();
+      const byArea = new Map();
+      const order = [];
+      for (const s of shards) {
+        const recs = (s.records || []).filter(r =>
+          r.series === metric && r.dimension === dim && r.category === cat &&
+          r.dwellingType === dwelling && r.season === 'October' &&
+          r.year >= yf && r.year <= yt && r.value != null);
+        const m = new Map();
+        for (const r of recs) { chartRows.push({ category: s._name, year: r.year, value: r.value }); m.set(r.year, r.value); yearsSet.add(r.year); }
+        byArea.set(s._name, m); order.push(s._name);
+      }
+
+      // Row: chart card (left) + table (right).
+      const row = document.createElement('div');
+      row.className = 'grid md:grid-cols-[3fr_2fr] gap-4 items-start';
+      const chartCell = document.createElement('div');
+      chartCell.className = 'cmp-chart min-w-0';
+      const tableCell = document.createElement('div');
+      tableCell.className = 'overflow-x-auto min-w-0';
+      row.append(chartCell, tableCell);
+      $output.appendChild(row);
+
+      // Chart (areas as lines). buildChartCard renders its own "No data" note
+      // when a metric has nothing for this category/area set.
+      const card = buildChartCard(chartCell, { series: metric });
+      card.render(chartRows, subBase, order, { season: 'October' });
+
+      // Table: transposed — years down the rows, areas across the columns.
+      if (chartRows.length) {
+        const years = [...yearsSet].sort((a, b) => a - b);
+        const fmt = fmtFor(metric);
+        const title = `${metric} ${subBase}`;
+        const rows = years.map(y => ({
+          area: String(y),
+          values: order.map(name => fmt((byArea.get(name) || new Map()).get(y))),
+        }));
+        tableCell.innerHTML = tableHtml(title, 'Year', order, rows);
+        lastTables.push({ title, columns: order.slice(),
+          rows: rows.map(r => ({ area: r.area, values: r.values.map(v => v == null ? '**' : v) })) });
+      } else {
+        tableCell.innerHTML = `<p class="text-sm text-neutral-600 mt-2">No ${esc(metric)} data for this selection.</p>`;
+      }
     }
-
-    if (!chartRows.length) {
-      $grid.replaceChildren(); chartCard = null; cardMetric = null;
-      $table.innerHTML = ''; lastTable = null;
-      $empty.hidden = false;
-      $empty.textContent = `No ${metric} data for "${cat}" (${DWELLING_LABEL[dwelling] || dwelling}) in the selected areas/years.`;
-      return;
-    }
-    $empty.hidden = true;
-
-    // Chart: areas as lines (category = area name).
-    ensureCard(metric);
-    chartCard.render(chartRows, `by ${cat} — ${DWELLING_LABEL[dwelling] || dwelling}`, order, { season: 'October' });
-
-    // Table: transposed — years down the rows, areas across the columns — so it
-    // stays narrow enough to sit beside the chart (2–6 area columns beats 10+
-    // year columns). Reads naturally next to the chart's year x-axis.
-    const years = [...yearsSet].sort((a, b) => a - b);
-    const fmt = fmtFor(metric);
-    const title = `${metric} by ${cat} — ${DWELLING_LABEL[dwelling] || dwelling}`;
-    const rows = years.map(y => ({
-      area: String(y),
-      values: order.map(name => fmt((byArea.get(name) || new Map()).get(y))),
-    }));
-    renderTable(title, 'Year', order, rows);
-    lastTable = { title, columns: order.slice(),
-      rows: rows.map(r => ({ area: r.area, values: r.values.map(v => v == null ? '**' : v) })) };
   }
 
-  function renderTable(title, corner, cols, rows) {
-    $table.innerHTML = `<section class="cmhc-table-block">
+  function tableHtml(title, corner, cols, rows) {
+    return `<section class="cmhc-table-block">
       <div class="cmhc-table-title">${esc(title)}</div>
       <table class="cmhc-table"><thead><tr><th>${esc(corner)}</th>${cols.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead>
       <tbody>${rows.map(r => `<tr><td>${esc(r.area)}</td>${r.values.map(v =>
@@ -183,21 +184,22 @@ export function initCompare({ geographies, capabilities, manifest, categoryOrder
 
   $province.addEventListener('change', () => { populateAreas(); scheduleRender(); });
   $breakdown.forEach(n => n.addEventListener('change', () => { populateCategory(); scheduleRender(); }));
-  [...$metric, ...$dwelling, $category, $yearFrom, $yearTo].forEach(el => el.addEventListener('change', scheduleRender));
+  [...$dwelling, $category, $yearFrom, $yearTo].forEach(el => el.addEventListener('change', scheduleRender));
 
   document.getElementById('cmp-download-xlsx')?.addEventListener('click', async () => {
-    if (!lastTable) return;
+    if (!lastTables.length) return;
     const { exportTablesToExcel } = await import('./excel-export.js');
-    await exportTablesToExcel([{ ...lastTable, dwellingSuffix: '' }],
+    await exportTablesToExcel(lastTables.map(t => ({ ...t, dwellingSuffix: '' })),
       { filename: `CMHC_CompareAreas_${new Date().toISOString().slice(0, 10)}.xlsx`,
         maxYear, titleNote: '— CMHC Rental Market Survey' });
   });
   document.getElementById('cmp-copy')?.addEventListener('click', () => {
-    if (!lastTable) return;
-    const html = `<h4>${esc(lastTable.title)}</h4><table border="1" cellspacing="0" cellpadding="3">` +
-      `<tr><th></th>${lastTable.columns.map(c => `<th>${esc(c)}</th>`).join('')}</tr>` +
-      lastTable.rows.map(r => `<tr><td>${esc(r.area)}</td>${r.values.map(v => `<td>${esc(v)}</td>`).join('')}</tr>`).join('') +
-      '</table>';
+    if (!lastTables.length) return;
+    const html = lastTables.map(t =>
+      `<h4>${esc(t.title)}</h4><table border="1" cellspacing="0" cellpadding="3">` +
+      `<tr><th></th>${t.columns.map(c => `<th>${esc(c)}</th>`).join('')}</tr>` +
+      t.rows.map(r => `<tr><td>${esc(r.area)}</td>${r.values.map(v => `<td>${esc(v)}</td>`).join('')}</tr>`).join('') +
+      '</table>').join('<br>');
     copyHtml(html);
   });
 

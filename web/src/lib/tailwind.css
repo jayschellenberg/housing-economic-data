@@ -301,8 +301,8 @@
 /* Compare Areas tab: the chart sits beside the table, so stack the area legend
    BELOW the plot (wrapping horizontally) — the plot then claims the full card
    width instead of giving ~140px to a right-side legend. */
-#cmp-chart-grid .cmhc-plot-wrap { flex-direction: column; align-items: stretch; }
-#cmp-chart-grid .cmhc-plot-legend {
+.cmp-chart .cmhc-plot-wrap { flex-direction: column; align-items: stretch; }
+.cmp-chart .cmhc-plot-legend {
   flex-direction: row;
   flex-wrap: wrap;
   max-width: none;
