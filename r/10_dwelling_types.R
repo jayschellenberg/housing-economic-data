@@ -33,9 +33,9 @@ TYPE_LABELS <- c("Single-detached house", "Semi-detached house", "Row house",
                  "Apartment in a building that has five or more storeys",
                  "Other single-attached house", "Movable dwelling")   # members 2..9
 
-# 98-10-0040 geography memberId → our uid/name/level. (Canada + 10 provinces +
-# MB/SK CMAs/CAs. uid = province SGC code / 3-digit CMA code, matching the
-# rental tab's convention.)
+# 98-10-0040 geography memberId → our uid/name/level. (Canada + 13 provinces/
+# territories + MB/SK CMAs/CAs. uid = province SGC code / 3-digit CMA code,
+# matching the rental tab's convention.)
 AREAS <- tibble::tribble(
   ~mid, ~uid,  ~name,                       ~level,     ~prov,
   1L,   "CA",  "Canada",                    "country",  "CA",
@@ -49,6 +49,9 @@ AREAS <- tibble::tribble(
   111L, "47",  "Saskatchewan",              "province", "47",
   121L, "48",  "Alberta",                   "province", "48",
   141L, "59",  "British Columbia",          "province", "59",
+  170L, "60",  "Yukon",                     "province", "60",
+  172L, "61",  "Northwest Territories",     "province", "61",
+  174L, "62",  "Nunavut",                   "province", "62",
   110L, "602", "Winnipeg (CMA)",            "cma",      "46",
   105L, "610", "Brandon (CA)",              "cma",      "46",
   106L, "607", "Portage la Prairie (CA)",   "cma",      "46",
