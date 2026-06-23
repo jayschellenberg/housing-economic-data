@@ -148,6 +148,27 @@
 }
 .cmhc-hsk-stats strong { color: var(--color-neutral-900); font-size: 15px; }
 
+/* Affordability tab — Factor stat cards + 30%/50% threshold bands. */
+.aff-stat-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+.aff-stat {
+  border: 1px solid var(--color-neutral-200);
+  border-left-width: 4px;
+  border-radius: 6px;
+  padding: 8px 14px;
+  min-width: 150px;
+  background: #fff;
+}
+.aff-stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--color-neutral-500); }
+.aff-stat-value { font-size: 24px; font-weight: 700; color: var(--color-neutral-900); line-height: 1.1; }
+.aff-stat-sub { font-size: 12px; color: var(--color-neutral-600); margin-top: 2px; }
+.aff-stat.aff-ok   { border-left-color: #16a34a; }
+.aff-stat.aff-warn { border-left-color: #d97706; }
+.aff-stat.aff-bad  { border-left-color: #dc2626; }
+.cmhc-table td.aff-ok   { color: #15803d; font-weight: 600; }
+.cmhc-table td.aff-warn { color: #b45309; font-weight: 600; }
+.cmhc-table td.aff-bad  { color: #b91c1c; font-weight: 700; }
+.cmhc-table tbody tr.aff-row-selected td { background: #fff7ed; }
+
 /* Median / Average rows appended after the period rows. */
 .cmhc-table tbody tr.cmhc-table-summary td {
   background: #eef2f7;

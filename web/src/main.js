@@ -17,6 +17,7 @@ import { initIndicators } from './indicators.js';
 import { initHousing } from './housing.js';
 import { initCensus } from './census.js';
 import { initEconomicUpdate } from './economic-update.js';
+import { initAffordability } from './affordability.js';
 import { wireChartDocExports } from './doc-image-export.js';
 
 const SERIES_PANELS = [
@@ -105,6 +106,7 @@ function setupTabs(initial) {
     snapshot:   { btn: document.getElementById('tab-btn-snapshot'),   panel: document.getElementById('tab-panel-snapshot') },
     indicators: { btn: document.getElementById('tab-btn-indicators'), panel: document.getElementById('tab-panel-indicators') },
     economic:   { btn: document.getElementById('tab-btn-economic'),   panel: document.getElementById('tab-panel-economic') },
+    affordability: { btn: document.getElementById('tab-btn-affordability'), panel: document.getElementById('tab-panel-affordability') },
   };
 
   function activate(name) {
@@ -214,6 +216,7 @@ async function bootstrap() {
   initHousing().catch(err => console.error('[housing bootstrap]', err));
   initCensus().catch(err => console.error('[census bootstrap]', err));
   initEconomicUpdate().catch(err => console.error('[economic bootstrap]', err));
+  initAffordability().catch(err => console.error('[affordability bootstrap]', err));
 
   // Per-tab "Download Word/Excel (charts)" exports — every rendered chart in
   // the active tab captured as a PNG and embedded one per page / worksheet.

@@ -47,6 +47,10 @@
         class="cmhc-tab" data-tab="census" aria-selected="false">
         Census Profile
       </button>
+      <button type="button" role="tab" id="tab-btn-affordability"
+        class="cmhc-tab" data-tab="affordability" aria-selected="false">
+        Affordability
+      </button>
       <button type="button" role="tab" id="tab-btn-snapshot"
         class="cmhc-tab" data-tab="snapshot" aria-selected="false">
         Current Snapshot
@@ -682,6 +686,46 @@
           Sources: Statistics Canada Web Data Service (retail, manufacturing, wholesale trade, farm cash receipts, CPI, employment, building permits, housing starts — contains information licensed under the Statistics Canada Open Licence); Canada Mortgage and Housing Corporation; the Winnipeg Regional Real Estate Board (WRREB); and the Canadian Real Estate Association MLS&reg; Home Price Index. Real GDP, minimum wage, and the Economic Outlook commentary are maintained manually (see <code>r/config/economic_update_manual.json</code>). This product is not affiliated with or endorsed by any of these organizations.
         </footer>
       </section>
+    </div>
+
+    <!-- ============================================================
+         Affordability tab — housing Affordability Factor (payment as
+         % of income) for Manitoba. Sidebar: area, tenure (rent/buy),
+         mortgage rate. Main: headline cards + ranking chart + table.
+         ============================================================ -->
+    <div id="tab-panel-affordability" class="grid md:grid-cols-[320px_1fr] min-h-[calc(100vh-110px)]" role="tabpanel" aria-labelledby="tab-btn-affordability" hidden>
+      <aside class="bg-white border-r border-neutral-200 p-4 space-y-4 overflow-y-auto" aria-label="Affordability filters">
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Area</h2>
+          <select id="aff-area" class="w-full border border-neutral-300 rounded px-2 py-1 text-sm"></select>
+          <p class="text-xs text-neutral-500 mt-2 leading-snug">Manitoba — province, CMAs/CAs, municipalities and Winnipeg neighbourhoods. Income &amp; rent are from the 2021 Census.</p>
+        </section>
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Tenure</h2>
+          <div class="flex flex-col gap-1 text-sm">
+            <label class="flex items-center gap-2"><input type="radio" name="affTenure" value="both" checked /> Rent &amp; purchase</label>
+            <label class="flex items-center gap-2"><input type="radio" name="affTenure" value="rental" /> Rental only</label>
+            <label class="flex items-center gap-2"><input type="radio" name="affTenure" value="purchase" /> Purchase only</label>
+          </div>
+        </section>
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Mortgage rate</h2>
+          <div class="flex items-center gap-2 text-sm">
+            <input id="aff-rate" type="number" step="0.01" min="0" class="w-24 border border-neutral-300 rounded px-2 py-1" />
+            <span>% annual</span>
+          </div>
+          <p id="aff-rate-ref" class="text-xs text-neutral-500 mt-1"></p>
+          <p class="text-xs text-neutral-500 mt-1">Purchase assumes 20% down, 25-yr amortization. The 4.64% default follows the Royal LePage 2026 report.</p>
+        </section>
+      </aside>
+      <main class="p-4 space-y-4 overflow-x-hidden">
+        <div id="aff-headline"></div>
+        <section class="grid gap-4" id="aff-chart-grid"></section>
+        <section class="space-y-3" id="aff-tables"></section>
+        <footer class="text-xs text-neutral-500 pt-4 border-t border-neutral-200">
+          Affordability Factor = monthly housing payment as a percentage of median household income; under 30% is generally considered affordable. Sources: Statistics Canada, Census of Population (income &amp; rent); CREA/CMHC MLS&reg; Home Price Index (home prices); Bank of Canada (mortgage rates). This product is not affiliated with or endorsed by these organizations.
+        </footer>
+      </main>
     </div>
 
     <footer id="site-footer" class="bg-neutral-50 border-t border-neutral-200 text-xs text-neutral-600 px-4 py-3 space-y-2">
