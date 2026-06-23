@@ -103,12 +103,13 @@ const DEMO_SECTIONS = [
 ];
 
 // ---- formatters ------------------------------------------------------------
-const fInt  = (v) => v == null ? '' : Number(v).toLocaleString();
-const fUsd  = (v) => v == null ? '' : `$${Math.round(Number(v)).toLocaleString()}`;
-const fDec1 = (v) => v == null ? '' : Number(v).toFixed(1);
-const fPct0 = (v) => v == null ? '' : `${Math.round(Number(v) * 100)}%`;          // fraction → "27%"
-const fPct1 = (v) => v == null ? '' : `${(Number(v) * 100).toFixed(1)}%`;         // fraction → "5.2%"
-const fStir = (v) => v == null ? '' : `${Math.round(Number(v))}%`;                // already 0–100
+const miss  = (v) => v == null || !Number.isFinite(Number(v));   // null / NaN / Infinity → "**"
+const fInt  = (v) => miss(v) ? '**' : Number(v).toLocaleString();
+const fUsd  = (v) => miss(v) ? '**' : `$${Math.round(Number(v)).toLocaleString()}`;
+const fDec1 = (v) => miss(v) ? '**' : Number(v).toFixed(1);
+const fPct0 = (v) => miss(v) ? '**' : `${Math.round(Number(v) * 100)}%`;          // fraction → "27%"
+const fPct1 = (v) => miss(v) ? '**' : `${(Number(v) * 100).toFixed(1)}%`;         // fraction → "5.2%"
+const fStir = (v) => miss(v) ? '**' : `${Math.round(Number(v))}%`;                // already 0–100
 const fmtVal = (v, kind) => kind === 'usd' ? fUsd(v) : kind === 'dec1' ? fDec1(v)
                           : kind === 'stir' ? fStir(v) : fInt(v);
 
@@ -292,9 +293,9 @@ export async function initCensus() {
     const val = (r, key) => demoFor(r, period)?.[key];
     const amt = (r, row) => fmtVal(val(r, row.key), row.fmt);
     const pct = (r, row) => {
-      if (!row.denom) return '';
+      if (!row.denom) return '';                          // row has no % (e.g. averages) — leave blank
       const d = val(r, row.denom), v = val(r, row.key);
-      return (d && v != null) ? fPct0(v / d) : '';
+      return (d && v != null) ? fPct0(v / d) : '**';      // % row but no data for this area → "**"
     };
 
     // Income/shelter section headers carry the income reference year, which is

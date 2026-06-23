@@ -318,7 +318,7 @@ export async function initStarts({ manifest }) {
       tr.appendChild(td0);
       r.values.forEach(v => {
         const td = document.createElement('td');
-        if (v == null) { td.textContent = '**'; td.classList.add('cmhc-table-na'); }
+        if (v == null || !Number.isFinite(Number(v))) { td.textContent = '**'; td.classList.add('cmhc-table-na'); }
         else td.textContent = Number(v).toLocaleString();
         tr.appendChild(td);
       });

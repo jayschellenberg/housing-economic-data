@@ -216,7 +216,7 @@ export async function initSecondary({ manifest }) {
         rawValues: cols.map(c => matrix.get(p)?.get(c) ?? null),
         values:    cols.map(c => {
           const v = matrix.get(p)?.get(c);
-          return v == null ? null : fmt(v);
+          return (v == null || !Number.isFinite(Number(v))) ? null : fmt(v);   // null/NaN → "**" downstream
         }),
       })),
     };

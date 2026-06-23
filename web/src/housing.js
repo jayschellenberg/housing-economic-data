@@ -105,8 +105,9 @@ export async function initHousing() {
   const nameByUid = new Map([...dByUid].map(([u, a]) => [u, a.name]).concat(
     [...hByUid].map(([u, a]) => [u, a.name])));   // census_housing / cluster names win on overlap
 
-  const fmtN = (v) => v == null ? '**' : Number(v).toLocaleString();
-  const fmtP = (v) => v == null ? '—'  : `${v.toFixed(1)}%`;
+  const miss = (v) => v == null || !Number.isFinite(Number(v));   // null / NaN / Infinity → "**"
+  const fmtN = (v) => miss(v) ? '**' : Number(v).toLocaleString();
+  const fmtP = (v) => miss(v) ? '**' : `${Number(v).toFixed(1)}%`;
   const major = (yd) => yd?.condition?.[yd.condition.length - 1];   // last condition cat = major
   const rollAge = (spec, age) => spec.map(ix => ix.reduce((s, i) => s + (age?.[i] || 0), 0));
   const dwellingYearsAsc = (dd) => ALL_YEARS.filter(y => dd.census?.[y]);
@@ -285,8 +286,8 @@ export async function initHousing() {
     const first = years[0], last = years[years.length - 1];
     const totChg = tot(first) > 0 ? (tot(last) - tot(first)) / tot(first) * 100 : null;
     const ppChg  = (majPct(last) != null && majPct(first) != null) ? majPct(last) - majPct(first) : null;
-    const fmtDeltaPct = (v) => v == null ? '—' : `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`;
-    const fmtDeltaPP  = (v) => v == null ? '—' : `${v >= 0 ? '+' : ''}${v.toFixed(1)} pp`;
+    const fmtDeltaPct = (v) => miss(v) ? '**' : `${v >= 0 ? '+' : ''}${Number(v).toFixed(1)}%`;
+    const fmtDeltaPP  = (v) => miss(v) ? '**' : `${v >= 0 ? '+' : ''}${Number(v).toFixed(1)} pp`;
 
     const headRows = [
       { area: 'Total private dwellings', values: [...years.map(y => fmtN(tot(y))), fmtDeltaPct(totChg)] },

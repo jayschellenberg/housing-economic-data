@@ -92,9 +92,10 @@ export function initCompare({ geographies, capabilities, manifest, categoryOrder
     return { level: c.value.slice(0, i), uid: c.value.slice(i + 1), name: c.dataset.name };
   });
 
+  const miss = (v) => v == null || !Number.isFinite(Number(v));   // null / NaN / Infinity → "**" (rendered downstream)
   const fmtFor = (metric) => (metric === 'Vacancy Rate' || metric === 'Average Rent Change')
-    ? (v) => (v == null ? null : `${Number(v).toFixed(1)}%`)
-    : (v) => (v == null ? null : `$${Math.round(Number(v)).toLocaleString()}`);
+    ? (v) => (miss(v) ? null : `${Number(v).toFixed(1)}%`)
+    : (v) => (miss(v) ? null : `$${Math.round(Number(v)).toLocaleString()}`);
   const dimsFor = (metric) => capabilities?.series?.[metric]?.dimensions || [];
 
   let lastTables = [];
