@@ -176,16 +176,21 @@ export async function initAffordability() {
       <p class="text-xs text-neutral-500 mt-1">Affordability Factor = housing payment as % of median household income; under ${AFFORD_LINE}% is considered affordable. Median income <strong>${fUsd(sel.income)}</strong>${sel.price != null ? ` · home price <strong>${fUsd(sel.price)}</strong>` : ''}.</p>`;
   }
 
-  // Ranking bars across the province + CMAs (+ the selected area if it's elsewhere).
+  // Ranking: the selected area's OWN province only — its province total + that
+  // province's CMAs, plus the selected area itself if it's a municipality /
+  // neighbourhood. Manitoba and Saskatchewan are never mixed in one view.
   function tableAreas(sel) {
-    const base = areas.filter(a => a.level === 'PR' || a.level === 'CMA');
+    const prov = sel?.prov;
+    const base = areas.filter(a => (a.level === 'PR' || a.level === 'CMA') && a.prov === prov);
     if (sel && !base.some(a => a.uid === sel.uid)) base.push(byUid.get(sel.uid));
     return base.map(factors);
   }
 
   function renderChart(showRent, showBuy) {
     $charts.replaceChildren();
-    const rows = tableAreas(factors(byUid.get(state.uid)));
+    const sel = byUid.get(state.uid);
+    const provName = PROV_LABEL[sel?.prov] || '';
+    const rows = tableAreas(factors(sel));
     const key = showBuy && !showRent ? 'buyFactor' : 'rentFactor';
     const label = key === 'buyFactor' ? 'Purchase' : 'Rental';
     const data = rows.filter(r => !miss(r[key])).map(r => ({ area: r.name, value: r[key] }));
@@ -204,7 +209,7 @@ export async function initAffordability() {
     }));
     const card = document.createElement('section');
     card.className = 'chart-card';
-    card.innerHTML = `<header class="chart-title">${label} affordability — Manitoba &amp; Saskatchewan</header>
+    card.innerHTML = `<header class="chart-title">${label} affordability — ${escapeHtml(provName)}</header>
       <p class="chart-sub">Housing payment as % of median household income · red line = ${AFFORD_LINE}% affordability threshold</p>
       <div data-role="plot"></div>
       <div class="chart-caption"><span class="chart-caption-left"></span>
@@ -231,7 +236,7 @@ export async function initAffordability() {
     }).join('');
     $tables.innerHTML = `
       <section class="cmhc-table-block">
-        <div class="cmhc-table-title">Affordability Factor — Manitoba &amp; Saskatchewan (ranked, most affordable first)</div>
+        <div class="cmhc-table-title">Affordability Factor — ${escapeHtml(PROV_LABEL[sel?.prov] || '')} (ranked, most affordable first)</div>
         <table class="cmhc-table"><thead><tr>${head.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table>
         <p class="text-xs text-neutral-500 mt-2">Income: 2021 Census (2020 income). <strong>Median rent</strong> = 2021 Census median shelter cost (MB only). <strong>Avg rent (CMHC)</strong> = current CMHC average rent, all bedroom types (centres only). The <strong>rental factor uses CMHC average rent where available</strong> (all centres, MB &amp; SK — comparable) and the census median otherwise. Mortgage: ${DOWN_PCT}% down, ${AMORT_YEARS}-yr amortization at ${state.rate.toFixed(2)}%${priceAsOf ? `; price as of ${escapeHtml(String(priceAsOf).slice(0, 7))}` : ''}. Purchase factor shows only where a home-price benchmark exists (Winnipeg). SK is province + major centres only.</p>
       </section>`;
