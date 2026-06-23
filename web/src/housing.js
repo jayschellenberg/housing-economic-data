@@ -38,6 +38,10 @@ const DT_SHORT = ['Single-detached', 'Semi-detached', 'Row', 'Duplex',
                   'Apt <5', 'Apt 5+', 'Other attached', 'Movable'];
 
 export async function initHousing() {
+  const $province = document.getElementById('hsk-province');
+  const $province2 = document.getElementById('hsk-province2');
+  const $areaSearch = document.getElementById('hsk-area-search');
+  const $area2Search = document.getElementById('hsk-area2-search');
   const $area = document.getElementById('hsk-area');
   const $area2 = document.getElementById('hsk-area2');
   const $compareSection = document.getElementById('hsk-compare-section');
@@ -109,29 +113,76 @@ export async function initHousing() {
   const rollAge = (spec, age) => spec.map(ix => ix.reduce((s, i) => s + (age?.[i] || 0), 0));
   const dwellingYearsAsc = (dd) => ALL_YEARS.filter(y => dd.census?.[y]);
 
-  // --- Combined area dropdown (union of both datasets) -----------------------
+  // --- Province → Area cascade ----------------------------------------------
+  // The flat union of both datasets is ~1,100 areas, so the picker is a
+  // Province/region dropdown first, then an area dropdown scoped to it (with a
+  // type-to-filter search for the long SK/MB municipality lists). Every
+  // selectable area is tagged with a `region`: 'CA' for Canada, the province
+  // uid for a province total, and the parent province uid for CMAs/CAs, CSDs
+  // and Winnipeg sub-areas.
   const byName = (a, b) => a.name.localeCompare(b.name);
-  const pickH = (test) => housing.areas.filter(test).sort(byName);
-  const pickD = (test) => (dwelling?.areas || []).filter(test).sort(byName);
-  const country = housing.areas.filter(a => a.level === 'country');
-  const opt   = (a) => `<option value="${escapeHtml(a.uid)}">${escapeHtml(a.name)}</option>`;
-  const group = (label, arr) => arr.length ? `<optgroup label="${escapeHtml(label)}">${arr.map(opt).join('')}</optgroup>` : '';
-  const optionsHtml =
-    country.map(opt).join('') +
-    group('Provinces & Territories', pickH(a => a.level === 'province')) +
-    group('Manitoba CMAs / CAs',     pickD(a => a.level === 'cma' && a.prov === '46')) +
-    group('Saskatchewan CMAs / CAs', pickD(a => a.level === 'cma' && a.prov === '47')) +
-    group('Manitoba municipalities', pickH(a => a.level === 'csd' && a.prov === '46')) +
-    group('Saskatchewan municipalities', pickH(a => a.level === 'csd' && a.prov === '47')) +
-    group('Winnipeg — Community Areas', wpgAreas.filter(a => a.level === 'WPG_CA').sort(byName)) +
-    group('Winnipeg — Clusters',        wpgAreas.filter(a => a.level === 'WPG_Cluster').sort(byName));
-  $area.innerHTML = optionsHtml;
-  if ($area2) $area2.innerHTML = '<option value="">— none —</option>' + optionsHtml;
-  // Default to Manitoba (province) — it carries both datasets, so the default
-  // compare view shows dwelling type + age + condition together.
-  $area.value = hByUid.has('46') ? '46'
-              : hByUid.has('4611040') ? '4611040'
-              : (country[0]?.uid || $area.options[0]?.value);
+  const REGION_CANADA = 'CA';
+  const allAreas = [];
+  for (const a of housing.areas.filter(a => a.level === 'country'))
+    allAreas.push({ uid: a.uid, name: a.name, level: 'country', region: REGION_CANADA });
+  for (const a of housing.areas.filter(a => a.level === 'province'))
+    allAreas.push({ uid: a.uid, name: a.name, level: 'province', region: a.uid });
+  for (const a of (dwelling?.areas || []).filter(a => a.level === 'cma'))
+    allAreas.push({ uid: a.uid, name: a.name, level: 'cma', region: a.prov });
+  for (const a of housing.areas.filter(a => a.level === 'csd'))
+    allAreas.push({ uid: a.uid, name: a.name, level: 'csd', region: a.prov });
+  for (const a of wpgAreas)
+    allAreas.push({ uid: a.uid, name: a.name, level: a.level, region: '46' });
+
+  // Region picker = Canada + every province/territory (in the housing dataset).
+  const regionOpts = [{ uid: REGION_CANADA, name: 'Canada' }].concat(
+    housing.areas.filter(a => a.level === 'province').sort(byName)
+      .map(a => ({ uid: a.uid, name: a.name })));
+  const defaultRegion = regionOpts.some(r => r.uid === '46') ? '46' : (regionOpts[1]?.uid || REGION_CANADA);
+  // The province total each region defaults to ('CA' → Canada).
+  const regionDefaultArea = (region) =>
+    region === REGION_CANADA ? (allAreas.find(a => a.region === REGION_CANADA)?.uid || '') : region;
+
+  // Build the area <select>'s option HTML for one region + filter text. The
+  // currently-selected area (keepUid) is always retained so filtering never
+  // blanks the chart; optgroups keep the CMA/CA, Municipality and Winnipeg
+  // splits visible.
+  const AREA_GROUPS = [
+    ['Province total', 'province'], ['CMAs / CAs', 'cma'], ['Municipalities', 'csd'],
+    ['Winnipeg — Community Areas', 'WPG_CA'], ['Winnipeg — Clusters', 'WPG_Cluster'],
+  ];
+  function buildAreaOptions(region, filter, { includeNone = false, keepUid = null } = {}) {
+    const f = (filter || '').trim().toLowerCase();
+    const opt = (a) => `<option value="${escapeHtml(a.uid)}">${escapeHtml(a.name)}</option>`;
+    const visible = allAreas.filter(a => a.region === region &&
+      (!f || a.name.toLowerCase().includes(f) || a.uid === keepUid));
+    let html;
+    if (region === REGION_CANADA) {
+      html = visible.filter(a => a.level === 'country').map(opt).join('');
+    } else {
+      html = AREA_GROUPS.map(([label, level]) => {
+        const arr = visible.filter(a => a.level === level).sort(byName);
+        return arr.length ? `<optgroup label="${escapeHtml(label)}">${arr.map(opt).join('')}</optgroup>` : '';
+      }).join('');
+    }
+    if (!html) html = '<option value="" disabled>No matching areas</option>';
+    return (includeNone ? '<option value="">— none —</option>' : '') + html;
+  }
+
+  // Populate region pickers and the initial area lists. Default to Manitoba —
+  // it carries both datasets, so the default compare view shows dwelling type +
+  // age + condition together.
+  const regionOptsHtml = regionOpts.map(r => `<option value="${escapeHtml(r.uid)}">${escapeHtml(r.name)}</option>`).join('');
+  $province.innerHTML = regionOptsHtml;
+  $province.value = defaultRegion;
+  $area.innerHTML = buildAreaOptions(defaultRegion, '', { keepUid: regionDefaultArea(defaultRegion) });
+  $area.value = hByUid.has(regionDefaultArea(defaultRegion)) ? regionDefaultArea(defaultRegion) : ($area.options[0]?.value || '');
+  if ($province2) {
+    $province2.innerHTML = regionOptsHtml;
+    $province2.value = defaultRegion;
+    $area2.innerHTML = buildAreaOptions(defaultRegion, '', { includeNone: true });
+    $area2.value = '';
+  }
 
   const viewVal = () => [...$view].find(r => r.checked)?.value || 'compare';
   let lastTables = [];
@@ -471,7 +522,34 @@ export async function initHousing() {
     }
   }
 
+  // Province change → rescope (and reset) the area list; search → filter it.
+  $province.addEventListener('change', () => {
+    const region = $province.value;
+    $areaSearch.value = '';
+    const def = regionDefaultArea(region);
+    $area.innerHTML = buildAreaOptions(region, '', { keepUid: def });
+    $area.value = def || $area.options[0]?.value || '';
+    render();
+  });
+  $areaSearch.addEventListener('input', () => {
+    const cur = $area.value;
+    $area.innerHTML = buildAreaOptions($province.value, $areaSearch.value, { keepUid: cur });
+    $area.value = cur;   // filtering never changes the selection
+  });
   $area.addEventListener('change', render);
+
+  $province2?.addEventListener('change', () => {
+    const region = $province2.value;
+    if ($area2Search) $area2Search.value = '';
+    $area2.innerHTML = buildAreaOptions(region, '', { includeNone: true });
+    $area2.value = '';
+    render();
+  });
+  $area2Search?.addEventListener('input', () => {
+    const cur = $area2.value;
+    $area2.innerHTML = buildAreaOptions($province2.value, $area2Search.value, { includeNone: true, keepUid: cur });
+    $area2.value = cur;
+  });
   $area2?.addEventListener('change', render);
   $view.forEach(r => r.addEventListener('change', render));
   render();
