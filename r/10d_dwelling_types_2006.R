@@ -84,8 +84,14 @@ cpt <- parse_file(f101, skip = 1, geoCol = 1, charCol = 4, totalCol = 6,
                   geo_ok = function(g) g == "1" || grepl("^[0-9]{2}$", g))
 cma <- parse_file(f201, skip = 3, geoCol = 1, charCol = 6, totalCol = 8,
                   geo_ok = function(g) grepl("^[0-9]{3}$", g))
-lookup <- c(cpt, cma)
-message(sprintf("[10d] 2006 geographies parsed: %d (CPT %d, CMA %d)", length(lookup), length(cpt), length(cma)))
+# Manitoba municipalities: the 301 download is split per province; parse the MAN
+# CSD file (Geo_Code 1, Characteristic 7, Total 9). Best-effort.
+f301mb <- tryCatch(fetch_unzip("CSV301", "-301-MAN\\.csv$"), error = function(e) NULL)
+csd <- if (!is.null(f301mb)) parse_file(f301mb, skip = 3, geoCol = 1, charCol = 7, totalCol = 9,
+                                        geo_ok = function(g) grepl("^46[0-9]{5}$", g)) else list()
+lookup <- c(cpt, cma, csd)
+message(sprintf("[10d] 2006 geographies parsed: %d (CPT %d, CMA %d, CSD %d)",
+                length(lookup), length(cpt), length(cma), length(csd)))
 
 # --- Merge onto the multi-year JSON ------------------------------------------
 json_path <- file.path(WEB_DATA, "housing", "dwelling_types.json")

@@ -76,8 +76,8 @@ reqs <- do.call(rbind, lapply(seq_len(nrow(AREAS)), function(i)
              coordinate = vapply(1:9, function(t) mk(AREAS$mid[i], t), character(1)),
              stringsAsFactors = FALSE)))
 
-fetch_batch <- function(coords) {
-  body <- lapply(coords, function(co) list(productId = PID, coordinate = co, latestN = 1L))
+fetch_batch <- function(coords, pid = PID) {
+  body <- lapply(coords, function(co) list(productId = pid, coordinate = co, latestN = 1L))
   for (attempt in 1:3) {
     resp <- tryCatch(POST(file.path(WDS, "getDataFromCubePidCoordAndLatestNPeriods"),
                           body = body, encode = "json",
@@ -115,6 +115,57 @@ build_area <- function(i) {
 }
 areas_out <- Filter(Negate(is.null), lapply(seq_len(nrow(AREAS)), build_area))
 message(sprintf("[10] areas with 2021 data: %d", length(areas_out)))
+
+# --- Manitoba municipalities (CSDs): 2021 structural type --------------------
+# Cube 98-10-0040 stops at CMA/CA geography, so MB municipalities come from cube
+# 98-10-0233 (the Census housing cube r/07 already uses), which carries a
+# structural-type dimension at the CSD level. Its structural-type members are
+# ordered differently from 98-10-0040, so the canonical 8-type slots map to the
+# coordinate positions below (derived by aligning to the published Manitoba
+# province totals; the leftover position is the "Other attached" subtotal).
+PID_CSD <- 98100233L
+CSD_POS <- c(2L, 9L, 8L, 5L, 6L, 3L, 7L, 10L)   # canonical[1..8] → 98-10-0233 structural-type position
+mb_meta <- tryCatch(content(POST(file.path(WDS, "getCubeMetadata"),
+                                 body = list(list(productId = PID_CSD)), encode = "json",
+                                 add_headers(`Content-Type` = "application/json"), timeout(120)),
+                            as = "parsed", encoding = "UTF-8"),
+                    error = function(e) NULL)
+mb_n <- 0L
+if (!is.null(mb_meta)) {
+  gdim <- Filter(function(d) grepl("geog", d$dimensionNameEn, ignore.case = TRUE),
+                 mb_meta[[1]]$object$dimension)[[1]]$member
+  mb <- Filter(function(m) as.integer(m$geoLevel %||% -1L) == 5L &&
+                           substr(as.character(m$classificationCode %||% ""), 1, 2) == "46", gdim)
+  if (length(mb)) {
+    mb_tbl <- data.frame(
+      mid  = vapply(mb, function(m) as.integer(m$memberId), integer(1)),
+      uid  = vapply(mb, function(m) as.character(m$classificationCode), character(1)),
+      name = vapply(mb, function(m) as.character(m$memberNameEn), character(1)),
+      stringsAsFactors = FALSE)
+    # coordinate = geo.period(Total).structuralType.statistics(Number).condition(Total).tenure(Total)
+    mkc  <- function(geo, pos) sprintf("%d.1.%d.1.1.1.0.0.0.0", geo, pos)
+    poss <- c(1L, CSD_POS)                                                   # total + 8 types
+    creq <- do.call(rbind, lapply(seq_len(nrow(mb_tbl)), function(i)
+      data.frame(uid = mb_tbl$uid[i], pos = poss,
+                 coordinate = vapply(poss, function(p) mkc(mb_tbl$mid[i], p), character(1)),
+                 stringsAsFactors = FALSE)))
+    message(sprintf("[10] fetching 2021 structural type for %d MB CSDs — %d coords", nrow(mb_tbl), nrow(creq)))
+    creq$value <- unlist(lapply(split(creq$coordinate, ceiling(seq_len(nrow(creq)) / 250)),
+                                function(ch) fetch_batch(ch, PID_CSD)))
+    for (i in seq_len(nrow(mb_tbl))) {
+      r <- creq[creq$uid == mb_tbl$uid[i], ]
+      total <- r$value[r$pos == 1L]
+      if (!length(total) || !is.finite(total) || total <= 0) next
+      types <- vapply(CSD_POS, function(p) { v <- r$value[r$pos == p]; if (length(v)) v[1] else NA_real_ }, numeric(1))
+      areas_out[[length(areas_out) + 1L]] <- list(
+        uid = mb_tbl$uid[i], name = mb_tbl$name[i], level = "csd", prov = "46",
+        census = list("2021" = list(total = round(total),
+                                    types = lapply(types, function(v) if (is.finite(v)) round(v) else NA))))
+      mb_n <- mb_n + 1L
+    }
+  }
+}
+message(sprintf("[10] MB CSDs added (2021): %d", mb_n))
 
 payload <- list(
   source       = "Statistics Canada, 2021 Census of Population, table 98-10-0040 (structural type of dwelling)",

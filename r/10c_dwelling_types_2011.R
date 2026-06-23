@@ -18,6 +18,10 @@
   if (length(m)) dirname(normalizePath(m[1], winslash = "/")) else "r"
 }
 source(file.path(.this_dir, "lib", "cmhc_helpers.R"))   # jsonlite, dplyr, DATA_DIR, WEB_DATA
+# CSD-level 2011 lives in the ~330 MB 301 file; data.table::fread reads just the
+# needed columns. Optional — CSD 2011 is skipped gracefully if it's unavailable.
+if (!requireNamespace("data.table", quietly = TRUE))
+  tryCatch(utils::install.packages("data.table", repos = "https://cloud.r-project.org"), error = function(e) NULL)
 
 STRUCT_HDR <- "Total number of occupied private dwellings by structural type of dwelling"
 # Trimmed 2011 leaf label → canonical 8-type slot (matches r/10 TYPE_LABELS order).
@@ -79,6 +83,26 @@ parse_file <- function(path, skip, geoCol, charCol, totalCol, geo_ok) {
   out
 }
 
+# CSDs come from the big 301 file: read only Geo_Code (1), Characteristics (7),
+# Total (9) with fread, and keep Manitoba codes (^46) only. Best-effort.
+parse_csd_301 <- function(path, geo_ok) {
+  if (!requireNamespace("data.table", quietly = TRUE)) {
+    message("[10c] data.table unavailable — skipping CSD-level 2011"); return(list())
+  }
+  d <- tryCatch(data.table::fread(path, select = c(1L, 7L, 9L), colClasses = "character",
+                                  header = TRUE, showProgress = FALSE, encoding = "Latin-1"),
+                error = function(e) NULL)
+  if (is.null(d)) { message("[10c] CSV301 read failed — skipping CSD-level 2011"); return(list()) }
+  geo <- d[[1]]; char <- d[[2]]; total <- d[[3]]
+  out <- list()
+  for (g in unique(geo[geo_ok(geo)])) {
+    sel <- geo == g
+    blk <- parse_geo_block(char[sel], total[sel])
+    if (!is.null(blk)) out[[g]] <- blk
+  }
+  out
+}
+
 message("[10c] parsing 2011 Census Profile structural type...")
 f101 <- fetch_unzip("CSV101", "-101\\.csv$")
 f201 <- fetch_unzip("CSV201", "-201\\.csv$")
@@ -86,8 +110,11 @@ cpt <- parse_file(f101, skip = 1, geoCol = 1, charCol = 4, totalCol = 6,
                   geo_ok = function(g) g == "01" || grepl("^[0-9]{2}$", g))
 cma <- parse_file(f201, skip = 2, geoCol = 1, charCol = 6, totalCol = 8,
                   geo_ok = function(g) grepl("^[0-9]{3}$", g))
-lookup <- c(cpt, cma)
-message(sprintf("[10c] 2011 geographies parsed: %d (CPT %d, CMA %d)", length(lookup), length(cpt), length(cma)))
+f301 <- tryCatch(fetch_unzip("CSV301", "-301\\.csv$"), error = function(e) NULL)
+csd  <- if (!is.null(f301)) parse_csd_301(f301, function(g) grepl("^46[0-9]{5}$", g)) else list()
+lookup <- c(cpt, cma, csd)
+message(sprintf("[10c] 2011 geographies parsed: %d (CPT %d, CMA %d, CSD %d)",
+                length(lookup), length(cpt), length(cma), length(csd)))
 
 # --- Merge onto the multi-year JSON ------------------------------------------
 json_path <- file.path(WEB_DATA, "housing", "dwelling_types.json")
