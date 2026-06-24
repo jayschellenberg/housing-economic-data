@@ -396,9 +396,14 @@ for (yr in c("2016", "2011", "2006")) {
   message(sprintf("[12b]   %s: enriched %d WPG_Nbhd; %d had no match", yr, matched, unmatched))
 }
 
-doc$source <- paste0(doc$source,
+# Append the Winnipeg-history provenance note, but idempotently — r/12b reads
+# the existing JSON and re-runs on every refresh, so a blind paste0 accumulates
+# the same sentence each time (it had stacked up 5×).
+wpg_note <- paste0(
   "; Winnipeg cluster/community-area history (2006/2011/2016) from City of Winnipeg ",
   "census profiles (Community Social Data Strategy custom tabulation)")
+if (!grepl("Winnipeg cluster/community-area history", doc$source %||% "", fixed = TRUE))
+  doc$source <- paste0(doc$source, wpg_note)
 # Advertise the dwelling-condition keys (Housing Stock tab) if not already listed.
 for (k in c("condition_ok","condition_major","condition_total"))
   if (!(k %in% unlist(doc$demoKeys))) doc$demoKeys <- c(doc$demoKeys, k)

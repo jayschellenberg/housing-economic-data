@@ -15,7 +15,7 @@
   <body class="bg-neutral-50 text-neutral-900 font-sans">
     <header class="bg-primary-700 text-white px-6 py-3 shadow">
       <h1 class="text-lg font-semibold">Housing &amp; Economic Data</h1>
-      <p class="text-sm text-primary-100">Historical trends &amp; comparison tables for Canadian rental and construction markets — Manitoba &amp; Saskatchewan in full detail, major centres elsewhere.</p>
+      <p class="text-sm text-primary-100">Historical trends, comparison tables and charts spanning Canadian rental, construction, housing stock, affordability, census demographics and economic indicators — Manitoba &amp; Saskatchewan in full detail, major centres elsewhere.</p>
     </header>
 
     <nav class="bg-neutral-100 border-b border-neutral-200 px-4 flex gap-1" role="tablist" aria-label="Views">
@@ -505,7 +505,7 @@
         <section id="mi-chart-grid" class="space-y-6"></section>
 
         <footer class="text-xs text-neutral-500 pt-4 border-t border-neutral-200" id="mi-footer">
-          Sources: Bank of Canada Valet, Statistics Canada Web Data Service. Contains information licensed under the Statistics Canada Open Licence. <span id="mi-data-as-of">—</span>
+          Sources: Bank of Canada Valet; Statistics Canada Web Data Service; the Office of the Superintendent of Bankruptcy Canada (insolvency statistics, via Open Government); and CMHC (average rents). Contains information licensed under the Statistics Canada Open Licence and the Open Government Licence – Canada. <span id="mi-data-as-of">—</span>
         </footer>
       </main>
     </div>
@@ -601,7 +601,7 @@
         <section id="hsk-chart-grid" class="grid md:grid-cols-2 gap-4"></section>
         <div id="hsk-tables" class="space-y-4"></div>
         <footer class="text-xs text-neutral-500 pt-4 border-t border-neutral-200">
-          Source: Statistics Canada, Census of Population — structural type (table 98-10-0040), dwelling condition &amp; period of construction (table 98-10-0233), 2006–2021. Contains information licensed under the Statistics Canada Open Licence.
+          Source: Statistics Canada, Census of Population, 2006–2021. Structural type of dwelling — table 98-10-0040 (2021), with 2016/2011 from Census Profile 98-316 and 2006 from Community Profile 92-591. Dwelling condition &amp; period of construction — table 98-10-0233 (2021), with earlier years from the Census/NHS profiles. Contains information licensed under the Statistics Canada Open Licence.
         </footer>
       </main>
     </div>
@@ -732,7 +732,7 @@
         <section class="grid md:grid-cols-2 gap-4" id="aff-chart-grid"></section>
         <section class="space-y-3" id="aff-tables"></section>
         <footer class="text-xs text-neutral-500 pt-4 border-t border-neutral-200">
-          Affordability Factor = monthly housing payment as a percentage of median household income; under 30% is generally considered affordable. Sources: Statistics Canada, Census of Population (income &amp; rent); CREA/CMHC MLS&reg; Home Price Index (home prices); Bank of Canada (mortgage rates). This product is not affiliated with or endorsed by these organizations.
+          Affordability Factor = monthly housing payment as a percentage of median household income; under 30% is generally considered affordable. Sources: Statistics Canada, Census of Population (median household income and median rent); CMHC Rental Market Survey (average rents); CREA MLS&reg; Home Price Index (home prices); Bank of Canada (mortgage rates). This product is not affiliated with or endorsed by these organizations.
         </footer>
       </main>
     </div>
@@ -744,11 +744,16 @@
         <a class="underline" href="https://github.com/mountainMath/cmhc" rel="noopener" target="_blank">von Bergmann, J. (2025) <em>cmhc</em>: R package to access, retrieve, and work with CMHC data</a>.
         Use or reproduction of any CMHC data shown here is subject to the
         <a class="underline" href="https://www.cmhc-schl.gc.ca/about-us/terms-of-use" rel="noopener" target="_blank">CMHC Licence Agreement for the Use of Data</a>,
-        including its attribution requirements. This product is not affiliated with or endorsed by CMHC. Market Indicators data is supplied by the
-        <a class="underline" href="https://www.bankofcanada.ca/valet/docs" rel="noopener" target="_blank">Bank of Canada Valet API</a> and
-        <a class="underline" href="https://www.statcan.gc.ca/en/developers" rel="noopener" target="_blank">Statistics Canada Web Data Service</a>
-        (the latter contains information licensed under the
-        <a class="underline" href="https://www.statcan.gc.ca/en/reference/licence" rel="noopener" target="_blank">Statistics Canada Open Licence</a>).
+        including its attribution requirements. This product is not affiliated with or endorsed by CMHC.
+        Census of Population data (Housing Stock, Census Profile and Affordability tabs) is from Statistics Canada, retrieved via the
+        <a class="underline" href="https://github.com/mountainMath/cancensus" rel="noopener" target="_blank">cancensus</a> R package / CensusMapper and StatsCan census tables.
+        Market Indicators and the MB Economic Update also draw on the
+        <a class="underline" href="https://www.bankofcanada.ca/valet/docs" rel="noopener" target="_blank">Bank of Canada Valet API</a>, the
+        <a class="underline" href="https://www.statcan.gc.ca/en/developers" rel="noopener" target="_blank">Statistics Canada Web Data Service</a>, the
+        <a class="underline" href="https://open.canada.ca/data/en/dataset/eaee474c-4b7f-4940-8d48-59123d0da436" rel="noopener" target="_blank">Office of the Superintendent of Bankruptcy Canada</a>
+        (insolvency statistics, via Open Government), the Canadian Real Estate Association MLS&reg; Home Price Index, and the Winnipeg Regional Real Estate Board.
+        Statistics Canada data contains information licensed under the
+        <a class="underline" href="https://www.statcan.gc.ca/en/reference/licence" rel="noopener" target="_blank">Statistics Canada Open Licence</a>; Open Government data under the Open Government Licence – Canada.
       </p>
       <p>
         Suggested citation: <em>JKS Consulting Inc. Housing &amp; Economic Data. <span id="site-citation-date">…</span>. https://housing-economic-data.vercel.app/</em>. Code is MIT-licensed; bundled data is subject to the source publishers' terms.

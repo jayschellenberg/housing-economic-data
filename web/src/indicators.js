@@ -21,7 +21,9 @@ const PROVIDER_LABEL = {
   boc:      'Bank of Canada Valet',
   statscan: 'Statistics Canada (WDS)',
   cba:      'Canadian Bankers Association',
-  derived:  'computed from BoC + StatsCan series',
+  osb:      'Office of the Superintendent of Bankruptcy (Open Government)',
+  cmhc:     'CMHC Rental Market Survey',
+  derived:  'computed from source series',
 };
 
 const FMT = {
