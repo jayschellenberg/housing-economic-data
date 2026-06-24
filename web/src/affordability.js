@@ -16,6 +16,7 @@
 
 import * as Plot from '@observablehq/plot';
 import { themed, frameMark, PALETTE } from './plot-theme.js';
+import { downloadCard } from './chart.js';
 
 const DEFAULT_RATE = 4.64;     // % — Royal LePage 2026 report assumption (3-yr fixed special)
 const DOWN_PCT     = 20;       // % down payment
@@ -197,8 +198,8 @@ export async function initAffordability() {
     if (!data.length) return;
     const maxV = Math.max(AFFORD_LINE + 5, ...data.map(d => d.value));
     const svg = Plot.plot(themed({
-      height: Math.max(140, data.length * 26 + 40), marginLeft: 150, marginBottom: 30,
-      x: { label: `${label} Affordability Factor (% of income)`, domain: [0, maxV], tickFormat: v => `${v}%` },
+      height: Math.max(240, data.length * 30 + 70), marginTop: 10, marginLeft: 140, marginBottom: 44, marginRight: 18,
+      x: { label: '% of household income →', domain: [0, maxV], tickFormat: v => `${v}%` },
       y: { label: null, domain: data.slice().sort((a, b) => a.value - b.value).map(d => d.area) },
       marks: [
         Plot.gridX({ stroke: '#e5e7eb' }),
@@ -207,14 +208,18 @@ export async function initAffordability() {
         frameMark(),
       ],
     }));
+    svg.style.overflow = 'visible';                 // don't clip the x-axis label at the viewBox edge
     const card = document.createElement('section');
     card.className = 'chart-card';
     card.innerHTML = `<header class="chart-title">${label} affordability — ${escapeHtml(provName)}</header>
       <p class="chart-sub">Housing payment as % of median household income · red line = ${AFFORD_LINE}% affordability threshold</p>
-      <div data-role="plot"></div>
+      <div data-role="plot" class="cmhc-plot"></div>
       <div class="chart-caption"><span class="chart-caption-left"></span>
-        <span class="chart-source">Source: StatsCan Census, CMHC/CREA, Bank of Canada</span></div>`;
+        <span class="chart-source">Source: StatsCan Census, CMHC/CREA, Bank of Canada</span></div>
+      <div class="chart-actions"><button type="button" data-role="dl-png">Download PNG</button></div>`;
     card.querySelector('[data-role="plot"]').appendChild(svg);
+    const fname = `affordability_${label}_${provName}_${new Date().toISOString().slice(0, 10)}.png`.replace(/\s+/g, '-');
+    card.querySelector('[data-role="dl-png"]').onclick = () => downloadCard(card, fname, 'png');
     $charts.appendChild(card);
   }
 

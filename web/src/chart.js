@@ -311,7 +311,7 @@ function buildFilename(series, sub) {
  * PNG is rasterised at 3x device pixel ratio for crisp print resolution
  * (suitable for pasting into Word at standard column widths).
  */
-async function downloadCard(card, filename, kind) {
+export async function downloadCard(card, filename, kind) {
   card.classList.add('cmhc-exporting');
   try {
     const opts = {
