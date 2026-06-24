@@ -15,6 +15,7 @@
 
 import * as Plot from '@observablehq/plot';
 import { themed, gridMarks, frameMark, PALETTE } from './plot-theme.js';
+import { downloadCard } from './chart.js';
 
 // Common age buckets for the comparison view — each census's own bands rolled
 // up to a shared set so the years line up despite different banding.
@@ -400,8 +401,12 @@ export async function initHousing() {
       <p class="chart-sub">${escapeHtml(sub)}</p>
       <div data-role="plot"></div>
       <div class="chart-caption"><span class="chart-caption-left"></span>
-        <span class="chart-source">Source: StatsCan Census</span></div>`;
+        <span class="chart-source">Source: StatsCan Census</span></div>
+      <div class="chart-actions"><button type="button" data-role="dl-png">Download PNG</button></div>`;
     card.querySelector('[data-role="plot"]').appendChild(svgNode);
+    const slug = String(title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const fname = `housing-stock-${slug}-${new Date().toISOString().slice(0, 10)}.png`;
+    card.querySelector('[data-role="dl-png"]').onclick = () => downloadCard(card, fname, 'png');
     $charts?.appendChild(card);
   }
 

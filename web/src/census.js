@@ -14,6 +14,7 @@
 
 import * as Plot from '@observablehq/plot';
 import { themed, gridMarks, frameMark, PALETTE } from './plot-theme.js';
+import { downloadCard } from './chart.js';
 
 // Geography levels, in dropdown group order.
 const LEVEL_GROUPS = [
@@ -458,8 +459,12 @@ export async function initCensus() {
       <p class="chart-sub">${escapeHtml(sub)}</p>
       <div data-role="plot"></div>
       <div class="chart-caption"><span class="chart-caption-left"></span>
-        <span class="chart-source">Source: StatsCan Census</span></div>`;
+        <span class="chart-source">Source: StatsCan Census</span></div>
+      <div class="chart-actions"><button type="button" data-role="dl-png">Download PNG</button></div>`;
     card.querySelector('[data-role="plot"]').appendChild(svgNode);
+    const slug = String(title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const fname = `census-${slug}-${new Date().toISOString().slice(0, 10)}.png`;
+    card.querySelector('[data-role="dl-png"]').onclick = () => downloadCard(card, fname, 'png');
     $charts.appendChild(card);
   }
 
