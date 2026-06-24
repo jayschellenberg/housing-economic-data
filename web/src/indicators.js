@@ -43,12 +43,26 @@ async function loadJson(path) {
 }
 
 let initialised = false;
-// Default year range: last 5 years through today. Users can widen via the
-// sidebar year-range inputs.
-const DEFAULT_YEAR_FROM = new Date().getFullYear() - 5;
+// Default range: a rolling 5-year window at month granularity, via the sidebar
+// month pickers (type="month" → "YYYY-MM"). The "from" default tracks the "to":
+// 5 years before the chosen "to" month, or 5 years before the current month
+// when "to" is left blank — unless the user sets "from" explicitly (monthFromLocked).
+function autoFromFor(toVal) {
+  let y, mo;
+  if (toVal && /^\d{4}-\d{2}$/.test(toVal)) {
+    [y, mo] = toVal.split('-').map(Number);
+  } else {
+    const d = new Date();
+    y = d.getFullYear();
+    mo = d.getMonth() + 1;
+  }
+  return `${y - 5}-${String(mo).padStart(2, '0')}`;
+}
+const DEFAULT_MONTH_FROM = autoFromFor(null);
 let state = {
-  yearFrom: DEFAULT_YEAR_FROM,
-  yearTo: null,
+  monthFrom: DEFAULT_MONTH_FROM,
+  monthTo: null,
+  monthFromLocked: false,   // true once the user edits "from" by hand
   sectionsHidden: new Set(),
   geosEnabled: new Set(['CA', 'MB', 'Winnipeg-CMA']),
 };
@@ -402,8 +416,8 @@ function buildChartSections(catalog, shards) {
       const records = recordsAll.filter(r => ids.has(r.id));
       card.render(records, seriesMeta, {
         subtitle: subtitleFor(seriesMeta),
-        yearFrom: state.yearFrom,
-        yearTo:   state.yearTo,
+        monthFrom: state.monthFrom,
+        monthTo:   state.monthTo,
       });
       // Stash the unfiltered set so rerenderCards() can re-apply the filter
       // without having to re-walk the shard each time.
@@ -434,8 +448,8 @@ function subtitleFor(seriesMeta) {
 
 // --- Sidebar wiring ---------------------------------------------------------
 function wireSidebar(catalog, manifest) {
-  const $yFrom = document.getElementById('mi-year-from');
-  const $yTo   = document.getElementById('mi-year-to');
+  const $yFrom = document.getElementById('mi-month-from');
+  const $yTo   = document.getElementById('mi-month-to');
   const $sectionsBox = document.getElementById('mi-section-toggles');
   const $asOf  = document.getElementById('mi-data-as-of');
 
@@ -443,10 +457,10 @@ function wireSidebar(catalog, manifest) {
     `${manifest.totalSeries || '?'} series, latest ${
       (manifest.groups || []).map(g => g.latestDate).sort().slice(-1)[0] || '—'}`;
 
-  // Pre-fill the year-range inputs with the default 5-year window so the
+  // Pre-fill the month-range inputs with the default 5-year window so the
   // user sees the value the charts are filtering to.
-  if ($yFrom && state.yearFrom != null) $yFrom.value = state.yearFrom;
-  if ($yTo   && state.yearTo   != null) $yTo.value   = state.yearTo;
+  if ($yFrom && state.monthFrom) $yFrom.value = state.monthFrom;
+  if ($yTo   && state.monthTo)   $yTo.value   = state.monthTo;
 
   if ($sectionsBox) {
     $sectionsBox.innerHTML = '';
@@ -523,13 +537,22 @@ function wireSidebar(catalog, manifest) {
     pending = setTimeout(() => { pending = null; rerenderCards(); }, 120);
   };
   $yFrom?.addEventListener('change', () => {
-    const v = parseInt($yFrom.value, 10);
-    state.yearFrom = Number.isFinite(v) ? v : null;
+    if ($yFrom.value) {
+      state.monthFrom = $yFrom.value;        // explicit choice — stop auto-tracking
+      state.monthFromLocked = true;
+    } else {
+      state.monthFromLocked = false;         // cleared — resume the smart default
+      state.monthFrom = autoFromFor(state.monthTo);
+      $yFrom.value = state.monthFrom;
+    }
     schedule();
   });
   $yTo?.addEventListener('change', () => {
-    const v = parseInt($yTo.value, 10);
-    state.yearTo = Number.isFinite(v) ? v : null;
+    state.monthTo = $yTo.value || null;
+    if (!state.monthFromLocked) {            // "from" is auto → flip to 5y before "to"
+      state.monthFrom = autoFromFor(state.monthTo);
+      if ($yFrom) $yFrom.value = state.monthFrom;
+    }
     schedule();
   });
 
@@ -565,8 +588,8 @@ function rerenderCards() {
     const records = recordsAll.filter(r => ids.has(r.id));
     card.render(records, seriesMeta, {
       subtitle: subtitleFor(seriesMeta),
-      yearFrom: state.yearFrom,
-      yearTo:   state.yearTo,
+      monthFrom: state.monthFrom,
+      monthTo:   state.monthTo,
     });
   });
   // Re-render the KPI bar too — geo filter affects which tiles are visible.

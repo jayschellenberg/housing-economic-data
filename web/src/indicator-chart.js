@@ -177,9 +177,19 @@ export function buildIndicatorCard(container, { chartId, title, sourceLabel, des
     const allValues = points.map(p => p.value).filter(Number.isFinite);
     const yFormatter = pickFormatter(seriesMeta[0]?.units || 'index', allValues);
 
-    // Apply year-range filter from opts (passed as { yearFrom, yearTo }).
-    const minDate = opts.yearFrom ? new Date(opts.yearFrom, 0, 1) : null;
-    const maxDate = opts.yearTo   ? new Date(opts.yearTo, 11, 31) : null;
+    // Apply month-range filter from opts (passed as { monthFrom, monthTo },
+    // each "YYYY-MM"). Record dates are parsed UTC (new Date("2026-06-23")), so
+    // build the bounds in UTC too: from = first day of monthFrom, to = last
+    // day of monthTo (end-of-day, to include that whole month).
+    const monthBound = (m, end) => {
+      if (!m) return null;
+      const [y, mo] = String(m).split('-').map(Number);
+      if (!Number.isFinite(y) || !Number.isFinite(mo)) return null;
+      return end ? new Date(Date.UTC(y, mo, 0, 23, 59, 59))   // last day of mo
+                 : new Date(Date.UTC(y, mo - 1, 1));          // first day of mo
+    };
+    const minDate = monthBound(opts.monthFrom, false);
+    const maxDate = monthBound(opts.monthTo, true);
     const filtered = points.filter(p =>
       (!minDate || p.date >= minDate) && (!maxDate || p.date <= maxDate)
     );
