@@ -132,12 +132,21 @@ run_breakdown <- function(breakdown, out_filename, geo_level) {
   combined <- bind_rows(lapply(ok, function(df) df %>%
                                  mutate(across(where(is.factor), as.character))))
 
-  # Synthetic per-zone GeoUID = parent CMA UID + slug of the zone name.
+  # Synthetic per-zone GeoUID = parent CMA UID + slug of the zone name. Cap the
+  # slug so the shard filename ({level}_{uid}.json) stays well under the Windows
+  # / Dropbox ~260-char path limit — some Calgary CMHC "neighbourhoods" bundle
+  # 10+ areas into one ~200-char name. Over the cap we keep a readable prefix and
+  # append a short stable hash of the full name for uniqueness. Display names
+  # (GeoName) are untouched; only the identifier shortens.
+  hashstr <- function(s) {
+    h <- 0
+    for (c in utf8ToInt(s)) h <- (h * 31 + c) %% 16777213   # prime < 2^24, stays exact in double
+    sprintf("%06x", h)
+  }
   slug <- function(x) {
-    x <- tolower(x)
-    x <- gsub("[^a-z0-9]+", "-", x)
-    x <- gsub("^-+|-+$", "", x)
-    x
+    s <- gsub("^-+|-+$", "", gsub("[^a-z0-9]+", "-", tolower(x)))
+    if (nchar(s) > 64) s <- paste0(gsub("-+$", "", substr(s, 1, 57)), "-", hashstr(x))
+    s
   }
 
   slim <- combined %>%
