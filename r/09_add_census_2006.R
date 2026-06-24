@@ -7,7 +7,7 @@
 # coarse before/after-1986 age split — not the detailed period-of-construction
 # bands. Sources (same comp_download.cfm form as 2011):
 #   - CSV101: Canada + provinces/territories  (header line 1)
-#   - CSV301: per-province CSD files; uses MAN + SASK (title+blank+header → skip 2)
+#   - CSV301: per-province CSD files; uses MAN only (title+blank+header → skip 2)
 # Run AFTER r/07 + r/08. Census-frequency, run-on-demand.
 # =============================================================================
 
@@ -75,13 +75,13 @@ csd_dir <- fetch_unzip("CSV301", "csd")
 cpt  <- parse_2006(list.files(cpt_dir, pattern = "-101\\.csv$", full.names = TRUE, ignore.case = TRUE)[1],
                    skip = 1, geoCol = 1, charCol = 4, totalCol = 6,
                    geo_ok = function(g) g == "1" || grepl("^[0-9]{2}$", g))
+# Manitoba CSDs only — SK & AB municipalities carry 2016 + 2021 census data only
+# (no pre-2016 municipal detail), so the 2006 CSD back-year is Manitoba-only.
 man  <- parse_2006(list.files(csd_dir, pattern = "-301-MAN\\.csv$",  full.names = TRUE, ignore.case = TRUE)[1],
                    skip = 3, geoCol = 1, charCol = 7, totalCol = 9, geo_ok = function(g) grepl("^[0-9]{7}$", g))
-sask <- parse_2006(list.files(csd_dir, pattern = "-301-SASK\\.csv$", full.names = TRUE, ignore.case = TRUE)[1],
-                   skip = 3, geoCol = 1, charCol = 7, totalCol = 9, geo_ok = function(g) grepl("^[0-9]{7}$", g))
-lookup <- c(cpt, man, sask)
-message(sprintf("[09] 2006 geographies parsed: %d (CPT %d, MAN %d, SASK %d)",
-                length(lookup), length(cpt), length(man), length(sask)))
+lookup <- c(cpt, man)
+message(sprintf("[09] 2006 geographies parsed: %d (CPT %d, MAN %d)",
+                length(lookup), length(cpt), length(man)))
 
 # --- Merge onto the multi-year JSON ------------------------------------------
 json_path <- file.path(WEB_DATA, "housing", "census_housing.json")

@@ -5,7 +5,7 @@
 # already populated with 2021 + 2016. 2011 has no clean API, so this parses the
 # NHS Profile comprehensive download files (catalogue 99-004-XWE2011001):
 #   - CPT (FMT=CSV101): Canada + provinces/territories       (char col 5, total col 7)
-#   - CSD (FMT=CSV301): per-province CSD files; we use MAN+SASK (char col 8, total col 10)
+#   - CSD (FMT=CSV301): per-province CSD files; we use MAN only (char col 8, total col 10)
 # Run AFTER r/07. Census is 5-yearly + the 2011 NHS is voluntary (lower
 # small-area reliability), so this is a run-on-demand generator.
 # =============================================================================
@@ -87,11 +87,12 @@ message("[08] parsing 2011 NHS files...")
 cpt_dir <- fetch_unzip("CSV101", "cpt")
 csd_dir <- fetch_unzip("CSV301", "csd")
 cpt <- parse_cpt(list.files(cpt_dir, pattern = "-101\\.csv$", full.names = TRUE)[1])
+# Manitoba CSDs only — SK & AB municipalities carry 2016 + 2021 census data only
+# (no pre-2016 municipal detail), so the 2011 CSD back-year is Manitoba-only.
 man <- parse_csd(list.files(csd_dir, pattern = "-301-MAN\\.csv$",  full.names = TRUE)[1])
-sask<- parse_csd(list.files(csd_dir, pattern = "-301-SASK\\.csv$", full.names = TRUE)[1])
-lookup2011 <- c(cpt, man, sask)
-message(sprintf("[08] 2011 geographies parsed: %d (CPT %d, MAN %d, SASK %d)",
-                length(lookup2011), length(cpt), length(man), length(sask)))
+lookup2011 <- c(cpt, man)
+message(sprintf("[08] 2011 geographies parsed: %d (CPT %d, MAN %d)",
+                length(lookup2011), length(cpt), length(man)))
 
 # --- Merge onto the existing multi-year JSON ---------------------------------
 json_path <- file.path(WEB_DATA, "housing", "census_housing.json")

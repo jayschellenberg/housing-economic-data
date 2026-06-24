@@ -116,7 +116,7 @@ build_area <- function(i) {
 areas_out <- Filter(Negate(is.null), lapply(seq_len(nrow(AREAS)), build_area))
 message(sprintf("[10] areas with 2021 data: %d", length(areas_out)))
 
-# --- Manitoba & Saskatchewan municipalities (CSDs): 2021 structural type ------
+# --- Manitoba, Saskatchewan & Alberta municipalities (CSDs): 2021 structural type ------
 # Cube 98-10-0040 stops at CMA/CA geography, so MB/SK municipalities come from
 # cube 98-10-0233 (the Census housing cube r/07 already uses), which carries a
 # structural-type dimension at the CSD level. Its structural-type members are
@@ -135,7 +135,7 @@ if (!is.null(csd_meta)) {
   gdim <- Filter(function(d) grepl("geog", d$dimensionNameEn, ignore.case = TRUE),
                  csd_meta[[1]]$object$dimension)[[1]]$member
   csds <- Filter(function(m) as.integer(m$geoLevel %||% -1L) == 5L &&
-                             substr(as.character(m$classificationCode %||% ""), 1, 2) %in% c("46", "47"), gdim)
+                             substr(as.character(m$classificationCode %||% ""), 1, 2) %in% c("46", "47", "48"), gdim)
   if (length(csds)) {
     csd_tbl <- data.frame(
       mid  = vapply(csds, function(m) as.integer(m$memberId), integer(1)),
@@ -149,7 +149,7 @@ if (!is.null(csd_meta)) {
       data.frame(uid = csd_tbl$uid[i], pos = poss,
                  coordinate = vapply(poss, function(p) mkc(csd_tbl$mid[i], p), character(1)),
                  stringsAsFactors = FALSE)))
-    message(sprintf("[10] fetching 2021 structural type for %d MB/SK CSDs — %d coords", nrow(csd_tbl), nrow(creq)))
+    message(sprintf("[10] fetching 2021 structural type for %d MB/SK/AB CSDs — %d coords", nrow(csd_tbl), nrow(creq)))
     creq$value <- unlist(lapply(split(creq$coordinate, ceiling(seq_len(nrow(creq)) / 250)),
                                 function(ch) fetch_batch(ch, PID_CSD)))
     for (i in seq_len(nrow(csd_tbl))) {
@@ -165,7 +165,7 @@ if (!is.null(csd_meta)) {
     }
   }
 }
-message(sprintf("[10] MB/SK CSDs added (2021): %d", csd_n))
+message(sprintf("[10] MB/SK/AB CSDs added (2021): %d", csd_n))
 
 payload <- list(
   source       = "Statistics Canada, 2021 Census of Population, table 98-10-0040 (structural type of dwelling)",

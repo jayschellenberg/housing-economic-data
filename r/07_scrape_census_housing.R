@@ -60,14 +60,14 @@ g <- tibble::tibble(
   level    = vapply(gm, function(m) as.integer(m$geoLevel %||% -1L), integer(1))
 )
 
-# --- 2. Area list: Canada + provinces/territories + MB/SK CSDs ----------------
+# --- 2. Area list: Canada + provinces/territories + MB/SK/AB CSDs --------------
 areas <- dplyr::bind_rows(
   g %>% dplyr::filter(level == 0) %>% dplyr::mutate(lvl = "country",  prov = "CA"),
   g %>% dplyr::filter(level == 2) %>% dplyr::mutate(lvl = "province", prov = code),
-  g %>% dplyr::filter(level == 5, substr(code, 1, 2) %in% c("46", "47")) %>%
+  g %>% dplyr::filter(level == 5, substr(code, 1, 2) %in% c("46", "47", "48")) %>%
         dplyr::mutate(lvl = "csd", prov = substr(code, 1, 2))
 ) %>% dplyr::arrange(match(lvl, c("country", "province", "csd")), name)
-message(sprintf("[07] Areas: %d (Canada + %d provinces + %d MB/SK CSDs)",
+message(sprintf("[07] Areas: %d (Canada + %d provinces + %d MB/SK/AB CSDs)",
                 nrow(areas), sum(areas$lvl == "province"), sum(areas$lvl == "csd")))
 
 # --- 3. Coordinates: per area, period 1..13 (age, all-else Total) + condition
