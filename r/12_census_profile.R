@@ -74,6 +74,15 @@ DATASETS <- c(`2006` = "CA06", `2011` = "CA11", `2016` = "CA16", `2021` = "CA21"
 MB_PR    <- "46"
 WPG_CSD  <- "4611040"   # City of Winnipeg (for DA-level fetch)
 
+# Saskatchewan + Alberta (2026-06): added at province / CMA-CA / CD level for the
+# 2016 + 2021 censuses only. Manitoba keeps full history + CSDs; SK/AB skip CSDs
+# (and pre-2016 years) to stay within the CensusMapper free-tier 500-region/day
+# cap and keep the flat area picker manageable. The Winnipeg virtual geographies
+# (DA-aggregated clusters/community areas, r/12b) stay Manitoba-only.
+ADD_PR     <- c("47", "48")          # SK, AB
+ADD_YEARS  <- c("2016", "2021")
+ADD_LEVELS <- c("PR", "CMA", "CD")   # not CSD
+
 # =============================================================================
 # Vector resolution (ported from MBCensusData/census_report.R)
 # =============================================================================
@@ -182,7 +191,10 @@ demo_fields_for <- function(year) {
 # =============================================================================
 fetch_level <- function(dataset, level, fields, lenient = FALSE) {
   vids <- if (lenient) resolve_fields_lenient(dataset, fields) else resolve_fields(dataset, fields)
-  df <- get_census(dataset = dataset, regions = list(PR = MB_PR), level = level,
+  # Manitoba always; SK + AB only for the 2016/2021 censuses at PR/CMA/CD level.
+  yr  <- unname(c(CA06 = "2006", CA11 = "2011", CA16 = "2016", CA21 = "2021")[dataset])
+  prs <- if (!is.na(yr) && yr %in% ADD_YEARS && level %in% ADD_LEVELS) c(MB_PR, ADD_PR) else MB_PR
+  df <- get_census(dataset = dataset, regions = list(PR = prs), level = level,
                    vectors = unname(vids[!is.na(vids)]), use_cache = TRUE, quiet = TRUE, geo_format = NA)
   out <- data.frame(
     uid        = as.character(df$GeoUID),

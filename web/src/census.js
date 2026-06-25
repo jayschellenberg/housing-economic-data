@@ -150,8 +150,9 @@ export async function initCensus() {
   // municipalities and match the census naming appraisers expect.
   for (const r of data.regions) {
     let n = String(r.name || '').replace(/\s{2,}/g, ' ').trim();
-    if (r.level === 'PR')  n = n.replace(/\s*\(Man\.\)$/, '');
-    if (r.level === 'CMA') n = n.replace(/\s*\(B\)$/, ' (CMA)').replace(/\s*\(D\)$/, ' (CA)');
+    if (r.level === 'PR')  n = n.replace(/\s*\([^)]*\)$/, '');                         // (Man.)/(Sask.)/(Alta.)
+    if (r.level === 'CMA') n = n.replace(/\s*\(B\)$/, ' (CMA)').replace(/\s*\((D|K)\)$/, ' (CA)');
+    if (r.level === 'CD')  n = n.replace(/\s*\(CDR\)$/, '');                           // census-division type code
     r.name = n;
   }
 
@@ -369,7 +370,10 @@ export async function initCensus() {
         popRows.push({ region: r.name, year: +y, value: tr[y].population });
     }
     if (popRows.length) {
-      const yrs = shownYears.map(Number);
+      // Fit the x-axis to the census years actually present across the selected
+      // areas (within the period cap) — so an area that only has 2016+2021
+      // (e.g. SK/AB) doesn't render an empty 2006–2011 stretch.
+      const yrs = [...new Set(popRows.map(d => d.year))].sort((a, b) => a - b);
       const loY = Math.min(...yrs), hiY = Math.max(...yrs);
       const maxV = Math.max(...popRows.map(d => d.value));
       const single = regionNames.length === 1;
