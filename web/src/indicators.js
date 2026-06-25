@@ -66,7 +66,7 @@ let state = {
   monthTo: null,
   monthFromLocked: false,   // true once the user edits "from" by hand
   sectionsHidden: new Set(),
-  geosEnabled: new Set(['CA', 'MB', 'Winnipeg-CMA']),
+  geosEnabled: new Set(['MB', 'Winnipeg-CMA']),   // Canada-only stats always render anyway (single-geo)
 };
 let lastRender = { cards: [], shards: {}, catalog: null };
 
