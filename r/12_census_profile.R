@@ -74,12 +74,13 @@ DATASETS <- c(`2006` = "CA06", `2011` = "CA11", `2016` = "CA16", `2021` = "CA21"
 MB_PR    <- "46"
 WPG_CSD  <- "4611040"   # City of Winnipeg (for DA-level fetch)
 
-# Saskatchewan + Alberta (2026-06): added at province / CMA-CA / CD level for the
-# 2016 + 2021 censuses only. Manitoba keeps full history + CSDs; SK/AB skip CSDs
-# (and pre-2016 years) to stay within the CensusMapper free-tier 500-region/day
-# cap and keep the flat area picker manageable. The Winnipeg virtual geographies
-# (DA-aggregated clusters/community areas, r/12b) stay Manitoba-only.
-ADD_PR     <- c("47", "48")          # SK, AB
+# Saskatchewan + Alberta + British Columbia (SK/AB 2026-06, BC 2026-06): added at
+# province / CMA-CA / CD level for the 2016 + 2021 censuses only. Manitoba keeps
+# full history + CSDs; SK/AB/BC skip CSDs (and pre-2016 years) to stay within the
+# CensusMapper free-tier 500-region/day cap and keep the flat area picker
+# manageable. The Winnipeg virtual geographies (DA-aggregated clusters/community
+# areas, r/12b) stay Manitoba-only.
+ADD_PR     <- c("47", "48", "59")    # SK, AB, BC
 ADD_YEARS  <- c("2016", "2021")
 ADD_LEVELS <- c("PR", "CMA", "CD")   # not CSD
 
