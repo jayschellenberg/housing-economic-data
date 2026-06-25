@@ -273,7 +273,10 @@ zone_uid_hash <- function(s) {
 }
 zone_slug <- function(x) {
   s <- gsub("^-+|-+$", "", gsub("[^a-z0-9]+", "-", tolower(x)))
-  if (nchar(s) > 64) s <- paste0(gsub("-+$", "", substr(s, 1, 57)), "-", zone_uid_hash(x))
+  # Vectorised: x is a whole ZoneName column, so cap only the over-long ids
+  # element-wise (a scalar `if` over a vector errors in R >= 4.2).
+  long <- which(nchar(s) > 64)
+  for (i in long) s[i] <- paste0(gsub("-+$", "", substr(s[i], 1, 57)), "-", zone_uid_hash(x[i]))
   s
 }
 
