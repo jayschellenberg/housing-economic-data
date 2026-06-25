@@ -84,13 +84,10 @@ export async function initSecondary({ manifest }) {
     if (!centresByProv.has(p)) centresByProv.set(p, new Map());
     centresByProv.get(p).set(String(r.geoUid), r.geoName);
   }
-  // Manitoba pinned first (home province / default); every other province with
-  // Srms data follows alphabetically by name.
-  const provs = [
-    ...(centresByProv.has(MB_UID) ? [MB_UID] : []),
-    ...[...centresByProv.keys()].filter(p => p !== MB_UID)
-       .sort((a, b) => (provNames.get(a) || a).localeCompare(provNames.get(b) || b)),
-  ];
+  // Provinces with Srms data, listed alphabetically by name (Manitoba is merely
+  // the pre-selected default below, not pinned to the top of the list).
+  const provs = [...centresByProv.keys()]
+    .sort((a, b) => (provNames.get(a) || a).localeCompare(provNames.get(b) || b));
   const centresFor = (p) => [...(centresByProv.get(p)?.entries() || [])]
     .map(([uid, name]) => ({ uid, name }))
     .sort((a, b) => a.name.localeCompare(b.name));
