@@ -76,13 +76,30 @@ export async function initAffordability() {
   // CMHC average rent for MB centres (keyed by census_profile uid) — pairs with
   // the census median rent so MB & SK centre factors share the CMHC basis.
   const mbCmhc = new Map((extra?.mbCmhcRent || []).map(m => [String(m.uid), m]));
+  // Strip cancensus type codes from region names (same as the Census Profile
+  // tab): "Manitoba (Man.)" → "Manitoba", "Winnipeg (B)" → "Winnipeg (CMA)",
+  // "Brandon (D)" → "Brandon (CA)". CSD codes are kept (they disambiguate
+  // same-named municipalities).
+  const cleanName = (name, level) => {
+    let n = String(name || '').replace(/\s{2,}/g, ' ').trim();
+    if (level === 'PR')  n = n.replace(/\s*\([^)]*\)$/, '');
+    if (level === 'CMA') n = n.replace(/\s*\(B\)$/, ' (CMA)').replace(/\s*\((D|K)\)$/, ' (CA)');
+    if (level === 'CD')  n = n.replace(/\s*\(CDR\)$/, '');
+    return n;
+  };
   const areas = [];
   for (const r of profile.regions) {                // Manitoba — census income + median rent; CMHC avg rent for centres
+    // census_profile.json now also carries SK (47…) + AB (48…) for the Census
+    // Profile tab. The Affordability tab's census areas are Manitoba only
+    // (uid 46…, or Winnipeg virtual geos WPG_*); Saskatchewan is added from
+    // affordability_extra (extra.sk) below, and other provinces aren't covered
+    // yet — so skip non-MB regions here to keep the province scoping correct.
+    if (!/^(46|WPG)/.test(String(r.uid))) continue;
     const d = newestDemo(r);
     if (!d) continue;
     const cmhc = mbCmhc.get(String(r.uid));
     areas.push({
-      uid: String(r.uid), name: r.name, level: r.level, prov: '46',
+      uid: String(r.uid), name: cleanName(r.name, r.level), level: r.level, prov: '46',
       group: groupOf('46', r.level), year: d.year, income: d.median_hh_income,
       medianRent: d.median_rent, avgRent: cmhc?.avgRent ?? null, avgRentYear: cmhc?.rentYear ?? null,
     });
