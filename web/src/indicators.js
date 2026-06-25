@@ -253,67 +253,93 @@ function buildTimeAdjustmentTool(catalog, shards) {
 }
 
 // --- Current Snapshot KPI bar -----------------------------------------------
+// Map a geo string to the id token(s) it appears as in series ids — so a
+// snapshotPick can be grouped with its same-metric siblings across geographies.
+const GEO_ID_TOKENS = {
+  CA: ['canada'], MB: ['manitoba'], SK: ['saskatchewan', 'sk'], AB: ['alberta', 'ab'],
+  BC: ['bc'], ON: ['ontario', 'on'], QC: ['quebec', 'qc'], NB: ['nb'], NS: ['ns'],
+  PE: ['pe'], NL: ['nl'],
+  'Winnipeg-CMA': ['winnipeg'], 'Calgary-CMA': ['calgary'], 'Edmonton-CMA': ['edmonton'],
+  'Regina-CMA': ['regina'], 'Saskatoon-CMA': ['saskatoon'],
+};
+// Display order for the per-geo tiles of one metric.
+const GEO_ORDER = ['CA', 'MB', 'SK', 'AB', 'BC', 'ON', 'QC', 'NB', 'NS', 'PE', 'NL',
+  'Winnipeg-CMA', 'Calgary-CMA', 'Edmonton-CMA', 'Regina-CMA', 'Saskatoon-CMA'];
+// A series id with its geo segment removed, so the same metric across different
+// geographies maps to one key (statscan.cpi_allitems.{manitoba|saskatchewan} ->
+// statscan.cpi_allitems; derived.rent.winnipeg.yoy -> derived.rent.yoy). Keeps
+// multi-metric charts (farm cash total/crop/livestock, rent-vs-wage, mortgage
+// 5/3/1yr) from collapsing — only the snapshotPick's own metric is shown.
+function geoStripId(id, geo) {
+  const parts = String(id).split('.');
+  for (const tok of (GEO_ID_TOKENS[geo] || [])) {
+    const idx = parts.indexOf(tok);
+    if (idx >= 0) { parts.splice(idx, 1); break; }
+  }
+  return parts.join('.');
+}
+
 function buildSnapshot(catalog, shards) {
   const $bar = document.getElementById('mi-snapshot');
   if (!$bar) return;
   $bar.replaceChildren();
   Object.entries(catalog.charts || {}).forEach(([chartId, c]) => {
     if (!c.snapshotPick) return;
-    const sid = c.snapshotPick;
     const shard = shards[c.displayGroup];
     if (!shard) return;
-    const meta = (shard.series || []).find(s => s.id === sid);
-    if (!meta) return;
-    // Honour the geo filter — but only if the chart has more than one
-    // available geo. Single-geo charts (national-only mortgage/bond/SLOS)
-    // are always shown so users don't lose national context when they
-    // uncheck Canada to focus on Manitoba.
-    const chartGeos = new Set((shard.series || [])
-      .filter(s => s.chartId === chartId).map(s => s.geo));
-    const filterApplies = chartGeos.size > 1 && c.geoFilter !== false;
-    if (filterApplies && !state.geosEnabled.has(meta.geo)) return;
-
-    const tile = document.createElement('div');
-    tile.className = 'cmhc-kpi';
-    tile.innerHTML = `
-      <div class="cmhc-kpi-label">${c.title}</div>
-      <div class="cmhc-kpi-value"></div>
-      <div class="cmhc-kpi-meta"></div>
-      <div class="cmhc-kpi-deltas"></div>
-    `;
-    const fmtKey = (meta.units === 'dollar' && Math.abs(meta.latestValue ?? 0) >= 1e6)
-      ? 'dollar_millions' : meta.units;
-    tile.querySelector('.cmhc-kpi-value').textContent = (FMT[fmtKey] || ((v) => String(v)))(meta.latestValue);
-    tile.querySelector('.cmhc-kpi-meta').textContent =
-      `${meta.chartLabel || meta.id} • as of ${meta.latestDate}`;
-
-    // Compute 90d / 12mo / 24mo deltas from this series's records.
-    const ids = new Set([sid]);
-    const records = (shard.records || []).filter(r => ids.has(r.id))
-      .sort((a, b) => a.date.localeCompare(b.date));
-    const $deltas = tile.querySelector('.cmhc-kpi-deltas');
-    const windows = [
-      { label: '90d',  days: 90 },
-      { label: '12mo', days: 365 },
-      { label: '24mo', days: 730 },
-    ];
-    windows.forEach(w => {
-      const d = computeDelta(records, w.days, meta.units);
-      if (!d) return;
-      // Semantic classification: favourable when direction matches the
-      // chart's goodDirection (NHPI up = favourable; bond yields up = unfavourable).
-      let sentiment = 'flat';
-      if (d.direction !== 'flat') {
-        sentiment = (d.direction === c.goodDirection) ? 'favourable' : 'unfavourable';
-      }
-      const chip = document.createElement('span');
-      chip.className = `cmhc-kpi-delta ${sentiment}`;
-      chip.innerHTML = `<span class="cmhc-kpi-delta-window">${w.label}</span> ${d.arrow} ${d.label}`;
-      $deltas.appendChild(chip);
-    });
-
-    $bar.appendChild(tile);
+    const pick = (shard.series || []).find(s => s.id === c.snapshotPick);
+    if (!pick) return;
+    // Geo-aware: one tile per enabled geography for the snapshotPick's metric —
+    // its same-metric siblings (same chartId + same geo-stripped id) across geos.
+    // Single-geo / national metrics always render, ignoring the filter.
+    const key = geoStripId(pick.id, pick.geo);
+    const sibs = (shard.series || [])
+      .filter(s => s.chartId === chartId && geoStripId(s.id, s.geo) === key);
+    const filterApplies = new Set(sibs.map(s => s.geo)).size > 1 && c.geoFilter !== false;
+    sibs
+      .filter(s => !filterApplies || state.geosEnabled.has(s.geo))
+      .sort((a, b) => (GEO_ORDER.indexOf(a.geo) + 1 || 99) - (GEO_ORDER.indexOf(b.geo) + 1 || 99))
+      .forEach(meta => renderSnapshotTile(c, meta, shard, $bar));
   });
+}
+
+function renderSnapshotTile(c, meta, shard, $bar) {
+  const tile = document.createElement('div');
+  tile.className = 'cmhc-kpi';
+  tile.innerHTML = `
+    <div class="cmhc-kpi-label">${c.title}</div>
+    <div class="cmhc-kpi-value"></div>
+    <div class="cmhc-kpi-meta"></div>
+    <div class="cmhc-kpi-deltas"></div>
+  `;
+  const fmtKey = (meta.units === 'dollar' && Math.abs(meta.latestValue ?? 0) >= 1e6)
+    ? 'dollar_millions' : meta.units;
+  tile.querySelector('.cmhc-kpi-value').textContent = (FMT[fmtKey] || ((v) => String(v)))(meta.latestValue);
+  tile.querySelector('.cmhc-kpi-meta').textContent =
+    `${meta.chartLabel || meta.id} • as of ${meta.latestDate}`;
+
+  const records = (shard.records || []).filter(r => r.id === meta.id)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const $deltas = tile.querySelector('.cmhc-kpi-deltas');
+  const windows = [
+    { label: '90d',  days: 90 },
+    { label: '12mo', days: 365 },
+    { label: '24mo', days: 730 },
+  ];
+  windows.forEach(w => {
+    const d = computeDelta(records, w.days, meta.units);
+    if (!d) return;
+    let sentiment = 'flat';
+    if (d.direction !== 'flat') {
+      sentiment = (d.direction === c.goodDirection) ? 'favourable' : 'unfavourable';
+    }
+    const chip = document.createElement('span');
+    chip.className = `cmhc-kpi-delta ${sentiment}`;
+    chip.innerHTML = `<span class="cmhc-kpi-delta-window">${w.label}</span> ${d.arrow} ${d.label}`;
+    $deltas.appendChild(chip);
+  });
+
+  $bar.appendChild(tile);
 }
 
 /**
