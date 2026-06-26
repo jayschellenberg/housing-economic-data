@@ -71,6 +71,7 @@ jobs:
           Rscript r/14_build_indicators.R
           Rscript r/16_scrape_mls.R
           Rscript r/15_build_economic_update.R
+          Rscript r/19_scrape_rtb.R
 
       - name: Verify samples against live API
         run: Rscript r/99_verify_samples.R
@@ -93,6 +94,25 @@ jobs:
             git commit -m "data: refresh (${{ steps.stamp.outputs.date }})"
             git push
             echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Alert on a new MB RTB rent guideline
+        if: success() && steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # r/19 writes data/rtb_new_guideline.txt only when the scraped guideline
+          # year/value differs from the previously committed file (gitignored, so
+          # still present in the workspace). Raise one issue when that happens.
+          if [ -f data/rtb_new_guideline.txt ]; then
+            BODY="$(cat data/rtb_new_guideline.txt)"
+            echo "RTB alert: $BODY"
+            gh issue create \
+              --title "New Manitoba RTB rent increase guideline" \
+              --body "$BODY  —  detected by the monthly RTB scrape (r/19); the RTB (MB) tab and web/public/data/economy/rtb_mb.json are updated. Source: https://www.gov.mb.ca/cca/rtb/rentincreaseguideline/currentrentguideline.html" \
+              || echo "gh issue create failed (continuing)"
+          else
+            echo "No new RTB guideline this run."
           fi
 
       - name: Notify by email — success with changes

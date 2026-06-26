@@ -51,6 +51,10 @@
         class="cmhc-tab" data-tab="affordability" aria-selected="false">
         Affordability
       </button>
+      <button type="button" role="tab" id="tab-btn-rtb"
+        class="cmhc-tab" data-tab="rtb" aria-selected="false">
+        RTB (MB)
+      </button>
       <button type="button" role="tab" id="tab-btn-snapshot"
         class="cmhc-tab" data-tab="snapshot" aria-selected="false">
         Current Snapshot
@@ -754,6 +758,23 @@
           Affordability Factor = monthly housing payment as a percentage of median household income; under 30% is generally considered affordable. Sources: Statistics Canada, Census of Population (median household income and median rent); CMHC Rental Market Survey (average rents); CREA MLS&reg; Home Price Index (home prices); Bank of Canada (mortgage rates). This product is not affiliated with or endorsed by these organizations.
         </footer>
       </main>
+    </div>
+
+    <!-- ============================================================
+         RTB (MB) tab — Manitoba Residential Tenancies Branch rent controls:
+         the current annual rent-increase guideline + an appraisal "Rent
+         Controls" narrative (Download Word), and the year-by-year guideline
+         history charted against Manitoba All-Items CPI. Scraped monthly by
+         r/19_scrape_rtb.R → economy/rtb_mb.json.
+         ============================================================ -->
+    <div id="tab-panel-rtb" class="p-4 space-y-4 max-w-6xl" role="tabpanel" aria-labelledby="tab-btn-rtb" hidden>
+      <div id="rtb-headline" class="cmhc-hsk-headline"></div>
+      <div id="rtb-narrative"></div>
+      <section id="rtb-chart"></section>
+      <div id="rtb-table"></div>
+      <footer class="text-xs text-neutral-500 pt-4 border-t border-neutral-200">
+        Source: Manitoba Residential Tenancies Branch — Rent Increase Guideline (gov.mb.ca/cca/rtb). Consumer Price Index: Statistics Canada, Manitoba All-Items CPI (not seasonally adjusted). Guideline values are the published annual maximums; this is an unofficial reproduction for reference, not legal advice.
+      </footer>
     </div>
 
     <footer id="site-footer" class="bg-neutral-50 border-t border-neutral-200 text-xs text-neutral-600 px-4 py-3 space-y-2">

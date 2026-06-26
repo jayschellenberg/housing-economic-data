@@ -18,6 +18,7 @@ import { initHousing } from './housing.js';
 import { initCensus } from './census.js';
 import { initEconomicUpdate } from './economic-update.js';
 import { initAffordability } from './affordability.js';
+import { initRtb } from './rtb.js';
 import { wireChartDocExports } from './doc-image-export.js';
 
 const SERIES_PANELS = [
@@ -107,6 +108,7 @@ function setupTabs(initial) {
     indicators: { btn: document.getElementById('tab-btn-indicators'), panel: document.getElementById('tab-panel-indicators') },
     economic:   { btn: document.getElementById('tab-btn-economic'),   panel: document.getElementById('tab-panel-economic') },
     affordability: { btn: document.getElementById('tab-btn-affordability'), panel: document.getElementById('tab-panel-affordability') },
+    rtb:        { btn: document.getElementById('tab-btn-rtb'),        panel: document.getElementById('tab-panel-rtb') },
   };
 
   function activate(name) {
@@ -193,7 +195,7 @@ async function bootstrap() {
   // sidebar TOC work after a hard refresh.
   const rawHash = window.location.hash.replace('#', '');
   let initialTab = 'charts';
-  if (['charts', 'tables', 'compare', 'starts', 'secondary', 'housing', 'census', 'snapshot', 'indicators', 'economic'].includes(rawHash)) {
+  if (['charts', 'tables', 'compare', 'starts', 'secondary', 'housing', 'census', 'affordability', 'rtb', 'snapshot', 'indicators', 'economic'].includes(rawHash)) {
     initialTab = rawHash;
   } else if (rawHash.startsWith('mi-section-')) {
     initialTab = 'indicators';
@@ -217,6 +219,7 @@ async function bootstrap() {
   initCensus().catch(err => console.error('[census bootstrap]', err));
   initEconomicUpdate().catch(err => console.error('[economic bootstrap]', err));
   initAffordability().catch(err => console.error('[affordability bootstrap]', err));
+  initRtb().catch(err => console.error('[rtb bootstrap]', err));
 
   // Per-tab "Download Word/Excel (charts)" exports — every rendered chart in
   // the active tab captured as a PNG and embedded one per page / worksheet.
