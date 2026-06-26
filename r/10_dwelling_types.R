@@ -135,7 +135,7 @@ if (!is.null(csd_meta)) {
   gdim <- Filter(function(d) grepl("geog", d$dimensionNameEn, ignore.case = TRUE),
                  csd_meta[[1]]$object$dimension)[[1]]$member
   csds <- Filter(function(m) as.integer(m$geoLevel %||% -1L) == 5L &&
-                             substr(as.character(m$classificationCode %||% ""), 1, 2) %in% c("46", "47", "48"), gdim)
+                             substr(as.character(m$classificationCode %||% ""), 1, 2) %in% c("46", "47", "48", "59"), gdim)
   if (length(csds)) {
     csd_tbl <- data.frame(
       mid  = vapply(csds, function(m) as.integer(m$memberId), integer(1)),

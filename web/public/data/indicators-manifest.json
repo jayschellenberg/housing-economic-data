@@ -1,13 +1,13 @@
 {
   "version": 1,
-  "generated": "2026-06-25T16:10:06Z",
+  "generated": "2026-06-26T03:15:40Z",
   "groups": [
     {
       "group": "mortgage_market",
       "file": "mortgage_market.json",
       "seriesCount": 9,
-      "recordCount": 26939,
-      "latestDate": "2026-06-15"
+      "recordCount": 26976,
+      "latestDate": "2026-06-24"
     },
     {
       "group": "credit_conditions",
@@ -19,44 +19,51 @@
     {
       "group": "prices",
       "file": "prices.json",
-      "seriesCount": 16,
-      "recordCount": 8920,
+      "seriesCount": 21,
+      "recordCount": 11654,
       "latestDate": "2026-05-01"
     },
     {
       "group": "supply",
       "file": "supply.json",
-      "seriesCount": 16,
-      "recordCount": 1600,
+      "seriesCount": 22,
+      "recordCount": 2200,
       "latestDate": "2026-04-01"
     },
     {
       "group": "demand",
       "file": "demand.json",
-      "seriesCount": 69,
-      "recordCount": 18803,
+      "seriesCount": 80,
+      "recordCount": 21411,
       "latestDate": "2026-05-01"
     },
     {
       "group": "economy",
       "file": "economy.json",
-      "seriesCount": 31,
-      "recordCount": 11521,
+      "seriesCount": 42,
+      "recordCount": 15639,
       "latestDate": "2026-05-01"
     },
     {
       "group": "construction_cost",
       "file": "construction_cost.json",
-      "seriesCount": 16,
-      "recordCount": 1104,
+      "seriesCount": 20,
+      "recordCount": 1348,
       "latestDate": "2026-01-01"
     },
     {
       "group": "commercial_leasing",
       "file": "commercial_leasing.json",
-      "seriesCount": 11,
-      "recordCount": 415,
+      "seriesCount": 12,
+      "recordCount": 444,
       "latestDate": "2026-01-01"
+    },
+    {
+      "group": "derived",
+      "file": "derived.json",
+      "seriesCount": 12,
+      "recordCount": 22829,
+      "latestDate": "2026-06-24"
     },
     {
       "group": "distress",
@@ -64,15 +71,8 @@
       "seriesCount": 16,
       "recordCount": 4920,
       "latestDate": "2026-04-01"
-    },
-    {
-      "group": "derived",
-      "file": "derived.json",
-      "seriesCount": 11,
-      "recordCount": 22765,
-      "latestDate": "2026-06-15"
     }
   ],
-  "totalSeries": 201,
-  "totalRecords": 97353
+  "totalSeries": 240,
+  "totalRecords": 107787
 }

@@ -1,9 +1,9 @@
 {
   "version": 1,
-  "lastUpdated": "2026-06-24T23:35:33Z",
+  "lastUpdated": "2026-06-26T03:12:55Z",
   "cmhcMaxYear": 2025,
-  "shardCount": 397,
-  "totalRecords": 636082,
+  "shardCount": 613,
+  "totalRecords": 873488,
   "shards": [
     {
       "file": "cma_001.json",
@@ -1383,6 +1383,789 @@
       "yearMax": 2025
     },
     {
+      "file": "csd_602-east-st-paul-rm.json",
+      "geoUid": "602-east-st-paul-rm",
+      "geoName": "East St. Paul (RM)",
+      "geoLevel": "csd",
+      "recordCount": 42,
+      "yearMin": 2023,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_602-headingley-rm.json",
+      "geoUid": "602-headingley-rm",
+      "geoName": "Headingley (RM)",
+      "geoLevel": "csd",
+      "recordCount": 308,
+      "yearMin": 2013,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_602-macdonald-rm.json",
+      "geoUid": "602-macdonald-rm",
+      "geoName": "Macdonald (RM)",
+      "geoLevel": "csd",
+      "recordCount": 84,
+      "yearMin": 2020,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_602-niverville-t.json",
+      "geoUid": "602-niverville-t",
+      "geoName": "Niverville (T)",
+      "geoLevel": "csd",
+      "recordCount": 217,
+      "yearMin": 2023,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_602-ritchot-rm.json",
+      "geoUid": "602-ritchot-rm",
+      "geoName": "Ritchot (RM)",
+      "geoLevel": "csd",
+      "recordCount": 123,
+      "yearMin": 2014,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_602-springfield-rm.json",
+      "geoUid": "602-springfield-rm",
+      "geoName": "Springfield (RM)",
+      "geoLevel": "csd",
+      "recordCount": 327,
+      "yearMin": 2012,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_602-st-clements-rm.json",
+      "geoUid": "602-st-clements-rm",
+      "geoName": "St. Clements (RM)",
+      "geoLevel": "csd",
+      "recordCount": 350,
+      "yearMin": 2001,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_602-st-fran-ois-xavier-rm.json",
+      "geoUid": "602-st-fran-ois-xavier-rm",
+      "geoName": "St. François Xavier (RM)",
+      "geoLevel": "csd",
+      "recordCount": 42,
+      "yearMin": 2021,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_602-tach-rm.json",
+      "geoUid": "602-tach-rm",
+      "geoName": "Taché (RM)",
+      "geoLevel": "csd",
+      "recordCount": 1024,
+      "yearMin": 2000,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_602-west-st-paul-rm.json",
+      "geoUid": "602-west-st-paul-rm",
+      "geoName": "West St. Paul (RM)",
+      "geoLevel": "csd",
+      "recordCount": 216,
+      "yearMin": 2019,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_602-winnipeg-c.json",
+      "geoUid": "602-winnipeg-c",
+      "geoName": "Winnipeg (C)",
+      "geoLevel": "csd",
+      "recordCount": 1432,
+      "yearMin": 2000,
+      "yearMax": 2006
+    },
+    {
+      "file": "csd_602-winnipeg-cy.json",
+      "geoUid": "602-winnipeg-cy",
+      "geoName": "Winnipeg (CY)",
+      "geoLevel": "csd",
+      "recordCount": 4147,
+      "yearMin": 2007,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_705-balgonie-t.json",
+      "geoUid": "705-balgonie-t",
+      "geoName": "Balgonie (T)",
+      "geoLevel": "csd",
+      "recordCount": 80,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_705-lumsden-t.json",
+      "geoUid": "705-lumsden-t",
+      "geoName": "Lumsden (T)",
+      "geoLevel": "csd",
+      "recordCount": 215,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_705-pilot-butte-t.json",
+      "geoUid": "705-pilot-butte-t",
+      "geoName": "Pilot Butte (T)",
+      "geoLevel": "csd",
+      "recordCount": 100,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_705-regina-cy.json",
+      "geoUid": "705-regina-cy",
+      "geoName": "Regina (CY)",
+      "geoLevel": "csd",
+      "recordCount": 1965,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_705-white-city-t.json",
+      "geoUid": "705-white-city-t",
+      "geoName": "White City (T)",
+      "geoLevel": "csd",
+      "recordCount": 10,
+      "yearMin": 2020,
+      "yearMax": 2020
+    },
+    {
+      "file": "csd_725-allan-t.json",
+      "geoUid": "725-allan-t",
+      "geoName": "Allan (T)",
+      "geoLevel": "csd",
+      "recordCount": 346,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_725-delisle-t.json",
+      "geoUid": "725-delisle-t",
+      "geoName": "Delisle (T)",
+      "geoLevel": "csd",
+      "recordCount": 205,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_725-dundurn-no-314-rm.json",
+      "geoUid": "725-dundurn-no-314-rm",
+      "geoName": "Dundurn No. 314 (RM)",
+      "geoLevel": "csd",
+      "recordCount": 80,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_725-dundurn-t.json",
+      "geoUid": "725-dundurn-t",
+      "geoName": "Dundurn (T)",
+      "geoLevel": "csd",
+      "recordCount": 8,
+      "yearMin": 2021,
+      "yearMax": 2021
+    },
+    {
+      "file": "csd_725-langham-t.json",
+      "geoUid": "725-langham-t",
+      "geoName": "Langham (T)",
+      "geoLevel": "csd",
+      "recordCount": 180,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_725-martensville-cy.json",
+      "geoUid": "725-martensville-cy",
+      "geoName": "Martensville (CY)",
+      "geoLevel": "csd",
+      "recordCount": 570,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_725-osler-t.json",
+      "geoUid": "725-osler-t",
+      "geoName": "Osler (T)",
+      "geoLevel": "csd",
+      "recordCount": 100,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_725-saskatoon-cy.json",
+      "geoUid": "725-saskatoon-cy",
+      "geoName": "Saskatoon (CY)",
+      "geoLevel": "csd",
+      "recordCount": 2004,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_725-warman-cy.json",
+      "geoUid": "725-warman-cy",
+      "geoName": "Warman (CY)",
+      "geoLevel": "csd",
+      "recordCount": 789,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_825-airdrie-cy.json",
+      "geoUid": "825-airdrie-cy",
+      "geoName": "Airdrie (CY)",
+      "geoLevel": "csd",
+      "recordCount": 1146,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_825-beiseker-vl.json",
+      "geoUid": "825-beiseker-vl",
+      "geoName": "Beiseker (VL)",
+      "geoLevel": "csd",
+      "recordCount": 190,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_825-calgary-cy.json",
+      "geoUid": "825-calgary-cy",
+      "geoName": "Calgary (CY)",
+      "geoLevel": "csd",
+      "recordCount": 2123,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_825-chestermere-cy.json",
+      "geoUid": "825-chestermere-cy",
+      "geoName": "Chestermere (CY)",
+      "geoLevel": "csd",
+      "recordCount": 141,
+      "yearMin": 2024,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_825-cochrane-t.json",
+      "geoUid": "825-cochrane-t",
+      "geoName": "Cochrane (T)",
+      "geoLevel": "csd",
+      "recordCount": 820,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_825-crossfield-t.json",
+      "geoUid": "825-crossfield-t",
+      "geoName": "Crossfield (T)",
+      "geoLevel": "csd",
+      "recordCount": 152,
+      "yearMin": 2018,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_835-beaumont-cy.json",
+      "geoUid": "835-beaumont-cy",
+      "geoName": "Beaumont (CY)",
+      "geoLevel": "csd",
+      "recordCount": 257,
+      "yearMin": 2020,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_835-beaumont-t.json",
+      "geoUid": "835-beaumont-t",
+      "geoName": "Beaumont (T)",
+      "geoLevel": "csd",
+      "recordCount": 134,
+      "yearMin": 2016,
+      "yearMax": 2019
+    },
+    {
+      "file": "csd_835-bon-accord-t.json",
+      "geoUid": "835-bon-accord-t",
+      "geoName": "Bon Accord (T)",
+      "geoLevel": "csd",
+      "recordCount": 220,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_835-calmar-t.json",
+      "geoUid": "835-calmar-t",
+      "geoName": "Calmar (T)",
+      "geoLevel": "csd",
+      "recordCount": 295,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_835-devon-t.json",
+      "geoUid": "835-devon-t",
+      "geoName": "Devon (T)",
+      "geoLevel": "csd",
+      "recordCount": 856,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_835-edmonton-cy.json",
+      "geoUid": "835-edmonton-cy",
+      "geoName": "Edmonton (CY)",
+      "geoLevel": "csd",
+      "recordCount": 2177,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_835-fort-saskatchewan-cy.json",
+      "geoUid": "835-fort-saskatchewan-cy",
+      "geoName": "Fort Saskatchewan (CY)",
+      "geoLevel": "csd",
+      "recordCount": 1493,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_835-gibbons-t.json",
+      "geoUid": "835-gibbons-t",
+      "geoName": "Gibbons (T)",
+      "geoLevel": "csd",
+      "recordCount": 162,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_835-leduc-cy.json",
+      "geoUid": "835-leduc-cy",
+      "geoName": "Leduc (CY)",
+      "geoLevel": "csd",
+      "recordCount": 1540,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_835-legal-t.json",
+      "geoUid": "835-legal-t",
+      "geoName": "Legal (T)",
+      "geoLevel": "csd",
+      "recordCount": 300,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_835-morinville-t.json",
+      "geoUid": "835-morinville-t",
+      "geoName": "Morinville (T)",
+      "geoLevel": "csd",
+      "recordCount": 638,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_835-parkland-county-md.json",
+      "geoUid": "835-parkland-county-md",
+      "geoName": "Parkland County (MD)",
+      "geoLevel": "csd",
+      "recordCount": 248,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_835-redwater-t.json",
+      "geoUid": "835-redwater-t",
+      "geoName": "Redwater (T)",
+      "geoLevel": "csd",
+      "recordCount": 389,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_835-spruce-grove-cy.json",
+      "geoUid": "835-spruce-grove-cy",
+      "geoName": "Spruce Grove (CY)",
+      "geoLevel": "csd",
+      "recordCount": 1248,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_835-st-albert-cy.json",
+      "geoUid": "835-st-albert-cy",
+      "geoName": "St. Albert (CY)",
+      "geoLevel": "csd",
+      "recordCount": 1425,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_835-stony-plain-t.json",
+      "geoUid": "835-stony-plain-t",
+      "geoName": "Stony Plain (T)",
+      "geoLevel": "csd",
+      "recordCount": 1058,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_835-strathcona-county-sm.json",
+      "geoUid": "835-strathcona-county-sm",
+      "geoName": "Strathcona County (SM)",
+      "geoLevel": "csd",
+      "recordCount": 1275,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_835-thorsby-t.json",
+      "geoUid": "835-thorsby-t",
+      "geoName": "Thorsby (T)",
+      "geoLevel": "csd",
+      "recordCount": 168,
+      "yearMin": 2018,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_835-thorsby-vl.json",
+      "geoUid": "835-thorsby-vl",
+      "geoName": "Thorsby (VL)",
+      "geoLevel": "csd",
+      "recordCount": 37,
+      "yearMin": 2016,
+      "yearMax": 2017
+    },
+    {
+      "file": "csd_835-wabamun-vl.json",
+      "geoUid": "835-wabamun-vl",
+      "geoName": "Wabamun (VL)",
+      "geoLevel": "csd",
+      "recordCount": 144,
+      "yearMin": 2016,
+      "yearMax": 2021
+    },
+    {
+      "file": "csd_835-warburg-vl.json",
+      "geoUid": "835-warburg-vl",
+      "geoName": "Warburg (VL)",
+      "geoLevel": "csd",
+      "recordCount": 100,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_933-bowen-island-im.json",
+      "geoUid": "933-bowen-island-im",
+      "geoName": "Bowen Island (IM)",
+      "geoLevel": "csd",
+      "recordCount": 180,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_933-burnaby-cy.json",
+      "geoUid": "933-burnaby-cy",
+      "geoName": "Burnaby (CY)",
+      "geoLevel": "csd",
+      "recordCount": 1834,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_933-coquitlam-cy.json",
+      "geoUid": "933-coquitlam-cy",
+      "geoName": "Coquitlam (CY)",
+      "geoLevel": "csd",
+      "recordCount": 1326,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_933-delta-cy.json",
+      "geoUid": "933-delta-cy",
+      "geoName": "Delta (CY)",
+      "geoLevel": "csd",
+      "recordCount": 421,
+      "yearMin": 2023,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_933-delta-dm.json",
+      "geoUid": "933-delta-dm",
+      "geoName": "Delta (DM)",
+      "geoLevel": "csd",
+      "recordCount": 989,
+      "yearMin": 2016,
+      "yearMax": 2022
+    },
+    {
+      "file": "csd_933-first-nations-vancouver-r.json",
+      "geoUid": "933-first-nations-vancouver-r",
+      "geoName": "First Nations (Vancouver) (R)",
+      "geoLevel": "csd",
+      "recordCount": 18,
+      "yearMin": 2025,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_933-greater-vancouver-a-rda.json",
+      "geoUid": "933-greater-vancouver-a-rda",
+      "geoName": "Greater Vancouver A (RDA)",
+      "geoLevel": "csd",
+      "recordCount": 1020,
+      "yearMin": 2016,
+      "yearMax": 2022
+    },
+    {
+      "file": "csd_933-langley-cy.json",
+      "geoUid": "933-langley-cy",
+      "geoName": "Langley (CY)",
+      "geoLevel": "csd",
+      "recordCount": 2705,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_933-langley-dm.json",
+      "geoUid": "933-langley-dm",
+      "geoName": "Langley (DM)",
+      "geoLevel": "csd",
+      "recordCount": 1742,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_933-maple-ridge-cy.json",
+      "geoUid": "933-maple-ridge-cy",
+      "geoName": "Maple Ridge (CY)",
+      "geoLevel": "csd",
+      "recordCount": 1303,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_933-metro-vancouver-a-rda.json",
+      "geoUid": "933-metro-vancouver-a-rda",
+      "geoName": "Metro Vancouver A (RDA)",
+      "geoLevel": "csd",
+      "recordCount": 376,
+      "yearMin": 2023,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_933-new-westminster-cy.json",
+      "geoUid": "933-new-westminster-cy",
+      "geoName": "New Westminster (CY)",
+      "geoLevel": "csd",
+      "recordCount": 1544,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_933-north-vancouver-cy.json",
+      "geoUid": "933-north-vancouver-cy",
+      "geoName": "North Vancouver (CY)",
+      "geoLevel": "csd",
+      "recordCount": 3140,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_933-north-vancouver-dm.json",
+      "geoUid": "933-north-vancouver-dm",
+      "geoName": "North Vancouver (DM)",
+      "geoLevel": "csd",
+      "recordCount": 2920,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_933-pitt-meadows-cy.json",
+      "geoUid": "933-pitt-meadows-cy",
+      "geoName": "Pitt Meadows (CY)",
+      "geoLevel": "csd",
+      "recordCount": 745,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_933-port-coquitlam-cy.json",
+      "geoUid": "933-port-coquitlam-cy",
+      "geoName": "Port Coquitlam (CY)",
+      "geoLevel": "csd",
+      "recordCount": 1116,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_933-port-moody-cy.json",
+      "geoUid": "933-port-moody-cy",
+      "geoName": "Port Moody (CY)",
+      "geoLevel": "csd",
+      "recordCount": 765,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_933-richmond-cy.json",
+      "geoUid": "933-richmond-cy",
+      "geoName": "Richmond (CY)",
+      "geoLevel": "csd",
+      "recordCount": 1521,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_933-surrey-cy.json",
+      "geoUid": "933-surrey-cy",
+      "geoName": "Surrey (CY)",
+      "geoLevel": "csd",
+      "recordCount": 1603,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_933-vancouver-cy.json",
+      "geoUid": "933-vancouver-cy",
+      "geoName": "Vancouver (CY)",
+      "geoLevel": "csd",
+      "recordCount": 2093,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_933-west-vancouver-dm.json",
+      "geoUid": "933-west-vancouver-dm",
+      "geoName": "West Vancouver (DM)",
+      "geoLevel": "csd",
+      "recordCount": 1141,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_933-white-rock-cy.json",
+      "geoUid": "933-white-rock-cy",
+      "geoName": "White Rock (CY)",
+      "geoLevel": "csd",
+      "recordCount": 1227,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_935-central-saanich-dm.json",
+      "geoUid": "935-central-saanich-dm",
+      "geoName": "Central Saanich (DM)",
+      "geoLevel": "csd",
+      "recordCount": 733,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_935-colwood-cy.json",
+      "geoUid": "935-colwood-cy",
+      "geoName": "Colwood (CY)",
+      "geoLevel": "csd",
+      "recordCount": 620,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_935-esquimalt-dm.json",
+      "geoUid": "935-esquimalt-dm",
+      "geoName": "Esquimalt (DM)",
+      "geoLevel": "csd",
+      "recordCount": 1602,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_935-first-nations-victoria-r.json",
+      "geoUid": "935-first-nations-victoria-r",
+      "geoName": "First Nations (Victoria) (R)",
+      "geoLevel": "csd",
+      "recordCount": 182,
+      "yearMin": 2017,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_935-langford-cy.json",
+      "geoUid": "935-langford-cy",
+      "geoName": "Langford (CY)",
+      "geoLevel": "csd",
+      "recordCount": 1229,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_935-metchosin-dm.json",
+      "geoUid": "935-metchosin-dm",
+      "geoName": "Metchosin (DM)",
+      "geoLevel": "csd",
+      "recordCount": 200,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_935-oak-bay-dm.json",
+      "geoUid": "935-oak-bay-dm",
+      "geoName": "Oak Bay (DM)",
+      "geoLevel": "csd",
+      "recordCount": 1349,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_935-saanich-dm.json",
+      "geoUid": "935-saanich-dm",
+      "geoName": "Saanich (DM)",
+      "geoLevel": "csd",
+      "recordCount": 1637,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_935-sidney-t.json",
+      "geoUid": "935-sidney-t",
+      "geoName": "Sidney (T)",
+      "geoLevel": "csd",
+      "recordCount": 884,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_935-sooke-dm.json",
+      "geoUid": "935-sooke-dm",
+      "geoName": "Sooke (DM)",
+      "geoLevel": "csd",
+      "recordCount": 437,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_935-victoria-cy.json",
+      "geoUid": "935-victoria-cy",
+      "geoName": "Victoria (CY)",
+      "geoLevel": "csd",
+      "recordCount": 1844,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "csd_935-view-royal-t.json",
+      "geoUid": "935-view-royal-t",
+      "geoName": "View Royal (T)",
+      "geoLevel": "csd",
+      "recordCount": 857,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
       "file": "neighbourhood_602-charleswood.json",
       "geoUid": "602-charleswood",
       "geoName": "Charleswood",
@@ -1986,8 +2769,8 @@
       "yearMax": 2025
     },
     {
-      "file": "neighbourhood_825-altadore-south-calgary-cfb-currie-lincoln-park-richmond-upper-mount-royal-elbow-park-rideau-park.json",
-      "geoUid": "825-altadore-south-calgary-cfb-currie-lincoln-park-richmond-upper-mount-royal-elbow-park-rideau-park",
+      "file": "neighbourhood_825-altadore-south-calgary-cfb-currie-lincoln-park-richmond-u-a911ab.json",
+      "geoUid": "825-altadore-south-calgary-cfb-currie-lincoln-park-richmond-u-a911ab",
       "geoName": "Altadore/South Calgary/CFB Currie/Lincoln Park/Richmond/Upper Mount Royal/Elbow Park/Rideau Park",
       "geoLevel": "neighbourhood",
       "recordCount": 1199,
@@ -2040,8 +2823,8 @@
       "yearMax": 2025
     },
     {
-      "file": "neighbourhood_825-bridlewood-evergreen-shawnee-slope-millrise-shawnessy-somerset-silverado-midnapore-parkland-deer-ridge-deer-run-sundanc.json",
-      "geoUid": "825-bridlewood-evergreen-shawnee-slope-millrise-shawnessy-somerset-silverado-midnapore-parkland-deer-ridge-deer-run-sundanc",
+      "file": "neighbourhood_825-bridlewood-evergreen-shawnee-slope-millrise-shawnessy-som-5efa5c.json",
+      "geoUid": "825-bridlewood-evergreen-shawnee-slope-millrise-shawnessy-som-5efa5c",
       "geoName": "Bridlewood/Evergreen/Shawnee Slope/Millrise/Shawnessy/Somerset/Silverado/Midnapore/Parkland/Deer Ridge/Deer Run/Sundanc",
       "geoLevel": "neighbourhood",
       "recordCount": 70,
@@ -2049,8 +2832,8 @@
       "yearMax": 2016
     },
     {
-      "file": "neighbourhood_825-bridlewood-evergreen-shawnee-slope-millrise-shawnessy-somerset-silverado-midnapore-parkland-deer-ridge-deer-run-sundance-chaparral-walden-legacy.json",
-      "geoUid": "825-bridlewood-evergreen-shawnee-slope-millrise-shawnessy-somerset-silverado-midnapore-parkland-deer-ridge-deer-run-sundance-chaparral-walden-legacy",
+      "file": "neighbourhood_825-bridlewood-evergreen-shawnee-slope-millrise-shawnessy-som-6c53da.json",
+      "geoUid": "825-bridlewood-evergreen-shawnee-slope-millrise-shawnessy-som-6c53da",
       "geoName": "Bridlewood/Evergreen/Shawnee Slope/Millrise/Shawnessy/Somerset/Silverado/Midnapore/Parkland/Deer Ridge/Deer Run/Sundance/Chaparral/Walden/Legacy",
       "geoLevel": "neighbourhood",
       "recordCount": 804,
@@ -2058,8 +2841,8 @@
       "yearMax": 2025
     },
     {
-      "file": "neighbourhood_825-calgary-cma-rural-calgary-city-rocky-view-county-chestermere-crossfield-irricana-beiseker.json",
-      "geoUid": "825-calgary-cma-rural-calgary-city-rocky-view-county-chestermere-crossfield-irricana-beiseker",
+      "file": "neighbourhood_825-calgary-cma-rural-calgary-city-rocky-view-county-chesterm-56994a.json",
+      "geoUid": "825-calgary-cma-rural-calgary-city-rocky-view-county-chesterm-56994a",
       "geoName": "Calgary CMA (Rural Calgary City/Rocky View County/Chestermere/Crossfield/Irricana/Beiseker)",
       "geoLevel": "neighbourhood",
       "recordCount": 427,
@@ -2067,8 +2850,8 @@
       "yearMax": 2025
     },
     {
-      "file": "neighbourhood_825-canyon-meadows-woodlands-woodbine-lake-bonavista-bonavista-downs-diamond-cove-queensland.json",
-      "geoUid": "825-canyon-meadows-woodlands-woodbine-lake-bonavista-bonavista-downs-diamond-cove-queensland",
+      "file": "neighbourhood_825-canyon-meadows-woodlands-woodbine-lake-bonavista-bonavist-ab529f.json",
+      "geoUid": "825-canyon-meadows-woodlands-woodbine-lake-bonavista-bonavist-ab529f",
       "geoName": "Canyon Meadows/Woodlands/Woodbine/Lake Bonavista/Bonavista Downs/Diamond Cove/Queensland",
       "geoLevel": "neighbourhood",
       "recordCount": 626,
@@ -2112,8 +2895,8 @@
       "yearMax": 2025
     },
     {
-      "file": "neighbourhood_825-dover-southview-inglewood-alyth-bonnybrook-erin-woods-eastfield-golden-triangle.json",
-      "geoUid": "825-dover-southview-inglewood-alyth-bonnybrook-erin-woods-eastfield-golden-triangle",
+      "file": "neighbourhood_825-dover-southview-inglewood-alyth-bonnybrook-erin-woods-eas-c27a5d.json",
+      "geoUid": "825-dover-southview-inglewood-alyth-bonnybrook-erin-woods-eas-c27a5d",
       "geoName": "Dover/Southview/Inglewood/Alyth/Bonnybrook/Erin Woods/Eastfield/Golden Triangle",
       "geoLevel": "neighbourhood",
       "recordCount": 927,
@@ -2139,8 +2922,8 @@
       "yearMax": 2025
     },
     {
-      "file": "neighbourhood_825-falconridge-castleridge-coral-springs-martindale-skyview-ranch-saddle-ridge-taradale-horizon-sunridge-westwinds.json",
-      "geoUid": "825-falconridge-castleridge-coral-springs-martindale-skyview-ranch-saddle-ridge-taradale-horizon-sunridge-westwinds",
+      "file": "neighbourhood_825-falconridge-castleridge-coral-springs-martindale-skyview-2c92ed.json",
+      "geoUid": "825-falconridge-castleridge-coral-springs-martindale-skyview-2c92ed",
       "geoName": "Falconridge/Castleridge/Coral Springs/Martindale/Skyview Ranch/Saddle Ridge/Taradale/Horizon/Sunridge/Westwinds",
       "geoLevel": "neighbourhood",
       "recordCount": 933,
@@ -2148,8 +2931,8 @@
       "yearMax": 2025
     },
     {
-      "file": "neighbourhood_825-forest-lawn-forest-heights-penbrooke-meadows-red-carpet-applewood-park.json",
-      "geoUid": "825-forest-lawn-forest-heights-penbrooke-meadows-red-carpet-applewood-park",
+      "file": "neighbourhood_825-forest-lawn-forest-heights-penbrooke-meadows-red-carpet-a-5a5506.json",
+      "geoUid": "825-forest-lawn-forest-heights-penbrooke-meadows-red-carpet-a-5a5506",
       "geoName": "Forest Lawn/Forest Heights/Penbrooke Meadows/Red Carpet/Applewood Park",
       "geoLevel": "neighbourhood",
       "recordCount": 1352,
@@ -2166,22 +2949,22 @@
       "yearMax": 2025
     },
     {
-      "file": "neighbourhood_825-huntington-hills-beddington-heights-evanston-panorama-hills-country-hills-coventry-hills-country-hills-village-harvest-hills-hanson-ranch-hidden-valley-sandstone-valley-macewan-glen.json",
-      "geoUid": "825-huntington-hills-beddington-heights-evanston-panorama-hills-country-hills-coventry-hills-country-hills-village-harvest-hills-hanson-ranch-hidden-valley-sandstone-valley-macewan-glen",
-      "geoName": "Huntington Hills/Beddington Heights/Evanston/Panorama Hills/Country Hills/Coventry Hills/Country Hills Village/Harvest Hills/Hanson Ranch/Hidden Valley/Sandstone Valley/MacEwan Glen",
-      "geoLevel": "neighbourhood",
-      "recordCount": 1016,
-      "yearMin": 2017,
-      "yearMax": 2025
-    },
-    {
-      "file": "neighbourhood_825-huntington-hills-beddington-heights-evanston-panorama-hills-country-hills-coventry-hills-country-hills-village-harvest.json",
-      "geoUid": "825-huntington-hills-beddington-heights-evanston-panorama-hills-country-hills-coventry-hills-country-hills-village-harvest",
+      "file": "neighbourhood_825-huntington-hills-beddington-heights-evanston-panorama-hil-154f39.json",
+      "geoUid": "825-huntington-hills-beddington-heights-evanston-panorama-hil-154f39",
       "geoName": "Huntington Hills/Beddington Heights/Evanston/Panorama Hills/Country Hills/Coventry Hills/Country Hills Village/Harvest",
       "geoLevel": "neighbourhood",
       "recordCount": 104,
       "yearMin": 2016,
       "yearMax": 2016
+    },
+    {
+      "file": "neighbourhood_825-huntington-hills-beddington-heights-evanston-panorama-hil-f01c00.json",
+      "geoUid": "825-huntington-hills-beddington-heights-evanston-panorama-hil-f01c00",
+      "geoName": "Huntington Hills/Beddington Heights/Evanston/Panorama Hills/Country Hills/Coventry Hills/Country Hills Village/Harvest Hills/Hanson Ranch/Hidden Valley/Sandstone Valley/MacEwan Glen",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1016,
+      "yearMin": 2017,
+      "yearMax": 2025
     },
     {
       "file": "neighbourhood_825-killarney-glengarry.json",
@@ -2220,8 +3003,8 @@
       "yearMax": 2025
     },
     {
-      "file": "neighbourhood_825-mckenzie-towne-new-brighton-copperfield-cranston-auburn-bay-mahogany-mckenzie-lake-douglasdale-glen.json",
-      "geoUid": "825-mckenzie-towne-new-brighton-copperfield-cranston-auburn-bay-mahogany-mckenzie-lake-douglasdale-glen",
+      "file": "neighbourhood_825-mckenzie-towne-new-brighton-copperfield-cranston-auburn-b-0995c6.json",
+      "geoUid": "825-mckenzie-towne-new-brighton-copperfield-cranston-auburn-b-0995c6",
       "geoName": "McKenzie Towne/New Brighton/Copperfield/Cranston/Auburn Bay/Mahogany/McKenzie Lake/Douglasdale/Glen",
       "geoLevel": "neighbourhood",
       "recordCount": 561,
@@ -2274,8 +3057,8 @@
       "yearMax": 2025
     },
     {
-      "file": "neighbourhood_825-north-haven-upper-north-haven-thorncliffe-highwood-greenview-cambrian-heights-queens-park-village.json",
-      "geoUid": "825-north-haven-upper-north-haven-thorncliffe-highwood-greenview-cambrian-heights-queens-park-village",
+      "file": "neighbourhood_825-north-haven-upper-north-haven-thorncliffe-highwood-greenv-8b95b7.json",
+      "geoUid": "825-north-haven-upper-north-haven-thorncliffe-highwood-greenv-8b95b7",
       "geoName": "North Haven/Upper North Haven/Thorncliffe/Highwood/Greenview/Cambrian Heights/Queens Park Village",
       "geoLevel": "neighbourhood",
       "recordCount": 970,
@@ -2283,8 +3066,8 @@
       "yearMax": 2025
     },
     {
-      "file": "neighbourhood_825-parkdale-st-andrews-heights-hounsfield-heights-briar-hill-hillhurst-west-hillhurst.json",
-      "geoUid": "825-parkdale-st-andrews-heights-hounsfield-heights-briar-hill-hillhurst-west-hillhurst",
+      "file": "neighbourhood_825-parkdale-st-andrews-heights-hounsfield-heights-briar-hill-5a2fbc.json",
+      "geoUid": "825-parkdale-st-andrews-heights-hounsfield-heights-briar-hill-5a2fbc",
       "geoName": "Parkdale/St. Andrews Heights/Hounsfield Heights/Briar Hill/Hillhurst/West Hillhurst",
       "geoLevel": "neighbourhood",
       "recordCount": 976,
@@ -2373,8 +3156,8 @@
       "yearMax": 2025
     },
     {
-      "file": "neighbourhood_825-valley-ridge-crestmont-cougar-ridge-west-springs-aspen-woods-springbank-hill-discovery-ridge.json",
-      "geoUid": "825-valley-ridge-crestmont-cougar-ridge-west-springs-aspen-woods-springbank-hill-discovery-ridge",
+      "file": "neighbourhood_825-valley-ridge-crestmont-cougar-ridge-west-springs-aspen-wo-dc1739.json",
+      "geoUid": "825-valley-ridge-crestmont-cougar-ridge-west-springs-aspen-wo-dc1739",
       "geoName": "Valley Ridge/Crestmont/Cougar Ridge/West Springs/Aspen Woods/Springbank Hill/Discovery Ridge",
       "geoLevel": "neighbourhood",
       "recordCount": 174,
@@ -2391,8 +3174,8 @@
       "yearMax": 2025
     },
     {
-      "file": "neighbourhood_825-vista-heights-skyline-east-pegasus-mccall-north-airways-south-airways-mayland-heights-mayland.json",
-      "geoUid": "825-vista-heights-skyline-east-pegasus-mccall-north-airways-south-airways-mayland-heights-mayland",
+      "file": "neighbourhood_825-vista-heights-skyline-east-pegasus-mccall-north-airways-s-be008a.json",
+      "geoUid": "825-vista-heights-skyline-east-pegasus-mccall-north-airways-s-be008a",
       "geoName": "Vista Heights/Skyline East/Pegasus/McCall/North Airways/South Airways/Mayland Heights/Mayland",
       "geoLevel": "neighbourhood",
       "recordCount": 984,
@@ -2945,6 +3728,852 @@
       "geoName": "Woodcroft/Inglewood",
       "geoLevel": "neighbourhood",
       "recordCount": 1187,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-ambleside.json",
+      "geoUid": "933-ambleside",
+      "geoName": "Ambleside",
+      "geoLevel": "neighbourhood",
+      "recordCount": 832,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-capital-hill-brentwood.json",
+      "geoUid": "933-capital-hill-brentwood",
+      "geoName": "Capital Hill/Brentwood",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1033,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-cedar-cottage.json",
+      "geoUid": "933-cedar-cottage",
+      "geoName": "Cedar Cottage",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1079,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-central-lonsdale.json",
+      "geoUid": "933-central-lonsdale",
+      "geoName": "Central Lonsdale",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1225,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-central-park.json",
+      "geoUid": "933-central-park",
+      "geoName": "Central Park",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1042,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-cloverdale-fleetwood.json",
+      "geoUid": "933-cloverdale-fleetwood",
+      "geoName": "Cloverdale/Fleetwood",
+      "geoLevel": "neighbourhood",
+      "recordCount": 578,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-collingwood.json",
+      "geoUid": "933-collingwood",
+      "geoName": "Collingwood",
+      "geoLevel": "neighbourhood",
+      "recordCount": 950,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-coquitlam-east.json",
+      "geoUid": "933-coquitlam-east",
+      "geoName": "Coquitlam East",
+      "geoLevel": "neighbourhood",
+      "recordCount": 573,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-coquitlam-west.json",
+      "geoUid": "933-coquitlam-west",
+      "geoName": "Coquitlam West",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1139,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-deer-lake.json",
+      "geoUid": "933-deer-lake",
+      "geoName": "Deer Lake",
+      "geoLevel": "neighbourhood",
+      "recordCount": 308,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-downtown-central.json",
+      "geoUid": "933-downtown-central",
+      "geoName": "Downtown Central",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1296,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-downtown-eastside-strathcona.json",
+      "geoUid": "933-downtown-eastside-strathcona",
+      "geoName": "Downtown Eastside/Strathcona",
+      "geoLevel": "neighbourhood",
+      "recordCount": 829,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-downtown-north.json",
+      "geoUid": "933-downtown-north",
+      "geoName": "Downtown North",
+      "geoLevel": "neighbourhood",
+      "recordCount": 905,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-downtown.json",
+      "geoUid": "933-downtown",
+      "geoName": "Downtown",
+      "geoLevel": "neighbourhood",
+      "recordCount": 2844,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-dundrave-west-vancouver-remainder.json",
+      "geoUid": "933-dundrave-west-vancouver-remainder",
+      "geoName": "Dundrave/West Vancouver Remainder",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1022,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-edmonds.json",
+      "geoUid": "933-edmonds",
+      "geoName": "Edmonds",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1009,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-english-bay.json",
+      "geoUid": "933-english-bay",
+      "geoName": "English Bay",
+      "geoLevel": "neighbourhood",
+      "recordCount": 2502,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-fraser-view-killarny.json",
+      "geoUid": "933-fraser-view-killarny",
+      "geoName": "Fraser View/Killarny",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1084,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-guildford.json",
+      "geoUid": "933-guildford",
+      "geoName": "Guildford",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1000,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-hastings-sunrise-grandview-woodlands.json",
+      "geoUid": "933-hastings-sunrise-grandview-woodlands",
+      "geoName": "Hastings/Sunrise/Grandview/Woodlands",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1526,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-kerrisdale.json",
+      "geoUid": "933-kerrisdale",
+      "geoName": "Kerrisdale",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1185,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-kitsilano-point-grey-north.json",
+      "geoUid": "933-kitsilano-point-grey-north",
+      "geoName": "Kitsilano/Point Grey North",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1252,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-kitsilano-point-grey-south.json",
+      "geoUid": "933-kitsilano-point-grey-south",
+      "geoName": "Kitsilano/Point Grey South",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1213,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-ladner.json",
+      "geoUid": "933-ladner",
+      "geoName": "Ladner",
+      "geoLevel": "neighbourhood",
+      "recordCount": 962,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-langley-cy.json",
+      "geoUid": "933-langley-cy",
+      "geoName": "Langley CY",
+      "geoLevel": "neighbourhood",
+      "recordCount": 2705,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-langley-dm.json",
+      "geoUid": "933-langley-dm",
+      "geoName": "Langley DM",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1742,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-lonsdale-east.json",
+      "geoUid": "933-lonsdale-east",
+      "geoName": "Lonsdale East",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1009,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-lonsdale-north.json",
+      "geoUid": "933-lonsdale-north",
+      "geoName": "Lonsdale North",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1098,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-lonsdale-west.json",
+      "geoUid": "933-lonsdale-west",
+      "geoName": "Lonsdale West",
+      "geoLevel": "neighbourhood",
+      "recordCount": 880,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-maple-ridge.json",
+      "geoUid": "933-maple-ridge",
+      "geoName": "Maple Ridge",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1149,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-marpole-remainder.json",
+      "geoUid": "933-marpole-remainder",
+      "geoName": "Marpole Remainder",
+      "geoLevel": "neighbourhood",
+      "recordCount": 838,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-marpole-south.json",
+      "geoUid": "933-marpole-south",
+      "geoName": "Marpole South",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1113,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-metrotown.json",
+      "geoUid": "933-metrotown",
+      "geoName": "Metrotown",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1165,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-mount-pleasant.json",
+      "geoUid": "933-mount-pleasant",
+      "geoName": "Mount Pleasant",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1358,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-new-westminster-east.json",
+      "geoUid": "933-new-westminster-east",
+      "geoName": "New Westminster East",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1038,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-new-westminster-west.json",
+      "geoUid": "933-new-westminster-west",
+      "geoName": "New Westminster West",
+      "geoLevel": "neighbourhood",
+      "recordCount": 556,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-newton.json",
+      "geoUid": "933-newton",
+      "geoName": "Newton",
+      "geoLevel": "neighbourhood",
+      "recordCount": 816,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-north-delta.json",
+      "geoUid": "933-north-delta",
+      "geoName": "North Delta",
+      "geoLevel": "neighbourhood",
+      "recordCount": 713,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-north-false-creek.json",
+      "geoUid": "933-north-false-creek",
+      "geoName": "North False Creek",
+      "geoLevel": "neighbourhood",
+      "recordCount": 774,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-north-vancouver-dm-east.json",
+      "geoUid": "933-north-vancouver-dm-east",
+      "geoName": "North Vancouver DM East",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1080,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-north-vancouver-dm-west.json",
+      "geoUid": "933-north-vancouver-dm-west",
+      "geoName": "North Vancouver DM West",
+      "geoLevel": "neighbourhood",
+      "recordCount": 995,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-pitt-meadows.json",
+      "geoUid": "933-pitt-meadows",
+      "geoName": "Pitt Meadows",
+      "geoLevel": "neighbourhood",
+      "recordCount": 682,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-point-grey.json",
+      "geoUid": "933-point-grey",
+      "geoName": "Point Grey",
+      "geoLevel": "neighbourhood",
+      "recordCount": 842,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-port-coquitlam.json",
+      "geoUid": "933-port-coquitlam",
+      "geoName": "Port Coquitlam",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1009,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-port-moody.json",
+      "geoUid": "933-port-moody",
+      "geoName": "Port Moody",
+      "geoLevel": "neighbourhood",
+      "recordCount": 713,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-renfrew.json",
+      "geoUid": "933-renfrew",
+      "geoName": "Renfrew",
+      "geoLevel": "neighbourhood",
+      "recordCount": 623,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-richmond-city-centre.json",
+      "geoUid": "933-richmond-city-centre",
+      "geoName": "Richmond City Centre",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1093,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-richmond-east.json",
+      "geoUid": "933-richmond-east",
+      "geoName": "Richmond East",
+      "geoLevel": "neighbourhood",
+      "recordCount": 641,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-richmond-south.json",
+      "geoUid": "933-richmond-south",
+      "geoName": "Richmond South",
+      "geoLevel": "neighbourhood",
+      "recordCount": 881,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-richmond-west.json",
+      "geoUid": "933-richmond-west",
+      "geoName": "Richmond West",
+      "geoLevel": "neighbourhood",
+      "recordCount": 922,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-riley-park.json",
+      "geoUid": "933-riley-park",
+      "geoName": "Riley Park",
+      "geoLevel": "neighbourhood",
+      "recordCount": 868,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-south-cambie.json",
+      "geoUid": "933-south-cambie",
+      "geoName": "South Cambie",
+      "geoLevel": "neighbourhood",
+      "recordCount": 971,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-south-false-creek.json",
+      "geoUid": "933-south-false-creek",
+      "geoName": "South False Creek",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1089,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-south-granville.json",
+      "geoUid": "933-south-granville",
+      "geoName": "South Granville",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1350,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-south-surrey.json",
+      "geoUid": "933-south-surrey",
+      "geoName": "South Surrey",
+      "geoLevel": "neighbourhood",
+      "recordCount": 429,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-southeast-burnaby-south.json",
+      "geoUid": "933-southeast-burnaby-south",
+      "geoName": "Southeast Burnaby South",
+      "geoLevel": "neighbourhood",
+      "recordCount": 844,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-sunset.json",
+      "geoUid": "933-sunset",
+      "geoName": "Sunset",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1050,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-surrey-city-centre.json",
+      "geoUid": "933-surrey-city-centre",
+      "geoName": "Surrey City Centre",
+      "geoLevel": "neighbourhood",
+      "recordCount": 820,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-tsawwassen.json",
+      "geoUid": "933-tsawwassen",
+      "geoName": "Tsawwassen",
+      "geoLevel": "neighbourhood",
+      "recordCount": 943,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-university-endowment-lands.json",
+      "geoUid": "933-university-endowment-lands",
+      "geoName": "University Endowment Lands",
+      "geoLevel": "neighbourhood",
+      "recordCount": 2627,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-university-lougheed.json",
+      "geoUid": "933-university-lougheed",
+      "geoName": "University/Lougheed",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1194,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-uptown.json",
+      "geoUid": "933-uptown",
+      "geoName": "Uptown",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1145,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-west-end-stanley-park-north.json",
+      "geoUid": "933-west-end-stanley-park-north",
+      "geoName": "West End/Stanley Park North",
+      "geoLevel": "neighbourhood",
+      "recordCount": 997,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-west-end-stanley-park-south.json",
+      "geoUid": "933-west-end-stanley-park-south",
+      "geoName": "West End/Stanley Park South",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1052,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-westside-heights.json",
+      "geoUid": "933-westside-heights",
+      "geoName": "Westside Heights",
+      "geoLevel": "neighbourhood",
+      "recordCount": 968,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-westside-kerrisdale-remainder.json",
+      "geoUid": "933-westside-kerrisdale-remainder",
+      "geoName": "Westside/Kerrisdale Remainder",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1123,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-whalley.json",
+      "geoUid": "933-whalley",
+      "geoName": "Whalley",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1197,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_933-white-rock.json",
+      "geoUid": "933-white-rock",
+      "geoName": "White Rock",
+      "geoLevel": "neighbourhood",
+      "recordCount": 2320,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_935-burnside.json",
+      "geoUid": "935-burnside",
+      "geoName": "Burnside",
+      "geoLevel": "neighbourhood",
+      "recordCount": 963,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_935-central-saanich.json",
+      "geoUid": "935-central-saanich",
+      "geoName": "Central Saanich",
+      "geoLevel": "neighbourhood",
+      "recordCount": 746,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_935-colwood.json",
+      "geoUid": "935-colwood",
+      "geoName": "Colwood",
+      "geoLevel": "neighbourhood",
+      "recordCount": 584,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_935-downtown.json",
+      "geoUid": "935-downtown",
+      "geoName": "Downtown",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1255,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_935-esquimalt.json",
+      "geoUid": "935-esquimalt",
+      "geoName": "Esquimalt",
+      "geoLevel": "neighbourhood",
+      "recordCount": 3012,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_935-fairfield-north.json",
+      "geoUid": "935-fairfield-north",
+      "geoName": "Fairfield North",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1230,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_935-fairfield-ross-bay.json",
+      "geoUid": "935-fairfield-ross-bay",
+      "geoName": "Fairfield-Ross Bay",
+      "geoLevel": "neighbourhood",
+      "recordCount": 587,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_935-fairfield-south.json",
+      "geoUid": "935-fairfield-south",
+      "geoName": "Fairfield South",
+      "geoLevel": "neighbourhood",
+      "recordCount": 984,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_935-fernwood.json",
+      "geoUid": "935-fernwood",
+      "geoName": "Fernwood",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1220,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_935-gonzales.json",
+      "geoUid": "935-gonzales",
+      "geoName": "Gonzales",
+      "geoLevel": "neighbourhood",
+      "recordCount": 474,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_935-hillside-quadra.json",
+      "geoUid": "935-hillside-quadra",
+      "geoName": "Hillside-Quadra",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1144,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_935-james-bay-north.json",
+      "geoUid": "935-james-bay-north",
+      "geoName": "James Bay (North)",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1192,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_935-james-bay-south.json",
+      "geoUid": "935-james-bay-south",
+      "geoName": "James Bay (South)",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1145,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_935-jubilee.json",
+      "geoUid": "935-jubilee",
+      "geoName": "Jubilee",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1173,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_935-langford.json",
+      "geoUid": "935-langford",
+      "geoName": "Langford",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1057,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_935-oak-bay-north.json",
+      "geoUid": "935-oak-bay-north",
+      "geoName": "Oak Bay North",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1152,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_935-oak-bay-south.json",
+      "geoUid": "935-oak-bay-south",
+      "geoName": "Oak Bay South",
+      "geoLevel": "neighbourhood",
+      "recordCount": 795,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_935-oaklands.json",
+      "geoUid": "935-oaklands",
+      "geoName": "Oaklands",
+      "geoLevel": "neighbourhood",
+      "recordCount": 938,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_935-rockland.json",
+      "geoUid": "935-rockland",
+      "geoName": "Rockland",
+      "geoLevel": "neighbourhood",
+      "recordCount": 893,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_935-saanich-centre.json",
+      "geoUid": "935-saanich-centre",
+      "geoName": "Saanich-Centre",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1221,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_935-saanich-other.json",
+      "geoUid": "935-saanich-other",
+      "geoName": "Saanich-Other",
+      "geoLevel": "neighbourhood",
+      "recordCount": 228,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_935-saanich-university.json",
+      "geoUid": "935-saanich-university",
+      "geoName": "Saanich/University",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1112,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_935-sidney.json",
+      "geoUid": "935-sidney",
+      "geoName": "Sidney",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1694,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_935-vic-west.json",
+      "geoUid": "935-vic-west",
+      "geoName": "Vic West",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1083,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_935-view-royal.json",
+      "geoUid": "935-view-royal",
+      "geoName": "View Royal",
+      "geoLevel": "neighbourhood",
+      "recordCount": 845,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "neighbourhood_935-west-shore-other.json",
+      "geoUid": "935-west-shore-other",
+      "geoName": "West Shore/Other",
+      "geoLevel": "neighbourhood",
+      "recordCount": 519,
       "yearMin": 2016,
       "yearMax": 2025
     },
@@ -3577,10 +5206,325 @@
       "recordCount": 1768,
       "yearMin": 2016,
       "yearMax": 2025
+    },
+    {
+      "file": "zone_933-central-park-metrotown.json",
+      "geoUid": "933-central-park-metrotown",
+      "geoName": "Central Park/Metrotown",
+      "geoLevel": "zone",
+      "recordCount": 1394,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_933-delta.json",
+      "geoUid": "933-delta",
+      "geoName": "Delta",
+      "geoLevel": "zone",
+      "recordCount": 1410,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_933-downtown.json",
+      "geoUid": "933-downtown",
+      "geoName": "Downtown",
+      "geoLevel": "zone",
+      "recordCount": 2844,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_933-east-hastings.json",
+      "geoUid": "933-east-hastings",
+      "geoName": "East Hastings",
+      "geoLevel": "zone",
+      "recordCount": 1721,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_933-english-bay.json",
+      "geoUid": "933-english-bay",
+      "geoName": "English Bay",
+      "geoLevel": "zone",
+      "recordCount": 2502,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_933-kitsilano-point-grey.json",
+      "geoUid": "933-kitsilano-point-grey",
+      "geoName": "Kitsilano/Point Grey",
+      "geoLevel": "zone",
+      "recordCount": 1564,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_933-langley-city-and-langley-dm.json",
+      "geoUid": "933-langley-city-and-langley-dm",
+      "geoName": "Langley City and Langley DM",
+      "geoLevel": "zone",
+      "recordCount": 1504,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_933-maple-ridge-pitt-meadows.json",
+      "geoUid": "933-maple-ridge-pitt-meadows",
+      "geoName": "Maple Ridge/Pitt Meadows",
+      "geoLevel": "zone",
+      "recordCount": 1358,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_933-marpole.json",
+      "geoUid": "933-marpole",
+      "geoName": "Marpole",
+      "geoLevel": "zone",
+      "recordCount": 1319,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_933-mount-pleasant-renfrew-heights.json",
+      "geoUid": "933-mount-pleasant-renfrew-heights",
+      "geoName": "Mount Pleasant/Renfrew Heights",
+      "geoLevel": "zone",
+      "recordCount": 1611,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_933-new-westminster.json",
+      "geoUid": "933-new-westminster",
+      "geoName": "New Westminster",
+      "geoLevel": "zone",
+      "recordCount": 1544,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_933-north-burnaby.json",
+      "geoUid": "933-north-burnaby",
+      "geoName": "North Burnaby",
+      "geoLevel": "zone",
+      "recordCount": 1618,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_933-north-vancouver-cy.json",
+      "geoUid": "933-north-vancouver-cy",
+      "geoName": "North Vancouver CY",
+      "geoLevel": "zone",
+      "recordCount": 3140,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_933-north-vancouver-dm.json",
+      "geoUid": "933-north-vancouver-dm",
+      "geoName": "North Vancouver DM",
+      "geoLevel": "zone",
+      "recordCount": 2920,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_933-richmond.json",
+      "geoUid": "933-richmond",
+      "geoName": "Richmond",
+      "geoLevel": "zone",
+      "recordCount": 1521,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_933-south-granville-oak.json",
+      "geoUid": "933-south-granville-oak",
+      "geoName": "South Granville/Oak",
+      "geoLevel": "zone",
+      "recordCount": 1753,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_933-southeast-burnaby.json",
+      "geoUid": "933-southeast-burnaby",
+      "geoName": "Southeast Burnaby",
+      "geoLevel": "zone",
+      "recordCount": 1337,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_933-southeast-vancouver.json",
+      "geoUid": "933-southeast-vancouver",
+      "geoName": "Southeast Vancouver",
+      "geoLevel": "zone",
+      "recordCount": 1662,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_933-surrey.json",
+      "geoUid": "933-surrey",
+      "geoName": "Surrey",
+      "geoLevel": "zone",
+      "recordCount": 1603,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_933-tri-cities.json",
+      "geoUid": "933-tri-cities",
+      "geoName": "Tri-Cities",
+      "geoLevel": "zone",
+      "recordCount": 1593,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_933-university-endowment-lands.json",
+      "geoUid": "933-university-endowment-lands",
+      "geoName": "University Endowment Lands",
+      "geoLevel": "zone",
+      "recordCount": 2627,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_933-west-end-stanley-park.json",
+      "geoUid": "933-west-end-stanley-park",
+      "geoName": "West End/Stanley Park",
+      "geoLevel": "zone",
+      "recordCount": 1272,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_933-west-vancouver.json",
+      "geoUid": "933-west-vancouver",
+      "geoName": "West Vancouver",
+      "geoLevel": "zone",
+      "recordCount": 1216,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_933-westside-kerrisdale.json",
+      "geoUid": "933-westside-kerrisdale",
+      "geoName": "Westside/Kerrisdale",
+      "geoLevel": "zone",
+      "recordCount": 1515,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_933-white-rock.json",
+      "geoUid": "933-white-rock",
+      "geoName": "White Rock",
+      "geoLevel": "zone",
+      "recordCount": 2320,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_935-cook-st-area.json",
+      "geoUid": "935-cook-st-area",
+      "geoName": "Cook St. Area",
+      "geoLevel": "zone",
+      "recordCount": 1483,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_935-esquimalt.json",
+      "geoUid": "935-esquimalt",
+      "geoName": "Esquimalt",
+      "geoLevel": "zone",
+      "recordCount": 3012,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_935-fort-st-area.json",
+      "geoUid": "935-fort-st-area",
+      "geoName": "Fort St. Area",
+      "geoLevel": "zone",
+      "recordCount": 1509,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_935-james-bay-area.json",
+      "geoUid": "935-james-bay-area",
+      "geoName": "James Bay Area",
+      "geoLevel": "zone",
+      "recordCount": 1461,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_935-langford-vw-royal-colwood-sooke.json",
+      "geoUid": "935-langford-vw-royal-colwood-sooke",
+      "geoName": "Langford/Vw Royal/Colwood/Sooke",
+      "geoLevel": "zone",
+      "recordCount": 1604,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_935-oak-bay.json",
+      "geoUid": "935-oak-bay",
+      "geoName": "Oak Bay",
+      "geoLevel": "zone",
+      "recordCount": 1349,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_935-remainder-of-city-of-victoria.json",
+      "geoUid": "935-remainder-of-city-of-victoria",
+      "geoName": "Remainder of City of Victoria",
+      "geoLevel": "zone",
+      "recordCount": 292,
+      "yearMin": 2024,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_935-remainder-of-city.json",
+      "geoUid": "935-remainder-of-city",
+      "geoName": "Remainder of City",
+      "geoLevel": "zone",
+      "recordCount": 1362,
+      "yearMin": 2016,
+      "yearMax": 2023
+    },
+    {
+      "file": "zone_935-saanich-central-saanich.json",
+      "geoUid": "935-saanich-central-saanich",
+      "geoName": "Saanich/Central Saanich",
+      "geoLevel": "zone",
+      "recordCount": 1713,
+      "yearMin": 2016,
+      "yearMax": 2025
+    },
+    {
+      "file": "zone_935-sidney.json",
+      "geoUid": "935-sidney",
+      "geoName": "Sidney",
+      "geoLevel": "zone",
+      "recordCount": 1694,
+      "yearMin": 2016,
+      "yearMax": 2025
     }
   ],
-  "startsShardCount": 397,
-  "startsTotalRecords": 700425,
+  "startsShardCount": 676,
+  "startsTotalRecords": 991755,
   "startsShards": [
     {
       "file": "cma_001.json",
@@ -4654,6 +6598,1028 @@
       "recordCount": 1845
     },
     {
+      "file": "csd_602-east-st-paul-rm.json",
+      "geoUid": "602-east-st-paul-rm",
+      "geoName": "East St. Paul (RM)",
+      "geoLevel": "csd",
+      "recordCount": 1530
+    },
+    {
+      "file": "csd_602-first-nations-winnipeg-r.json",
+      "geoUid": "602-first-nations-winnipeg-r",
+      "geoName": "First Nations (Winnipeg) (R)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_602-headingley-rm.json",
+      "geoUid": "602-headingley-rm",
+      "geoName": "Headingley (RM)",
+      "geoLevel": "csd",
+      "recordCount": 1530
+    },
+    {
+      "file": "csd_602-indian-reserve-winnipeg-r.json",
+      "geoUid": "602-indian-reserve-winnipeg-r",
+      "geoName": "Indian Reserve (Winnipeg) (R)",
+      "geoLevel": "csd",
+      "recordCount": 90
+    },
+    {
+      "file": "csd_602-macdonald-rm.json",
+      "geoUid": "602-macdonald-rm",
+      "geoName": "Macdonald (RM)",
+      "geoLevel": "csd",
+      "recordCount": 1530
+    },
+    {
+      "file": "csd_602-niverville-t.json",
+      "geoUid": "602-niverville-t",
+      "geoName": "Niverville (T)",
+      "geoLevel": "csd",
+      "recordCount": 360
+    },
+    {
+      "file": "csd_602-ritchot-rm.json",
+      "geoUid": "602-ritchot-rm",
+      "geoName": "Ritchot (RM)",
+      "geoLevel": "csd",
+      "recordCount": 1530
+    },
+    {
+      "file": "csd_602-rosser-rm.json",
+      "geoUid": "602-rosser-rm",
+      "geoName": "Rosser (RM)",
+      "geoLevel": "csd",
+      "recordCount": 1530
+    },
+    {
+      "file": "csd_602-springfield-rm.json",
+      "geoUid": "602-springfield-rm",
+      "geoName": "Springfield (RM)",
+      "geoLevel": "csd",
+      "recordCount": 1530
+    },
+    {
+      "file": "csd_602-st-clements-rm.json",
+      "geoUid": "602-st-clements-rm",
+      "geoName": "St. Clements (RM)",
+      "geoLevel": "csd",
+      "recordCount": 1530
+    },
+    {
+      "file": "csd_602-st-fran-ois-xavier-rm.json",
+      "geoUid": "602-st-fran-ois-xavier-rm",
+      "geoName": "St. François Xavier (RM)",
+      "geoLevel": "csd",
+      "recordCount": 900
+    },
+    {
+      "file": "csd_602-st-francois-xavier-rm.json",
+      "geoUid": "602-st-francois-xavier-rm",
+      "geoName": "St. Francois Xavier (RM)",
+      "geoLevel": "csd",
+      "recordCount": 630
+    },
+    {
+      "file": "csd_602-tach-rm.json",
+      "geoUid": "602-tach-rm",
+      "geoName": "Taché (RM)",
+      "geoLevel": "csd",
+      "recordCount": 1530
+    },
+    {
+      "file": "csd_602-west-st-paul-rm.json",
+      "geoUid": "602-west-st-paul-rm",
+      "geoName": "West St. Paul (RM)",
+      "geoLevel": "csd",
+      "recordCount": 1530
+    },
+    {
+      "file": "csd_602-winnipeg-cy.json",
+      "geoUid": "602-winnipeg-cy",
+      "geoName": "Winnipeg (CY)",
+      "geoLevel": "csd",
+      "recordCount": 1530
+    },
+    {
+      "file": "csd_705-balgonie-t.json",
+      "geoUid": "705-balgonie-t",
+      "geoName": "Balgonie (T)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_705-belle-plaine-vl.json",
+      "geoUid": "705-belle-plaine-vl",
+      "geoName": "Belle Plaine (VL)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_705-buena-vista-vl.json",
+      "geoUid": "705-buena-vista-vl",
+      "geoName": "Buena Vista (VL)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_705-craven-vl.json",
+      "geoUid": "705-craven-vl",
+      "geoName": "Craven (VL)",
+      "geoLevel": "csd",
+      "recordCount": 360
+    },
+    {
+      "file": "csd_705-disley-vl.json",
+      "geoUid": "705-disley-vl",
+      "geoName": "Disley (VL)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_705-edenwold-no-158-rm.json",
+      "geoUid": "705-edenwold-no-158-rm",
+      "geoName": "Edenwold No. 158 (RM)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_705-edenwold-vl.json",
+      "geoUid": "705-edenwold-vl",
+      "geoName": "Edenwold (VL)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_705-first-nations-regina-r.json",
+      "geoUid": "705-first-nations-regina-r",
+      "geoName": "First Nations (Regina) (R)",
+      "geoLevel": "csd",
+      "recordCount": 180
+    },
+    {
+      "file": "csd_705-grand-coulee-t.json",
+      "geoUid": "705-grand-coulee-t",
+      "geoName": "Grand Coulee (T)",
+      "geoLevel": "csd",
+      "recordCount": 810
+    },
+    {
+      "file": "csd_705-grand-coulee-vl.json",
+      "geoUid": "705-grand-coulee-vl",
+      "geoName": "Grand Coulee (VL)",
+      "geoLevel": "csd",
+      "recordCount": 180
+    },
+    {
+      "file": "csd_705-lajord-no-128-rm.json",
+      "geoUid": "705-lajord-no-128-rm",
+      "geoName": "Lajord No. 128 (RM)",
+      "geoLevel": "csd",
+      "recordCount": 900
+    },
+    {
+      "file": "csd_705-lumsden-beach-rv.json",
+      "geoUid": "705-lumsden-beach-rv",
+      "geoName": "Lumsden Beach (RV)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_705-lumsden-no-189-rm.json",
+      "geoUid": "705-lumsden-no-189-rm",
+      "geoName": "Lumsden No. 189 (RM)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_705-lumsden-t.json",
+      "geoUid": "705-lumsden-t",
+      "geoName": "Lumsden (T)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_705-pense-no-160-rm.json",
+      "geoUid": "705-pense-no-160-rm",
+      "geoName": "Pense No. 160 (RM)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_705-pense-t.json",
+      "geoUid": "705-pense-t",
+      "geoName": "Pense (T)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_705-pilot-butte-t.json",
+      "geoUid": "705-pilot-butte-t",
+      "geoName": "Pilot Butte (T)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_705-regina-beach-t.json",
+      "geoUid": "705-regina-beach-t",
+      "geoName": "Regina Beach (T)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_705-regina-cy.json",
+      "geoUid": "705-regina-cy",
+      "geoName": "Regina (CY)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_705-sherwood-no-159-rm.json",
+      "geoUid": "705-sherwood-no-159-rm",
+      "geoName": "Sherwood No. 159 (RM)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_705-white-city-t.json",
+      "geoUid": "705-white-city-t",
+      "geoName": "White City (T)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_725-aberdeen-no-373-rm.json",
+      "geoUid": "725-aberdeen-no-373-rm",
+      "geoName": "Aberdeen No. 373 (RM)",
+      "geoLevel": "csd",
+      "recordCount": 900
+    },
+    {
+      "file": "csd_725-aberdeen-t.json",
+      "geoUid": "725-aberdeen-t",
+      "geoName": "Aberdeen (T)",
+      "geoLevel": "csd",
+      "recordCount": 900
+    },
+    {
+      "file": "csd_725-allan-t.json",
+      "geoUid": "725-allan-t",
+      "geoName": "Allan (T)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_725-asquith-t.json",
+      "geoUid": "725-asquith-t",
+      "geoName": "Asquith (T)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_725-blucher-no-343-rm.json",
+      "geoUid": "725-blucher-no-343-rm",
+      "geoName": "Blucher No. 343 (RM)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_725-bradwell-vl.json",
+      "geoUid": "725-bradwell-vl",
+      "geoName": "Bradwell (VL)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_725-clavet-vl.json",
+      "geoUid": "725-clavet-vl",
+      "geoName": "Clavet (VL)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_725-colonsay-no-342-rm.json",
+      "geoUid": "725-colonsay-no-342-rm",
+      "geoName": "Colonsay No. 342 (RM)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_725-colonsay-t.json",
+      "geoUid": "725-colonsay-t",
+      "geoName": "Colonsay (T)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_725-corman-park-no-344-rm.json",
+      "geoUid": "725-corman-park-no-344-rm",
+      "geoName": "Corman Park No. 344 (RM)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_725-dalmeny-t.json",
+      "geoUid": "725-dalmeny-t",
+      "geoName": "Dalmeny (T)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_725-delisle-t.json",
+      "geoUid": "725-delisle-t",
+      "geoName": "Delisle (T)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_725-dundurn-no-314-rm.json",
+      "geoUid": "725-dundurn-no-314-rm",
+      "geoName": "Dundurn No. 314 (RM)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_725-dundurn-t.json",
+      "geoUid": "725-dundurn-t",
+      "geoName": "Dundurn (T)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_725-first-nations-saskatoon-r.json",
+      "geoUid": "725-first-nations-saskatoon-r",
+      "geoName": "First Nations (Saskatoon) (R)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_725-langham-t.json",
+      "geoUid": "725-langham-t",
+      "geoName": "Langham (T)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_725-martensville-cy.json",
+      "geoUid": "725-martensville-cy",
+      "geoName": "Martensville (CY)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_725-meacham-vl.json",
+      "geoUid": "725-meacham-vl",
+      "geoName": "Meacham (VL)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_725-osler-t.json",
+      "geoUid": "725-osler-t",
+      "geoName": "Osler (T)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_725-saskatoon-cy.json",
+      "geoUid": "725-saskatoon-cy",
+      "geoName": "Saskatoon (CY)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_725-shields-rv.json",
+      "geoUid": "725-shields-rv",
+      "geoName": "Shields (RV)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_725-thode-rv.json",
+      "geoUid": "725-thode-rv",
+      "geoName": "Thode (RV)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_725-vanscoy-no-345-rm.json",
+      "geoUid": "725-vanscoy-no-345-rm",
+      "geoName": "Vanscoy No. 345 (RM)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_725-vanscoy-vl.json",
+      "geoUid": "725-vanscoy-vl",
+      "geoName": "Vanscoy (VL)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_725-warman-cy.json",
+      "geoUid": "725-warman-cy",
+      "geoName": "Warman (CY)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_825-airdrie-cy.json",
+      "geoUid": "825-airdrie-cy",
+      "geoName": "Airdrie (CY)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_825-beiseker-vl.json",
+      "geoUid": "825-beiseker-vl",
+      "geoName": "Beiseker (VL)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_825-calgary-cy.json",
+      "geoUid": "825-calgary-cy",
+      "geoName": "Calgary (CY)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_825-chestermere-cy.json",
+      "geoUid": "825-chestermere-cy",
+      "geoName": "Chestermere (CY)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_825-cochrane-t.json",
+      "geoUid": "825-cochrane-t",
+      "geoName": "Cochrane (T)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_825-crossfield-t.json",
+      "geoUid": "825-crossfield-t",
+      "geoName": "Crossfield (T)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_825-first-nations-calgary-r.json",
+      "geoUid": "825-first-nations-calgary-r",
+      "geoName": "First Nations (Calgary) (R)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_825-irricana-t.json",
+      "geoUid": "825-irricana-t",
+      "geoName": "Irricana (T)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_825-rocky-view-county-md.json",
+      "geoUid": "825-rocky-view-county-md",
+      "geoName": "Rocky View County (MD)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_835-beaumont-cy.json",
+      "geoUid": "835-beaumont-cy",
+      "geoName": "Beaumont (CY)",
+      "geoLevel": "csd",
+      "recordCount": 630
+    },
+    {
+      "file": "csd_835-beaumont-t.json",
+      "geoUid": "835-beaumont-t",
+      "geoName": "Beaumont (T)",
+      "geoLevel": "csd",
+      "recordCount": 360
+    },
+    {
+      "file": "csd_835-betula-beach-sv.json",
+      "geoUid": "835-betula-beach-sv",
+      "geoName": "Betula Beach (SV)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_835-bon-accord-t.json",
+      "geoUid": "835-bon-accord-t",
+      "geoName": "Bon Accord (T)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_835-bruderheim-t.json",
+      "geoUid": "835-bruderheim-t",
+      "geoName": "Bruderheim (T)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_835-calmar-t.json",
+      "geoUid": "835-calmar-t",
+      "geoName": "Calmar (T)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_835-devon-t.json",
+      "geoUid": "835-devon-t",
+      "geoName": "Devon (T)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_835-edmonton-cy.json",
+      "geoUid": "835-edmonton-cy",
+      "geoName": "Edmonton (CY)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_835-first-nations-edmonton-r.json",
+      "geoUid": "835-first-nations-edmonton-r",
+      "geoName": "First Nations (Edmonton) (R)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_835-fort-saskatchewan-cy.json",
+      "geoUid": "835-fort-saskatchewan-cy",
+      "geoName": "Fort Saskatchewan (CY)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_835-gibbons-t.json",
+      "geoUid": "835-gibbons-t",
+      "geoName": "Gibbons (T)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_835-golden-days-sv.json",
+      "geoUid": "835-golden-days-sv",
+      "geoName": "Golden Days (SV)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_835-itaska-beach-sv.json",
+      "geoUid": "835-itaska-beach-sv",
+      "geoName": "Itaska Beach (SV)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_835-kapasiwin-sv.json",
+      "geoUid": "835-kapasiwin-sv",
+      "geoName": "Kapasiwin (SV)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_835-lakeview-sv.json",
+      "geoUid": "835-lakeview-sv",
+      "geoName": "Lakeview (SV)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_835-leduc-county-md.json",
+      "geoUid": "835-leduc-county-md",
+      "geoName": "Leduc County (MD)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_835-leduc-cy.json",
+      "geoUid": "835-leduc-cy",
+      "geoName": "Leduc (CY)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_835-legal-t.json",
+      "geoUid": "835-legal-t",
+      "geoName": "Legal (T)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_835-morinville-t.json",
+      "geoUid": "835-morinville-t",
+      "geoName": "Morinville (T)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_835-parkland-county-md.json",
+      "geoUid": "835-parkland-county-md",
+      "geoName": "Parkland County (MD)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_835-point-alison-sv.json",
+      "geoUid": "835-point-alison-sv",
+      "geoName": "Point Alison (SV)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_835-redwater-t.json",
+      "geoUid": "835-redwater-t",
+      "geoName": "Redwater (T)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_835-seba-beach-sv.json",
+      "geoUid": "835-seba-beach-sv",
+      "geoName": "Seba Beach (SV)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_835-spring-lake-vl.json",
+      "geoUid": "835-spring-lake-vl",
+      "geoName": "Spring Lake (VL)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_835-spruce-grove-cy.json",
+      "geoUid": "835-spruce-grove-cy",
+      "geoName": "Spruce Grove (CY)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_835-st-albert-cy.json",
+      "geoUid": "835-st-albert-cy",
+      "geoName": "St. Albert (CY)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_835-stony-plain-t.json",
+      "geoUid": "835-stony-plain-t",
+      "geoName": "Stony Plain (T)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_835-strathcona-county-sm.json",
+      "geoUid": "835-strathcona-county-sm",
+      "geoName": "Strathcona County (SM)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_835-sturgeon-county-md.json",
+      "geoUid": "835-sturgeon-county-md",
+      "geoName": "Sturgeon County (MD)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_835-sundance-beach-sv.json",
+      "geoUid": "835-sundance-beach-sv",
+      "geoName": "Sundance Beach (SV)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_835-thorsby-t.json",
+      "geoUid": "835-thorsby-t",
+      "geoName": "Thorsby (T)",
+      "geoLevel": "csd",
+      "recordCount": 810
+    },
+    {
+      "file": "csd_835-thorsby-vl.json",
+      "geoUid": "835-thorsby-vl",
+      "geoName": "Thorsby (VL)",
+      "geoLevel": "csd",
+      "recordCount": 180
+    },
+    {
+      "file": "csd_835-wabamun-vl.json",
+      "geoUid": "835-wabamun-vl",
+      "geoName": "Wabamun (VL)",
+      "geoLevel": "csd",
+      "recordCount": 540
+    },
+    {
+      "file": "csd_835-warburg-vl.json",
+      "geoUid": "835-warburg-vl",
+      "geoName": "Warburg (VL)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_933-anmore-vl.json",
+      "geoUid": "933-anmore-vl",
+      "geoName": "Anmore (VL)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_933-belcarra-vl.json",
+      "geoUid": "933-belcarra-vl",
+      "geoName": "Belcarra (VL)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_933-bowen-island-im.json",
+      "geoUid": "933-bowen-island-im",
+      "geoName": "Bowen Island (IM)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_933-burnaby-cy.json",
+      "geoUid": "933-burnaby-cy",
+      "geoName": "Burnaby (CY)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_933-coquitlam-cy.json",
+      "geoUid": "933-coquitlam-cy",
+      "geoName": "Coquitlam (CY)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_933-delta-cy.json",
+      "geoUid": "933-delta-cy",
+      "geoName": "Delta (CY)",
+      "geoLevel": "csd",
+      "recordCount": 360
+    },
+    {
+      "file": "csd_933-delta-dm.json",
+      "geoUid": "933-delta-dm",
+      "geoName": "Delta (DM)",
+      "geoLevel": "csd",
+      "recordCount": 630
+    },
+    {
+      "file": "csd_933-first-nations-vancouver-r.json",
+      "geoUid": "933-first-nations-vancouver-r",
+      "geoName": "First Nations (Vancouver) (R)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_933-greater-vancouver-a-rda.json",
+      "geoUid": "933-greater-vancouver-a-rda",
+      "geoName": "Greater Vancouver A (RDA)",
+      "geoLevel": "csd",
+      "recordCount": 630
+    },
+    {
+      "file": "csd_933-langley-cy.json",
+      "geoUid": "933-langley-cy",
+      "geoName": "Langley (CY)",
+      "geoLevel": "csd",
+      "recordCount": 1980
+    },
+    {
+      "file": "csd_933-langley-dm.json",
+      "geoUid": "933-langley-dm",
+      "geoName": "Langley (DM)",
+      "geoLevel": "csd",
+      "recordCount": 1980
+    },
+    {
+      "file": "csd_933-lions-bay-vl.json",
+      "geoUid": "933-lions-bay-vl",
+      "geoName": "Lions Bay (VL)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_933-maple-ridge-cy.json",
+      "geoUid": "933-maple-ridge-cy",
+      "geoName": "Maple Ridge (CY)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_933-metro-vancouver-a-rda.json",
+      "geoUid": "933-metro-vancouver-a-rda",
+      "geoName": "Metro Vancouver A (RDA)",
+      "geoLevel": "csd",
+      "recordCount": 360
+    },
+    {
+      "file": "csd_933-new-westminster-cy.json",
+      "geoUid": "933-new-westminster-cy",
+      "geoName": "New Westminster (CY)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_933-north-vancouver-cy.json",
+      "geoUid": "933-north-vancouver-cy",
+      "geoName": "North Vancouver (CY)",
+      "geoLevel": "csd",
+      "recordCount": 1980
+    },
+    {
+      "file": "csd_933-north-vancouver-dm.json",
+      "geoUid": "933-north-vancouver-dm",
+      "geoName": "North Vancouver (DM)",
+      "geoLevel": "csd",
+      "recordCount": 1980
+    },
+    {
+      "file": "csd_933-pitt-meadows-cy.json",
+      "geoUid": "933-pitt-meadows-cy",
+      "geoName": "Pitt Meadows (CY)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_933-port-coquitlam-cy.json",
+      "geoUid": "933-port-coquitlam-cy",
+      "geoName": "Port Coquitlam (CY)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_933-port-moody-cy.json",
+      "geoUid": "933-port-moody-cy",
+      "geoName": "Port Moody (CY)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_933-richmond-cy.json",
+      "geoUid": "933-richmond-cy",
+      "geoName": "Richmond (CY)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_933-surrey-cy.json",
+      "geoUid": "933-surrey-cy",
+      "geoName": "Surrey (CY)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_933-vancouver-cy.json",
+      "geoUid": "933-vancouver-cy",
+      "geoName": "Vancouver (CY)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_933-west-vancouver-dm.json",
+      "geoUid": "933-west-vancouver-dm",
+      "geoName": "West Vancouver (DM)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_933-white-rock-cy.json",
+      "geoUid": "933-white-rock-cy",
+      "geoName": "White Rock (CY)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_935-capital-h-part-1-rda.json",
+      "geoUid": "935-capital-h-part-1-rda",
+      "geoName": "Capital H (Part 1) (RDA)",
+      "geoLevel": "csd",
+      "recordCount": 90
+    },
+    {
+      "file": "csd_935-central-saanich-dm.json",
+      "geoUid": "935-central-saanich-dm",
+      "geoName": "Central Saanich (DM)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_935-colwood-cy.json",
+      "geoUid": "935-colwood-cy",
+      "geoName": "Colwood (CY)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_935-esquimalt-dm.json",
+      "geoUid": "935-esquimalt-dm",
+      "geoName": "Esquimalt (DM)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_935-first-nations-victoria-r.json",
+      "geoUid": "935-first-nations-victoria-r",
+      "geoName": "First Nations (Victoria) (R)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_935-highlands-dm.json",
+      "geoUid": "935-highlands-dm",
+      "geoName": "Highlands (DM)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_935-juan-de-fuca-part-1-rda.json",
+      "geoUid": "935-juan-de-fuca-part-1-rda",
+      "geoName": "Juan de Fuca (Part 1) (RDA)",
+      "geoLevel": "csd",
+      "recordCount": 630
+    },
+    {
+      "file": "csd_935-juan-de-fuca-rda.json",
+      "geoUid": "935-juan-de-fuca-rda",
+      "geoName": "Juan de Fuca (RDA)",
+      "geoLevel": "csd",
+      "recordCount": 270
+    },
+    {
+      "file": "csd_935-langford-cy.json",
+      "geoUid": "935-langford-cy",
+      "geoName": "Langford (CY)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_935-metchosin-dm.json",
+      "geoUid": "935-metchosin-dm",
+      "geoName": "Metchosin (DM)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_935-north-saanich-dm.json",
+      "geoUid": "935-north-saanich-dm",
+      "geoName": "North Saanich (DM)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_935-oak-bay-dm.json",
+      "geoUid": "935-oak-bay-dm",
+      "geoName": "Oak Bay (DM)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_935-saanich-dm.json",
+      "geoUid": "935-saanich-dm",
+      "geoName": "Saanich (DM)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_935-sidney-t.json",
+      "geoUid": "935-sidney-t",
+      "geoName": "Sidney (T)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_935-sooke-dm.json",
+      "geoUid": "935-sooke-dm",
+      "geoName": "Sooke (DM)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_935-victoria-cy.json",
+      "geoUid": "935-victoria-cy",
+      "geoName": "Victoria (CY)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
+      "file": "csd_935-view-royal-t.json",
+      "geoUid": "935-view-royal-t",
+      "geoName": "View Royal (T)",
+      "geoLevel": "csd",
+      "recordCount": 990
+    },
+    {
       "file": "neighbourhood_602-charleswood.json",
       "geoUid": "602-charleswood",
       "geoName": "Charleswood",
@@ -5123,8 +8089,8 @@
       "recordCount": 990
     },
     {
-      "file": "neighbourhood_825-altadore-south-calgary-cfb-currie-lincoln-park-richmond-upper-mount-royal-elbow-park-rideau-park.json",
-      "geoUid": "825-altadore-south-calgary-cfb-currie-lincoln-park-richmond-upper-mount-royal-elbow-park-rideau-park",
+      "file": "neighbourhood_825-altadore-south-calgary-cfb-currie-lincoln-park-richmond-u-a911ab.json",
+      "geoUid": "825-altadore-south-calgary-cfb-currie-lincoln-park-richmond-u-a911ab",
       "geoName": "Altadore/South Calgary/CFB Currie/Lincoln Park/Richmond/Upper Mount Royal/Elbow Park/Rideau Park",
       "geoLevel": "neighbourhood",
       "recordCount": 990
@@ -5165,29 +8131,29 @@
       "recordCount": 990
     },
     {
-      "file": "neighbourhood_825-bridlewood-evergreen-shawnee-slope-millrise-shawnessy-somerset-silverado-midnapore-parkland-deer-ridge-deer-run-sundanc.json",
-      "geoUid": "825-bridlewood-evergreen-shawnee-slope-millrise-shawnessy-somerset-silverado-midnapore-parkland-deer-ridge-deer-run-sundanc",
+      "file": "neighbourhood_825-bridlewood-evergreen-shawnee-slope-millrise-shawnessy-som-5efa5c.json",
+      "geoUid": "825-bridlewood-evergreen-shawnee-slope-millrise-shawnessy-som-5efa5c",
       "geoName": "Bridlewood/Evergreen/Shawnee Slope/Millrise/Shawnessy/Somerset/Silverado/Midnapore/Parkland/Deer Ridge/Deer Run/Sundanc",
       "geoLevel": "neighbourhood",
       "recordCount": 90
     },
     {
-      "file": "neighbourhood_825-bridlewood-evergreen-shawnee-slope-millrise-shawnessy-somerset-silverado-midnapore-parkland-deer-ridge-deer-run-sundance-chaparral-walden-legacy.json",
-      "geoUid": "825-bridlewood-evergreen-shawnee-slope-millrise-shawnessy-somerset-silverado-midnapore-parkland-deer-ridge-deer-run-sundance-chaparral-walden-legacy",
+      "file": "neighbourhood_825-bridlewood-evergreen-shawnee-slope-millrise-shawnessy-som-6c53da.json",
+      "geoUid": "825-bridlewood-evergreen-shawnee-slope-millrise-shawnessy-som-6c53da",
       "geoName": "Bridlewood/Evergreen/Shawnee Slope/Millrise/Shawnessy/Somerset/Silverado/Midnapore/Parkland/Deer Ridge/Deer Run/Sundance/Chaparral/Walden/Legacy",
       "geoLevel": "neighbourhood",
       "recordCount": 900
     },
     {
-      "file": "neighbourhood_825-calgary-cma-rural-calgary-city-rocky-view-county-chestermere-crossfield-irricana-beiseker.json",
-      "geoUid": "825-calgary-cma-rural-calgary-city-rocky-view-county-chestermere-crossfield-irricana-beiseker",
+      "file": "neighbourhood_825-calgary-cma-rural-calgary-city-rocky-view-county-chesterm-56994a.json",
+      "geoUid": "825-calgary-cma-rural-calgary-city-rocky-view-county-chesterm-56994a",
       "geoName": "Calgary CMA (Rural Calgary City/Rocky View County/Chestermere/Crossfield/Irricana/Beiseker)",
       "geoLevel": "neighbourhood",
       "recordCount": 990
     },
     {
-      "file": "neighbourhood_825-canyon-meadows-woodlands-woodbine-lake-bonavista-bonavista-downs-diamond-cove-queensland.json",
-      "geoUid": "825-canyon-meadows-woodlands-woodbine-lake-bonavista-bonavista-downs-diamond-cove-queensland",
+      "file": "neighbourhood_825-canyon-meadows-woodlands-woodbine-lake-bonavista-bonavist-ab529f.json",
+      "geoUid": "825-canyon-meadows-woodlands-woodbine-lake-bonavista-bonavist-ab529f",
       "geoName": "Canyon Meadows/Woodlands/Woodbine/Lake Bonavista/Bonavista Downs/Diamond Cove/Queensland",
       "geoLevel": "neighbourhood",
       "recordCount": 990
@@ -5221,8 +8187,8 @@
       "recordCount": 990
     },
     {
-      "file": "neighbourhood_825-dover-southview-inglewood-alyth-bonnybrook-erin-woods-eastfield-golden-triangle.json",
-      "geoUid": "825-dover-southview-inglewood-alyth-bonnybrook-erin-woods-eastfield-golden-triangle",
+      "file": "neighbourhood_825-dover-southview-inglewood-alyth-bonnybrook-erin-woods-eas-c27a5d.json",
+      "geoUid": "825-dover-southview-inglewood-alyth-bonnybrook-erin-woods-eas-c27a5d",
       "geoName": "Dover/Southview/Inglewood/Alyth/Bonnybrook/Erin Woods/Eastfield/Golden Triangle",
       "geoLevel": "neighbourhood",
       "recordCount": 990
@@ -5242,15 +8208,15 @@
       "recordCount": 990
     },
     {
-      "file": "neighbourhood_825-falconridge-castleridge-coral-springs-martindale-skyview-ranch-saddle-ridge-taradale-horizon-sunridge-westwinds.json",
-      "geoUid": "825-falconridge-castleridge-coral-springs-martindale-skyview-ranch-saddle-ridge-taradale-horizon-sunridge-westwinds",
+      "file": "neighbourhood_825-falconridge-castleridge-coral-springs-martindale-skyview-2c92ed.json",
+      "geoUid": "825-falconridge-castleridge-coral-springs-martindale-skyview-2c92ed",
       "geoName": "Falconridge/Castleridge/Coral Springs/Martindale/Skyview Ranch/Saddle Ridge/Taradale/Horizon/Sunridge/Westwinds",
       "geoLevel": "neighbourhood",
       "recordCount": 990
     },
     {
-      "file": "neighbourhood_825-forest-lawn-forest-heights-penbrooke-meadows-red-carpet-applewood-park.json",
-      "geoUid": "825-forest-lawn-forest-heights-penbrooke-meadows-red-carpet-applewood-park",
+      "file": "neighbourhood_825-forest-lawn-forest-heights-penbrooke-meadows-red-carpet-a-5a5506.json",
+      "geoUid": "825-forest-lawn-forest-heights-penbrooke-meadows-red-carpet-a-5a5506",
       "geoName": "Forest Lawn/Forest Heights/Penbrooke Meadows/Red Carpet/Applewood Park",
       "geoLevel": "neighbourhood",
       "recordCount": 990
@@ -5263,18 +8229,18 @@
       "recordCount": 990
     },
     {
-      "file": "neighbourhood_825-huntington-hills-beddington-heights-evanston-panorama-hills-country-hills-coventry-hills-country-hills-village-harvest-hills-hanson-ranch-hidden-valley-sandstone-valley-macewan-glen.json",
-      "geoUid": "825-huntington-hills-beddington-heights-evanston-panorama-hills-country-hills-coventry-hills-country-hills-village-harvest-hills-hanson-ranch-hidden-valley-sandstone-valley-macewan-glen",
-      "geoName": "Huntington Hills/Beddington Heights/Evanston/Panorama Hills/Country Hills/Coventry Hills/Country Hills Village/Harvest Hills/Hanson Ranch/Hidden Valley/Sandstone Valley/MacEwan Glen",
-      "geoLevel": "neighbourhood",
-      "recordCount": 900
-    },
-    {
-      "file": "neighbourhood_825-huntington-hills-beddington-heights-evanston-panorama-hills-country-hills-coventry-hills-country-hills-village-harvest.json",
-      "geoUid": "825-huntington-hills-beddington-heights-evanston-panorama-hills-country-hills-coventry-hills-country-hills-village-harvest",
+      "file": "neighbourhood_825-huntington-hills-beddington-heights-evanston-panorama-hil-154f39.json",
+      "geoUid": "825-huntington-hills-beddington-heights-evanston-panorama-hil-154f39",
       "geoName": "Huntington Hills/Beddington Heights/Evanston/Panorama Hills/Country Hills/Coventry Hills/Country Hills Village/Harvest",
       "geoLevel": "neighbourhood",
       "recordCount": 90
+    },
+    {
+      "file": "neighbourhood_825-huntington-hills-beddington-heights-evanston-panorama-hil-f01c00.json",
+      "geoUid": "825-huntington-hills-beddington-heights-evanston-panorama-hil-f01c00",
+      "geoName": "Huntington Hills/Beddington Heights/Evanston/Panorama Hills/Country Hills/Coventry Hills/Country Hills Village/Harvest Hills/Hanson Ranch/Hidden Valley/Sandstone Valley/MacEwan Glen",
+      "geoLevel": "neighbourhood",
+      "recordCount": 900
     },
     {
       "file": "neighbourhood_825-killarney-glengarry.json",
@@ -5305,8 +8271,8 @@
       "recordCount": 990
     },
     {
-      "file": "neighbourhood_825-mckenzie-towne-new-brighton-copperfield-cranston-auburn-bay-mahogany-mckenzie-lake-douglasdale-glen.json",
-      "geoUid": "825-mckenzie-towne-new-brighton-copperfield-cranston-auburn-bay-mahogany-mckenzie-lake-douglasdale-glen",
+      "file": "neighbourhood_825-mckenzie-towne-new-brighton-copperfield-cranston-auburn-b-0995c6.json",
+      "geoUid": "825-mckenzie-towne-new-brighton-copperfield-cranston-auburn-b-0995c6",
       "geoName": "McKenzie Towne/New Brighton/Copperfield/Cranston/Auburn Bay/Mahogany/McKenzie Lake/Douglasdale/Glen",
       "geoLevel": "neighbourhood",
       "recordCount": 990
@@ -5347,15 +8313,15 @@
       "recordCount": 990
     },
     {
-      "file": "neighbourhood_825-north-haven-upper-north-haven-thorncliffe-highwood-greenview-cambrian-heights-queens-park-village.json",
-      "geoUid": "825-north-haven-upper-north-haven-thorncliffe-highwood-greenview-cambrian-heights-queens-park-village",
+      "file": "neighbourhood_825-north-haven-upper-north-haven-thorncliffe-highwood-greenv-8b95b7.json",
+      "geoUid": "825-north-haven-upper-north-haven-thorncliffe-highwood-greenv-8b95b7",
       "geoName": "North Haven/Upper North Haven/Thorncliffe/Highwood/Greenview/Cambrian Heights/Queens Park Village",
       "geoLevel": "neighbourhood",
       "recordCount": 990
     },
     {
-      "file": "neighbourhood_825-parkdale-st-andrews-heights-hounsfield-heights-briar-hill-hillhurst-west-hillhurst.json",
-      "geoUid": "825-parkdale-st-andrews-heights-hounsfield-heights-briar-hill-hillhurst-west-hillhurst",
+      "file": "neighbourhood_825-parkdale-st-andrews-heights-hounsfield-heights-briar-hill-5a2fbc.json",
+      "geoUid": "825-parkdale-st-andrews-heights-hounsfield-heights-briar-hill-5a2fbc",
       "geoName": "Parkdale/St. Andrews Heights/Hounsfield Heights/Briar Hill/Hillhurst/West Hillhurst",
       "geoLevel": "neighbourhood",
       "recordCount": 990
@@ -5424,8 +8390,8 @@
       "recordCount": 990
     },
     {
-      "file": "neighbourhood_825-valley-ridge-crestmont-cougar-ridge-west-springs-aspen-woods-springbank-hill-discovery-ridge.json",
-      "geoUid": "825-valley-ridge-crestmont-cougar-ridge-west-springs-aspen-woods-springbank-hill-discovery-ridge",
+      "file": "neighbourhood_825-valley-ridge-crestmont-cougar-ridge-west-springs-aspen-wo-dc1739.json",
+      "geoUid": "825-valley-ridge-crestmont-cougar-ridge-west-springs-aspen-wo-dc1739",
       "geoName": "Valley Ridge/Crestmont/Cougar Ridge/West Springs/Aspen Woods/Springbank Hill/Discovery Ridge",
       "geoLevel": "neighbourhood",
       "recordCount": 990
@@ -5438,8 +8404,8 @@
       "recordCount": 990
     },
     {
-      "file": "neighbourhood_825-vista-heights-skyline-east-pegasus-mccall-north-airways-south-airways-mayland-heights-mayland.json",
-      "geoUid": "825-vista-heights-skyline-east-pegasus-mccall-north-airways-south-airways-mayland-heights-mayland",
+      "file": "neighbourhood_825-vista-heights-skyline-east-pegasus-mccall-north-airways-s-be008a.json",
+      "geoUid": "825-vista-heights-skyline-east-pegasus-mccall-north-airways-s-be008a",
       "geoName": "Vista Heights/Skyline East/Pegasus/McCall/North Airways/South Airways/Mayland Heights/Mayland",
       "geoLevel": "neighbourhood",
       "recordCount": 990
@@ -5868,6 +8834,685 @@
       "file": "neighbourhood_835-woodcroft-inglewood.json",
       "geoUid": "835-woodcroft-inglewood",
       "geoName": "Woodcroft/Inglewood",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-ambleside.json",
+      "geoUid": "933-ambleside",
+      "geoName": "Ambleside",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-anmore-belcarra-metro-vancouver-north.json",
+      "geoUid": "933-anmore-belcarra-metro-vancouver-north",
+      "geoName": "Anmore/Belcarra/Metro Vancouver North",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-capital-hill-brentwood.json",
+      "geoUid": "933-capital-hill-brentwood",
+      "geoName": "Capital Hill/Brentwood",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-cedar-cottage.json",
+      "geoUid": "933-cedar-cottage",
+      "geoName": "Cedar Cottage",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-central-lonsdale.json",
+      "geoUid": "933-central-lonsdale",
+      "geoName": "Central Lonsdale",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-central-park.json",
+      "geoUid": "933-central-park",
+      "geoName": "Central Park",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-cloverdale-fleetwood.json",
+      "geoUid": "933-cloverdale-fleetwood",
+      "geoName": "Cloverdale/Fleetwood",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-collingwood.json",
+      "geoUid": "933-collingwood",
+      "geoName": "Collingwood",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-coquitlam-east.json",
+      "geoUid": "933-coquitlam-east",
+      "geoName": "Coquitlam East",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-coquitlam-west.json",
+      "geoUid": "933-coquitlam-west",
+      "geoName": "Coquitlam West",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-deer-lake.json",
+      "geoUid": "933-deer-lake",
+      "geoName": "Deer Lake",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-downtown-central.json",
+      "geoUid": "933-downtown-central",
+      "geoName": "Downtown Central",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-downtown-eastside-strathcona.json",
+      "geoUid": "933-downtown-eastside-strathcona",
+      "geoName": "Downtown Eastside/Strathcona",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-downtown-north.json",
+      "geoUid": "933-downtown-north",
+      "geoName": "Downtown North",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-downtown.json",
+      "geoUid": "933-downtown",
+      "geoName": "Downtown",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1980
+    },
+    {
+      "file": "neighbourhood_933-dundrave-west-vancouver-remainder.json",
+      "geoUid": "933-dundrave-west-vancouver-remainder",
+      "geoName": "Dundrave/West Vancouver Remainder",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-edmonds.json",
+      "geoUid": "933-edmonds",
+      "geoName": "Edmonds",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-english-bay.json",
+      "geoUid": "933-english-bay",
+      "geoName": "English Bay",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1980
+    },
+    {
+      "file": "neighbourhood_933-fraser-view-killarny.json",
+      "geoUid": "933-fraser-view-killarny",
+      "geoName": "Fraser View/Killarny",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-guildford.json",
+      "geoUid": "933-guildford",
+      "geoName": "Guildford",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-hastings-sunrise-grandview-woodlands.json",
+      "geoUid": "933-hastings-sunrise-grandview-woodlands",
+      "geoName": "Hastings/Sunrise/Grandview/Woodlands",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-kerrisdale.json",
+      "geoUid": "933-kerrisdale",
+      "geoName": "Kerrisdale",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-kitsilano-point-grey-north.json",
+      "geoUid": "933-kitsilano-point-grey-north",
+      "geoName": "Kitsilano/Point Grey North",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-kitsilano-point-grey-south.json",
+      "geoUid": "933-kitsilano-point-grey-south",
+      "geoName": "Kitsilano/Point Grey South",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-ladner.json",
+      "geoUid": "933-ladner",
+      "geoName": "Ladner",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-langley-cy.json",
+      "geoUid": "933-langley-cy",
+      "geoName": "Langley CY",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1980
+    },
+    {
+      "file": "neighbourhood_933-langley-dm.json",
+      "geoUid": "933-langley-dm",
+      "geoName": "Langley DM",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1980
+    },
+    {
+      "file": "neighbourhood_933-lonsdale-east.json",
+      "geoUid": "933-lonsdale-east",
+      "geoName": "Lonsdale East",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-lonsdale-north.json",
+      "geoUid": "933-lonsdale-north",
+      "geoName": "Lonsdale North",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-lonsdale-west.json",
+      "geoUid": "933-lonsdale-west",
+      "geoName": "Lonsdale West",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-maple-ridge.json",
+      "geoUid": "933-maple-ridge",
+      "geoName": "Maple Ridge",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-marpole-remainder.json",
+      "geoUid": "933-marpole-remainder",
+      "geoName": "Marpole Remainder",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-marpole-south.json",
+      "geoUid": "933-marpole-south",
+      "geoName": "Marpole South",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-metrotown.json",
+      "geoUid": "933-metrotown",
+      "geoName": "Metrotown",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-mount-pleasant.json",
+      "geoUid": "933-mount-pleasant",
+      "geoName": "Mount Pleasant",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-new-westminster-east.json",
+      "geoUid": "933-new-westminster-east",
+      "geoName": "New Westminster East",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-new-westminster-west.json",
+      "geoUid": "933-new-westminster-west",
+      "geoName": "New Westminster West",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-newton.json",
+      "geoUid": "933-newton",
+      "geoName": "Newton",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-north-delta.json",
+      "geoUid": "933-north-delta",
+      "geoName": "North Delta",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-north-false-creek.json",
+      "geoUid": "933-north-false-creek",
+      "geoName": "North False Creek",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-north-vancouver-dm-east.json",
+      "geoUid": "933-north-vancouver-dm-east",
+      "geoName": "North Vancouver DM East",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-north-vancouver-dm-west.json",
+      "geoUid": "933-north-vancouver-dm-west",
+      "geoName": "North Vancouver DM West",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-pitt-meadows.json",
+      "geoUid": "933-pitt-meadows",
+      "geoName": "Pitt Meadows",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-point-grey.json",
+      "geoUid": "933-point-grey",
+      "geoName": "Point Grey",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-port-coquitlam.json",
+      "geoUid": "933-port-coquitlam",
+      "geoName": "Port Coquitlam",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-port-moody.json",
+      "geoUid": "933-port-moody",
+      "geoName": "Port Moody",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-renfrew.json",
+      "geoUid": "933-renfrew",
+      "geoName": "Renfrew",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-richmond-city-centre.json",
+      "geoUid": "933-richmond-city-centre",
+      "geoName": "Richmond City Centre",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-richmond-east.json",
+      "geoUid": "933-richmond-east",
+      "geoName": "Richmond East",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-richmond-south.json",
+      "geoUid": "933-richmond-south",
+      "geoName": "Richmond South",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-richmond-west.json",
+      "geoUid": "933-richmond-west",
+      "geoName": "Richmond West",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-riley-park.json",
+      "geoUid": "933-riley-park",
+      "geoName": "Riley Park",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-sea-island.json",
+      "geoUid": "933-sea-island",
+      "geoName": "Sea Island",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-south-cambie.json",
+      "geoUid": "933-south-cambie",
+      "geoName": "South Cambie",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-south-false-creek.json",
+      "geoUid": "933-south-false-creek",
+      "geoName": "South False Creek",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-south-granville.json",
+      "geoUid": "933-south-granville",
+      "geoName": "South Granville",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-south-surrey.json",
+      "geoUid": "933-south-surrey",
+      "geoName": "South Surrey",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-southeast-burnaby-south.json",
+      "geoUid": "933-southeast-burnaby-south",
+      "geoName": "Southeast Burnaby South",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-sunset.json",
+      "geoUid": "933-sunset",
+      "geoName": "Sunset",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-surrey-city-centre.json",
+      "geoUid": "933-surrey-city-centre",
+      "geoName": "Surrey City Centre",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-tsawwassen.json",
+      "geoUid": "933-tsawwassen",
+      "geoName": "Tsawwassen",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-university-endowment-lands.json",
+      "geoUid": "933-university-endowment-lands",
+      "geoName": "University Endowment Lands",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1980
+    },
+    {
+      "file": "neighbourhood_933-university-lougheed.json",
+      "geoUid": "933-university-lougheed",
+      "geoName": "University/Lougheed",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-uptown.json",
+      "geoUid": "933-uptown",
+      "geoName": "Uptown",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-west-end-stanley-park-north.json",
+      "geoUid": "933-west-end-stanley-park-north",
+      "geoName": "West End/Stanley Park North",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-west-end-stanley-park-south.json",
+      "geoUid": "933-west-end-stanley-park-south",
+      "geoName": "West End/Stanley Park South",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-westside-heights.json",
+      "geoUid": "933-westside-heights",
+      "geoName": "Westside Heights",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-westside-kerrisdale-remainder.json",
+      "geoUid": "933-westside-kerrisdale-remainder",
+      "geoName": "Westside/Kerrisdale Remainder",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-whalley.json",
+      "geoUid": "933-whalley",
+      "geoName": "Whalley",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_933-white-rock.json",
+      "geoUid": "933-white-rock",
+      "geoName": "White Rock",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1980
+    },
+    {
+      "file": "neighbourhood_935-burnside.json",
+      "geoUid": "935-burnside",
+      "geoName": "Burnside",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_935-central-saanich.json",
+      "geoUid": "935-central-saanich",
+      "geoName": "Central Saanich",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_935-colwood.json",
+      "geoUid": "935-colwood",
+      "geoName": "Colwood",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_935-downtown.json",
+      "geoUid": "935-downtown",
+      "geoName": "Downtown",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_935-esquimalt.json",
+      "geoUid": "935-esquimalt",
+      "geoName": "Esquimalt",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1980
+    },
+    {
+      "file": "neighbourhood_935-fairfield-north.json",
+      "geoUid": "935-fairfield-north",
+      "geoName": "Fairfield North",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_935-fairfield-ross-bay.json",
+      "geoUid": "935-fairfield-ross-bay",
+      "geoName": "Fairfield-Ross Bay",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_935-fairfield-south.json",
+      "geoUid": "935-fairfield-south",
+      "geoName": "Fairfield South",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_935-fernwood.json",
+      "geoUid": "935-fernwood",
+      "geoName": "Fernwood",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_935-gonzales.json",
+      "geoUid": "935-gonzales",
+      "geoName": "Gonzales",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_935-hillside-quadra.json",
+      "geoUid": "935-hillside-quadra",
+      "geoName": "Hillside-Quadra",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_935-james-bay-north.json",
+      "geoUid": "935-james-bay-north",
+      "geoName": "James Bay (North)",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_935-james-bay-south.json",
+      "geoUid": "935-james-bay-south",
+      "geoName": "James Bay (South)",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_935-jubilee.json",
+      "geoUid": "935-jubilee",
+      "geoName": "Jubilee",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_935-langford.json",
+      "geoUid": "935-langford",
+      "geoName": "Langford",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_935-north-saanich.json",
+      "geoUid": "935-north-saanich",
+      "geoName": "North Saanich",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1980
+    },
+    {
+      "file": "neighbourhood_935-oak-bay-north.json",
+      "geoUid": "935-oak-bay-north",
+      "geoName": "Oak Bay North",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_935-oak-bay-south.json",
+      "geoUid": "935-oak-bay-south",
+      "geoName": "Oak Bay South",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_935-oaklands.json",
+      "geoUid": "935-oaklands",
+      "geoName": "Oaklands",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_935-rockland.json",
+      "geoUid": "935-rockland",
+      "geoName": "Rockland",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_935-saanich-centre.json",
+      "geoUid": "935-saanich-centre",
+      "geoName": "Saanich-Centre",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_935-saanich-other.json",
+      "geoUid": "935-saanich-other",
+      "geoName": "Saanich-Other",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_935-saanich-university.json",
+      "geoUid": "935-saanich-university",
+      "geoName": "Saanich/University",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_935-sidney.json",
+      "geoUid": "935-sidney",
+      "geoName": "Sidney",
+      "geoLevel": "neighbourhood",
+      "recordCount": 1980
+    },
+    {
+      "file": "neighbourhood_935-vic-west.json",
+      "geoUid": "935-vic-west",
+      "geoName": "Vic West",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_935-view-royal.json",
+      "geoUid": "935-view-royal",
+      "geoName": "View Royal",
+      "geoLevel": "neighbourhood",
+      "recordCount": 990
+    },
+    {
+      "file": "neighbourhood_935-west-shore-other.json",
+      "geoUid": "935-west-shore-other",
+      "geoName": "West Shore/Other",
       "geoLevel": "neighbourhood",
       "recordCount": 990
     },
@@ -6360,7 +10005,259 @@
       "geoName": "West Jasper Place",
       "geoLevel": "zone",
       "recordCount": 990
+    },
+    {
+      "file": "zone_933-central-park-metrotown.json",
+      "geoUid": "933-central-park-metrotown",
+      "geoName": "Central Park/Metrotown",
+      "geoLevel": "zone",
+      "recordCount": 990
+    },
+    {
+      "file": "zone_933-delta.json",
+      "geoUid": "933-delta",
+      "geoName": "Delta",
+      "geoLevel": "zone",
+      "recordCount": 990
+    },
+    {
+      "file": "zone_933-downtown.json",
+      "geoUid": "933-downtown",
+      "geoName": "Downtown",
+      "geoLevel": "zone",
+      "recordCount": 1980
+    },
+    {
+      "file": "zone_933-east-hastings.json",
+      "geoUid": "933-east-hastings",
+      "geoName": "East Hastings",
+      "geoLevel": "zone",
+      "recordCount": 990
+    },
+    {
+      "file": "zone_933-english-bay.json",
+      "geoUid": "933-english-bay",
+      "geoName": "English Bay",
+      "geoLevel": "zone",
+      "recordCount": 1980
+    },
+    {
+      "file": "zone_933-kitsilano-point-grey.json",
+      "geoUid": "933-kitsilano-point-grey",
+      "geoName": "Kitsilano/Point Grey",
+      "geoLevel": "zone",
+      "recordCount": 990
+    },
+    {
+      "file": "zone_933-langley-city-and-langley-dm.json",
+      "geoUid": "933-langley-city-and-langley-dm",
+      "geoName": "Langley City and Langley DM",
+      "geoLevel": "zone",
+      "recordCount": 990
+    },
+    {
+      "file": "zone_933-maple-ridge-pitt-meadows.json",
+      "geoUid": "933-maple-ridge-pitt-meadows",
+      "geoName": "Maple Ridge/Pitt Meadows",
+      "geoLevel": "zone",
+      "recordCount": 990
+    },
+    {
+      "file": "zone_933-marpole.json",
+      "geoUid": "933-marpole",
+      "geoName": "Marpole",
+      "geoLevel": "zone",
+      "recordCount": 990
+    },
+    {
+      "file": "zone_933-mount-pleasant-renfrew-heights.json",
+      "geoUid": "933-mount-pleasant-renfrew-heights",
+      "geoName": "Mount Pleasant/Renfrew Heights",
+      "geoLevel": "zone",
+      "recordCount": 990
+    },
+    {
+      "file": "zone_933-new-westminster.json",
+      "geoUid": "933-new-westminster",
+      "geoName": "New Westminster",
+      "geoLevel": "zone",
+      "recordCount": 990
+    },
+    {
+      "file": "zone_933-north-burnaby.json",
+      "geoUid": "933-north-burnaby",
+      "geoName": "North Burnaby",
+      "geoLevel": "zone",
+      "recordCount": 990
+    },
+    {
+      "file": "zone_933-north-vancouver-cy.json",
+      "geoUid": "933-north-vancouver-cy",
+      "geoName": "North Vancouver CY",
+      "geoLevel": "zone",
+      "recordCount": 1980
+    },
+    {
+      "file": "zone_933-north-vancouver-dm.json",
+      "geoUid": "933-north-vancouver-dm",
+      "geoName": "North Vancouver DM",
+      "geoLevel": "zone",
+      "recordCount": 1980
+    },
+    {
+      "file": "zone_933-richmond.json",
+      "geoUid": "933-richmond",
+      "geoName": "Richmond",
+      "geoLevel": "zone",
+      "recordCount": 990
+    },
+    {
+      "file": "zone_933-south-granville-oak.json",
+      "geoUid": "933-south-granville-oak",
+      "geoName": "South Granville/Oak",
+      "geoLevel": "zone",
+      "recordCount": 990
+    },
+    {
+      "file": "zone_933-southeast-burnaby.json",
+      "geoUid": "933-southeast-burnaby",
+      "geoName": "Southeast Burnaby",
+      "geoLevel": "zone",
+      "recordCount": 990
+    },
+    {
+      "file": "zone_933-southeast-vancouver.json",
+      "geoUid": "933-southeast-vancouver",
+      "geoName": "Southeast Vancouver",
+      "geoLevel": "zone",
+      "recordCount": 990
+    },
+    {
+      "file": "zone_933-surrey.json",
+      "geoUid": "933-surrey",
+      "geoName": "Surrey",
+      "geoLevel": "zone",
+      "recordCount": 990
+    },
+    {
+      "file": "zone_933-tri-cities.json",
+      "geoUid": "933-tri-cities",
+      "geoName": "Tri-Cities",
+      "geoLevel": "zone",
+      "recordCount": 990
+    },
+    {
+      "file": "zone_933-university-endowment-lands.json",
+      "geoUid": "933-university-endowment-lands",
+      "geoName": "University Endowment Lands",
+      "geoLevel": "zone",
+      "recordCount": 1980
+    },
+    {
+      "file": "zone_933-west-end-stanley-park.json",
+      "geoUid": "933-west-end-stanley-park",
+      "geoName": "West End/Stanley Park",
+      "geoLevel": "zone",
+      "recordCount": 990
+    },
+    {
+      "file": "zone_933-west-vancouver.json",
+      "geoUid": "933-west-vancouver",
+      "geoName": "West Vancouver",
+      "geoLevel": "zone",
+      "recordCount": 990
+    },
+    {
+      "file": "zone_933-westside-kerrisdale.json",
+      "geoUid": "933-westside-kerrisdale",
+      "geoName": "Westside/Kerrisdale",
+      "geoLevel": "zone",
+      "recordCount": 990
+    },
+    {
+      "file": "zone_933-white-rock.json",
+      "geoUid": "933-white-rock",
+      "geoName": "White Rock",
+      "geoLevel": "zone",
+      "recordCount": 1980
+    },
+    {
+      "file": "zone_935-cook-st-area.json",
+      "geoUid": "935-cook-st-area",
+      "geoName": "Cook St. Area",
+      "geoLevel": "zone",
+      "recordCount": 990
+    },
+    {
+      "file": "zone_935-esquimalt.json",
+      "geoUid": "935-esquimalt",
+      "geoName": "Esquimalt",
+      "geoLevel": "zone",
+      "recordCount": 1980
+    },
+    {
+      "file": "zone_935-fort-st-area.json",
+      "geoUid": "935-fort-st-area",
+      "geoName": "Fort St. Area",
+      "geoLevel": "zone",
+      "recordCount": 990
+    },
+    {
+      "file": "zone_935-james-bay-area.json",
+      "geoUid": "935-james-bay-area",
+      "geoName": "James Bay Area",
+      "geoLevel": "zone",
+      "recordCount": 990
+    },
+    {
+      "file": "zone_935-langford-vw-royal-colwood-sooke.json",
+      "geoUid": "935-langford-vw-royal-colwood-sooke",
+      "geoName": "Langford/Vw Royal/Colwood/Sooke",
+      "geoLevel": "zone",
+      "recordCount": 990
+    },
+    {
+      "file": "zone_935-north-saanich.json",
+      "geoUid": "935-north-saanich",
+      "geoName": "North Saanich",
+      "geoLevel": "zone",
+      "recordCount": 1980
+    },
+    {
+      "file": "zone_935-oak-bay.json",
+      "geoUid": "935-oak-bay",
+      "geoName": "Oak Bay",
+      "geoLevel": "zone",
+      "recordCount": 990
+    },
+    {
+      "file": "zone_935-remainder-of-city-of-victoria.json",
+      "geoUid": "935-remainder-of-city-of-victoria",
+      "geoName": "Remainder of City of Victoria",
+      "geoLevel": "zone",
+      "recordCount": 270
+    },
+    {
+      "file": "zone_935-remainder-of-city.json",
+      "geoUid": "935-remainder-of-city",
+      "geoName": "Remainder of City",
+      "geoLevel": "zone",
+      "recordCount": 720
+    },
+    {
+      "file": "zone_935-saanich-central-saanich.json",
+      "geoUid": "935-saanich-central-saanich",
+      "geoName": "Saanich/Central Saanich",
+      "geoLevel": "zone",
+      "recordCount": 990
+    },
+    {
+      "file": "zone_935-sidney.json",
+      "geoUid": "935-sidney",
+      "geoName": "Sidney",
+      "geoLevel": "zone",
+      "recordCount": 1980
     }
   ],
-  "secondaryTotalRecords": 1825
+  "secondaryTotalRecords": 2842
 }

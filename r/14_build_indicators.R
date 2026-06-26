@@ -58,15 +58,17 @@ if (file.exists(rent_csv)) {
            Category     == "Total",
            DwellingType == "All",
            grepl("October", Season, fixed = TRUE),
-           as.character(GeoUID) %in% c("46", "602", "825", "835", "705", "725")) %>%
+           as.character(GeoUID) %in% c("46", "602", "825", "835", "705", "725", "933", "935")) %>%
     mutate(GeoUID = as.character(GeoUID))
   if (nrow(cmhc_rent) > 0) {
     rent_id  <- c("46" = "cmhc.rent.manitoba", "602" = "cmhc.rent.winnipeg",
                   "825" = "cmhc.rent.calgary", "835" = "cmhc.rent.edmonton",
-                  "705" = "cmhc.rent.regina",  "725" = "cmhc.rent.saskatoon")
+                  "705" = "cmhc.rent.regina",  "725" = "cmhc.rent.saskatoon",
+                  "933" = "cmhc.rent.vancouver", "935" = "cmhc.rent.victoria")
     rent_geo <- c("46" = "MB",           "602" = "Winnipeg-CMA",
                   "825" = "Calgary-CMA", "835" = "Edmonton-CMA",
-                  "705" = "Regina-CMA",  "725" = "Saskatoon-CMA")
+                  "705" = "Regina-CMA",  "725" = "Saskatoon-CMA",
+                  "933" = "Vancouver-CMA", "935" = "Victoria-CMA")
     rent_recs <- cmhc_rent %>%
       transmute(
         id        = rent_id[GeoUID],

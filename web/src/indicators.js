@@ -257,14 +257,16 @@ function buildTimeAdjustmentTool(catalog, shards) {
 // snapshotPick can be grouped with its same-metric siblings across geographies.
 const GEO_ID_TOKENS = {
   CA: ['canada'], MB: ['manitoba'], SK: ['saskatchewan', 'sk'], AB: ['alberta', 'ab'],
-  BC: ['bc'], ON: ['ontario', 'on'], QC: ['quebec', 'qc'], NB: ['nb'], NS: ['ns'],
+  BC: ['british_columbia', 'bc'], ON: ['ontario', 'on'], QC: ['quebec', 'qc'], NB: ['nb'], NS: ['ns'],
   PE: ['pe'], NL: ['nl'],
   'Winnipeg-CMA': ['winnipeg'], 'Calgary-CMA': ['calgary'], 'Edmonton-CMA': ['edmonton'],
   'Regina-CMA': ['regina'], 'Saskatoon-CMA': ['saskatoon'],
+  'Vancouver-CMA': ['vancouver'], 'Victoria-CMA': ['victoria'],
 };
 // Display order for the per-geo tiles of one metric.
 const GEO_ORDER = ['CA', 'MB', 'SK', 'AB', 'BC', 'ON', 'QC', 'NB', 'NS', 'PE', 'NL',
-  'Winnipeg-CMA', 'Calgary-CMA', 'Edmonton-CMA', 'Regina-CMA', 'Saskatoon-CMA'];
+  'Winnipeg-CMA', 'Calgary-CMA', 'Edmonton-CMA', 'Regina-CMA', 'Saskatoon-CMA',
+  'Vancouver-CMA', 'Victoria-CMA'];
 // A series id with its geo segment removed, so the same metric across different
 // geographies maps to one key (statscan.cpi_allitems.{manitoba|saskatchewan} ->
 // statscan.cpi_allitems; derived.rent.winnipeg.yoy -> derived.rent.yoy). Keeps
@@ -284,7 +286,7 @@ function geoStripId(id, geo) {
 // pass through unchanged. Applied to both the snapshot and the charts.
 const CITY_PROVINCE = {
   'Winnipeg-CMA': 'MB', 'Regina-CMA': 'SK', 'Saskatoon-CMA': 'SK',
-  'Calgary-CMA': 'AB', 'Edmonton-CMA': 'AB',
+  'Calgary-CMA': 'AB', 'Edmonton-CMA': 'AB', 'Vancouver-CMA': 'BC', 'Victoria-CMA': 'BC',
 };
 function effectiveGeos(enabled) {
   return new Set([...enabled].filter(g => {

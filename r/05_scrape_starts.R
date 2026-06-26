@@ -113,9 +113,10 @@ htp_ok <- compact(htp_pull)
 message(sprintf("[05] HTP rows returned: %d / %d", length(htp_ok), length(htp_pull)))
 
 # =============================================================================
-# Part 2 — Survey Zones + Neighbourhoods via yearly snapshot stitching
+# Part 2 — Survey Zones + Neighbourhoods + Census Subdivisions via yearly
+# snapshot stitching (CMHC exposes CSDs as a per-CMA breakdown, same as zones).
 # =============================================================================
-message("\n[05] === Survey Zones + Neighbourhoods ===")
+message("\n[05] === Survey Zones + Neighbourhoods + Census Subdivisions ===")
 
 current_year <- as.integer(format(Sys.Date(), "%Y"))
 years <- seq(SCSS_ZONE_START_YEAR, current_year)
@@ -152,7 +153,7 @@ pull_zone_snapshot <- function(uid, parent, series, dimension, frequency, year, 
 }
 
 zone_results <- list()
-for (bk in c("Survey Zones", "Neighbourhoods")) {
+for (bk in c("Survey Zones", "Neighbourhoods", "Census Subdivision")) {
   grid <- zone_grid(bk)
   message(sprintf("[05] %s queries: %d", bk, nrow(grid)))
   res <- pmap(grid, pull_zone_snapshot)
@@ -164,12 +165,8 @@ for (bk in c("Survey Zones", "Neighbourhoods")) {
 # =============================================================================
 # Part 3 — Unify and write
 # =============================================================================
-slug <- function(x) {
-  x <- tolower(x)
-  x <- gsub("[^a-z0-9]+", "-", x)
-  x <- gsub("^-+|-+$", "", x)
-  x
-}
+# Zone / neighbourhood GeoUID slug is the capped, Windows-path-safe zone_slug()
+# from cmhc_helpers.R (shared with r/02).
 
 # Helper: extract Year + Quarter for an Scss result frame. Defensive against
 # missing DateString (zone-snapshot responses) and missing Date (rare).
@@ -219,14 +216,15 @@ flatten_zone <- function(df_list, level_label) {
         Category = if (first(.$Dimension) %in% names(df)) df[[first(.$Dimension)]] else NA_character_,
         GeoLevel = level_label,
         GeoName  = ZoneName,
-        GeoUID   = paste0(ParentUID, "-", slug(ZoneName))
+        GeoUID   = paste0(ParentUID, "-", zone_slug(ZoneName))
       )
   }))
 }
 zone_combined <- flatten_zone(zone_results[["Survey Zones"]],    "zone")
 nbhd_combined <- flatten_zone(zone_results[["Neighbourhoods"]], "neighbourhood")
+csd_combined  <- flatten_zone(zone_results[["Census Subdivision"]], "csd")
 
-all_combined <- bind_rows(hist_combined, zone_combined, nbhd_combined)
+all_combined <- bind_rows(hist_combined, zone_combined, nbhd_combined, csd_combined)
 if (nrow(all_combined) == 0) {
   stop("[05] No Scss data returned from any query.")
 }

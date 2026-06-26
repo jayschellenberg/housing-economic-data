@@ -1,14 +1,17 @@
 # =============================================================================
 # r/02_scrape_zone_snapshots.R
-# Loop year=CMHC_ZONE_START (default 2000) .. current to pull Survey Zone +
-# Neighbourhood snapshots from
-# CMHC and stitch into long-form CSVs. The cmhc API does not expose historical
-# time series at zone/neighbourhood level — yearly snapshots are the only
-# path. Missing years are silently dropped, not interpolated.
+# Loop year=CMHC_ZONE_START (default 2000) .. current to pull Survey Zone,
+# Neighbourhood, and Census Subdivision snapshots from CMHC and stitch into
+# long-form CSVs. The cmhc API does not expose historical time series at
+# zone/neighbourhood/CSD level — yearly snapshots are the only path. Missing
+# years are silently dropped, not interpolated. (CMHC publishes CSDs as a
+# breakdown OF a CMA, not at province level — the province-level CSD breakdown
+# 500s for every province, so we discover them per-CMA here, same as zones.)
 #
 # Outputs:
 #   data/zone_snapshots.csv
 #   data/neighbourhood_snapshots.csv
+#   data/csd_snapshots.csv
 # =============================================================================
 
 .this_dir <- {
@@ -132,29 +135,16 @@ run_breakdown <- function(breakdown, out_filename, geo_level) {
   combined <- bind_rows(lapply(ok, function(df) df %>%
                                  mutate(across(where(is.factor), as.character))))
 
-  # Synthetic per-zone GeoUID = parent CMA UID + slug of the zone name. Cap the
-  # slug so the shard filename ({level}_{uid}.json) stays well under the Windows
-  # / Dropbox ~260-char path limit — some Calgary CMHC "neighbourhoods" bundle
-  # 10+ areas into one ~200-char name. Over the cap we keep a readable prefix and
-  # append a short stable hash of the full name for uniqueness. Display names
-  # (GeoName) are untouched; only the identifier shortens.
-  hashstr <- function(s) {
-    h <- 0
-    for (c in utf8ToInt(s)) h <- (h * 31 + c) %% 16777213   # prime < 2^24, stays exact in double
-    sprintf("%06x", h)
-  }
-  slug <- function(x) {
-    s <- gsub("^-+|-+$", "", gsub("[^a-z0-9]+", "-", tolower(x)))
-    if (nchar(s) > 64) s <- paste0(gsub("-+$", "", substr(s, 1, 57)), "-", hashstr(x))
-    s
-  }
+  # Synthetic per-zone GeoUID = parent CMA UID + capped slug of the zone name.
+  # zone_slug (cmhc_helpers.R) keeps the shard filename Windows-path-safe and is
+  # shared with r/05 so both shard trees use the identical identifier.
 
   slim <- combined %>%
     mutate(
       Season = "October"  # snapshots use October as CMHC's canonical reporting period
     ) %>%
     transmute(
-      GeoUID       = paste0(ParentUID, "-", slug(ZoneName)),
+      GeoUID       = paste0(ParentUID, "-", zone_slug(ZoneName)),
       GeoName      = ZoneName,
       GeoLevel     = geo_level,
       ParentUID    = as.character(ParentUID),
@@ -179,5 +169,6 @@ run_breakdown <- function(breakdown, out_filename, geo_level) {
                   suppressWarnings(max(slim$Year, na.rm = TRUE))))
 }
 
-run_breakdown("Survey Zones",    "zone_snapshots.csv",          "zone")
-run_breakdown("Neighbourhoods",  "neighbourhood_snapshots.csv", "neighbourhood")
+run_breakdown("Survey Zones",       "zone_snapshots.csv",          "zone")
+run_breakdown("Neighbourhoods",     "neighbourhood_snapshots.csv", "neighbourhood")
+run_breakdown("Census Subdivision", "csd_snapshots.csv",           "csd")

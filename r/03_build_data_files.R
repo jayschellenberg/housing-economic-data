@@ -15,6 +15,7 @@ source(file.path(.this_dir, "lib", "cmhc_helpers.R"))
 hist_path <- file.path(DATA_DIR, "historical_rental.csv")
 zone_path <- file.path(DATA_DIR, "zone_snapshots.csv")
 nbhd_path <- file.path(DATA_DIR, "neighbourhood_snapshots.csv")
+csd_path  <- file.path(DATA_DIR, "csd_snapshots.csv")
 
 read_or_empty <- function(p) {
   if (!file.exists(p)) return(tibble::tibble())
@@ -24,8 +25,9 @@ read_or_empty <- function(p) {
 hist <- read_or_empty(hist_path)
 zone <- read_or_empty(zone_path)
 nbhd <- read_or_empty(nbhd_path)
+csd  <- read_or_empty(csd_path)
 
-if (nrow(hist) == 0 && nrow(zone) == 0 && nrow(nbhd) == 0) {
+if (nrow(hist) == 0 && nrow(zone) == 0 && nrow(nbhd) == 0 && nrow(csd) == 0) {
   stop("[03] No working CSVs found. Run 01_scrape_historical.R and 02_scrape_zone_snapshots.R first.")
 }
 
@@ -61,7 +63,7 @@ unify <- function(df) {
     )
 }
 
-all_records <- bind_rows(unify(hist), unify(zone), unify(nbhd))
+all_records <- bind_rows(unify(hist), unify(zone), unify(nbhd), unify(csd))
 
 # --- Non-Manitoba year floor -------------------------------------------------
 # Manitoba keeps full history; every other province is limited to a rolling
@@ -77,7 +79,12 @@ resolve_prov <- function(geoUid, geoLevel, parentUid) {
   prov[lv == "province"] <- gu[lv == "province"]
   m_cma <- lv == "cma";                       prov[m_cma] <- CMAS$prov_uid[match(gu[m_cma], CMAS$uid)]
   m_zn  <- lv %in% c("zone", "neighbourhood"); prov[m_zn]  <- CMAS$prov_uid[match(pu[m_zn], CMAS$uid)]
-  m_csd <- lv == "csd";                       prov[m_csd] <- substr(gu[m_csd], 1, 2)
+  # CSDs arrive two ways: r/02 snapshots use a synthetic "<CMA>-<slug>" UID with
+  # the parent CMA set (resolve via the parent); r/01 centre CSDs have a real SGC
+  # UID (province = first two digits) and no CMA parent. Prefer parent, else UID.
+  m_csd   <- lv == "csd"
+  csd_par <- CMAS$prov_uid[match(pu, CMAS$uid)]
+  prov[m_csd] <- ifelse(!is.na(csd_par[m_csd]), csd_par[m_csd], substr(gu[m_csd], 1, 2))
   prov
 }
 apply_year_floor <- function(df, uidCol, levelCol, parentCol, yearCol) {

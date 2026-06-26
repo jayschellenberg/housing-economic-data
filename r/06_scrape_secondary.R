@@ -34,7 +34,7 @@ SRMS_SERIES <- c(
 SRMS_DIMENSIONS <- c("Bedroom Type", "Structure Size")
 
 # Geographies to probe. CMHC only returns Srms for the larger centres, so we
-# query Manitoba + Saskatchewan province / CMA / CA / centre-CSD rows and let
+# query MB + SK + AB + BC province / CMA / CA / centre-CSD rows and let
 # safe_srms drop the geos that return nothing. prov_uid is carried through so
 # the web app can build a Province -> Centre picker.
 sk_cmas <- CMAS %>%
@@ -43,14 +43,18 @@ sk_cmas <- CMAS %>%
 ab_cmas <- CMAS %>%
   dplyr::filter(prov_uid == "48") %>%
   dplyr::transmute(uid, name, level, prov_uid)
+bc_cmas <- CMAS %>%
+  dplyr::filter(prov_uid == "59") %>%
+  dplyr::transmute(uid, name, level, prov_uid)
 geos <- bind_rows(
-  tibble::tibble(uid   = c(MB_PROVINCE_UID, "47", "48"),
-                 name  = c("Manitoba", "Saskatchewan", "Alberta"),
+  tibble::tibble(uid   = c(MB_PROVINCE_UID, "47", "48", "59"),
+                 name  = c("Manitoba", "Saskatchewan", "Alberta", "British Columbia"),
                  level = "province",
-                 prov_uid = c("46", "47", "48")),
+                 prov_uid = c("46", "47", "48", "59")),
   MB_CMAS        %>% dplyr::mutate(prov_uid = "46"),
   sk_cmas,
   ab_cmas,
+  bc_cmas,
   MB_CENTRE_CSDS %>% dplyr::mutate(prov_uid = "46")
 )
 
@@ -151,7 +155,8 @@ records <- slim %>%
     geoLevel = GeoLevel,
     prov     = GeoProv,
     provName = dplyr::recode(GeoProv, "46" = "Manitoba", "47" = "Saskatchewan",
-                             "48" = "Alberta", .default = GeoProv),
+                             "48" = "Alberta", "59" = "British Columbia",
+                             .default = GeoProv),
     year     = Year,
     series   = Series,
     dimension = Dimension,

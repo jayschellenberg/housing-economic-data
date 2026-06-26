@@ -59,7 +59,7 @@ PROVINCES <- tibble::tribble(
   "24",  "Quebec",                      "basic",
   "35",  "Ontario",                     "basic",
   "48",  "Alberta",                     "full",
-  "59",  "British Columbia",            "basic",
+  "59",  "British Columbia",            "full",
   "60",  "Yukon",                       "basic",
   "61",  "Northwest Territories",       "basic"
 )
@@ -128,7 +128,8 @@ CENTRE_CSDS <- tibble::tribble(
 # CAs return empty). Regina + Saskatoon are Saskatchewan's equivalents.
 # Filtered to the in-scope provinces' CMA UIDs.
 ZONE_CMAS <- c("Winnipeg" = "602", "Regina" = "705", "Saskatoon" = "725",
-               "Calgary" = "825", "Edmonton" = "835")
+               "Calgary" = "825", "Edmonton" = "835",
+               "Vancouver" = "933", "Victoria" = "935")
 ZONE_CMAS <- ZONE_CMAS[unname(ZONE_CMAS) %in% CMAS$uid]
 
 # --- RMS catalog -------------------------------------------------------------
@@ -256,6 +257,27 @@ extract_zone_name <- function(df) {
                             "Census Subdivision", "Name", "name"))
   if (length(candidates)) return(as.character(df[[candidates[1]]]))
   rep(NA_character_, nrow(df))
+}
+
+# Synthetic per-zone / per-neighbourhood GeoUID slug, shared by r/02 (Rms
+# snapshots) and r/05 (Scss starts) so both shard trees use the identical
+# capped identifier. Caps the slug so the shard filename ({level}_{uid}.json)
+# stays well under the Windows / Dropbox ~260-char path limit — some CMHC
+# "neighbourhoods" bundle 10+ areas into one ~200-char name. Over the cap we
+# keep a readable 57-char prefix and append a short stable hash of the full
+# name for uniqueness. Display names (GeoName) are untouched; only the id shortens.
+zone_uid_hash <- function(s) {
+  h <- 0
+  for (ch in utf8ToInt(s)) h <- (h * 31 + ch) %% 16777213   # prime < 2^24, stays exact in double
+  sprintf("%06x", h)
+}
+zone_slug <- function(x) {
+  s <- gsub("^-+|-+$", "", gsub("[^a-z0-9]+", "-", tolower(x)))
+  # Vectorised: x is a whole ZoneName column, so cap only the over-long ids
+  # element-wise (a scalar `if` over a vector errors in R >= 4.2).
+  long <- which(nchar(s) > 64)
+  for (i in long) s[i] <- paste0(gsub("-+$", "", substr(s[i], 1, 57)), "-", zone_uid_hash(x[i]))
+  s
 }
 
 message(sprintf("[helpers] root = %s", ROOT))

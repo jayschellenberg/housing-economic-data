@@ -58,14 +58,14 @@ export async function initAffordability() {
   }
 
   // --- Area model: income + rent per area, grouped by province + level --------
-  const PROV_LABEL = { '46': 'Manitoba', '47': 'Saskatchewan' };
+  const PROV_LABEL = { '46': 'Manitoba', '47': 'Saskatchewan', '48': 'Alberta', '59': 'British Columbia' };
   const LEVEL_LABEL = {
     PR: 'Province', CMA: 'CMAs / CAs', CD: 'Census divisions', CSD: 'Municipalities',
     WPG_CA: 'Winnipeg — Community Areas', WPG_Cluster: 'Winnipeg — Clusters', WPG_Nbhd: 'Winnipeg — Neighbourhoods',
   };
   const groupOf = (prov, level) => `${PROV_LABEL[prov] || prov} · ${LEVEL_LABEL[level] || level}`;
   const GROUP_ORDER = [];
-  for (const p of ['46', '47'])
+  for (const p of ['46', '47', '48', '59'])
     for (const lv of ['PR', 'CMA', 'CSD', 'CD', 'WPG_CA', 'WPG_Cluster', 'WPG_Nbhd']) GROUP_ORDER.push(groupOf(p, lv));
 
   const newestDemo = (r) => {
@@ -110,6 +110,15 @@ export async function initAffordability() {
       group: groupOf('47', a.level), year: a.incomeYear || '2021', income: a.income,
       medianRent: null, avgRent: a.rent ?? null, avgRentYear: a.rentYear ?? null,
     });
+  }
+  for (const [arr, prov] of [[extra?.ab, '48'], [extra?.bc, '59']]) {   // Alberta + BC — same basis as SK
+    for (const a of (arr || [])) {
+      areas.push({
+        uid: String(a.uid), name: a.name, level: a.level, prov,
+        group: groupOf(prov, a.level), year: a.incomeYear || '2021', income: a.income,
+        medianRent: null, avgRent: a.rent ?? null, avgRentYear: a.rentYear ?? null,
+      });
+    }
   }
   const byUid = new Map(areas.map(a => [a.uid, a]));
 

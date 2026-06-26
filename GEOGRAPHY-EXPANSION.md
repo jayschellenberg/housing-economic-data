@@ -4,7 +4,7 @@ How geographic coverage (provinces and cities/CMAs) is wired into each tab/data
 source, what's covered today, and the step‑by‑step to add more. Written as a
 resume point — pick any data source below and follow its "to add" steps.
 
-_Last updated: 2026‑06 (after Alberta + SK/AB Market‑Indicator/Census/Snapshot work)._
+_Last updated: 2026‑06 (after British Columbia — full CMHC + indicators + census; municipal CSDs for every full province; AB/BC Affordability)._
 
 ---
 
@@ -26,11 +26,19 @@ Province SGC codes: **CA**=Canada, **46**=MB, **47**=SK, **48**=AB, 59=BC, 35=ON
 
 \* CRSPI (commercial leasing) has no Regina value.
 
+**2026‑06 (BC expansion):** British Columbia is now a fourth **full** province (Vancouver +
+Victoria zones/neighbourhoods, 10‑yr). **Municipal CSDs** are now scraped for every full
+province's CMAs — ~88 total (MB 13, SK 14, AB 27, BC 34) — via the per‑CMA breakdown
+(r/02 RMS + r/05 SCSS). **Affordability** now covers AB + BC (rental). The province‑column
+table above predates this; read **BC as a fourth full province**.
+
 **Two key facts that constrain everything:**
-1. **CMHC does not publish below CMA/CA/zone/neighbourhood** outside Manitoba — its
-   Census‑Subdivision breakdown returns a hard 500 for SK/AB/etc. So CMHC rental/starts
-   data is **never municipal** outside MB; "full" = province + CMA/CA + the primary CMAs'
-   survey zones & neighbourhoods.
+1. **CMHC publishes municipal (CSD) data as a per‑CMA breakdown, not per‑province.** The
+   *province*‑level Census‑Subdivision breakdown returns a hard 500 for **every** province
+   (including MB) — which is why the old province‑level `discover_csds` found nothing.
+   Querying the breakdown **per‑CMA** returns each metro's CSDs for every full province
+   (r/02 RMS + r/05 SCSS; synthetic `<CMA>-<slug>` UIDs). So "full" = province + CMA/CA +
+   the primary CMAs' survey zones, neighbourhoods **and municipalities (CSDs)**.
 2. **Census municipal (CSD) data IS available** for any province (StatsCan), but is gated
    by the CensusMapper free‑tier cap (Census Profile) and by data volume.
 
