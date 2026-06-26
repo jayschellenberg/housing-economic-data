@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated": "2026-06-24T23:34:24Z",
+  "generated": "2026-06-26T03:11:27Z",
   "levels": {
     "province": [
       {
@@ -1156,11 +1156,794 @@
     ],
     "csd": [
       {
+        "uid": "825-airdrie-cy",
+        "name": "Airdrie (CY)",
+        "prov": "48",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "825",
+        "parentName": "Calgary"
+      },
+      {
+        "uid": "725-allan-t",
+        "name": "Allan (T)",
+        "prov": "47",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "725",
+        "parentName": "Saskatoon"
+      },
+      {
+        "uid": "705-balgonie-t",
+        "name": "Balgonie (T)",
+        "prov": "47",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "705",
+        "parentName": "Regina"
+      },
+      {
+        "uid": "835-beaumont-cy",
+        "name": "Beaumont (CY)",
+        "prov": "48",
+        "yearMin": 2020,
+        "yearMax": 2025,
+        "parentUid": "835",
+        "parentName": "Edmonton"
+      },
+      {
+        "uid": "835-beaumont-t",
+        "name": "Beaumont (T)",
+        "prov": "48",
+        "yearMin": 2016,
+        "yearMax": 2019,
+        "parentUid": "835",
+        "parentName": "Edmonton"
+      },
+      {
+        "uid": "825-beiseker-vl",
+        "name": "Beiseker (VL)",
+        "prov": "48",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "825",
+        "parentName": "Calgary"
+      },
+      {
+        "uid": "835-bon-accord-t",
+        "name": "Bon Accord (T)",
+        "prov": "48",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "835",
+        "parentName": "Edmonton"
+      },
+      {
+        "uid": "933-bowen-island-im",
+        "name": "Bowen Island (IM)",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-burnaby-cy",
+        "name": "Burnaby (CY)",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "825-calgary-cy",
+        "name": "Calgary (CY)",
+        "prov": "48",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "825",
+        "parentName": "Calgary"
+      },
+      {
+        "uid": "835-calmar-t",
+        "name": "Calmar (T)",
+        "prov": "48",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "835",
+        "parentName": "Edmonton"
+      },
+      {
+        "uid": "935-central-saanich-dm",
+        "name": "Central Saanich (DM)",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "825-chestermere-cy",
+        "name": "Chestermere (CY)",
+        "prov": "48",
+        "yearMin": 2024,
+        "yearMax": 2025,
+        "parentUid": "825",
+        "parentName": "Calgary"
+      },
+      {
+        "uid": "825-cochrane-t",
+        "name": "Cochrane (T)",
+        "prov": "48",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "825",
+        "parentName": "Calgary"
+      },
+      {
+        "uid": "935-colwood-cy",
+        "name": "Colwood (CY)",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "933-coquitlam-cy",
+        "name": "Coquitlam (CY)",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "825-crossfield-t",
+        "name": "Crossfield (T)",
+        "prov": "48",
+        "yearMin": 2018,
+        "yearMax": 2025,
+        "parentUid": "825",
+        "parentName": "Calgary"
+      },
+      {
+        "uid": "725-delisle-t",
+        "name": "Delisle (T)",
+        "prov": "47",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "725",
+        "parentName": "Saskatoon"
+      },
+      {
+        "uid": "933-delta-cy",
+        "name": "Delta (CY)",
+        "prov": "59",
+        "yearMin": 2023,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-delta-dm",
+        "name": "Delta (DM)",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2022,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "835-devon-t",
+        "name": "Devon (T)",
+        "prov": "48",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "835",
+        "parentName": "Edmonton"
+      },
+      {
+        "uid": "725-dundurn-t",
+        "name": "Dundurn (T)",
+        "prov": "47",
+        "yearMin": 2021,
+        "yearMax": 2021,
+        "parentUid": "725",
+        "parentName": "Saskatoon"
+      },
+      {
+        "uid": "725-dundurn-no-314-rm",
+        "name": "Dundurn No. 314 (RM)",
+        "prov": "47",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "725",
+        "parentName": "Saskatoon"
+      },
+      {
+        "uid": "602-east-st-paul-rm",
+        "name": "East St. Paul (RM)",
+        "prov": "46",
+        "yearMin": 2023,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "835-edmonton-cy",
+        "name": "Edmonton (CY)",
+        "prov": "48",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "835",
+        "parentName": "Edmonton"
+      },
+      {
+        "uid": "935-esquimalt-dm",
+        "name": "Esquimalt (DM)",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "933-first-nations-vancouver-r",
+        "name": "First Nations (Vancouver) (R)",
+        "prov": "59",
+        "yearMin": 2025,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "935-first-nations-victoria-r",
+        "name": "First Nations (Victoria) (R)",
+        "prov": "59",
+        "yearMin": 2017,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "835-fort-saskatchewan-cy",
+        "name": "Fort Saskatchewan (CY)",
+        "prov": "48",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "835",
+        "parentName": "Edmonton"
+      },
+      {
+        "uid": "835-gibbons-t",
+        "name": "Gibbons (T)",
+        "prov": "48",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "835",
+        "parentName": "Edmonton"
+      },
+      {
+        "uid": "933-greater-vancouver-a-rda",
+        "name": "Greater Vancouver A (RDA)",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2022,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "602-headingley-rm",
+        "name": "Headingley (RM)",
+        "prov": "46",
+        "yearMin": 2013,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "935-langford-cy",
+        "name": "Langford (CY)",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "725-langham-t",
+        "name": "Langham (T)",
+        "prov": "47",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "725",
+        "parentName": "Saskatoon"
+      },
+      {
+        "uid": "933-langley-cy",
+        "name": "Langley (CY)",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-langley-dm",
+        "name": "Langley (DM)",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "835-leduc-cy",
+        "name": "Leduc (CY)",
+        "prov": "48",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "835",
+        "parentName": "Edmonton"
+      },
+      {
+        "uid": "835-legal-t",
+        "name": "Legal (T)",
+        "prov": "48",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "835",
+        "parentName": "Edmonton"
+      },
+      {
+        "uid": "705-lumsden-t",
+        "name": "Lumsden (T)",
+        "prov": "47",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "705",
+        "parentName": "Regina"
+      },
+      {
+        "uid": "602-macdonald-rm",
+        "name": "Macdonald (RM)",
+        "prov": "46",
+        "yearMin": 2020,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "933-maple-ridge-cy",
+        "name": "Maple Ridge (CY)",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "725-martensville-cy",
+        "name": "Martensville (CY)",
+        "prov": "47",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "725",
+        "parentName": "Saskatoon"
+      },
+      {
+        "uid": "935-metchosin-dm",
+        "name": "Metchosin (DM)",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "933-metro-vancouver-a-rda",
+        "name": "Metro Vancouver A (RDA)",
+        "prov": "59",
+        "yearMin": 2023,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "835-morinville-t",
+        "name": "Morinville (T)",
+        "prov": "48",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "835",
+        "parentName": "Edmonton"
+      },
+      {
+        "uid": "933-new-westminster-cy",
+        "name": "New Westminster (CY)",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "602-niverville-t",
+        "name": "Niverville (T)",
+        "prov": "46",
+        "yearMin": 2023,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "933-north-vancouver-cy",
+        "name": "North Vancouver (CY)",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-north-vancouver-dm",
+        "name": "North Vancouver (DM)",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "935-oak-bay-dm",
+        "name": "Oak Bay (DM)",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "725-osler-t",
+        "name": "Osler (T)",
+        "prov": "47",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "725",
+        "parentName": "Saskatoon"
+      },
+      {
+        "uid": "835-parkland-county-md",
+        "name": "Parkland County (MD)",
+        "prov": "48",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "835",
+        "parentName": "Edmonton"
+      },
+      {
+        "uid": "705-pilot-butte-t",
+        "name": "Pilot Butte (T)",
+        "prov": "47",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "705",
+        "parentName": "Regina"
+      },
+      {
+        "uid": "933-pitt-meadows-cy",
+        "name": "Pitt Meadows (CY)",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-port-coquitlam-cy",
+        "name": "Port Coquitlam (CY)",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-port-moody-cy",
+        "name": "Port Moody (CY)",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "835-redwater-t",
+        "name": "Redwater (T)",
+        "prov": "48",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "835",
+        "parentName": "Edmonton"
+      },
+      {
+        "uid": "705-regina-cy",
+        "name": "Regina (CY)",
+        "prov": "47",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "705",
+        "parentName": "Regina"
+      },
+      {
+        "uid": "933-richmond-cy",
+        "name": "Richmond (CY)",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "602-ritchot-rm",
+        "name": "Ritchot (RM)",
+        "prov": "46",
+        "yearMin": 2014,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "935-saanich-dm",
+        "name": "Saanich (DM)",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "725-saskatoon-cy",
+        "name": "Saskatoon (CY)",
+        "prov": "47",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "725",
+        "parentName": "Saskatoon"
+      },
+      {
         "uid": "4613047",
         "name": "Selkirk CY",
         "prov": "46",
         "yearMin": 2018,
         "yearMax": 2025
+      },
+      {
+        "uid": "935-sidney-t",
+        "name": "Sidney (T)",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "935-sooke-dm",
+        "name": "Sooke (DM)",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "602-springfield-rm",
+        "name": "Springfield (RM)",
+        "prov": "46",
+        "yearMin": 2012,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "835-spruce-grove-cy",
+        "name": "Spruce Grove (CY)",
+        "prov": "48",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "835",
+        "parentName": "Edmonton"
+      },
+      {
+        "uid": "835-st-albert-cy",
+        "name": "St. Albert (CY)",
+        "prov": "48",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "835",
+        "parentName": "Edmonton"
+      },
+      {
+        "uid": "602-st-clements-rm",
+        "name": "St. Clements (RM)",
+        "prov": "46",
+        "yearMin": 2001,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-st-fran-ois-xavier-rm",
+        "name": "St. François Xavier (RM)",
+        "prov": "46",
+        "yearMin": 2021,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "835-stony-plain-t",
+        "name": "Stony Plain (T)",
+        "prov": "48",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "835",
+        "parentName": "Edmonton"
+      },
+      {
+        "uid": "835-strathcona-county-sm",
+        "name": "Strathcona County (SM)",
+        "prov": "48",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "835",
+        "parentName": "Edmonton"
+      },
+      {
+        "uid": "933-surrey-cy",
+        "name": "Surrey (CY)",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "602-tach-rm",
+        "name": "Taché (RM)",
+        "prov": "46",
+        "yearMin": 2000,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "835-thorsby-t",
+        "name": "Thorsby (T)",
+        "prov": "48",
+        "yearMin": 2018,
+        "yearMax": 2025,
+        "parentUid": "835",
+        "parentName": "Edmonton"
+      },
+      {
+        "uid": "835-thorsby-vl",
+        "name": "Thorsby (VL)",
+        "prov": "48",
+        "yearMin": 2016,
+        "yearMax": 2017,
+        "parentUid": "835",
+        "parentName": "Edmonton"
+      },
+      {
+        "uid": "933-vancouver-cy",
+        "name": "Vancouver (CY)",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "935-victoria-cy",
+        "name": "Victoria (CY)",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "935-view-royal-t",
+        "name": "View Royal (T)",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "835-wabamun-vl",
+        "name": "Wabamun (VL)",
+        "prov": "48",
+        "yearMin": 2016,
+        "yearMax": 2021,
+        "parentUid": "835",
+        "parentName": "Edmonton"
+      },
+      {
+        "uid": "835-warburg-vl",
+        "name": "Warburg (VL)",
+        "prov": "48",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "835",
+        "parentName": "Edmonton"
+      },
+      {
+        "uid": "725-warman-cy",
+        "name": "Warman (CY)",
+        "prov": "47",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "725",
+        "parentName": "Saskatoon"
+      },
+      {
+        "uid": "602-west-st-paul-rm",
+        "name": "West St. Paul (RM)",
+        "prov": "46",
+        "yearMin": 2019,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "933-west-vancouver-dm",
+        "name": "West Vancouver (DM)",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "705-white-city-t",
+        "name": "White City (T)",
+        "prov": "47",
+        "yearMin": 2020,
+        "yearMax": 2020,
+        "parentUid": "705",
+        "parentName": "Regina"
+      },
+      {
+        "uid": "933-white-rock-cy",
+        "name": "White Rock (CY)",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "602-winnipeg-c",
+        "name": "Winnipeg (C)",
+        "prov": "46",
+        "yearMin": 2000,
+        "yearMax": 2006,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
+      },
+      {
+        "uid": "602-winnipeg-cy",
+        "name": "Winnipeg (CY)",
+        "prov": "46",
+        "yearMin": 2007,
+        "yearMax": 2025,
+        "parentUid": "602",
+        "parentName": "Winnipeg"
       }
     ],
     "zone": [
@@ -1219,6 +2002,15 @@
         "parentName": "Saskatoon"
       },
       {
+        "uid": "933-central-park-metrotown",
+        "name": "Central Park/Metrotown",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
         "uid": "825-chinook",
         "name": "Chinook",
         "prov": "48",
@@ -1226,6 +2018,24 @@
         "yearMax": 2025,
         "parentUid": "825",
         "parentName": "Calgary"
+      },
+      {
+        "uid": "935-cook-st-area",
+        "name": "Cook St. Area",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "933-delta",
+        "name": "Delta",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
       },
       {
         "uid": "825-downtown",
@@ -1246,6 +2056,15 @@
         "parentName": "Edmonton"
       },
       {
+        "uid": "933-downtown",
+        "name": "Downtown",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
         "uid": "705-east",
         "name": "East",
         "prov": "47",
@@ -1264,6 +2083,15 @@
         "parentName": "Edmonton"
       },
       {
+        "uid": "933-east-hastings",
+        "name": "East Hastings",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
         "uid": "602-east-kildonan",
         "name": "East Kildonan",
         "prov": "46",
@@ -1271,6 +2099,24 @@
         "yearMax": 2025,
         "parentUid": "602",
         "parentName": "Winnipeg"
+      },
+      {
+        "uid": "933-english-bay",
+        "name": "English Bay",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "935-esquimalt",
+        "name": "Esquimalt",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
       },
       {
         "uid": "825-fish-creek",
@@ -1309,6 +2155,15 @@
         "parentName": "Edmonton"
       },
       {
+        "uid": "935-fort-st-area",
+        "name": "Fort St. Area",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
         "uid": "835-hudson-s-bay-reserve",
         "name": "Hudson's Bay Reserve",
         "prov": "48",
@@ -1318,6 +2173,15 @@
         "parentName": "Edmonton"
       },
       {
+        "uid": "935-james-bay-area",
+        "name": "James Bay Area",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
         "uid": "835-jasper-place",
         "name": "Jasper Place",
         "prov": "48",
@@ -1325,6 +2189,33 @@
         "yearMax": 2025,
         "parentUid": "835",
         "parentName": "Edmonton"
+      },
+      {
+        "uid": "933-kitsilano-point-grey",
+        "name": "Kitsilano/Point Grey",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "935-langford-vw-royal-colwood-sooke",
+        "name": "Langford/Vw Royal/Colwood/Sooke",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "933-langley-city-and-langley-dm",
+        "name": "Langley City and Langley DM",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
       },
       {
         "uid": "835-leduc",
@@ -1345,6 +2236,24 @@
         "parentName": "Winnipeg"
       },
       {
+        "uid": "933-maple-ridge-pitt-meadows",
+        "name": "Maple Ridge/Pitt Meadows",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-marpole",
+        "name": "Marpole",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
         "uid": "602-midland",
         "name": "Midland",
         "prov": "46",
@@ -1363,6 +2272,24 @@
         "parentName": "Edmonton"
       },
       {
+        "uid": "933-mount-pleasant-renfrew-heights",
+        "name": "Mount Pleasant/Renfrew Heights",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-new-westminster",
+        "name": "New Westminster",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
         "uid": "725-north",
         "name": "North",
         "prov": "47",
@@ -1370,6 +2297,15 @@
         "yearMax": 2025,
         "parentUid": "725",
         "parentName": "Saskatoon"
+      },
+      {
+        "uid": "933-north-burnaby",
+        "name": "North Burnaby",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
       },
       {
         "uid": "835-north-central",
@@ -1397,6 +2333,24 @@
         "yearMax": 2025,
         "parentUid": "825",
         "parentName": "Calgary"
+      },
+      {
+        "uid": "933-north-vancouver-cy",
+        "name": "North Vancouver CY",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-north-vancouver-dm",
+        "name": "North Vancouver DM",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
       },
       {
         "uid": "705-northeast",
@@ -1444,6 +2398,15 @@
         "parentName": "Calgary"
       },
       {
+        "uid": "935-oak-bay",
+        "name": "Oak Bay",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
         "uid": "825-other-centres",
         "name": "Other Centres",
         "prov": "48",
@@ -1489,6 +2452,51 @@
         "parentName": "Saskatoon"
       },
       {
+        "uid": "935-remainder-of-city",
+        "name": "Remainder of City",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2023,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "935-remainder-of-city-of-victoria",
+        "name": "Remainder of City of Victoria",
+        "prov": "59",
+        "yearMin": 2024,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "933-richmond",
+        "name": "Richmond",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "935-saanich-central-saanich",
+        "name": "Saanich/Central Saanich",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "935-sidney",
+        "name": "Sidney",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
         "uid": "725-south",
         "name": "South",
         "prov": "47",
@@ -1496,6 +2504,15 @@
         "yearMax": 2025,
         "parentUid": "725",
         "parentName": "Saskatoon"
+      },
+      {
+        "uid": "933-south-granville-oak",
+        "name": "South Granville/Oak",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
       },
       {
         "uid": "835-south-west",
@@ -1541,6 +2558,24 @@
         "yearMax": 2025,
         "parentUid": "825",
         "parentName": "Calgary"
+      },
+      {
+        "uid": "933-southeast-burnaby",
+        "name": "Southeast Burnaby",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-southeast-vancouver",
+        "name": "Southeast Vancouver",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
       },
       {
         "uid": "725-southwest",
@@ -1624,6 +2659,15 @@
         "parentName": "Edmonton"
       },
       {
+        "uid": "933-surrey",
+        "name": "Surrey",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
         "uid": "602-transcona",
         "name": "Transcona",
         "prov": "46",
@@ -1633,6 +2677,15 @@
         "parentName": "Winnipeg"
       },
       {
+        "uid": "933-tri-cities",
+        "name": "Tri-Cities",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
         "uid": "835-university",
         "name": "University",
         "prov": "48",
@@ -1640,6 +2693,15 @@
         "yearMax": 2025,
         "parentUid": "835",
         "parentName": "Edmonton"
+      },
+      {
+        "uid": "933-university-endowment-lands",
+        "name": "University Endowment Lands",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
       },
       {
         "uid": "705-west",
@@ -1669,6 +2731,15 @@
         "parentName": "Edmonton"
       },
       {
+        "uid": "933-west-end-stanley-park",
+        "name": "West End/Stanley Park",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
         "uid": "835-west-jasper-place",
         "name": "West Jasper Place",
         "prov": "48",
@@ -1685,6 +2756,33 @@
         "yearMax": 2025,
         "parentUid": "602",
         "parentName": "Winnipeg"
+      },
+      {
+        "uid": "933-west-vancouver",
+        "name": "West Vancouver",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-westside-kerrisdale",
+        "name": "Westside/Kerrisdale",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-white-rock",
+        "name": "White Rock",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
       }
     ],
     "neighbourhood": [
@@ -1716,13 +2814,22 @@
         "parentName": "Regina"
       },
       {
-        "uid": "825-altadore-south-calgary-cfb-currie-lincoln-park-richmond-upper-mount-royal-elbow-park-rideau-park",
+        "uid": "825-altadore-south-calgary-cfb-currie-lincoln-park-richmond-u-a911ab",
         "name": "Altadore/South Calgary/CFB Currie/Lincoln Park/Richmond/Upper Mount Royal/Elbow Park/Rideau Park",
         "prov": "48",
         "yearMin": 2016,
         "yearMax": 2025,
         "parentUid": "825",
         "parentName": "Calgary"
+      },
+      {
+        "uid": "933-ambleside",
+        "name": "Ambleside",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
       },
       {
         "uid": "825-bankview",
@@ -1788,7 +2895,7 @@
         "parentName": "Calgary"
       },
       {
-        "uid": "825-bridlewood-evergreen-shawnee-slope-millrise-shawnessy-somerset-silverado-midnapore-parkland-deer-ridge-deer-run-sundanc",
+        "uid": "825-bridlewood-evergreen-shawnee-slope-millrise-shawnessy-som-5efa5c",
         "name": "Bridlewood/Evergreen/Shawnee Slope/Millrise/Shawnessy/Somerset/Silverado/Midnapore/Parkland/Deer Ridge/Deer Run/Sundanc",
         "prov": "48",
         "yearMin": 2016,
@@ -1797,7 +2904,7 @@
         "parentName": "Calgary"
       },
       {
-        "uid": "825-bridlewood-evergreen-shawnee-slope-millrise-shawnessy-somerset-silverado-midnapore-parkland-deer-ridge-deer-run-sundance-chaparral-walden-legacy",
+        "uid": "825-bridlewood-evergreen-shawnee-slope-millrise-shawnessy-som-6c53da",
         "name": "Bridlewood/Evergreen/Shawnee Slope/Millrise/Shawnessy/Somerset/Silverado/Midnapore/Parkland/Deer Ridge/Deer Run/Sundance/Chaparral/Walden/Legacy",
         "prov": "48",
         "yearMin": 2017,
@@ -1815,7 +2922,16 @@
         "parentName": "Edmonton"
       },
       {
-        "uid": "825-calgary-cma-rural-calgary-city-rocky-view-county-chestermere-crossfield-irricana-beiseker",
+        "uid": "935-burnside",
+        "name": "Burnside",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "825-calgary-cma-rural-calgary-city-rocky-view-county-chesterm-56994a",
         "name": "Calgary CMA (Rural Calgary City/Rocky View County/Chestermere/Crossfield/Irricana/Beiseker)",
         "prov": "48",
         "yearMin": 2016,
@@ -1833,7 +2949,7 @@
         "parentName": "Edmonton"
       },
       {
-        "uid": "825-canyon-meadows-woodlands-woodbine-lake-bonavista-bonavista-downs-diamond-cove-queensland",
+        "uid": "825-canyon-meadows-woodlands-woodbine-lake-bonavista-bonavist-ab529f",
         "name": "Canyon Meadows/Woodlands/Woodbine/Lake Bonavista/Bonavista Downs/Diamond Cove/Queensland",
         "prov": "48",
         "yearMin": 2016,
@@ -1851,6 +2967,15 @@
         "parentName": "Edmonton"
       },
       {
+        "uid": "933-capital-hill-brentwood",
+        "name": "Capital Hill/Brentwood",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
         "uid": "825-capitol-hill-rosemont-banff-trail",
         "name": "Capitol Hill/Rosemont/Banff Trail",
         "prov": "48",
@@ -1858,6 +2983,15 @@
         "yearMax": 2025,
         "parentUid": "825",
         "parentName": "Calgary"
+      },
+      {
+        "uid": "933-cedar-cottage",
+        "name": "Cedar Cottage",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
       },
       {
         "uid": "705-central",
@@ -1878,6 +3012,15 @@
         "parentName": "Saskatoon"
       },
       {
+        "uid": "933-central-lonsdale",
+        "name": "Central Lonsdale",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
         "uid": "835-central-mcdougall",
         "name": "Central McDougall",
         "prov": "48",
@@ -1894,6 +3037,24 @@
         "yearMax": 2025,
         "parentUid": "835",
         "parentName": "Edmonton"
+      },
+      {
+        "uid": "933-central-park",
+        "name": "Central Park",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "935-central-saanich",
+        "name": "Central Saanich",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
       },
       {
         "uid": "835-central-south-west",
@@ -1932,6 +3093,15 @@
         "parentName": "Edmonton"
       },
       {
+        "uid": "933-cloverdale-fleetwood",
+        "name": "Cloverdale/Fleetwood",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
         "uid": "825-cochrane",
         "name": "Cochrane",
         "prov": "48",
@@ -1939,6 +3109,24 @@
         "yearMax": 2025,
         "parentUid": "825",
         "parentName": "Calgary"
+      },
+      {
+        "uid": "933-collingwood",
+        "name": "Collingwood",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "935-colwood",
+        "name": "Colwood",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
       },
       {
         "uid": "725-confederation-east",
@@ -1968,6 +3156,24 @@
         "parentName": "Saskatoon"
       },
       {
+        "uid": "933-coquitlam-east",
+        "name": "Coquitlam East",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-coquitlam-west",
+        "name": "Coquitlam West",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
         "uid": "705-coronation-park",
         "name": "Coronation Park",
         "prov": "47",
@@ -1984,6 +3190,15 @@
         "yearMax": 2025,
         "parentUid": "825",
         "parentName": "Calgary"
+      },
+      {
+        "uid": "933-deer-lake",
+        "name": "Deer Lake",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
       },
       {
         "uid": "835-delton-eastwood",
@@ -2004,7 +3219,7 @@
         "parentName": "Edmonton"
       },
       {
-        "uid": "825-dover-southview-inglewood-alyth-bonnybrook-erin-woods-eastfield-golden-triangle",
+        "uid": "825-dover-southview-inglewood-alyth-bonnybrook-erin-woods-eas-c27a5d",
         "name": "Dover/Southview/Inglewood/Alyth/Bonnybrook/Erin Woods/Eastfield/Golden Triangle",
         "prov": "48",
         "yearMin": 2016,
@@ -2031,6 +3246,33 @@
         "parentName": "Edmonton"
       },
       {
+        "uid": "933-downtown",
+        "name": "Downtown",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "935-downtown",
+        "name": "Downtown",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "933-downtown-central",
+        "name": "Downtown Central",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
         "uid": "705-downtown-east",
         "name": "Downtown East",
         "prov": "47",
@@ -2038,6 +3280,24 @@
         "yearMax": 2025,
         "parentUid": "705",
         "parentName": "Regina"
+      },
+      {
+        "uid": "933-downtown-eastside-strathcona",
+        "name": "Downtown Eastside/Strathcona",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-downtown-north",
+        "name": "Downtown North",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
       },
       {
         "uid": "705-downtown-west",
@@ -2056,6 +3316,15 @@
         "yearMax": 2025,
         "parentUid": "825",
         "parentName": "Calgary"
+      },
+      {
+        "uid": "933-dundrave-west-vancouver-remainder",
+        "name": "Dundrave/West Vancouver Remainder",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
       },
       {
         "uid": "705-east",
@@ -2094,6 +3363,15 @@
         "parentName": "Winnipeg"
       },
       {
+        "uid": "933-edmonds",
+        "name": "Edmonds",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
         "uid": "835-edmonton-cma-remainder",
         "name": "Edmonton CMA Remainder",
         "prov": "48",
@@ -2112,6 +3390,51 @@
         "parentName": "Winnipeg"
       },
       {
+        "uid": "933-english-bay",
+        "name": "English Bay",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "935-esquimalt",
+        "name": "Esquimalt",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "935-fairfield-north",
+        "name": "Fairfield North",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "935-fairfield-south",
+        "name": "Fairfield South",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "935-fairfield-ross-bay",
+        "name": "Fairfield-Ross Bay",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
         "uid": "825-fairview-industrial-fairview-kingsland",
         "name": "Fairview Industrial/Fairview/Kingsland",
         "prov": "48",
@@ -2121,7 +3444,7 @@
         "parentName": "Calgary"
       },
       {
-        "uid": "825-falconridge-castleridge-coral-springs-martindale-skyview-ranch-saddle-ridge-taradale-horizon-sunridge-westwinds",
+        "uid": "825-falconridge-castleridge-coral-springs-martindale-skyview-2c92ed",
         "name": "Falconridge/Castleridge/Coral Springs/Martindale/Skyview Ranch/Saddle Ridge/Taradale/Horizon/Sunridge/Westwinds",
         "prov": "48",
         "yearMin": 2016,
@@ -2130,7 +3453,16 @@
         "parentName": "Calgary"
       },
       {
-        "uid": "825-forest-lawn-forest-heights-penbrooke-meadows-red-carpet-applewood-park",
+        "uid": "935-fernwood",
+        "name": "Fernwood",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "825-forest-lawn-forest-heights-penbrooke-meadows-red-carpet-a-5a5506",
         "name": "Forest Lawn/Forest Heights/Penbrooke Meadows/Red Carpet/Applewood Park",
         "prov": "48",
         "yearMin": 2016,
@@ -2173,6 +3505,15 @@
         "yearMax": 2025,
         "parentUid": "835",
         "parentName": "Edmonton"
+      },
+      {
+        "uid": "933-fraser-view-killarny",
+        "name": "Fraser View/Killarny",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
       },
       {
         "uid": "602-garden-city",
@@ -2220,6 +3561,15 @@
         "parentName": "Calgary"
       },
       {
+        "uid": "935-gonzales",
+        "name": "Gonzales",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
         "uid": "835-grandin",
         "name": "Grandin",
         "prov": "48",
@@ -2227,6 +3577,24 @@
         "yearMax": 2025,
         "parentUid": "835",
         "parentName": "Edmonton"
+      },
+      {
+        "uid": "933-guildford",
+        "name": "Guildford",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-hastings-sunrise-grandview-woodlands",
+        "name": "Hastings/Sunrise/Grandview/Woodlands",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
       },
       {
         "uid": "835-highlands-alberta-avenue",
@@ -2247,7 +3615,16 @@
         "parentName": "Regina"
       },
       {
-        "uid": "825-huntington-hills-beddington-heights-evanston-panorama-hills-country-hills-coventry-hills-country-hills-village-harvest",
+        "uid": "935-hillside-quadra",
+        "name": "Hillside-Quadra",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "825-huntington-hills-beddington-heights-evanston-panorama-hil-154f39",
         "name": "Huntington Hills/Beddington Heights/Evanston/Panorama Hills/Country Hills/Coventry Hills/Country Hills Village/Harvest",
         "prov": "48",
         "yearMin": 2016,
@@ -2256,7 +3633,7 @@
         "parentName": "Calgary"
       },
       {
-        "uid": "825-huntington-hills-beddington-heights-evanston-panorama-hills-country-hills-coventry-hills-country-hills-village-harvest-hills-hanson-ranch-hidden-valley-sandstone-valley-macewan-glen",
+        "uid": "825-huntington-hills-beddington-heights-evanston-panorama-hil-f01c00",
         "name": "Huntington Hills/Beddington Heights/Evanston/Panorama Hills/Country Hills/Coventry Hills/Country Hills Village/Harvest Hills/Hanson Ranch/Hidden Valley/Sandstone Valley/MacEwan Glen",
         "prov": "48",
         "yearMin": 2017,
@@ -2274,6 +3651,42 @@
         "parentName": "Winnipeg"
       },
       {
+        "uid": "935-james-bay-north",
+        "name": "James Bay (North)",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "935-james-bay-south",
+        "name": "James Bay (South)",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "935-jubilee",
+        "name": "Jubilee",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "933-kerrisdale",
+        "name": "Kerrisdale",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
         "uid": "825-killarney-glengarry",
         "name": "Killarney/Glengarry",
         "prov": "48",
@@ -2281,6 +3694,33 @@
         "yearMax": 2025,
         "parentUid": "825",
         "parentName": "Calgary"
+      },
+      {
+        "uid": "933-kitsilano-point-grey-north",
+        "name": "Kitsilano/Point Grey North",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-kitsilano-point-grey-south",
+        "name": "Kitsilano/Point Grey South",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-ladner",
+        "name": "Ladner",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
       },
       {
         "uid": "705-lakeview-north",
@@ -2319,6 +3759,33 @@
         "parentName": "Saskatoon"
       },
       {
+        "uid": "935-langford",
+        "name": "Langford",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "933-langley-cy",
+        "name": "Langley CY",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-langley-dm",
+        "name": "Langley DM",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
         "uid": "835-leduc",
         "name": "Leduc",
         "prov": "48",
@@ -2335,6 +3802,33 @@
         "yearMax": 2025,
         "parentUid": "835",
         "parentName": "Edmonton"
+      },
+      {
+        "uid": "933-lonsdale-east",
+        "name": "Lonsdale East",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-lonsdale-north",
+        "name": "Lonsdale North",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-lonsdale-west",
+        "name": "Lonsdale West",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
       },
       {
         "uid": "835-lower-east-central",
@@ -2373,6 +3867,15 @@
         "parentName": "Calgary"
       },
       {
+        "uid": "933-maple-ridge",
+        "name": "Maple Ridge",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
         "uid": "825-marlborough-park-marlborough-abbeydale",
         "name": "Marlborough Park/Marlborough/Abbeydale",
         "prov": "48",
@@ -2380,6 +3883,24 @@
         "yearMax": 2025,
         "parentUid": "825",
         "parentName": "Calgary"
+      },
+      {
+        "uid": "933-marpole-remainder",
+        "name": "Marpole Remainder",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-marpole-south",
+        "name": "Marpole South",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
       },
       {
         "uid": "835-mccauley",
@@ -2391,7 +3912,7 @@
         "parentName": "Edmonton"
       },
       {
-        "uid": "825-mckenzie-towne-new-brighton-copperfield-cranston-auburn-bay-mahogany-mckenzie-lake-douglasdale-glen",
+        "uid": "825-mckenzie-towne-new-brighton-copperfield-cranston-auburn-b-0995c6",
         "name": "McKenzie Towne/New Brighton/Copperfield/Cranston/Auburn Bay/Mahogany/McKenzie Lake/Douglasdale/Glen",
         "prov": "48",
         "yearMin": 2016,
@@ -2416,6 +3937,15 @@
         "yearMax": 2025,
         "parentUid": "825",
         "parentName": "Calgary"
+      },
+      {
+        "uid": "933-metrotown",
+        "name": "Metrotown",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
       },
       {
         "uid": "825-misson-beltline",
@@ -2463,6 +3993,42 @@
         "parentName": "Calgary"
       },
       {
+        "uid": "933-mount-pleasant",
+        "name": "Mount Pleasant",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-new-westminster-east",
+        "name": "New Westminster East",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-new-westminster-west",
+        "name": "New Westminster West",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-newton",
+        "name": "Newton",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
         "uid": "705-normanview",
         "name": "Normanview",
         "prov": "47",
@@ -2508,6 +4074,15 @@
         "parentName": "Edmonton"
       },
       {
+        "uid": "933-north-delta",
+        "name": "North Delta",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
         "uid": "835-north-east",
         "name": "North East",
         "prov": "48",
@@ -2515,6 +4090,15 @@
         "yearMax": 2025,
         "parentUid": "835",
         "parentName": "Edmonton"
+      },
+      {
+        "uid": "933-north-false-creek",
+        "name": "North False Creek",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
       },
       {
         "uid": "825-north-glenmore-park-lakeview",
@@ -2526,7 +4110,7 @@
         "parentName": "Calgary"
       },
       {
-        "uid": "825-north-haven-upper-north-haven-thorncliffe-highwood-greenview-cambrian-heights-queens-park-village",
+        "uid": "825-north-haven-upper-north-haven-thorncliffe-highwood-greenv-8b95b7",
         "name": "North Haven/Upper North Haven/Thorncliffe/Highwood/Greenview/Cambrian Heights/Queens Park Village",
         "prov": "48",
         "yearMin": 2016,
@@ -2551,6 +4135,24 @@
         "yearMax": 2025,
         "parentUid": "835",
         "parentName": "Edmonton"
+      },
+      {
+        "uid": "933-north-vancouver-dm-east",
+        "name": "North Vancouver DM East",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-north-vancouver-dm-west",
+        "name": "North Vancouver DM West",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
       },
       {
         "uid": "835-north-west-jasper-place",
@@ -2634,6 +4236,33 @@
         "parentName": "Saskatoon"
       },
       {
+        "uid": "935-oak-bay-north",
+        "name": "Oak Bay North",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "935-oak-bay-south",
+        "name": "Oak Bay South",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "935-oaklands",
+        "name": "Oaklands",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
         "uid": "602-old-st-vital",
         "name": "Old St. Vital",
         "prov": "46",
@@ -2679,13 +4308,22 @@
         "parentName": "Saskatoon"
       },
       {
-        "uid": "825-parkdale-st-andrews-heights-hounsfield-heights-briar-hill-hillhurst-west-hillhurst",
+        "uid": "825-parkdale-st-andrews-heights-hounsfield-heights-briar-hill-5a2fbc",
         "name": "Parkdale/St. Andrews Heights/Hounsfield Heights/Briar Hill/Hillhurst/West Hillhurst",
         "prov": "48",
         "yearMin": 2016,
         "yearMax": 2025,
         "parentUid": "825",
         "parentName": "Calgary"
+      },
+      {
+        "uid": "933-pitt-meadows",
+        "name": "Pitt Meadows",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
       },
       {
         "uid": "602-point-douglas",
@@ -2695,6 +4333,33 @@
         "yearMax": 2025,
         "parentUid": "602",
         "parentName": "Winnipeg"
+      },
+      {
+        "uid": "933-point-grey",
+        "name": "Point Grey",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-port-coquitlam",
+        "name": "Port Coquitlam",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-port-moody",
+        "name": "Port Moody",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
       },
       {
         "uid": "835-queen-mary-park",
@@ -2713,6 +4378,60 @@
         "yearMax": 2025,
         "parentUid": "825",
         "parentName": "Calgary"
+      },
+      {
+        "uid": "933-renfrew",
+        "name": "Renfrew",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-richmond-city-centre",
+        "name": "Richmond City Centre",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-richmond-east",
+        "name": "Richmond East",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-richmond-south",
+        "name": "Richmond South",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-richmond-west",
+        "name": "Richmond West",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-riley-park",
+        "name": "Riley Park",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
       },
       {
         "uid": "602-river-osborne",
@@ -2740,6 +4459,15 @@
         "yearMax": 2025,
         "parentUid": "835",
         "parentName": "Edmonton"
+      },
+      {
+        "uid": "935-rockland",
+        "name": "Rockland",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
       },
       {
         "uid": "825-rosedale-sunnyside-crescent-heights-renfrew",
@@ -2787,6 +4515,33 @@
         "parentName": "Calgary"
       },
       {
+        "uid": "935-saanich-centre",
+        "name": "Saanich-Centre",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "935-saanich-other",
+        "name": "Saanich-Other",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "935-saanich-university",
+        "name": "Saanich/University",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
         "uid": "825-scarboro-sunalta",
         "name": "Scarboro/Sunalta",
         "prov": "48",
@@ -2823,6 +4578,15 @@
         "parentName": "Calgary"
       },
       {
+        "uid": "935-sidney",
+        "name": "Sidney",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
         "uid": "825-silver-springs-scenic-acres-tuscany",
         "name": "Silver Springs/Scenic Acres/Tuscany",
         "prov": "48",
@@ -2830,6 +4594,33 @@
         "yearMax": 2025,
         "parentUid": "825",
         "parentName": "Calgary"
+      },
+      {
+        "uid": "933-south-cambie",
+        "name": "South Cambie",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-south-false-creek",
+        "name": "South False Creek",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-south-granville",
+        "name": "South Granville",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
       },
       {
         "uid": "835-south-jasper-place",
@@ -2868,6 +4659,15 @@
         "parentName": "Winnipeg"
       },
       {
+        "uid": "933-south-surrey",
+        "name": "South Surrey",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
         "uid": "835-south-west-jasper-place",
         "name": "South West Jasper Place",
         "prov": "48",
@@ -2884,6 +4684,15 @@
         "yearMax": 2025,
         "parentUid": "705",
         "parentName": "Regina"
+      },
+      {
+        "uid": "933-southeast-burnaby-south",
+        "name": "Southeast Burnaby South",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
       },
       {
         "uid": "825-southeast-industrial-area-and-surrounding-communities",
@@ -3003,6 +4812,24 @@
         "parentName": "Edmonton"
       },
       {
+        "uid": "933-sunset",
+        "name": "Sunset",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-surrey-city-centre",
+        "name": "Surrey City Centre",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
         "uid": "835-terwillegar-rural-southwest",
         "name": "Terwillegar/Rural Southwest",
         "prov": "48",
@@ -3030,6 +4857,15 @@
         "parentName": "Winnipeg"
       },
       {
+        "uid": "933-tsawwassen",
+        "name": "Tsawwassen",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
         "uid": "602-tuxedo",
         "name": "Tuxedo",
         "prov": "46",
@@ -3048,6 +4884,15 @@
         "parentName": "Edmonton"
       },
       {
+        "uid": "933-university-endowment-lands",
+        "name": "University Endowment Lands",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
         "uid": "725-university-heights",
         "name": "University Heights",
         "prov": "47",
@@ -3055,6 +4900,15 @@
         "yearMax": 2025,
         "parentUid": "725",
         "parentName": "Saskatoon"
+      },
+      {
+        "uid": "933-university-lougheed",
+        "name": "University/Lougheed",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
       },
       {
         "uid": "725-upper-southwest",
@@ -3066,7 +4920,16 @@
         "parentName": "Saskatoon"
       },
       {
-        "uid": "825-valley-ridge-crestmont-cougar-ridge-west-springs-aspen-woods-springbank-hill-discovery-ridge",
+        "uid": "933-uptown",
+        "name": "Uptown",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "825-valley-ridge-crestmont-cougar-ridge-west-springs-aspen-wo-dc1739",
         "name": "Valley Ridge/Crestmont/Cougar Ridge/West Springs/Aspen Woods/Springbank Hill/Discovery Ridge",
         "prov": "48",
         "yearMin": 2021,
@@ -3084,7 +4947,25 @@
         "parentName": "Calgary"
       },
       {
-        "uid": "825-vista-heights-skyline-east-pegasus-mccall-north-airways-south-airways-mayland-heights-mayland",
+        "uid": "935-vic-west",
+        "name": "Vic West",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "935-view-royal",
+        "name": "View Royal",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "825-vista-heights-skyline-east-pegasus-mccall-north-airways-s-be008a",
         "name": "Vista Heights/Skyline East/Pegasus/McCall/North Airways/South Airways/Mayland Heights/Mayland",
         "prov": "48",
         "yearMin": 2016,
@@ -3174,6 +5055,24 @@
         "parentName": "Winnipeg"
       },
       {
+        "uid": "933-west-end-stanley-park-north",
+        "name": "West End/Stanley Park North",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-west-end-stanley-park-south",
+        "name": "West End/Stanley Park South",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
         "uid": "835-west-jasper-place-rural",
         "name": "West Jasper Place/Rural",
         "prov": "48",
@@ -3183,6 +5082,33 @@
         "parentName": "Edmonton"
       },
       {
+        "uid": "935-west-shore-other",
+        "name": "West Shore/Other",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "935",
+        "parentName": "Victoria"
+      },
+      {
+        "uid": "933-westside-heights",
+        "name": "Westside Heights",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-westside-kerrisdale-remainder",
+        "name": "Westside/Kerrisdale Remainder",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
         "uid": "835-westwood",
         "name": "Westwood",
         "prov": "48",
@@ -3190,6 +5116,24 @@
         "yearMax": 2025,
         "parentUid": "835",
         "parentName": "Edmonton"
+      },
+      {
+        "uid": "933-whalley",
+        "name": "Whalley",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
+      },
+      {
+        "uid": "933-white-rock",
+        "name": "White Rock",
+        "prov": "59",
+        "yearMin": 2016,
+        "yearMax": 2025,
+        "parentUid": "933",
+        "parentName": "Vancouver"
       },
       {
         "uid": "825-whitehorn-temple",
