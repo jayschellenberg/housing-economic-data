@@ -87,12 +87,19 @@ message("[08] parsing 2011 NHS files...")
 cpt_dir <- fetch_unzip("CSV101", "cpt")
 csd_dir <- fetch_unzip("CSV301", "csd")
 cpt <- parse_cpt(list.files(cpt_dir, pattern = "-101\\.csv$", full.names = TRUE)[1])
-# Manitoba CSDs only — SK & AB municipalities carry 2016 + 2021 census data only
-# (no pre-2016 municipal detail), so the 2011 CSD back-year is Manitoba-only.
-man <- parse_csd(list.files(csd_dir, pattern = "-301-MAN\\.csv$",  full.names = TRUE)[1])
-lookup2011 <- c(cpt, man)
-message(sprintf("[08] 2011 geographies parsed: %d (CPT %d, MAN %d)",
-                length(lookup2011), length(cpt), length(man)))
+# Manitoba + western municipalities (SK/AB/BC). Each province's CSDs are a
+# separate file in the comprehensive download; parse MB plus the three western
+# provinces so their municipalities gain the 2011 back-year — the target western
+# baseline (2006 stays Manitoba-only). Other provinces are not modelled.
+CSD_FILES <- c("-301-MAN\\.csv$", "-301-SASK\\.csv$", "-301-ALTA\\.csv$", "-301-BC\\.csv$")
+csd <- list()
+for (pat in CSD_FILES) {
+  f <- list.files(csd_dir, pattern = pat, full.names = TRUE)[1]
+  if (!is.na(f) && file.exists(f)) csd <- c(csd, parse_csd(f))
+}
+lookup2011 <- c(cpt, csd)
+message(sprintf("[08] 2011 geographies parsed: %d (CPT %d, CSD %d)",
+                length(lookup2011), length(cpt), length(csd)))
 
 # --- Merge onto the existing multi-year JSON ---------------------------------
 json_path <- file.path(WEB_DATA, "housing", "census_housing.json")
@@ -108,7 +115,10 @@ doc$areas <- lapply(doc$areas, function(a) {
   }
   a
 })
-doc$censusYears <- list("2021", "2016", "2011")
+# Additive — keep any year already present (e.g. 2006 from r/09) so this can be
+# re-run standalone without dropping the deeper Manitoba back-years.
+doc$censusYears <- as.list(sort(unique(c(unlist(doc$censusYears), "2021", "2016", "2011")),
+                                decreasing = TRUE))
 doc$periodLabels[["2011"]]    <- as.list(PERIOD_LABELS_2011)
 doc$conditionLabels[["2011"]] <- as.list(CONDITION_LABELS_2011)
 doc$source <- "Statistics Canada, Census of Population — 2021 (98-10-0233), 2016 (Census Profile) and 2011 (NHS Profile)"

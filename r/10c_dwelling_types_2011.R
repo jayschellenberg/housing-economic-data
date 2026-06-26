@@ -111,9 +111,10 @@ cpt <- parse_file(f101, skip = 1, geoCol = 1, charCol = 4, totalCol = 6,
 cma <- parse_file(f201, skip = 2, geoCol = 1, charCol = 6, totalCol = 8,
                   geo_ok = function(g) grepl("^[0-9]{3}$", g))
 f301 <- tryCatch(fetch_unzip("CSV301", "-301\\.csv$"), error = function(e) NULL)
-# Manitoba CSDs only — SK & AB municipalities carry 2016 + 2021 census data only
-# (no pre-2016 municipal detail), so the 2011 back-year is Manitoba-only.
-csd  <- if (!is.null(f301)) parse_csd_301(f301, function(g) grepl("^46[0-9]{5}$", g)) else list()
+# Manitoba + western municipalities (SK/AB/BC) — the national 301 file carries
+# every province's CSDs; keep MB plus the three western provinces so their
+# municipalities gain the 2011 back-year (target western baseline). Best-effort.
+csd  <- if (!is.null(f301)) parse_csd_301(f301, function(g) grepl("^(46|47|48|59)[0-9]{5}$", g)) else list()
 lookup <- c(cpt, cma, csd)
 message(sprintf("[10c] 2011 geographies parsed: %d (CPT %d, CMA %d, CSD %d)",
                 length(lookup), length(cpt), length(cma), length(csd)))
