@@ -15,7 +15,7 @@ Province SGC codes: **CA**=Canada, **46**=MB, **47**=SK, **48**=AB, 59=BC, 35=ON
 
 | Tab / source | Script(s) | National | Manitoba | Saskatchewan | Alberta | Other provinces | Cities / CMAs |
 |---|---|---|---|---|---|---|---|
-| **Rental Charts/Tables/Compare** (CMHC RMS) | r/00–03 | – | **full** (prov+CMA/CA + survey zones + neighbourhoods, full history) | **full** (Regina/Saskatoon zones+nbhds, 10‑yr) | **full** (Calgary/Edmonton zones+nbhds, 10‑yr) | **basic** (prov + CMA/CA, last 10 yr) | via CMHC survey zones/neighbourhoods |
+| **Rental Charts/Tables/Compare** (CMHC RMS) | r/00–03 | – | **full** (prov+CMA/CA + survey zones + neighbourhoods, full history) | **full** (Regina/Saskatoon zones+nbhds, 15‑yr) | **full** (Calgary/Edmonton zones+nbhds, 15‑yr) | **basic** (prov + CMA/CA, last 15 yr) | via CMHC survey zones/neighbourhoods |
 | **Housing Starts** (CMHC SCSS) | r/05 | – | full | full | full | basic | same CMHC geos |
 | **Secondary Rental** (CMHC Srms) | r/06 | – | Winnipeg | Regina, Saskatoon | Calgary, Edmonton | – | hardcoded centre list |
 | **Housing Stock / Dwelling Type** (Census) | r/07–10d | Canada + 13 provinces | **all ~213 CSDs, 2006–2021** | CSDs **2016+2021 only** | CSDs **2016+2021 only** | province + (national bulk) CMA back‑years | – |

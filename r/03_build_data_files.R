@@ -67,12 +67,12 @@ all_records <- bind_rows(unify(hist), unify(zone), unify(nbhd), unify(csd))
 
 # --- Non-Manitoba year floor -------------------------------------------------
 # Manitoba keeps full history; every other province is limited to a rolling
-# 10-year window to keep the dataset compact (user decision, 2026-06). The floor
-# is computed from the current year so it advances automatically each refresh.
-# Resolve each record's province from its geo UID / parent CMA (CMAS comes from
-# cmhc_helpers) and drop pre-floor rows for non-MB geos.
+# 15-year window to keep the dataset compact (user decision: 10→15 yr, 2026-06,
+# for western parity). The floor is computed from the current year so it advances
+# automatically each refresh. Resolve each record's province from its geo UID /
+# parent CMA (CMAS comes from cmhc_helpers) and drop pre-floor rows for non-MB geos.
 FULL_HISTORY_PROV <- c("46")   # Manitoba province UID
-NONMB_MIN_YEAR    <- as.integer(format(Sys.Date(), "%Y")) - 10L   # rolling 10-yr
+NONMB_MIN_YEAR    <- as.integer(format(Sys.Date(), "%Y")) - 15L   # rolling 15-yr
 resolve_prov <- function(geoUid, geoLevel, parentUid) {
   gu <- as.character(geoUid); pu <- as.character(parentUid); lv <- as.character(geoLevel)
   prov <- rep(NA_character_, length(gu))
