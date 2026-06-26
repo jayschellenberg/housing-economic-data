@@ -87,20 +87,26 @@ export async function initAffordability() {
     if (level === 'CD')  n = n.replace(/\s*\(CDR\)$/, '');
     return n;
   };
+  const provOfUid = (uid) => /^WPG/.test(String(uid)) ? '46' : String(uid).slice(0, 2);
   const areas = [];
-  for (const r of profile.regions) {                // Manitoba — census income + median rent; CMHC avg rent for centres
-    // census_profile.json now also carries SK (47…) + AB (48…) for the Census
-    // Profile tab. The Affordability tab's census areas are Manitoba only
-    // (uid 46…, or Winnipeg virtual geos WPG_*); Saskatchewan is added from
-    // affordability_extra (extra.sk) below, and other provinces aren't covered
-    // yet — so skip non-MB regions here to keep the province scoping correct.
-    if (!/^(46|WPG)/.test(String(r.uid))) continue;
+  for (const r of profile.regions) {                // census income + median rent (CMHC avg rent for MB centres)
+    // census_profile.json carries Manitoba in full plus SK/AB/BC at PR/CMA/CD
+    // and municipality (CSD) level. The province/CMA rows for SK/AB/BC come from
+    // affordability_extra below (they carry CMHC current rent), so from the
+    // census file we take Manitoba (all levels + Winnipeg virtual geos) and only
+    // the SK/AB/BC municipalities — the rows extra doesn't cover — to avoid
+    // duplicating the province/CMA totals.
+    const uid = String(r.uid);
+    const isMB = /^(46|WPG)/.test(uid);
+    const isWesternCsd = r.level === 'CSD' && /^(47|48|59)/.test(uid);
+    if (!isMB && !isWesternCsd) continue;
     const d = newestDemo(r);
     if (!d) continue;
-    const cmhc = mbCmhc.get(String(r.uid));
+    const prov = provOfUid(uid);
+    const cmhc = mbCmhc.get(uid);                   // MB centres only; null for municipalities/other provinces
     areas.push({
-      uid: String(r.uid), name: cleanName(r.name, r.level), level: r.level, prov: '46',
-      group: groupOf('46', r.level), year: d.year, income: d.median_hh_income,
+      uid, name: cleanName(r.name, r.level), level: r.level, prov,
+      group: groupOf(prov, r.level), year: d.year, income: d.median_hh_income,
       medianRent: d.median_rent, avgRent: cmhc?.avgRent ?? null, avgRentYear: cmhc?.rentYear ?? null,
     });
   }
@@ -152,15 +158,29 @@ export async function initAffordability() {
   // --- State ------------------------------------------------------------------
   const state = { uid: '', tenure: 'both', rate: DEFAULT_RATE };
 
-  // Area dropdown, grouped by level.
-  const opt = (a) => `<option value="${escapeHtml(a.uid)}">${escapeHtml(a.name)}</option>`;
-  const grouped = GROUP_ORDER.map(g => {
-    const arr = areas.filter(a => a.group === g).sort((x, y) => x.name.localeCompare(y.name));
-    return arr.length ? `<optgroup label="${escapeHtml(g)}">${arr.map(opt).join('')}</optgroup>` : '';
-  }).join('');
-  $area.innerHTML = grouped;
-  state.uid = byUid.has('46602') ? '46602' : (areas[0]?.uid || '');   // default Winnipeg CMA
-  $area.value = state.uid;
+  // Province + area cascade. The province <select> scopes the area list to one
+  // province (Manitoba additionally carries the Winnipeg virtual geos), so the
+  // ~970 SK/AB/BC municipalities don't swamp one flat dropdown.
+  const $prov = document.getElementById('aff-prov');
+  const provsPresent = ['46', '47', '48', '59'].filter(p => areas.some(a => a.prov === p));
+  const fillProv = (prov) => {
+    if ($prov) $prov.innerHTML = provsPresent
+      .map(p => `<option value="${p}">${escapeHtml(PROV_LABEL[p] || p)}</option>`).join('');
+    if ($prov) $prov.value = prov;
+  };
+  const fillArea = (prov, defaultUid) => {
+    const opt = (a) => `<option value="${escapeHtml(a.uid)}">${escapeHtml(a.name)}</option>`;
+    $area.innerHTML = GROUP_ORDER
+      .filter(g => areas.some(a => a.prov === prov && a.group === g))
+      .map(g => {
+        const arr = areas.filter(a => a.prov === prov && a.group === g).sort((x, y) => x.name.localeCompare(y.name));
+        return `<optgroup label="${escapeHtml(g)}">${arr.map(opt).join('')}</optgroup>`;
+      }).join('');
+    if (defaultUid && areas.some(a => a.uid === defaultUid && a.prov === prov)) $area.value = defaultUid;
+    state.uid = $area.value;
+  };
+  fillProv('46');
+  fillArea('46', byUid.has('46602') ? '46602' : (areas.find(a => a.prov === '46')?.uid || areas[0]?.uid || ''));  // default Winnipeg CMA
   if ($rate) $rate.value = state.rate;
 
   // --- Per-area affordability computation -------------------------------------
@@ -276,11 +296,12 @@ export async function initAffordability() {
       <section class="cmhc-table-block">
         <div class="cmhc-table-title">Affordability Factor — ${escapeHtml(PROV_LABEL[sel?.prov] || '')} (ranked, most affordable first)</div>
         <table class="cmhc-table"><thead><tr>${head.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table>
-        <p class="text-xs text-neutral-500 mt-2">Income: 2021 Census (2020 income). <strong>Median rent</strong> = 2021 Census median shelter cost (MB only). <strong>Avg rent (CMHC)</strong> = current CMHC average rent, all bedroom types (centres only). The <strong>rental factor uses CMHC average rent where available</strong> (all centres, MB &amp; SK — comparable) and the census median otherwise. Mortgage: ${DOWN_PCT}% down, ${AMORT_YEARS}-yr amortization at ${state.rate.toFixed(2)}%${priceAsOf ? `; price as of ${escapeHtml(String(priceAsOf).slice(0, 7))}` : ''}. Purchase factor shows only where a home-price benchmark exists (Winnipeg). SK is province + major centres only.</p>
+        <p class="text-xs text-neutral-500 mt-2">Income: 2021 Census (2020 income). <strong>Median rent</strong> = 2021 Census median shelter cost (Manitoba + SK/AB/BC municipalities, where reported). <strong>Avg rent (CMHC)</strong> = current CMHC average rent, all bedroom types (centres only). The <strong>rental factor uses CMHC average rent where available</strong> (province + major centres — comparable) and the census median otherwise. Mortgage: ${DOWN_PCT}% down, ${AMORT_YEARS}-yr amortization at ${state.rate.toFixed(2)}%${priceAsOf ? `; price as of ${escapeHtml(String(priceAsOf).slice(0, 7))}` : ''}. Purchase factor shows only where a home-price benchmark exists (Winnipeg, Calgary, Edmonton, Saskatoon, Regina, Vancouver, Victoria). SK/AB/BC outside those centres are census income + median rent.</p>
       </section>`;
   }
 
   // --- Events -----------------------------------------------------------------
+  $prov?.addEventListener('change', () => { fillArea($prov.value); render(); });   // repopulate scoped area list
   $area.addEventListener('change', () => { state.uid = $area.value; render(); });
   $tenure.forEach(n => n.addEventListener('change', () => { if (n.checked) { state.tenure = n.value; render(); } }));
   $rate?.addEventListener('change', () => {

@@ -27,6 +27,12 @@ const LEVEL_GROUPS = [
   { tag: 'WPG_Nbhd',    label: 'Winnipeg — Neighbourhoods' },
 ];
 
+// Province scoping for the area cascade. Winnipeg virtual geos (WPG_*) belong to
+// Manitoba; every other region's province is the first two digits of its uid.
+const PROV_LABEL = { '46': 'Manitoba', '47': 'Saskatchewan', '48': 'Alberta', '59': 'British Columbia' };
+const PROV_ORDER = ['46', '47', '48', '59'];
+const provOf = (r) => String(r.uid).startsWith('WPG') ? '46' : String(r.uid).slice(0, 2);
+
 // Trends table layout (mirrors MBCensusData display_trends). `key` reads from a
 // year's trend object; `popchg` is computed; `header` is a section divider.
 const TREND_ROWS = [
@@ -131,6 +137,7 @@ function demoFor(region, period) {
 
 export async function initCensus() {
   const $area    = [1, 2, 3].map(i => document.getElementById(`census-area${i}`));
+  const $prov    = [1, 2, 3].map(i => document.getElementById(`census-prov${i}`));
   const $period  = document.getElementById('census-period');
   const $headline = document.getElementById('census-headline');
   const $charts   = document.getElementById('census-chart-grid');
@@ -159,30 +166,39 @@ export async function initCensus() {
   const years  = (data.censusYears || []).map(String);
   const byUid  = new Map(data.regions.map(r => [r.uid, r]));
 
-  // Build a grouped <select> over all regions.
-  const fillSelect = (sel, defaultUid) => {
+  // Province + area cascade for each of the three pickers. The area <select> is
+  // grouped by level (optgroups) but scoped to the chosen province, so the
+  // ~1,400 SK/AB/BC municipalities only appear under their own province rather
+  // than swamping one flat list. Manitoba additionally carries the Winnipeg
+  // virtual geographies.
+  const provsPresent = PROV_ORDER.filter(p => data.regions.some(r => provOf(r) === p));
+  const fillProv = (sel, prov) => {
+    sel.innerHTML = provsPresent
+      .map(p => `<option value="${p}">${escapeHtml(PROV_LABEL[p] || p)}</option>`).join('');
+    sel.value = prov;
+  };
+  const fillArea = (sel, prov, defaultUid) => {
     const opt = (r) => `<option value="${escapeHtml(r.uid)}">${escapeHtml(r.name)}</option>`;
     sel.innerHTML = LEVEL_GROUPS.map(g => {
-      const arr = data.regions.filter(r => r.level === g.tag)
+      const arr = data.regions.filter(r => r.level === g.tag && provOf(r) === prov)
         .sort((a, b) => a.name.localeCompare(b.name));
       return arr.length ? `<optgroup label="${escapeHtml(g.label)}">${arr.map(opt).join('')}</optgroup>` : '';
     }).join('');
-    if (defaultUid && byUid.has(defaultUid)) sel.value = defaultUid;
+    if (defaultUid && data.regions.some(r => r.uid === defaultUid && provOf(r) === prov)) sel.value = defaultUid;
   };
 
   // Defaults mirror the old subject / comparison / Manitoba layout while leaving
   // all three pickers free: Area 1 = first Winnipeg cluster if the rebuilt data
-  // has them, else RM of Springfield (the sample report) / first CSD; Area 2 =
-  // Winnipeg CMA; Area 3 = Manitoba (PR).
-  const manitoba    = data.regions.find(r => r.level === 'PR');
+  // has them, else RM of Springfield (the sample report) / first MB CSD; Area 2 =
+  // Winnipeg CMA; Area 3 = Manitoba (PR). All three start scoped to Manitoba.
+  const manitoba    = data.regions.find(r => r.level === 'PR' && r.uid === '46');
   const wpgCma      = data.regions.find(r => r.level === 'CMA' && /^winnipeg/i.test(r.name));
-  const firstCsd    = data.regions.find(r => r.level === 'CSD');
+  const firstCsd    = data.regions.find(r => r.level === 'CSD' && provOf(r) === '46');
   const firstClust  = data.regions.filter(r => r.level === 'WPG_Cluster')
     .sort((a, b) => a.name.localeCompare(b.name))[0];
   const area1Def = firstClust?.uid || (byUid.has('4612047') ? '4612047' : firstCsd?.uid);
-  fillSelect($area[0], area1Def);
-  fillSelect($area[1], wpgCma?.uid);
-  fillSelect($area[2], manitoba?.uid);
+  const areaDefs = [area1Def, wpgCma?.uid, manitoba?.uid];
+  $prov.forEach((psel, i) => { fillProv(psel, '46'); fillArea($area[i], '46', areaDefs[i]); });
   if ($period && !DEMO_PERIODS.includes($period.value)) $period.value = '2021';
 
   // Ensure the two table containers exist before the first render.
@@ -237,12 +253,15 @@ export async function initCensus() {
   // ---- Trends tables (one per area, all stacked) --------------------------
   function renderTrends(cols) {
     const models = [];
-    const html = cols.map(subject => {
+    // Skip areas with no multi-census trend data (SK/AB/BC municipalities carry
+    // demographics only) so they don't render an all-blank Trends table.
+    const html = cols.filter(c => Object.keys(c.trends || {}).length).map(subject => {
       const { tableHtml, model } = trendTableFor(subject);
       models.push(model);
       return tableHtml;
     }).join('');
-    $tables.querySelector('#census-trends').innerHTML = html;
+    $tables.querySelector('#census-trends').innerHTML = html ||
+      '<p class="text-sm text-neutral-600">No multi-census population &amp; dwelling trends for the selected area(s). Municipalities (CSDs) outside Manitoba currently carry demographics only — pick a province, CMA/CA or census division for trend history.</p>';
     return models;
   }
 
@@ -376,12 +395,16 @@ export async function initCensus() {
       const yrs = [...new Set(popRows.map(d => d.year))].sort((a, b) => a - b);
       const loY = Math.min(...yrs), hiY = Math.max(...yrs);
       const maxV = Math.max(...popRows.map(d => d.value));
-      const single = regionNames.length === 1;
+      // Only legend the areas that actually have a trend line (SK/AB/BC
+      // municipalities have no trends), but keep each area's colour aligned with
+      // the demographic charts by indexing PALETTE off the full area order.
+      const popRegions = regionNames.filter(n => popRows.some(d => d.region === n));
+      const popRange = popRegions.map(n => PALETTE[regionNames.indexOf(n) % PALETTE.length]);
       const svg = Plot.plot(themed({
         height: 250,
         x: { domain: [loY - 0.5, hiY + 0.5], ticks: yrs, tickFormat: 'd' },
         y: { label: 'Population', tickFormat: v => Number(v).toLocaleString(), domain: [0, maxV * 1.12] },
-        color: { domain: regionNames, range: PALETTE, legend: !single },
+        color: { domain: popRegions, range: popRange, legend: popRegions.length > 1 },
         marks: [
           ...gridMarks(),
           Plot.lineY(popRows, { x: 'year', y: 'value', stroke: 'region', strokeWidth: 1.8 }),
@@ -472,6 +495,11 @@ export async function initCensus() {
     $charts.appendChild(card);
   }
 
+  // Changing a picker's province repopulates its area list (first item selected).
+  $prov.forEach((psel, i) => psel.addEventListener('change', () => {
+    fillArea($area[i], psel.value);
+    render();
+  }));
   $area.forEach(sel => sel.addEventListener('change', render));
   $period?.addEventListener('change', render);
   render();
