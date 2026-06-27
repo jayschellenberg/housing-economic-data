@@ -133,30 +133,38 @@ history <- lapply(sort(as.integer(names(hist)), decreasing = TRUE),
                   function(y) list(year = y, pct = hist[[as.character(y)]],
                                    eaf = eaf_map[[as.character(y)]] %||% NA))
 
-# --- 3. Manitoba All-items CPI annual % change (best-effort) ------------------
-# v41691233 = StatsCan table 18-10-0004, Manitoba, All-items (not seasonally
-# adjusted, 2002=100). Annual averages -> YoY %. Dropped silently on any failure.
+# --- 3. CPI change UNDERLYING each guideline (best-effort) --------------------
+# The guideline for year N is set from the change in the average All-items CPI
+# (Manitoba, NSA) over the 12 months ending June 30 of year N-1 vs the preceding
+# 12 months (per the RTB "calculate" page), then rounded and capped to the Bank
+# of Canada 1-3% band. So we key CPI by GUIDELINE year (not calendar year) using
+# exactly that window — aligned to the guideline it produced, reproducing it where
+# the cap/freezes don't override. **v41692055 = MB All-items** (table 18-10-0004);
+# the earlier v41691233 was the WRONG series (Canada, all-items ex food+energy).
 cpi <- tryCatch({
   if (!requireNamespace("cansim", quietly = TRUE)) install.packages("cansim", repos = "https://cloud.r-project.org")
-  v <- cansim::get_cansim_vector(41691233)
-  d <- as.data.frame(v)
-  val <- suppressWarnings(as.numeric(d$val_norm %||% d$VALUE))
-  yr  <- as.integer(substr(as.character(d$REF_DATE), 1, 4))
-  ok  <- is.finite(val) & !is.na(yr)
-  ann <- tapply(val[ok], yr[ok], mean, na.rm = TRUE)            # annual average index
-  cnt <- tapply(val[ok], yr[ok], length)                       # months present per year
-  if (length(ann) < 2 || max(ann) < 80 || max(ann) > 400) stop("CPI vector failed sanity check")
-  yrs <- as.integer(names(ann))
-  complete <- (cnt[as.character(yrs)] >= 12)                   # exclude partial years (the current one)
-  out <- list()
-  for (i in 2:length(ann)) {
-    if (!isTRUE(unname(complete[i])) || !isTRUE(unname(complete[i - 1])) || yrs[i] != yrs[i - 1] + 1) next
-    out[[length(out) + 1]] <- list(year = yrs[i], changePct = round((ann[i] / ann[i - 1] - 1) * 100, 1))
+  d <- as.data.frame(cansim::get_cansim_vector(41692055))
+  val <- suppressWarnings(as.numeric(d$val_norm)); if (all(is.na(val))) val <- suppressWarnings(as.numeric(d$VALUE))
+  ym  <- as.character(d$REF_DATE)
+  key <- as.integer(substr(ym, 1, 4)) * 100 + as.integer(substr(ym, 6, 7))   # YYYYMM
+  if (sum(is.finite(val)) < 24 || max(val, na.rm = TRUE) < 80 || max(val, na.rm = TRUE) > 400)
+    stop("CPI vector failed sanity check")
+  cpival <- function(y, m) { i <- which(key == y * 100 + m); if (length(i)) val[i[1]] else NA_real_ }
+  jul_jun <- function(endYear) {     # mean of the 12 monthly CPI ending June 30, endYear
+    ms <- c(vapply(7:12, function(m) cpival(endYear - 1, m), numeric(1)),
+            vapply(1:6,  function(m) cpival(endYear,     m), numeric(1)))
+    if (any(is.na(ms))) NA_real_ else mean(ms)
   }
-  message(sprintf("[19] MB All-items CPI: %d annual changes (%d..%d), latest %.1f%%",
-                  length(out), yrs[2], yrs[length(yrs)], out[[length(out)]]$changePct))
-  rev(out)   # newest-first to match history
-}, error = function(e) { message("[19] CPI overlay unavailable: ", conditionMessage(e)); list() })
+  out <- list()
+  for (N in sort(as.integer(names(HISTORY_SEED)), decreasing = TRUE)) {
+    A <- jul_jun(N - 1); B <- jul_jun(N - 2)          # guideline N uses the window ending Jun N-1
+    if (is.na(A) || is.na(B)) next
+    out[[length(out) + 1]] <- list(year = N, changePct = round((A / B - 1) * 100, 1))
+  }
+  message(sprintf("[19] MB All-items CPI basis: %d guideline-years computed (latest %s = %.1f%%)",
+                  length(out), out[[1]]$year, out[[1]]$changePct))
+  out
+}, error = function(e) { message("[19] CPI basis unavailable: ", conditionMessage(e)); list() })
 
 # --- 4. New-guideline alert flag ---------------------------------------------
 if (file.exists(FLAG_PATH)) file.remove(FLAG_PATH)
