@@ -635,6 +635,44 @@ function wireSidebar(catalog, manifest) {
     state.geosEnabled = readGeos();
     schedule();
   }));
+
+  // Snapshot-tab geography picker — a Province (BC/AB/SK/MB) + an Urban centre
+  // (the province's CMAs), driving the same shared geosEnabled and kept in sync
+  // with the Market Indicators multi-selects so the two controls never diverge.
+  const PROV_CMAS = {
+    MB: [['Winnipeg-CMA', 'Winnipeg']],
+    SK: [['Regina-CMA', 'Regina'], ['Saskatoon-CMA', 'Saskatoon']],
+    AB: [['Calgary-CMA', 'Calgary'], ['Edmonton-CMA', 'Edmonton']],
+    BC: [['Vancouver-CMA', 'Vancouver'], ['Victoria-CMA', 'Victoria']],
+  };
+  const $snapProv = document.getElementById('snap-geo-prov');
+  const $snapCma  = document.getElementById('snap-geo-cma');
+  if ($snapProv && $snapCma) {
+    const fillCma = (prov, want) => {
+      const cmas = PROV_CMAS[prov] || [];
+      $snapCma.innerHTML = '<option value="">(province only)</option>' +
+        cmas.map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
+      if (want && cmas.some(([v]) => v === want)) $snapCma.value = want;
+    };
+    const syncMi = (geos) => ['mi-geo-prov', 'mi-geo-cma'].forEach(id => {
+      const sel = document.getElementById(id);
+      if (sel) for (const o of sel.options) o.selected = geos.has(o.value);
+    });
+    const apply = () => {
+      // Province + (optional) one urban centre. Province always included so its
+      // tiles show alongside the city's; "Canada"/national tiles render regardless.
+      state.geosEnabled = new Set([$snapProv.value, $snapCma.value].filter(Boolean));
+      syncMi(state.geosEnabled);
+      schedule();
+    };
+    // Seed the picker from whatever geo state is already active.
+    const curProv = [...state.geosEnabled].find(g => PROV_CMAS[g]) || 'MB';
+    const curCma  = [...state.geosEnabled].find(g => /-CMA$/.test(g)) || '';
+    $snapProv.value = PROV_CMAS[curProv] ? curProv : 'MB';
+    fillCma($snapProv.value, curCma);
+    $snapProv.addEventListener('change', () => { fillCma($snapProv.value); apply(); });
+    $snapCma.addEventListener('change', apply);
+  }
 }
 
 function applySectionVisibility() {
