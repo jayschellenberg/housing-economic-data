@@ -540,22 +540,39 @@
          tab already loads; just rendered into its own panel.
          ============================================================ -->
     <div id="tab-panel-snapshot" class="p-4 space-y-4" role="tabpanel" aria-labelledby="tab-btn-snapshot" hidden>
-      <div class="flex gap-2 justify-end">
-        <button id="snap-download-docx" type="button"
-          class="text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
-          Download Word (snapshot)
-        </button>
-        <button id="snap-download-xlsx" type="button"
-          class="text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
-          Download Excel (snapshot)
-        </button>
+      <div class="flex flex-wrap gap-3 items-end justify-between">
+        <div class="flex flex-wrap gap-3 items-end">
+          <div>
+            <label class="block text-xs text-neutral-600 mb-1" for="snap-geo-prov">Province</label>
+            <select id="snap-geo-prov" class="border border-neutral-300 rounded px-2 py-1 text-sm">
+              <option value="MB">Manitoba</option>
+              <option value="SK">Saskatchewan</option>
+              <option value="AB">Alberta</option>
+              <option value="BC">British Columbia</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-neutral-600 mb-1" for="snap-geo-cma">Urban centre</label>
+            <select id="snap-geo-cma" class="border border-neutral-300 rounded px-2 py-1 text-sm"></select>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button id="snap-download-docx" type="button"
+            class="text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+            Download Word (snapshot)
+          </button>
+          <button id="snap-download-xlsx" type="button"
+            class="text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+            Download Excel (snapshot)
+          </button>
+        </div>
       </div>
       <section class="cmhc-snapshot-wrap">
         <h2 class="cmhc-snapshot-title">Current Snapshot</h2>
         <p class="text-xs text-neutral-500 mb-3">Latest reading per indicator with 90-day / 12-month / 24-month change chips. Tap an indicator name in the Market Indicators tab for the underlying chart.</p>
         <div id="mi-snapshot" class="cmhc-snapshot-sections"></div>
         <p class="text-xs text-neutral-500 mt-4">
-          Green chips = favourable direction for the indicator; red = unfavourable; grey = unchanged. Direction semantics follow the catalog's <code>goodDirection</code> per chart. National-only indicators (mortgage rates, bond yields, SLOS) always show; multi-geo indicators respect the Geography filter on the Market Indicators tab.
+          Green chips = favourable direction for the indicator; red = unfavourable; grey = unchanged. Direction semantics follow the catalog's <code>goodDirection</code> per chart. National-only indicators (mortgage rates, bond yields, SLOS) always show; provincial &amp; urban-centre indicators follow the Province / Urban centre selection above (kept in sync with the Market Indicators tab).
         </p>
       </section>
     </div>
