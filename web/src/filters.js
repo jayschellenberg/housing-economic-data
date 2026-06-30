@@ -7,6 +7,8 @@
  * breakdown radios the active series doesn't support.
  */
 
+import { escapeHtml } from './escape.js';
+
 const LEVEL_LABEL = {
   province:      'Entire province',
   cma:           'CMA / CA',
@@ -234,10 +236,4 @@ export function initFilters({ geographies, capabilities, categoryOrder = {}, ini
 
   applyToInputs();
   return { getState: () => ({ ...state }), refresh: applyToInputs };
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-  }[c]));
 }

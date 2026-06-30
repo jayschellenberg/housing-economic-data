@@ -15,6 +15,7 @@
 import * as Plot from '@observablehq/plot';
 import { toPng } from 'html-to-image';
 import { themed, fmt, PALETTE, gridMarks, frameMark } from './plot-theme.js';
+import { escapeHtml } from './escape.js';
 
 const COUNT_FMT = (v) => Number(v).toLocaleString();
 
@@ -59,7 +60,7 @@ export function buildChartCard(container, { series }) {
   const card = document.createElement('section');
   card.className = 'chart-card';
   card.innerHTML = `
-    <header class="chart-title">${series}</header>
+    <header class="chart-title">${escapeHtml(series)}</header>
     <p class="chart-sub" data-role="sub"></p>
     <div data-role="plot"></div>
     <div data-role="empty" class="text-xs text-neutral-500 mt-2" hidden>No data for this filter combination.</div>
@@ -239,7 +240,7 @@ export function buildBarCard(container, { title }) {
   const card = document.createElement('section');
   card.className = 'chart-card';
   card.innerHTML = `
-    <header class="chart-title">${title}</header>
+    <header class="chart-title">${escapeHtml(title)}</header>
     <p class="chart-sub" data-role="sub"></p>
     <div data-role="plot"></div>
     <div data-role="empty" class="text-xs text-neutral-500 mt-2" hidden>No data for this combination.</div>

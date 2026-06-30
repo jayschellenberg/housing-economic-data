@@ -14,6 +14,7 @@
  */
 
 import { buildChartCard } from './chart.js';
+import { escapeHtml as esc } from './escape.js';
 
 const METRICS = ['Median Rent', 'Average Rent', 'Vacancy Rate', 'Average Rent Change'];
 const AREA_LEVELS = ['province', 'cma', 'csd', 'zone', 'neighbourhood'];
@@ -230,10 +231,4 @@ function copyHtml(html) {
       'text/plain': new Blob([text], { type: 'text/plain' }),
     })]);
   } catch { navigator.clipboard?.writeText(text); }
-}
-
-function esc(s) {
-  return String(s ?? '').replace(/[&<>"']/g, c => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-  }[c]));
 }

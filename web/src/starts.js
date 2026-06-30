@@ -15,6 +15,7 @@
  */
 
 import { buildChartCard } from './chart.js';
+import { escapeHtml } from './escape.js';
 
 const SERIES = ['Starts', 'Completions', 'Under Construction',
                 'Absorbed Units', 'Unabsorbed Inventory'];
@@ -362,12 +363,6 @@ export async function initStarts({ manifest }) {
   if (state.geoUid) $name.value = state.geoUid;   // reflect the Manitoba default in the dropdown
   renderCategoryToggles();
   render();
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-  }[c]));
 }
 
 // --- Summary stats (used by the chart caption + table summary rows) ---------

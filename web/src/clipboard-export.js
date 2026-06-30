@@ -9,6 +9,8 @@
  * into Excel or a plain-text editor still produces usable rows.
  */
 
+import { escapeHtml } from './escape.js';
+
 const ACCENT = '#8B0000';
 const FONT = 'Calibri, sans-serif';
 
@@ -106,10 +108,4 @@ export async function copyTablesToClipboard(built, opts) {
   tmp.remove();
   sel.removeAllRanges();
   return status;
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-  }[c]));
 }

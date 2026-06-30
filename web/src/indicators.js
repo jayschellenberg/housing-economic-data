@@ -16,6 +16,7 @@
  */
 
 import { buildIndicatorCard } from './indicator-chart.js';
+import { escapeHtml } from './escape.js';
 
 const PROVIDER_LABEL = {
   boc:      'Bank of Canada Valet',
@@ -177,7 +178,7 @@ function buildTimeAdjustmentTool(catalog, shards) {
                                     min="${minDate}" max="${todayIso}" value="${todayIso.slice(0, 7)}-01" /></label>
         <label>Index
           <select id="ta-index">
-            ${choices.map(c => `<option value="${c.id}">${c.title}${c.base ? ` (${c.base})` : ''}</option>`).join('')}
+            ${choices.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.title)}${c.base ? ` (${escapeHtml(c.base)})` : ''}</option>`).join('')}
           </select>
         </label>
         <label>Sale price <span class="cmhc-time-adjust-optional">(optional)</span>
@@ -238,8 +239,8 @@ function buildTimeAdjustmentTool(catalog, shards) {
       <p><strong>Multiplier:</strong> ${mult.toFixed(4)} <span class="cmhc-time-adjust-pct">(${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%)</span></p>
       ${priceLine}
       <p class="cmhc-time-adjust-detail">
-        ${meta.title} (${meta.geo}) — sale-date index <strong>${saleHit.value.toFixed(1)}</strong> (${saleHit.date}),
-        effective-date index <strong>${effHit.value.toFixed(1)}</strong> (${effHit.date}).
+        ${escapeHtml(meta.title)} (${escapeHtml(meta.geo)}) — sale-date index <strong>${saleHit.value.toFixed(1)}</strong> (${escapeHtml(saleHit.date)}),
+        effective-date index <strong>${effHit.value.toFixed(1)}</strong> (${escapeHtml(effHit.date)}).
       </p>
     `;
   }
@@ -346,7 +347,7 @@ function renderSnapshotTile(c, meta, shard, $bar) {
   const tile = document.createElement('div');
   tile.className = 'cmhc-kpi';
   tile.innerHTML = `
-    <div class="cmhc-kpi-label">${c.title}</div>
+    <div class="cmhc-kpi-label">${escapeHtml(c.title)}</div>
     <div class="cmhc-kpi-value"></div>
     <div class="cmhc-kpi-meta"></div>
     <div class="cmhc-kpi-deltas"></div>
@@ -458,7 +459,7 @@ function buildChartSections(catalog, shards) {
     section.className = 'cmhc-mi-section';
     section.dataset.group = g.id;
     section.id = `mi-section-${g.id}`;
-    section.innerHTML = `<h2 class="cmhc-mi-section-title">${g.title}</h2><div class="cmhc-mi-section-grid grid md:grid-cols-2 gap-4"></div>`;
+    section.innerHTML = `<h2 class="cmhc-mi-section-title">${escapeHtml(g.title)}</h2><div class="cmhc-mi-section-grid grid md:grid-cols-2 gap-4"></div>`;
     const $sectionGrid = section.querySelector('.cmhc-mi-section-grid');
 
     // Iterate chartIds that belong to this group, ordered by chart.order.
@@ -559,7 +560,7 @@ function wireSidebar(catalog, manifest) {
         const lbl = document.createElement('label');
         lbl.className = 'flex items-center gap-1';
         lbl.innerHTML =
-          `<input type="checkbox" data-section="${id}" checked /> ${g.title}`;
+          `<input type="checkbox" data-section="${escapeHtml(id)}" checked /> ${escapeHtml(g.title)}`;
         $sectionsBox.appendChild(lbl);
       });
     $sectionsBox.querySelectorAll('input[type=checkbox]').forEach(cb => {
@@ -589,7 +590,7 @@ function wireSidebar(catalog, manifest) {
       .forEach(([id, g]) => {
         const li = document.createElement('li');
         li.innerHTML =
-          `<a href="#mi-section-${id}" data-jump="${id}" class="cmhc-mi-jump-link">${g.title}</a>`;
+          `<a href="#mi-section-${encodeURIComponent(id)}" data-jump="${escapeHtml(id)}" class="cmhc-mi-jump-link">${escapeHtml(g.title)}</a>`;
         $jumpList.appendChild(li);
       });
 

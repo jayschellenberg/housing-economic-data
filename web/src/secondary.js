@@ -12,6 +12,7 @@
  */
 
 import { buildChartCard } from './chart.js';
+import { escapeHtml } from './escape.js';
 
 // Series we show, grouped by which dimension CMHC publishes them under.
 // Two of them — Condo Vacancy Rate and Condo Average Rent — are commonly
@@ -310,10 +311,4 @@ function orderedCategories(dim, presentSet) {
   const canonical = CATEGORY_ORDER[dim] || [];
   return canonical.filter(c => presentSet.has(c))
     .concat([...presentSet].filter(c => !canonical.includes(c)));
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-  }[c]));
 }

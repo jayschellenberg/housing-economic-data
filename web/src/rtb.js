@@ -13,6 +13,7 @@
 import * as Plot from '@observablehq/plot';
 import { themed, gridMarks, frameMark, PALETTE } from './plot-theme.js';
 import { downloadCard } from './chart.js';
+import { escapeHtml } from './escape.js';
 
 const miss = (v) => v == null || !Number.isFinite(Number(v));
 const fPct = (v) => miss(v) ? '**' : `${Number(v).toFixed(1)}%`;
@@ -151,35 +152,42 @@ export async function initRtb() {
 
 function renderChart($chart, data, cpiByYear) {
   if (!$chart) return;
-  const hist = (data.history || []).slice().sort((a, b) => a.year - b.year);
-  if (!hist.length) { $chart.replaceChildren(); return; }
+  const all = (data.history || []).slice().sort((a, b) => a.year - b.year);
+  if (!all.length) { $chart.replaceChildren(); return; }
+  // Chart shows the most recent 15 years only (the table below keeps the full
+  // 1982–present record).
+  const maxYear = all[all.length - 1].year;
+  const hist = all.filter(h => h.year >= maxYear - 14);
   const rows = [];
   for (const h of hist) {
     rows.push({ year: h.year, series: 'Rent guideline', value: h.pct });
     const cpi = cpiByYear.get(h.year);
     if (cpi != null) rows.push({ year: h.year, series: 'MB CPI (guideline basis)', value: cpi });
+    // EAF is a separate figure, first published for 2024 — it only appears at
+    // the right edge of the window.
+    if (h.eaf != null) rows.push({ year: h.year, series: 'Economic adjustment factor', value: h.eaf });
   }
-  const series = ['Rent guideline', 'MB CPI (guideline basis)'];
+  const series = ['Rent guideline', 'MB CPI (guideline basis)', 'Economic adjustment factor'];
   const loY = hist[0].year, hiY = hist[hist.length - 1].year;
   const maxV = Math.max(...rows.map(d => d.value), 5);
   const minV = Math.min(0, ...rows.map(d => d.value));
   const svg = Plot.plot(themed({
-    width: 520, height: 280, marginBottom: 34, marginLeft: 40,   // ~Housing-Starts card size; Plot adds max-width:100% so it still shrinks on narrow screens
+    height: 280, marginBottom: 34, marginLeft: 40,   // no fixed width → Plot's ~640px default with max-width:100%, matching the Rental Charts page cards
     x: { label: null, tickFormat: 'd' },
     y: { label: '% change', tickFormat: v => `${v}%`, domain: [minV, maxV * 1.1], grid: true },
-    color: { domain: series, range: [PALETTE[0], '#dc2626'], legend: true },
+    color: { domain: series, range: [PALETTE[0], '#dc2626', '#16a34a'], legend: true },
     marks: [
       ...gridMarks(),
       Plot.ruleY([0], { stroke: '#9ca3af' }),
       Plot.lineY(rows, { x: 'year', y: 'value', stroke: 'series', strokeWidth: 1.8 }),
-      Plot.dot(rows.filter(d => d.series === 'Rent guideline'), { x: 'year', y: 'value', fill: PALETTE[0], r: 2.5 }),
+      Plot.dot(rows.filter(d => d.series === 'Rent guideline' || d.series === 'Economic adjustment factor'), { x: 'year', y: 'value', fill: 'series', r: 2.5 }),
       frameMark(),
     ],
   }));
   const card = document.createElement('section');
-  card.className = 'chart-card';   // width is constrained by the #rtb-chart grid (matches Housing Starts cards)
+  card.className = 'chart-card';
   card.innerHTML = `<header class="chart-title">Rent increase guideline vs Manitoba CPI</header>
-    <p class="chart-sub">${loY}–${hiY} — guideline vs the Manitoba All-items CPI change that sets it (change in the 12-month average ending June of the prior year). The guideline = that, capped to 1–3% — except the 2022–23 freezes (0%).</p>
+    <p class="chart-sub">${loY}–${hiY} — guideline vs the Manitoba All-items CPI change that sets it (change in the 12-month average ending June of the prior year). The guideline = that, capped to 1–3% — except the 2022–23 freezes (0%). The economic adjustment factor (first published for 2024) is shown where available.</p>
     <div data-role="plot" class="cmhc-plot"></div>
     <div class="chart-caption"><span class="chart-caption-left"></span>
       <span class="chart-source">Source: Manitoba RTB; StatsCan (MB All-Items CPI)</span></div>
@@ -207,13 +215,20 @@ function renderTable($table, data, cpiByYear) {
 }
 
 // Turn bare URLs in narrative text into links for the on-screen version.
+// Each segment — non-URL text and the matched URL (used in both the href
+// attribute and the link text) — is passed through escapeHtml exactly once,
+// so it stays safe (and never double-escapes) even if reused on arbitrary
+// scraped text. The scheme is constrained to http(s) by the regex.
 function linkify(s) {
-  return escapeHtml(s).replace(/(https?:\/\/[^\s]+)/g,
-    u => `<a href="${u}" target="_blank" rel="noopener" class="text-accent-600 hover:underline">${u}</a>`);
-}
-
-function escapeHtml(s) {
-  return String(s ?? '').replace(/[&<>"']/g, ch => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-  }[ch]));
+  const str = String(s ?? '');
+  const re = /(https?:\/\/[^\s]+)/g;
+  let out = '', last = 0, m;
+  while ((m = re.exec(str)) !== null) {
+    out += escapeHtml(str.slice(last, m.index));
+    const u = escapeHtml(m[0]);
+    out += `<a href="${u}" target="_blank" rel="noopener" class="text-accent-600 hover:underline">${u}</a>`;
+    last = m.index + m[0].length;
+  }
+  out += escapeHtml(str.slice(last));
+  return out;
 }

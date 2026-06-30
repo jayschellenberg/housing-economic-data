@@ -136,7 +136,7 @@ jobs:
         id: ok_email_gate
       - name: Send success email
         if: success() && steps.commit.outputs.changed == 'true' && steps.ok_email_gate.outputs.send == 'true'
-        uses: dawidd6/action-send-mail@v3
+        uses: dawidd6/action-send-mail@4226df7daafa6fc901a43789c49bf7ab309066e7 # v3.11.0
         with:
           server_address: ${{ vars.SMTP_HOST || 'smtp.gmail.com' }}
           server_port:    ${{ vars.SMTP_PORT || 587 }}
@@ -171,7 +171,7 @@ jobs:
         id: fail_email_gate
       - name: Send failure email
         if: failure() && steps.fail_email_gate.outputs.send == 'true'
-        uses: dawidd6/action-send-mail@v3
+        uses: dawidd6/action-send-mail@4226df7daafa6fc901a43789c49bf7ab309066e7 # v3.11.0
         with:
           server_address: ${{ vars.SMTP_HOST || 'smtp.gmail.com' }}
           server_port:    ${{ vars.SMTP_PORT || 587 }}

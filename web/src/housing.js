@@ -16,6 +16,7 @@
 import * as Plot from '@observablehq/plot';
 import { themed, gridMarks, frameMark, PALETTE } from './plot-theme.js';
 import { downloadCard } from './chart.js';
+import { escapeHtml } from './escape.js';
 
 // Common age buckets for the comparison view — each census's own bands rolled
 // up to a shared set so the years line up despite different banding.
@@ -568,10 +569,4 @@ function copyHtml(html) {
   } catch {
     navigator.clipboard?.writeText(text);
   }
-}
-
-function escapeHtml(s) {
-  return String(s ?? '').replace(/[&<>"']/g, c => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-  }[c]));
 }

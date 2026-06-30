@@ -15,6 +15,7 @@
 import * as Plot from '@observablehq/plot';
 import { themed, gridMarks, frameMark, PALETTE } from './plot-theme.js';
 import { downloadCard } from './chart.js';
+import { escapeHtml } from './escape.js';
 
 // Geography levels, in dropdown group order.
 const LEVEL_GROUPS = [
@@ -538,10 +539,4 @@ function copyHtml(html) {
       'text/plain': new Blob([text], { type: 'text/plain' }),
     })]);
   } catch { navigator.clipboard?.writeText(text); }
-}
-
-function escapeHtml(s) {
-  return String(s ?? '').replace(/[&<>"']/g, c => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-  }[c]));
 }

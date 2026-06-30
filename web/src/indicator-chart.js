@@ -17,6 +17,7 @@
 import * as Plot from '@observablehq/plot';
 import { toPng } from 'html-to-image';
 import { themed, PALETTE, gridMarks, frameMark } from './plot-theme.js';
+import { escapeHtml } from './escape.js';
 
 // --- Formatters --------------------------------------------------------------
 const FMT = {
@@ -106,7 +107,7 @@ export function buildIndicatorCard(container, { chartId, title, sourceLabel, des
   // they're embedding in a report — keep it visible on screen but out of the
   // exported image (see filter in exportCard).
   card.innerHTML = `
-    <header class="chart-title">${title}</header>
+    <header class="chart-title">${escapeHtml(title)}</header>
     <p class="chart-sub" data-role="sub"></p>
     <div data-role="plot" style="min-height:240px"></div>
     <div data-role="empty" class="text-xs text-neutral-500 mt-2" hidden>No data for this filter combination.</div>
