@@ -18,6 +18,7 @@
 // indicators.js so the vendor chunk stays lean.
 
 import { buildBarCard } from './chart.js';
+import { escapeHtml } from './escape.js';
 
 // Table definitions — series + dimension pair + display label.
 const TABLE_DEFS = {
@@ -376,10 +377,4 @@ export function initTables({ geographies, manifest, loadShard }) {
   });
 
   render();
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-  }[c]));
 }

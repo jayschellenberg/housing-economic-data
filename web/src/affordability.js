@@ -17,6 +17,7 @@
 import * as Plot from '@observablehq/plot';
 import { themed, frameMark, PALETTE } from './plot-theme.js';
 import { downloadCard } from './chart.js';
+import { escapeHtml } from './escape.js';
 
 const DEFAULT_RATE = 4.64;     // % — Royal LePage 2026 report assumption (3-yr fixed special)
 const DOWN_PCT     = 20;       // % down payment
@@ -310,10 +311,4 @@ export async function initAffordability() {
     render();
   });
   render();
-}
-
-function escapeHtml(s) {
-  return String(s ?? '').replace(/[&<>"']/g, c => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-  }[c]));
 }

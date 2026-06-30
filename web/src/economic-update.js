@@ -16,6 +16,7 @@
 
 import { buildIndicatorCard } from './indicator-chart.js';
 import { captureNodes } from './doc-image-export.js';
+import { escapeHtml } from './escape.js';
 
 // --- Formatters --------------------------------------------------------------
 const fmt1 = (v) => (v == null || isNaN(v)) ? '—' : Number(v).toFixed(1);
@@ -45,12 +46,6 @@ function upDown(pct) {
   if (pct == null || isNaN(pct)) return '—';
   if (Math.abs(pct) < 0.5) return 'about even';
   return `${pct > 0 ? 'up' : 'down'} ${pct0(pct)}`;
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-  }[c]));
 }
 
 function pushLine(arr, line) { if (line) arr.push(line); }
@@ -148,7 +143,7 @@ export async function initEconomicUpdate() {
   // Overview
   if (intro.winnipegCmaPopulation != null) {
     const cas = (intro.comparableAreas || [])
-      .map(a => `${escapeHtml(a.name)} (${a.type}: ${fmt0(a.population)})`).join(', ');
+      .map(a => `${escapeHtml(a.name)} (${escapeHtml(a.type)}: ${fmt0(a.population)})`).join(', ');
     const overviewParas = [
       `Manitoba had a population of approximately ${fmt0(intro.provincePopulation)} according to the ${intro.censusYear} Census. `
       + `The Winnipeg Census Metropolitan Area (CMA) is the largest population centre at ${fmt0(intro.winnipegCmaPopulation)}, or roughly ${pct0(intro.winnipegSharePct)} of the province. `
