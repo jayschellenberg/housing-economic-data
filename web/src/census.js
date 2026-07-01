@@ -15,6 +15,7 @@
 import * as Plot from '@observablehq/plot';
 import { themed, gridMarks, frameMark, PALETTE } from './plot-theme.js';
 import { downloadCard } from './chart.js';
+import { mapCard } from './map.js';
 import { resolveProvince, rememberProvince } from './prefs.js';
 import { escapeHtml } from './escape.js';
 
@@ -125,6 +126,59 @@ const fmtVal = (v, kind) => kind === 'usd' ? fUsd(v) : kind === 'dec1' ? fDec1(v
 // Census periods offered by the Demographics period selector.
 const DEMO_PERIODS = ['2021', '2016', '2011'];
 
+// ---- Map (choropleth) config ----------------------------------------------
+// Metrics the Manitoba-municipality choropleth can shade by. `kind` drives the
+// value/legend formatting; `renter_share` is derived from renter / tenure_total.
+const MAP_METRICS = [
+  { key: 'median_hh_income',    label: 'Median household income', kind: 'usd' },
+  { key: 'median_rent',         label: 'Median monthly rent',     kind: 'usd' },
+  { key: 'median_dwelling_val', label: 'Median dwelling value',   kind: 'usd' },
+  { key: 'renter_share',        label: 'Renter share',            kind: 'pct' },
+  { key: 'median_age',          label: 'Median age',              kind: 'dec1' },
+  { key: 'population',           label: 'Population',              kind: 'int' },
+];
+const CHORO_RAMP = ['#dbeafe', '#93c5fd', '#3b82f6', '#1d4ed8', '#1e3a8a'];  // light→dark blue
+const MAP_NO_DATA = '#e5e7eb';
+
+const metricValue = (region, key, period) => {
+  const d = demoFor(region, period);
+  if (!d) return null;
+  if (key === 'renter_share') {
+    const r = Number(d.renter), t = Number(d.tenure_total);
+    return (Number.isFinite(r) && Number.isFinite(t) && t > 0) ? (r / t) * 100 : null;
+  }
+  const v = Number(d[key]);           // census suppression is `{}` → Number({}) = NaN → null
+  return Number.isFinite(v) ? v : null;
+};
+const mapLabel = (kind, v) => !Number.isFinite(v) ? 'No data'
+  : kind === 'usd'  ? `$${Math.round(v).toLocaleString()}`
+  : kind === 'pct'  ? `${v.toFixed(1)}%`
+  : kind === 'dec1' ? v.toFixed(1)
+  : Math.round(v).toLocaleString();
+const mapCompact = (kind, v) => !Number.isFinite(v) ? '**'
+  : kind === 'usd'  ? (Math.abs(v) >= 1000 ? `$${Math.round(v / 1000)}k` : `$${Math.round(v)}`)
+  : kind === 'pct'  ? `${Math.round(v)}%`
+  : kind === 'dec1' ? v.toFixed(1)
+  : (Math.abs(v) >= 1000 ? `${Math.round(v / 1000)}k` : String(Math.round(v)));
+
+// 5-bin quantile choropleth. entries: [{uid,name,value}]. → { values, legend }.
+function buildChoropleth(entries, kind) {
+  const nums = entries.map(e => e.value).filter(v => Number.isFinite(v)).sort((a, b) => a - b);
+  const values = new Map();
+  if (!nums.length) return { values, legend: [{ swatch: MAP_NO_DATA, text: 'No data' }] };
+  const q = (p) => nums[Math.min(nums.length - 1, Math.floor(p * nums.length))];
+  const breaks = [q(0.2), q(0.4), q(0.6), q(0.8)];
+  const binOf = (v) => { let b = 0; for (const br of breaks) { if (v >= br) b++; else break; } return b; };
+  for (const e of entries) {
+    if (!Number.isFinite(e.value)) continue;
+    values.set(String(e.uid), { fill: CHORO_RAMP[binOf(e.value)], label: `${e.name}: ${mapLabel(kind, e.value)}` });
+  }
+  const edges = [nums[0], ...breaks, nums[nums.length - 1]];
+  const legend = CHORO_RAMP.map((c, i) => ({ swatch: c, text: `${mapCompact(kind, edges[i])}–${mapCompact(kind, edges[i + 1])}` }));
+  legend.push({ swatch: MAP_NO_DATA, text: 'No data' });
+  return { values, legend };
+}
+
 // Read a region's demographics object for a given census period. The rebuilt
 // data keys `demo` by year ({ "2021": {…}, "2016": {…}, "2011": {…} }); the
 // current (pre-rebuild) file ships a single flat object that represents 2021.
@@ -146,8 +200,10 @@ export async function initCensus() {
   const $tables   = document.getElementById('census-tables');
   if (!$area[0] || !$tables) return;
 
-  const data = await fetch('./data/housing/census_profile.json')
-    .then(r => r.ok ? r.json() : null).catch(() => null);
+  const [data, mbCsdGeo] = await Promise.all([
+    fetch('./data/housing/census_profile.json').then(r => r.ok ? r.json() : null).catch(() => null),
+    fetch('./data/geo/mb_csd.geojson').then(r => r.ok ? r.json() : null).catch(() => null),
+  ]);
   if (!data || !Array.isArray(data.regions)) {
     $tables.innerHTML = '<p class="text-sm text-red-700">Census profile data not found. Run r/12_census_profile.R.</p>';
     return;
@@ -210,6 +266,53 @@ export async function initCensus() {
   });
   if ($period && !DEMO_PERIODS.includes($period.value)) $period.value = '2021';
 
+  // ---- Map: Manitoba municipality choropleth that drives Area 1 ------------
+  // Shown only when Area 1's province is Manitoba (the level the PoC ships
+  // boundaries for) and the boundary file loaded. A metric picker sits above it.
+  const $mapHost = document.getElementById('census-map');
+  let censusMap = null, $mapMetric = null;
+  if ($mapHost && mbCsdGeo) {
+    const controls = document.createElement('div');
+    controls.className = 'census-map-controls';
+    controls.innerHTML = `<label for="census-map-metric" class="text-sm text-neutral-600">Map metric:</label>
+      <select id="census-map-metric" class="border border-neutral-300 rounded px-2 py-1 text-sm">
+        ${MAP_METRICS.map(m => `<option value="${m.key}">${escapeHtml(m.label)}</option>`).join('')}
+      </select>`;
+    $mapHost.appendChild(controls);
+    $mapMetric = controls.querySelector('#census-map-metric');
+    censusMap = mapCard($mapHost);
+    $mapMetric.addEventListener('change', renderCensusMap);
+  }
+
+  function renderCensusMap() {
+    if (!censusMap) return;
+    if ($prov[0]?.value !== '46' || !mbCsdGeo) { censusMap.card.style.display = 'none'; return; }
+    censusMap.card.style.display = '';
+    const metric = MAP_METRICS.find(m => m.key === $mapMetric.value) || MAP_METRICS[0];
+    const period = $period?.value || '2021';
+    const entries = [];
+    for (const r of data.regions) {
+      if (r.level !== 'CSD' || provOf(r) !== '46') continue;
+      entries.push({ uid: r.uid, name: r.name, value: metricValue(r, metric.key, period) });
+    }
+    const { values, legend } = buildChoropleth(entries, metric.kind);
+    const selId = byUid.get($area[0].value)?.level === 'CSD' ? $area[0].value : null;
+    censusMap.render({
+      geojson: mbCsdGeo, values, selectedId: selId,
+      onSelect: (id) => {
+        if (!byUid.has(id)) return;
+        fillProv($prov[0], '46');           // ensure Area 1 province = Manitoba
+        fillArea($area[0], '46', id);       // scope Area 1 list to MB + select the clicked CSD
+        render();
+      },
+      title: `Manitoba municipalities — ${metric.label.toLowerCase()} (${period} Census)`,
+      sub: 'Click a municipality to set it as Area 1 (subject).',
+      source: 'Boundaries: Statistics Canada 2021 (OGL–Canada) · Data: StatsCan Census',
+      legend,
+      filename: `census_map_Manitoba_${metric.key}_${period}.png`,
+    });
+  }
+
   // Ensure the two table containers exist before the first render.
   $tables.innerHTML = '<section class="cmhc-table-block" id="census-trends"></section>' +
                       '<section class="cmhc-table-block" id="census-demo"></section>';
@@ -218,6 +321,7 @@ export async function initCensus() {
   let lastDemoTable   = null;
 
   function render() {
+    renderCensusMap();
     const period = $period?.value || '2021';
     // The three chosen areas, de-duped (picking the same area twice collapses
     // it rather than repeating a table/column).
