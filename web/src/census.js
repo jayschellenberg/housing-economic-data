@@ -15,7 +15,7 @@
 import * as Plot from '@observablehq/plot';
 import { themed, gridMarks, frameMark, PALETTE } from './plot-theme.js';
 import { downloadCard } from './chart.js';
-import { mapCard } from './map.js';
+import { mapCard, quantileChoropleth } from './map.js';
 import { provinceGeo, hasProvinceGeo } from './geo.js';
 import { resolveProvince, rememberProvince } from './prefs.js';
 import { escapeHtml } from './escape.js';
@@ -138,8 +138,6 @@ const MAP_METRICS = [
   { key: 'median_age',          label: 'Median age',              kind: 'dec1' },
   { key: 'population',           label: 'Population',              kind: 'int' },
 ];
-const CHORO_RAMP = ['#dbeafe', '#93c5fd', '#3b82f6', '#1d4ed8', '#1e3a8a'];  // light→dark blue
-const MAP_NO_DATA = '#e5e7eb';
 const PROV_NAME = { '46': 'Manitoba', '47': 'Saskatchewan', '48': 'Alberta', '59': 'British Columbia' };
 
 const metricValue = (region, key, period) => {
@@ -163,23 +161,6 @@ const mapCompact = (kind, v) => !Number.isFinite(v) ? '**'
   : kind === 'dec1' ? v.toFixed(1)
   : (Math.abs(v) >= 1000 ? `${Math.round(v / 1000)}k` : String(Math.round(v)));
 
-// 5-bin quantile choropleth. entries: [{uid,name,value}]. → { values, legend }.
-function buildChoropleth(entries, kind) {
-  const nums = entries.map(e => e.value).filter(v => Number.isFinite(v)).sort((a, b) => a - b);
-  const values = new Map();
-  if (!nums.length) return { values, legend: [{ swatch: MAP_NO_DATA, text: 'No data' }] };
-  const q = (p) => nums[Math.min(nums.length - 1, Math.floor(p * nums.length))];
-  const breaks = [q(0.2), q(0.4), q(0.6), q(0.8)];
-  const binOf = (v) => { let b = 0; for (const br of breaks) { if (v >= br) b++; else break; } return b; };
-  for (const e of entries) {
-    if (!Number.isFinite(e.value)) continue;
-    values.set(String(e.uid), { fill: CHORO_RAMP[binOf(e.value)], label: `${e.name}: ${mapLabel(kind, e.value)}` });
-  }
-  const edges = [nums[0], ...breaks, nums[nums.length - 1]];
-  const legend = CHORO_RAMP.map((c, i) => ({ swatch: c, text: `${mapCompact(kind, edges[i])}–${mapCompact(kind, edges[i + 1])}` }));
-  legend.push({ swatch: MAP_NO_DATA, text: 'No data' });
-  return { values, legend };
-}
 
 // Read a region's demographics object for a given census period. The rebuilt
 // data keys `demo` by year ({ "2021": {…}, "2016": {…}, "2011": {…} }); the
@@ -301,7 +282,10 @@ export async function initCensus() {
       if (r.level !== 'CSD' || provOf(r) !== prov) continue;
       entries.push({ uid: r.uid, name: r.name, value: metricValue(r, metric.key, period) });
     }
-    const { values, legend } = buildChoropleth(entries, metric.kind);
+    const { values, legend } = quantileChoropleth(entries, {
+      label:   (v) => mapLabel(metric.kind, v),
+      compact: (v) => mapCompact(metric.kind, v),
+    });
     const selId = byUid.get($area[0].value)?.level === 'CSD' ? $area[0].value : null;
     censusMap.render({
       geojson, values, selectedId: selId,

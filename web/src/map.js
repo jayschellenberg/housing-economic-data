@@ -20,6 +20,31 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 const NO_DATA_FILL = '#e5e7eb';   // grey — matches the "**" missing-data convention
 const SEL_STROKE    = '#111827';  // near-black outline for the selected polygon
 const EXPORT_RATIO  = 3;          // device-pixel scale for crisp PNGs (matches the chart cards)
+const CHORO_RAMP    = ['#dbeafe', '#93c5fd', '#3b82f6', '#1d4ed8', '#1e3a8a'];  // light→dark blue
+
+/**
+ * Build a 5-bin quantile choropleth from [{uid, name, value}] rows. `label` and
+ * `compact` format a value for the tooltip and the legend respectively. Returns
+ * { values, legend } ready for mapCard.render(). Shared by the Census/Housing maps.
+ */
+export function quantileChoropleth(entries, { label, compact, ramp = CHORO_RAMP } = {}) {
+  const fmt = label || ((v) => String(v));
+  const cmp = compact || fmt;
+  const nums = entries.map(e => e.value).filter(v => Number.isFinite(v)).sort((a, b) => a - b);
+  const values = new Map();
+  if (!nums.length) return { values, legend: [{ swatch: NO_DATA_FILL, text: 'No data' }] };
+  const q = (p) => nums[Math.min(nums.length - 1, Math.floor(p * nums.length))];
+  const breaks = [q(0.2), q(0.4), q(0.6), q(0.8)];
+  const binOf = (v) => { let b = 0; for (const br of breaks) { if (v >= br) b++; else break; } return b; };
+  for (const e of entries) {
+    if (!Number.isFinite(e.value)) continue;
+    values.set(String(e.uid), { fill: ramp[binOf(e.value)], label: `${e.name}: ${fmt(e.value)}` });
+  }
+  const edges = [nums[0], ...breaks, nums[nums.length - 1]];
+  const legend = ramp.map((c, i) => ({ swatch: c, text: `${cmp(edges[i])}–${cmp(edges[i + 1])}` }));
+  legend.push({ swatch: NO_DATA_FILL, text: 'No data' });
+  return { values, legend };
+}
 
 // Rasterize an inline <svg> to a PNG data URL directly on a canvas. The map's
 // choropleth is hundreds of <path> nodes; html-to-image's per-node style
