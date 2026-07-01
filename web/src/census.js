@@ -15,6 +15,9 @@
 import * as Plot from '@observablehq/plot';
 import { themed, gridMarks, frameMark, PALETTE } from './plot-theme.js';
 import { downloadCard } from './chart.js';
+import { mapCard, quantileChoropleth } from './map.js';
+import { provinceGeo, hasProvinceGeo } from './geo.js';
+import { resolveProvince, rememberProvince } from './prefs.js';
 import { escapeHtml } from './escape.js';
 
 // Geography levels, in dropdown group order.
@@ -124,6 +127,41 @@ const fmtVal = (v, kind) => kind === 'usd' ? fUsd(v) : kind === 'dec1' ? fDec1(v
 // Census periods offered by the Demographics period selector.
 const DEMO_PERIODS = ['2021', '2016', '2011'];
 
+// ---- Map (choropleth) config ----------------------------------------------
+// Metrics the Manitoba-municipality choropleth can shade by. `kind` drives the
+// value/legend formatting; `renter_share` is derived from renter / tenure_total.
+const MAP_METRICS = [
+  { key: 'median_hh_income',    label: 'Median household income', kind: 'usd' },
+  { key: 'median_rent',         label: 'Median monthly rent',     kind: 'usd' },
+  { key: 'median_dwelling_val', label: 'Median dwelling value',   kind: 'usd' },
+  { key: 'renter_share',        label: 'Renter share',            kind: 'pct' },
+  { key: 'median_age',          label: 'Median age',              kind: 'dec1' },
+  { key: 'population',           label: 'Population',              kind: 'int' },
+];
+const PROV_NAME = { '46': 'Manitoba', '47': 'Saskatchewan', '48': 'Alberta', '59': 'British Columbia' };
+
+const metricValue = (region, key, period) => {
+  const d = demoFor(region, period);
+  if (!d) return null;
+  if (key === 'renter_share') {
+    const r = Number(d.renter), t = Number(d.tenure_total);
+    return (Number.isFinite(r) && Number.isFinite(t) && t > 0) ? (r / t) * 100 : null;
+  }
+  const v = Number(d[key]);           // census suppression is `{}` → Number({}) = NaN → null
+  return Number.isFinite(v) ? v : null;
+};
+const mapLabel = (kind, v) => !Number.isFinite(v) ? 'No data'
+  : kind === 'usd'  ? `$${Math.round(v).toLocaleString()}`
+  : kind === 'pct'  ? `${v.toFixed(1)}%`
+  : kind === 'dec1' ? v.toFixed(1)
+  : Math.round(v).toLocaleString();
+const mapCompact = (kind, v) => !Number.isFinite(v) ? '**'
+  : kind === 'usd'  ? (Math.abs(v) >= 1000 ? `$${Math.round(v / 1000)}k` : `$${Math.round(v)}`)
+  : kind === 'pct'  ? `${Math.round(v)}%`
+  : kind === 'dec1' ? v.toFixed(1)
+  : (Math.abs(v) >= 1000 ? `${Math.round(v / 1000)}k` : String(Math.round(v)));
+
+
 // Read a region's demographics object for a given census period. The rebuilt
 // data keys `demo` by year ({ "2021": {…}, "2016": {…}, "2011": {…} }); the
 // current (pre-rebuild) file ships a single flat object that represents 2021.
@@ -199,8 +237,71 @@ export async function initCensus() {
     .sort((a, b) => a.name.localeCompare(b.name))[0];
   const area1Def = firstClust?.uid || (byUid.has('4612047') ? '4612047' : firstCsd?.uid);
   const areaDefs = [area1Def, wpgCma?.uid, manitoba?.uid];
-  $prov.forEach((psel, i) => { fillProv(psel, '46'); fillArea($area[i], '46', areaDefs[i]); });
+  // Area 1 (the subject) opens on the shared "home" province; the two comparison
+  // pickers stay on Manitoba. Non-MB home → area defaults fall back to the first
+  // area in that province (the MB-specific uids above simply won't match).
+  const startProv = resolveProvince(provsPresent);
+  $prov.forEach((psel, i) => {
+    const prov = i === 0 ? startProv : '46';
+    fillProv(psel, prov); fillArea($area[i], prov, areaDefs[i]);
+  });
   if ($period && !DEMO_PERIODS.includes($period.value)) $period.value = '2021';
+
+  // ---- Map: Manitoba municipality choropleth that drives Area 1 ------------
+  // Shown only when Area 1's province is Manitoba (the level the PoC ships
+  // boundaries for) and the boundary file loaded. A metric picker sits above it.
+  const $mapHost = document.getElementById('census-map');
+  let censusMap = null, $mapMetric = null, censusMapToken = 0;
+  if ($mapHost) {
+    const controls = document.createElement('div');
+    controls.className = 'census-map-controls';
+    controls.innerHTML = `<label for="census-map-metric" class="text-sm text-neutral-600">Map metric:</label>
+      <select id="census-map-metric" class="border border-neutral-300 rounded px-2 py-1 text-sm">
+        ${MAP_METRICS.map(m => `<option value="${m.key}">${escapeHtml(m.label)}</option>`).join('')}
+      </select>`;
+    $mapHost.appendChild(controls);
+    $mapMetric = controls.querySelector('#census-map-metric');
+    censusMap = mapCard($mapHost);
+    $mapMetric.addEventListener('change', renderCensusMap);
+  }
+
+  async function renderCensusMap() {
+    if (!censusMap) return;
+    const prov = $prov[0]?.value;
+    if (!prov || !hasProvinceGeo(prov)) { censusMap.card.style.display = 'none'; return; }
+    const token = ++censusMapToken;
+    const geojson = await provinceGeo(prov, 'csd');
+    if (token !== censusMapToken) return;           // a newer render superseded this one
+    if (!geojson) { censusMap.card.style.display = 'none'; return; }
+    censusMap.card.style.display = '';
+    const provName = PROV_NAME[prov] || '';
+    const metric = MAP_METRICS.find(m => m.key === $mapMetric.value) || MAP_METRICS[0];
+    const period = $period?.value || '2021';
+    const entries = [];
+    for (const r of data.regions) {
+      if (r.level !== 'CSD' || provOf(r) !== prov) continue;
+      entries.push({ uid: r.uid, name: r.name, value: metricValue(r, metric.key, period) });
+    }
+    const { values, legend } = quantileChoropleth(entries, {
+      label:   (v) => mapLabel(metric.kind, v),
+      compact: (v) => mapCompact(metric.kind, v),
+    });
+    const selId = byUid.get($area[0].value)?.level === 'CSD' ? $area[0].value : null;
+    censusMap.render({
+      geojson, values, selectedId: selId,
+      onSelect: (id) => {
+        if (!byUid.has(id)) return;
+        fillProv($prov[0], prov);           // ensure Area 1 province matches the map
+        fillArea($area[0], prov, id);       // scope Area 1 list + select the clicked CSD
+        render();
+      },
+      title: `${provName} municipalities — ${metric.label.toLowerCase()} (${period} Census)`,
+      sub: 'Click a municipality to set it as Area 1 (subject).',
+      source: 'Boundaries: Statistics Canada 2021 (OGL–Canada) · Data: StatsCan Census',
+      legend,
+      filename: `census_map_${provName}_${metric.key}_${period}.png`.replace(/\s+/g, '-'),
+    });
+  }
 
   // Ensure the two table containers exist before the first render.
   $tables.innerHTML = '<section class="cmhc-table-block" id="census-trends"></section>' +
@@ -210,6 +311,7 @@ export async function initCensus() {
   let lastDemoTable   = null;
 
   function render() {
+    renderCensusMap();
     const period = $period?.value || '2021';
     // The three chosen areas, de-duped (picking the same area twice collapses
     // it rather than repeating a table/column).
@@ -497,7 +599,9 @@ export async function initCensus() {
   }
 
   // Changing a picker's province repopulates its area list (first item selected).
+  // The subject picker (Area 1) also records the shared "home" province.
   $prov.forEach((psel, i) => psel.addEventListener('change', () => {
+    if (i === 0) rememberProvince(psel.value);
     fillArea($area[i], psel.value);
     render();
   }));

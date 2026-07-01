@@ -4,6 +4,13 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   plugins: [tailwindcss()],
   cacheDir: process.env.VITE_CACHE_DIR || 'node_modules/.vite',
+  // Pre-bundle the heavy shared deps at server start so adding a new importer
+  // (e.g. map.js also importing plot + html-to-image) can't trigger a mid-load
+  // re-optimization, which otherwise 504s the in-flight dep requests and leaves
+  // the page half-initialised ("Outdated Optimize Dep").
+  optimizeDeps: {
+    include: ['@observablehq/plot', 'html-to-image', 'd3'],
+  },
   build: {
     target: 'es2020',
     rollupOptions: {

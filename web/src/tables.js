@@ -18,6 +18,7 @@
 // indicators.js so the vendor chunk stays lean.
 
 import { buildBarCard } from './chart.js';
+import { resolveProvince, rememberProvince } from './prefs.js';
 import { escapeHtml } from './escape.js';
 
 // Table definitions — series + dimension pair + display label.
@@ -216,7 +217,8 @@ export function initTables({ geographies, manifest, loadShard }) {
 
   // Province dropdown — the first row + the scope for the other areas.
   $province.innerHTML = provinceItems.map(it => `<option value="${escapeHtml(it.prov)}">${escapeHtml(it.name)}</option>`).join('');
-  $province.value = provinceItems.some(it => it.prov === '46') ? '46' : provinceItems[0]?.prov || '';
+  const provCodes = provinceItems.map(it => it.prov);
+  $province.value = resolveProvince(provCodes, provCodes.includes('46') ? '46' : (provCodes[0] || ''));
   const currentProvinceItem = () => provinceItems.find(it => it.prov === $province.value) || provinceItems[0];
 
   function populateAreaDropdowns() {
@@ -338,7 +340,7 @@ export function initTables({ geographies, manifest, loadShard }) {
   });
   // Changing the province re-scopes the second–fourth dropdowns (and resets
   // their defaults) before re-rendering.
-  $province.addEventListener('change', () => { populateAreaDropdowns(); scheduleRender(); });
+  $province.addEventListener('change', () => { rememberProvince($province.value); populateAreaDropdowns(); scheduleRender(); });
 
   // Flash a transient status label on an export button, then restore it.
   function flashLabel(btn, label) {

@@ -16,6 +16,9 @@
 import * as Plot from '@observablehq/plot';
 import { themed, gridMarks, frameMark, PALETTE } from './plot-theme.js';
 import { downloadCard } from './chart.js';
+import { mapCard, quantileChoropleth } from './map.js';
+import { provinceGeo, hasProvinceGeo } from './geo.js';
+import { resolveProvince, rememberProvince } from './prefs.js';
 import { escapeHtml } from './escape.js';
 
 // Common age buckets for the comparison view — each census's own bands rolled
@@ -33,6 +36,46 @@ const ALL_YEARS = ['2006', '2011', '2016', '2021'];
 // Winnipeg clusters/CAs carry the City's 8 age buckets (CITY_AGE_LABELS); this
 // rolls them up to the same COMMON_AGE bands for the compare-across-years view.
 const CLUSTER_ROLLUP = [[0], [1], [2], [3], [4, 5], [6, 7]];
+
+// ---- Map (choropleth) config ----------------------------------------------
+const PROV_NAME = { '46': 'Manitoba', '47': 'Saskatchewan', '48': 'Alberta', '59': 'British Columbia' };
+const HOUSING_MAP_METRICS = [
+  { key: 'major',    label: 'Needing major repairs',   kind: 'pct' },
+  { key: 'pre1961',  label: 'Built 1960 or before',    kind: 'pct' },
+  { key: 'post2000', label: 'Built 2001 or later',     kind: 'pct' },
+  { key: 'total',    label: 'Total private dwellings',  kind: 'int' },
+];
+// Compute a map metric from one census year's { total, age[], condition[ok,major] }.
+function housingMetric(key, yd, year) {
+  if (key === 'total') return Number.isFinite(Number(yd.total)) ? Number(yd.total) : null;
+  if (key === 'major') {
+    const c = yd.condition || [];
+    const ok = Number(c[0] || 0), major = Number(c[c.length - 1] || 0), t = ok + major;
+    return t > 0 ? (major / t) * 100 : null;                 // last condition category = major
+  }
+  const age = yd.age, spec = ROLLUP[year];                   // pre1961 / post2000 via the year's rollup
+  if (!Array.isArray(age) || !age.length || !spec) return null;
+  const total = age.reduce((s, v) => s + (Number(v) || 0), 0);
+  if (!(total > 0)) return null;
+  const idxs = key === 'pre1961' ? (spec[0] || []) : [...(spec[4] || []), ...(spec[5] || [])];
+  return idxs.reduce((s, i) => s + (Number(age[i]) || 0), 0) / total * 100;
+}
+// Newest census year (of ALL_YEARS) for which the metric is computable, so every
+// municipality shows its most recent figure (MB has 2006–2021; western CSDs 2016+).
+function housingMetricLatest(area, key) {
+  for (let i = ALL_YEARS.length - 1; i >= 0; i--) {
+    const yd = area.census?.[ALL_YEARS[i]];
+    if (!yd) continue;
+    const v = housingMetric(key, yd, ALL_YEARS[i]);
+    if (v != null && Number.isFinite(v)) return v;
+  }
+  return null;
+}
+const hMapLabel = (kind, v) => !Number.isFinite(v) ? 'No data'
+  : kind === 'pct' ? `${v.toFixed(1)}%` : Math.round(v).toLocaleString();
+const hMapCompact = (kind, v) => !Number.isFinite(v) ? '**'
+  : kind === 'pct' ? `${Math.round(v)}%`
+  : (Math.abs(v) >= 1000 ? `${Math.round(v / 1000)}k` : String(Math.round(v)));
 
 // Short labels for the 8 structural types (index-aligned across census years;
 // 2006 leaves the last two null — see dwelling_types notes2006).
@@ -138,7 +181,11 @@ export async function initHousing() {
   const regionOpts = [{ uid: REGION_CANADA, name: 'Canada' }].concat(
     housing.areas.filter(a => a.level === 'province').sort(byName)
       .map(a => ({ uid: a.uid, name: a.name })));
-  const defaultRegion = regionOpts.some(r => r.uid === '46') ? '46' : (regionOpts[1]?.uid || REGION_CANADA);
+  // Honour the shared "home" province if the housing dataset carries it, else
+  // Manitoba (or Canada if MB is absent). 'CA' stays a valid manual choice.
+  const provinceCodes = regionOpts.map(r => r.uid).filter(u => /^\d{2}$/.test(u));
+  const defaultRegion = resolveProvince(provinceCodes,
+    regionOpts.some(r => r.uid === '46') ? '46' : (regionOpts[1]?.uid || REGION_CANADA));
   // The province total each region defaults to ('CA' → Canada).
   const regionDefaultArea = (region) =>
     region === REGION_CANADA ? (allAreas.find(a => a.region === REGION_CANADA)?.uid || '') : region;
@@ -177,6 +224,60 @@ export async function initHousing() {
     $province2.value = defaultRegion;
     $area2.innerHTML = buildAreaOptions(defaultRegion, { includeNone: true });
     $area2.value = '';
+  }
+
+  // ---- Map: province municipality choropleth that drives the Area picker ----
+  const $mapHost = document.getElementById('hsk-map');
+  let housingMap = null, $mapMetric = null, housingMapToken = 0;
+  if ($mapHost) {
+    const controls = document.createElement('div');
+    controls.className = 'census-map-controls';
+    controls.innerHTML = `<label for="hsk-map-metric" class="text-sm text-neutral-600">Map metric:</label>
+      <select id="hsk-map-metric" class="border border-neutral-300 rounded px-2 py-1 text-sm">
+        ${HOUSING_MAP_METRICS.map(m => `<option value="${m.key}">${escapeHtml(m.label)}</option>`).join('')}
+      </select>`;
+    $mapHost.appendChild(controls);
+    $mapMetric = controls.querySelector('#hsk-map-metric');
+    housingMap = mapCard($mapHost);
+    $mapMetric.addEventListener('change', renderHousingMap);
+  }
+
+  // Municipalities in the selected region's province, shaded by the chosen housing
+  // metric (newest census). Shown only when the region is a province (not Canada).
+  async function renderHousingMap() {
+    if (!housingMap) return;
+    const prov = $province.value;
+    if (!hasProvinceGeo(prov)) { housingMap.card.style.display = 'none'; return; }   // 'CA' → hide
+    const token = ++housingMapToken;
+    const geojson = await provinceGeo(prov, 'csd');
+    if (token !== housingMapToken) return;
+    if (!geojson) { housingMap.card.style.display = 'none'; return; }
+    housingMap.card.style.display = '';
+    const metric = HOUSING_MAP_METRICS.find(m => m.key === $mapMetric.value) || HOUSING_MAP_METRICS[0];
+    const provName = PROV_NAME[prov] || '';
+    const entries = [];
+    for (const a of hByUid.values()) {
+      if (a.level !== 'csd' || String(a.uid).slice(0, 2) !== prov) continue;
+      entries.push({ uid: a.uid, name: a.name, value: housingMetricLatest(a, metric.key) });
+    }
+    const { values, legend } = quantileChoropleth(entries, {
+      label:   (v) => hMapLabel(metric.kind, v),
+      compact: (v) => hMapCompact(metric.kind, v),
+    });
+    const selId = hByUid.get($area.value)?.level === 'csd' ? $area.value : null;
+    housingMap.render({
+      geojson, values, selectedId: selId,
+      onSelect: (id) => {
+        if (!hByUid.has(id)) return;
+        $area.value = id;
+        render();
+      },
+      title: `${provName} municipalities — ${metric.label.toLowerCase()}`,
+      sub: 'Newest census · click a municipality to select it.',
+      source: 'Boundaries: Statistics Canada 2021 (OGL–Canada) · Data: StatsCan Census',
+      legend,
+      filename: `housing_map_${provName}_${metric.key}.png`.replace(/\s+/g, '-'),
+    });
   }
 
   const viewVal = () => [...$view].find(r => r.checked)?.value || 'compare';
@@ -482,6 +583,7 @@ export async function initHousing() {
 
   // --- Orchestration ---------------------------------------------------------
   function render() {
+    renderHousingMap();
     const uid = $area.value;
     const name = nameByUid.get(uid) || uid;
     const hd = hByUid.get(uid), dd = dByUid.get(uid);
@@ -524,6 +626,7 @@ export async function initHousing() {
   // Province change → rescope (and reset to the province total) the area list.
   $province.addEventListener('change', () => {
     const region = $province.value;
+    rememberProvince(region);                       // shared home province ('CA' is ignored)
     const def = regionDefaultArea(region);
     $area.innerHTML = buildAreaOptions(region);
     $area.value = def || $area.options[0]?.value || '';

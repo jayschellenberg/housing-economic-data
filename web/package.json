@@ -26,6 +26,7 @@
     "data:mls": "Rscript ../r/16_scrape_mls.R",
     "data:economic": "Rscript ../r/16_scrape_mls.R && Rscript ../r/15_build_economic_update.R",
     "data:rtb": "Rscript ../r/19_scrape_rtb.R",
+    "data:geo": "Rscript ../r/20_build_boundaries.R",
     "data:all": "Rscript ../r/00_audit_geographies.R && Rscript ../r/00_build_capabilities.R && Rscript ../r/01_scrape_historical.R && Rscript ../r/02_scrape_zone_snapshots.R && Rscript ../r/05_scrape_starts.R && Rscript ../r/06_scrape_secondary.R && Rscript ../r/03_build_data_files.R && Rscript ../r/04_build_manifest.R && Rscript ../r/13_validate_indicators.R && Rscript ../r/10_scrape_boc.R && Rscript ../r/11_scrape_statscan.R && Rscript ../r/17_scrape_osb.R && Rscript ../r/14_build_indicators.R && Rscript ../r/16_scrape_mls.R && Rscript ../r/15_build_economic_update.R && Rscript ../r/19_scrape_rtb.R"
   },
   "dependencies": {
@@ -37,6 +38,7 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.0",
+    "mapshaper": "^0.7.33",
     "tailwindcss": "^4.3.0",
     "vite": "^5.4.10"
   },

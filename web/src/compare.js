@@ -14,6 +14,7 @@
  */
 
 import { buildChartCard } from './chart.js';
+import { resolveProvince, rememberProvince } from './prefs.js';
 import { escapeHtml as esc } from './escape.js';
 
 const METRICS = ['Median Rent', 'Average Rent', 'Vacancy Rate', 'Average Rent Change'];
@@ -44,7 +45,8 @@ export function initCompare({ geographies, capabilities, manifest, categoryOrder
 
   $province.innerHTML = provinceItems
     .map(it => `<option value="${esc(it.prov)}">${esc(it.name)}</option>`).join('');
-  $province.value = provinceItems.some(it => it.prov === '46') ? '46' : provinceItems[0]?.prov || '';
+  const provCodes = provinceItems.map(it => it.prov);
+  $province.value = resolveProvince(provCodes, provCodes.includes('46') ? '46' : (provCodes[0] || ''));
 
   const maxYear = manifest?.cmhcMaxYear ?? new Date().getFullYear();
   $yearFrom.value = Math.max(maxYear - 10, 1990);
@@ -197,7 +199,7 @@ export function initCompare({ geographies, capabilities, manifest, categoryOrder
   let pending = null;
   function scheduleRender() { if (pending) clearTimeout(pending); pending = setTimeout(() => { pending = null; render(); }, 120); }
 
-  $province.addEventListener('change', () => { populateAreas(); scheduleRender(); });
+  $province.addEventListener('change', () => { rememberProvince($province.value); populateAreas(); scheduleRender(); });
   $breakdown.forEach(n => n.addEventListener('change', () => { populateCategory(); scheduleRender(); }));
   [...$dwelling, $category, $yearFrom, $yearTo].forEach(el => el.addEventListener('change', scheduleRender));
 

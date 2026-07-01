@@ -8,6 +8,7 @@
  */
 
 import { escapeHtml } from './escape.js';
+import { resolveProvince, rememberProvince } from './prefs.js';
 
 const LEVEL_LABEL = {
   province:      'Entire province',
@@ -41,14 +42,17 @@ export function initFilters({ geographies, capabilities, categoryOrder = {}, ini
   const provinceItems = (levels.province || []).slice().sort((a, b) => a.name.localeCompare(b.name));
   const provExists = (p) => provinceItems.some(it => it.prov === p);
   const fallbackProv = () => provExists(DEFAULT_PROV) ? DEFAULT_PROV : provinceItems[0]?.prov;
+  // A shared link's geoUid always wins; absent that, open on the visitor's saved
+  // "home" province (shared across tabs), else Manitoba.
+  const homeProv = resolveProvince(provinceItems.map(it => it.prov), fallbackProv());
 
   // Initial state. The persisted selection is still (geoLevel, geoUid); province
-  // is derived from the saved geoUid. Default: Manitoba / Entire province.
+  // is derived from the saved geoUid.
   const savedProv = initialState.geoUid ? provOf(initialState.geoUid) : null;
   const state = {
-    province:     (savedProv && provExists(savedProv)) ? savedProv : fallbackProv(),
+    province:     (savedProv && provExists(savedProv)) ? savedProv : homeProv,
     geoLevel:     initialState.geoLevel || 'province',
-    geoUid:       initialState.geoUid   || DEFAULT_PROV,
+    geoUid:       initialState.geoUid   || homeProv,
     dwellingType: initialState.dwellingType || 'All',
     yearFrom:     initialState.yearFrom     || null,
     yearTo:       initialState.yearTo       || null,
@@ -191,6 +195,7 @@ export function initFilters({ geographies, capabilities, categoryOrder = {}, ini
   // --- Event wiring --------------------------------------------------------
   $province.addEventListener('change', () => {
     state.province = $province.value;
+    rememberProvince(state.province);   // shared home province across tabs
     normalize();          // keep the level if the new province has it, else fall back
     populateLevels();
     populateNames();

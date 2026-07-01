@@ -15,6 +15,7 @@
  */
 
 import { buildChartCard } from './chart.js';
+import { resolveProvince, rememberProvince } from './prefs.js';
 import { escapeHtml } from './escape.js';
 
 const SERIES = ['Starts', 'Completions', 'Under Construction',
@@ -83,12 +84,13 @@ export async function initStarts({ manifest }) {
     .map(l => `<option value="${l}">${LEVEL_LABEL[l] ?? l}</option>`)
     .join('');
 
-  // Open on Manitoba (province uid 46) when provinces are the first level;
-  // otherwise fall back to the first item in that level.
+  // Open on the shared "home" province (default Manitoba, uid 46) when provinces
+  // are the first level; otherwise fall back to the first item in that level.
   const defaultLevel = availableLevels[0] || 'province';
   const defaultList  = levels[defaultLevel] || [];
   const defaultItem  = (defaultLevel === 'province'
-      && defaultList.find(it => it.uid === '46' || it.name === 'Manitoba'))
+      && (defaultList.find(it => String(it.uid) === resolveProvince(defaultList.map(it => String(it.uid))))
+          || defaultList.find(it => it.uid === '46' || it.name === 'Manitoba')))
     || defaultList[0];
 
   const state = {
@@ -350,9 +352,14 @@ export async function initStarts({ manifest }) {
     state.geoLevel = $level.value;
     populateNames();
     state.geoUid = $name.value;
+    if (state.geoLevel === 'province') rememberProvince(state.geoUid);
     scheduleRender();
   });
-  $name.addEventListener('change',  () => { state.geoUid = $name.value; scheduleRender(); });
+  $name.addEventListener('change',  () => {
+    state.geoUid = $name.value;
+    if (state.geoLevel === 'province') rememberProvince(state.geoUid);
+    scheduleRender();
+  });
   $freq.forEach(n => n.addEventListener('change', () => { if (n.checked) { state.frequency = n.value; scheduleRender(); } }));
   $bd  .forEach(n => n.addEventListener('change', () => { if (n.checked) { state.breakdown = n.value; renderCategoryToggles(); scheduleRender(); } }));
   $yFrom.addEventListener('change', () => { const v = parseInt($yFrom.value, 10); state.yearFrom = Number.isFinite(v) ? v : null; scheduleRender(); });

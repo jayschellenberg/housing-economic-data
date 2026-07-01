@@ -12,6 +12,7 @@
  */
 
 import { buildChartCard } from './chart.js';
+import { resolveProvince, rememberProvince } from './prefs.js';
 import { escapeHtml } from './escape.js';
 
 // Series we show, grouped by which dimension CMHC publishes them under.
@@ -72,10 +73,7 @@ export async function initSecondary({ manifest }) {
   // are carried on every record by r/06; new centres appear here automatically.
   const MB_UID         = '46';                          // Manitoba — pinned first / default
   const DEFAULT_CENTRE = { '46': '602', '47': '725' };  // Winnipeg / Saskatoon
-  // Remember the last-used province across visits (falls back to Manitoba).
-  const PROV_LS_KEY = 'sr-prov';
-  const readSavedProv = () => { try { return localStorage.getItem(PROV_LS_KEY); } catch { return null; } };
-  const saveProv = (p) => { try { localStorage.setItem(PROV_LS_KEY, p); } catch {} };
+  // Province persistence is shared across tabs via prefs.js (falls back to MB).
   const provNames      = new Map();
   const centresByProv  = new Map();                     // prov uid → Map(geoUid → name)
   for (const r of records) {
@@ -102,7 +100,7 @@ export async function initSecondary({ manifest }) {
   const yMin = Math.min(...years), yMax = Math.max(...years);
 
   const state = {
-    prov:     (() => { const s = readSavedProv(); return (s && provs.includes(s)) ? s : (provs.includes(MB_UID) ? MB_UID : provs[0]); })(),
+    prov:     resolveProvince(provs, provs.includes(MB_UID) ? MB_UID : provs[0]),
     centre:   '',
     yearFrom: Math.max(yMin, yMax - 9),
     yearTo:   yMax,
@@ -286,7 +284,7 @@ export async function initSecondary({ manifest }) {
   // ----- Event wiring --------------------------------------------------------
   $province.addEventListener('change', () => {
     state.prov = $province.value;
-    saveProv(state.prov);                           // remember for next visit
+    rememberProvince(state.prov);                   // remember for next visit (shared across tabs)
     state.centre = pickDefaultCentre(state.prov);   // default centre per province
     populateCentres();
     scheduleRender();
