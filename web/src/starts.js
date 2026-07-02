@@ -17,6 +17,7 @@
 import { buildChartCard } from './chart.js';
 import { resolveProvince, rememberProvince } from './prefs.js';
 import { escapeHtml } from './escape.js';
+import { initStartsMap } from './starts-map.js';
 
 const SERIES = ['Starts', 'Completions', 'Under Construction',
                 'Absorbed Units', 'Unabsorbed Inventory'];
@@ -144,6 +145,19 @@ export async function initStarts({ manifest }) {
   $charts.replaceChildren();
   const cards = SERIES.map(s => ({ series: s, ...buildChartCard($charts, { series: s }) }));
 
+  // Bottom-of-page Starts choropleth: shades the selected CMA's zones by a Scss
+  // metric and doubles as a click-to-select picker (drives the geo dropdowns).
+  const startsMap = initStartsMap({ geographies: geos, onSelect: (level, uid) => setGeo(level, uid) });
+  function setGeo(level, uid) {
+    state.geoLevel = level;
+    $level.value = level;
+    populateNames();
+    state.geoUid = uid;
+    $name.value = uid;
+    if (state.geoLevel === 'province') rememberProvince(state.geoUid);
+    scheduleRender();
+  }
+
   // Manifest "as of" line.
   if (manifest?.lastUpdated && $asOf) {
     const d = new Date(manifest.lastUpdated);
@@ -163,6 +177,7 @@ export async function initStarts({ manifest }) {
   let lastExport = null;
 
   async function render() {
+    startsMap.render(state);   // choropleth follows the geo (independent of the shard)
     $tables.replaceChildren();
     if (!state.geoUid) {
       $empty.hidden = false; $empty.classList.remove('hidden');
