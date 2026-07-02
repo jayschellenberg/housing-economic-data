@@ -9,7 +9,7 @@
  * Boundaries: adapted from CMHC RMS survey geographies (r/21 build step).
  */
 
-import { makeZoneChoroplethMap } from './zone-choropleth.js';
+import { makeZoneChoroplethMap, singleGeoTarget } from './zone-choropleth.js';
 import { loadRentalSummary } from './rental-summary.js';
 
 // Metrics the map can shade by — same set and order as the charts' panels.
@@ -22,7 +22,7 @@ const METRICS = [
 ];
 
 export function initChartsMap({ geographies, onSelect }) {
-  return makeZoneChoroplethMap({
+  const core = makeZoneChoroplethMap({
     host: 'charts-map',
     geographies,
     onSelect,
@@ -32,4 +32,5 @@ export function initChartsMap({ geographies, onSelect }) {
     source: 'Boundaries: adapted from CMHC Rental Market Survey geographies; not endorsed by CMHC',
     filePrefix: 'rental',
   });
+  return { render: (state) => core.draw(singleGeoTarget(state)) };
 }

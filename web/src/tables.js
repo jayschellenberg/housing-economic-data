@@ -20,6 +20,7 @@
 import { buildBarCard } from './chart.js';
 import { resolveProvince, rememberProvince } from './prefs.js';
 import { escapeHtml } from './escape.js';
+import { initTablesMap } from './tables-map.js';
 
 // Table definitions — series + dimension pair + display label.
 const TABLE_DEFS = {
@@ -239,6 +240,10 @@ export function initTables({ geographies, manifest, loadShard }) {
   }
   populateAreaDropdowns();
 
+  // Bottom-of-page context map (display-only): shows when the comparison areas
+  // share one CMA, shaded by a metric picker, with the compared areas outlined.
+  const tablesMap = initTablesMap({ geographies });
+
   // Vintage label.
   const maxYear = manifest?.cmhcMaxYear ?? new Date().getFullYear();
   $vintage.textContent = `Primary Rental Market — ${maxYear} October`;
@@ -271,6 +276,7 @@ export function initTables({ geographies, manifest, loadShard }) {
   async function render() {
     $output.replaceChildren();
     const { second, third, fourth } = pickedAreas();
+    tablesMap.render([second, third, fourth].filter(Boolean));
     const tableIds = pickedTables();
     if (!third) {
       $empty.hidden = false;

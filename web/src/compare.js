@@ -17,6 +17,7 @@ import { buildChartCard } from './chart.js';
 import { resolveProvince, rememberProvince } from './prefs.js';
 import { escapeHtml as esc } from './escape.js';
 import { fUsd, fPct1 } from './format.js';
+import { initCompareMap } from './compare-map.js';
 
 const METRICS = ['Median Rent', 'Average Rent', 'Vacancy Rate', 'Average Rent Change'];
 const AREA_LEVELS = ['province', 'cma', 'csd', 'zone', 'neighbourhood'];
@@ -104,11 +105,21 @@ export function initCompare({ geographies, capabilities, manifest, categoryOrder
 
   let lastTables = [];
 
+  // Bottom-of-page context map: shows when the compared areas share one CMA.
+  // Clicking a polygon toggles that area in/out of the comparison.
+  const compareMap = initCompareMap({ geographies, onSelect: (level, uid) => toggleArea(level, uid) });
+  function toggleArea(level, uid) {
+    const val = `${level}:${uid}`;
+    const cb = [...$areas.querySelectorAll('input[type=checkbox]')].find(c => c.value === val);
+    if (cb) { cb.checked = !cb.checked; scheduleRender(); }
+  }
+
   async function render() {
     const dim = pickedBreakdown(), cat = $category.value, dwelling = pickedDwelling();
     const yf = parseInt($yearFrom.value, 10) || (maxYear - 10);
     const yt = parseInt($yearTo.value, 10)   || maxYear;
     const areas = pickedAreas();
+    compareMap.render(areas);
 
     if (areas.length < 2) {
       $output.replaceChildren(); lastTables = [];

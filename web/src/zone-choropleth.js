@@ -30,6 +30,37 @@ const fmtCompact = (kind, v) => !Number.isFinite(v) ? '**'
   : kind === 'pct' ? `${v.toFixed(1)}%`
   : (Math.abs(v) >= 1000 ? `${Math.round(v / 1000)}k` : String(Math.round(v)));
 
+// Map a single-geo tab's (geoLevel, geoUid) selection to a draw target. A zone/
+// neighbourhood implies its CMA + own layer and outlines itself; a CMA shows its
+// zones with nothing outlined; province/CSD → no map.
+export function singleGeoTarget(state) {
+  const { geoLevel, geoUid } = state || {};
+  if (geoLevel === 'zone' || geoLevel === 'neighbourhood') {
+    return { cma: String(geoUid).split('-')[0], layer: geoLevel, selectedIds: [String(geoUid)] };
+  }
+  if (geoLevel === 'cma') return { cma: String(geoUid), layer: 'zone', selectedIds: [] };
+  return null;
+}
+
+// Map a set of picked comparison areas to a draw target — but ONLY when they all
+// sit within a single CMA (else null → the map hides). The compared areas at the
+// shown layer are outlined. A province/CSD pick contributes no CMA and is simply
+// absent from the map; a picked CMA (with no zones) shows that CMA's zones.
+export function comparedAreasTarget(areas) {
+  const cmas = new Set();
+  for (const a of areas || []) {
+    if (a.level === 'zone' || a.level === 'neighbourhood') cmas.add(String(a.uid).split('-')[0]);
+    else if (a.level === 'cma') cmas.add(String(a.uid));
+  }
+  if (cmas.size !== 1) return null;
+  const cma = [...cmas][0];
+  const hasZone = areas.some(a => a.level === 'zone');
+  const hasNbhd = areas.some(a => a.level === 'neighbourhood');
+  const layer = hasNbhd && !hasZone ? 'neighbourhood' : 'zone';
+  const selectedIds = areas.filter(a => a.level === layer).map(a => String(a.uid));
+  return { cma, layer, selectedIds };
+}
+
 /**
  * @param {Object} opts
  * @param {string}   opts.host        id of the container <section>
@@ -40,11 +71,11 @@ const fmtCompact = (kind, v) => !Number.isFinite(v) ? '**'
  * @param {string}   opts.pickerId    id for the metric <select>
  * @param {string}   opts.source      map source/attribution line
  * @param {string}   opts.filePrefix  PNG filename prefix (e.g. "rental" / "starts")
- * @returns {{ render: (state) => void }}
+ * @returns {{ draw: (target) => void }}  target = { cma, layer, selectedIds } | null
  */
-export function makeZoneChoroplethMap({ host, geographies, onSelect, metrics, loadSummary, pickerId, source, filePrefix }) {
+export function makeZoneChoroplethMap({ host, geographies, onSelect, metrics, loadSummary, pickerId, source, filePrefix, clickHint }) {
   const $host = document.getElementById(host);
-  if (!$host) return { render: () => {} };
+  if (!$host) return { draw: () => {} };
 
   const levels = geographies.levels || {};
   const uidSet = (lvl) => new Set((levels[lvl] || []).map(it => String(it.uid)));
@@ -62,34 +93,26 @@ export function makeZoneChoroplethMap({ host, geographies, onSelect, metrics, lo
 
   const map = mapCard($host);
   let token = 0;
-  let lastState = null;
-  $metric.addEventListener('change', () => { if (lastState) render(lastState); });
-
-  // Which CMA + polygon layer does the current selection imply?
-  function target(state) {
-    const { geoLevel, geoUid } = state;
-    if (geoLevel === 'zone' || geoLevel === 'neighbourhood') {
-      return { cma: String(geoUid).split('-')[0], layer: geoLevel };
-    }
-    if (geoLevel === 'cma') return { cma: String(geoUid), layer: 'zone' };
-    return null;                       // province / csd — no zone map
-  }
+  let lastTarget = null;
+  $metric.addEventListener('change', () => { if (lastTarget) draw(lastTarget); });
 
   const hide = () => { controls.style.display = 'none'; map.card.style.display = 'none'; };
 
-  async function render(state) {
-    lastState = state;
-    const t = target(state);
-    if (!t || !hasCmaGeo(t.cma)) { hide(); return; }
+  // target = { cma, layer, selectedIds } (or null to hide). Callers derive it:
+  // single-geo tabs via singleGeoTarget; comparison tabs from their picked areas.
+  async function draw(target) {
+    lastTarget = target;
+    if (!target || !target.cma || !hasCmaGeo(target.cma)) { hide(); return; }
+    const { cma, layer, selectedIds = [] } = target;
     const my = ++token;
-    const [geojson, summary] = await Promise.all([cmaGeo(t.cma, t.layer), loadSummary()]);
+    const [geojson, summary] = await Promise.all([cmaGeo(cma, layer), loadSummary()]);
     if (my !== token) return;                        // superseded by a newer render
     if (!geojson) { hide(); return; }
     controls.style.display = '';
     map.card.style.display = '';
 
     const metric = metrics.find(m => m.key === $metric.value) || metrics[0];
-    const uids = appUids[t.layer];
+    const uids = appUids[layer];
     const entries = geojson.features.map(f => {
       const id = String(f.properties.id);
       const rec = summary?.geos?.[id]?.values?.[metric.key];
@@ -108,19 +131,22 @@ export function makeZoneChoroplethMap({ host, geographies, onSelect, metrics, lo
       else if (uids.has(e.uid) && !values.has(e.uid)) values.set(e.uid, { fill: NO_DATA_FILL, label: 'No data' });
     }
 
-    const noun = LEVEL_NOUN[t.layer];
+    const noun = LEVEL_NOUN[layer];
+    const hint = onSelect
+      ? (clickHint || `Click a ${noun.replace(/s$/, '')} to load it; the dropdowns stay in sync.`)
+      : `The compared ${noun} are outlined.`;
     map.render({
       geojson,
       values,
-      selectedId: state.geoUid,
-      onSelect: (id) => onSelect(t.layer, id),
-      title: `${cmaName(t.cma)} — ${metric.label} by ${noun}`,
-      sub: `Shaded by ${metric.label.toLowerCase()} (most recent). Click a ${noun.replace(/s$/, '')} to load it; the dropdowns stay in sync.`,
+      selectedIds,
+      onSelect: onSelect ? (id) => onSelect(layer, id) : undefined,
+      title: `${cmaName(cma)} — ${metric.label} by ${noun}`,
+      sub: `Shaded by ${metric.label.toLowerCase()} (most recent). ${hint}`,
       source,
       legend,
-      filename: `${filePrefix}_map_${t.cma}_${t.layer}_${metric.key}.png`.replace(/\s+/g, '-'),
+      filename: `${filePrefix}_map_${cma}_${layer}_${metric.key}.png`.replace(/\s+/g, '-'),
     });
   }
 
-  return { render };
+  return { draw };
 }

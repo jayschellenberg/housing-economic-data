@@ -10,7 +10,7 @@
  * Starts survey shares the same zone/neighbourhood geography.
  */
 
-import { makeZoneChoroplethMap } from './zone-choropleth.js';
+import { makeZoneChoroplethMap, singleGeoTarget } from './zone-choropleth.js';
 import { loadStartsSummary } from './starts-summary.js';
 
 // Scss series the map can shade by (all whole-unit counts).
@@ -23,7 +23,7 @@ const METRICS = [
 ];
 
 export function initStartsMap({ geographies, onSelect }) {
-  return makeZoneChoroplethMap({
+  const core = makeZoneChoroplethMap({
     host: 'hs-map',
     geographies,
     onSelect,
@@ -33,4 +33,5 @@ export function initStartsMap({ geographies, onSelect }) {
     source: 'Boundaries: adapted from CMHC Rental Market Survey geographies; not endorsed by CMHC',
     filePrefix: 'starts',
   });
+  return { render: (state) => core.draw(singleGeoTarget(state)) };
 }
