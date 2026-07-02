@@ -18,6 +18,11 @@
 
 SHRINK_TOLERANCE_PCT <- as.numeric(Sys.getenv("REFRESH_SHRINK_TOLERANCE_PCT", unset = "10"))
 ALLOW_SHRINK         <- identical(Sys.getenv("REFRESH_ALLOW_SHRINK"), "1")
+# Hard floor: even with REFRESH_ALLOW_SHRINK=1, refuse a catastrophic drop. An
+# operator approving an intended retirement should never also wave through a
+# 60%+ loss from an outage that returned near-empty data. Raise the env var only
+# if a loss that large is genuinely intended.
+HARD_FLOOR_PCT       <- as.numeric(Sys.getenv("REFRESH_HARD_FLOOR_PCT", unset = "60"))
 
 read_prev_json <- function(path) {
   raw <- tryCatch(system2("git", c("show", paste0("HEAD:", path)),
@@ -121,6 +126,16 @@ if (length(failures) == 0) {
   quit(status = 0L)
 }
 if (ALLOW_SHRINK) {
+  catastrophic <- Filter(function(c) is.finite(c$delta_pct) && c$delta_pct <= -HARD_FLOOR_PCT, failures)
+  if (length(catastrophic) > 0) {
+    labels <- paste(vapply(catastrophic,
+                           function(c) sprintf("%s (%.1f%%)", c$label, c$delta_pct), ""),
+                    collapse = ", ")
+    cat(sprintf("\n[sanity] REFRESH_ALLOW_SHRINK=1, but %d metric(s) dropped past the hard floor (-%g%%): %s.\n",
+                length(catastrophic), HARD_FLOOR_PCT, labels))
+    cat("[sanity] A drop this large is almost always an outage returning near-empty data, not an intentional retirement — refusing to overwrite. Raise REFRESH_HARD_FLOOR_PCT only if this loss is genuinely intended.\n")
+    quit(status = 1L)
+  }
   cat(sprintf("\n[sanity] %d metric(s) shrank beyond tolerance, but REFRESH_ALLOW_SHRINK=1 — proceeding.\n",
               length(failures)))
   quit(status = 0L)

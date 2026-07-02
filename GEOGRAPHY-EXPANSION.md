@@ -188,7 +188,48 @@ present, so `"Calgary;All-items"` matches `"Calgary, Alberta;All-items"`.
 
 ---
 
-## 7. Open / next candidates
+## 7. Map views (boundary layer)
+
+Several tabs draw choropleth / picker maps from self‑hosted GeoJSON under
+`web/public/data/geo/` (committed — the running site fetches static files; a
+fresh clone needs **no** rebuild). Rendering is a hand‑built planar Web‑Mercator
+in `web/src/map.js` (NOT `Plot.geo`/`d3-geo` — the spherical path mis‑renders
+these polygons). Two build scripts, both needing the `mapshaper` dev‑dependency:
+
+- **`r/20_build_boundaries.R`** → `<slug>_<cd|csd>.geojson` per province from
+  StatsCan 2021 cartographic boundary files. Feature id = real CSDUID/CDUID.
+  Consumed by the **Affordability / Census Profile / Housing Stock** municipality
+  choropleths. Run: `npm run data:geo`.
+- **`r/21_build_cmhc_zone_boundaries.R`** → `zones_<cma>.geojson` +
+  `nbhd_<cma>.geojson` per surveyed CMA from the CMHC RMS geodatabases (fetched
+  via `cmhc::get_cmhc_geography()` into `r/lib/cache/cmhc_geo/`). Feature id =
+  the rental/starts `<cma>-<zone_slug(name)>` GeoUID. Consumed by the **Rental
+  Charts** survey‑zone/neighbourhood picker map (`web/src/charts-map.js`).
+
+Loaders live in **`web/src/geo.js`**: `provinceGeo`/`hasProvinceGeo` (census
+family) and `cmaGeo`/`hasCmaGeo` (CMHC family).
+
+**Adding a province's municipality maps** (with §3): add its SGC code to
+`PROVINCES` + slug to `SLUG` in `r/20`, add the slug to `SLUG` in `geo.js`, then
+`npm run data:geo`. (BC gets a harder `SIMPLIFY_OVERRIDE` — a fjorded coastline
+is huge; watch the file size.)
+
+**Adding a CMA's zone/neighbourhood map** (with §4b): once the CMA's survey
+zones/neighbourhoods are in `geographies.json`/`starts-geographies.json`, add the
+3‑digit CMA code to `CMHC_CMAS` in `geo.js` and re‑run `r/21`. Gotchas the script
+handles but you should know: CMHC's internal `METCODE` ≠ the app CMA code
+(Winnipeg is `2680`, not `602`) — it maps via the MET layer's `SGCCODE`; and it
+slugs the **long** zone/neighbourhood names first (the RMS API used long names).
+Unresolved app uids are logged (year‑variant duplicates whose twin owns the
+polygon — dropdown‑only, area coverage stays complete); persistent name typos go
+in `r/lib/cmhc_geo_aliases.csv`.
+
+**Licence:** CMHC's data licence permits publishing derived Value‑added Products
+with attribution and no CMHC marks — map cards carry an "adapted from CMHC" line.
+
+---
+
+## 8. Open / next candidates
 
 - **Affordability → Alberta** (and fuller SK): wire `extra.ab` via r/18 (income 98‑10‑0055 +
   CMHC rent). Purchase factor needs an AB home‑price benchmark.

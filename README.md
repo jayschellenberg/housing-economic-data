@@ -1,8 +1,26 @@
 # Housing & Economic Data
 
-Interactive line charts of CMHC rental and vacancy data for Canada, filterable by geography (Province / CMA / CSD / Survey Zone / Neighbourhood), dwelling type (Apartment / Row / All), and a choice of breakdown dimension (Bedroom Type / Year of Construction / Structure Size / Rent Ranges).
+A multi-tab static website of Canadian housing & economic data, built for a commercial real-estate appraiser — CMHC rental market, housing starts, secondary rental, census housing & demographics, affordability, Manitoba rent control, and market indicators — with copy-to-Word, Excel (.xlsx), and PNG exports for appraisal reports. The **Rental Charts** tab shows interactive line charts of CMHC rental and vacancy data, filterable by geography (Province / CMA / CSD / Survey Zone / Neighbourhood), dwelling type (Apartment / Row / All), and a breakdown dimension (Bedroom Type / Year of Construction / Structure Size / Rent Ranges).
 
-**Geographic coverage.** Manitoba and Saskatchewan carry **full** detail — every level (province, CMA/CA, survey zone, neighbourhood) with complete history. Every other province/territory includes its **major centres** (province + CMA/CA level) for the **most recent 10 years** only (a rolling window that advances each refresh). The rental/starts geography list is config-driven in `r/lib/cmhc_helpers.R` (the `PROVINCES` table, `detail = full | basic`); CMA/CA UIDs are derived from the `cmhc` package's translation table. Saskatchewan has no CSD-level data — CMHC's Census-Subdivision breakdown returns a 500 for SK. Each `geographies.json` item carries a `prov` code, which drives the Rental Charts **province-first filter** (Province → Level → Area, scoped to one province at a time).
+**Map views.** Several tabs render self-hosted choropleth maps (Observable Plot; no external tiles, so the strict CSP and PNG/Word export stay intact): municipality choropleths on **Affordability**, **Census Profile**, and **Housing Stock** (shaded by a chosen metric; click a municipality to select it), and a survey-zone / neighbourhood picker map on **Rental Charts**. Boundary GeoJSON is built by `r/20_build_boundaries.R` (StatsCan cartographic boundaries) and `r/21_build_cmhc_zone_boundaries.R` (CMHC survey geographies) and committed under `web/public/data/geo/`, so the running site fetches static files and a fresh clone needs no boundary rebuild.
+
+**Geographic coverage.** Manitoba, Saskatchewan, Alberta and British Columbia carry **full** detail — every level (province, CMA/CA, survey zone, neighbourhood, and municipality/CSD). Manitoba has the deepest history (rental data back to 1990); the other three cover the most recent 15 years. Every other province/territory includes its **major centres** (province + CMA/CA level) for a rolling recent window. The rental/starts geography list is config-driven in `r/lib/cmhc_helpers.R` (the `PROVINCES` table, `detail = full | basic`); CMA/CA UIDs are derived from the `cmhc` package's translation table. Each `geographies.json` item carries a `prov` code, which drives the Rental Charts **province-first filter** (Province → Level → Area, scoped to one province at a time).
+
+## Tabs
+
+| Tab | What it shows | Pipeline |
+|---|---|---|
+| Rental Charts | CMHC Rms line charts (5 metrics) + survey-zone picker map | `r/01`–`r/04`, `r/21` |
+| Rental Tables | Appraisal-ready vacancy / median-rent pivot tables + bar charts | `r/03` |
+| Compare Areas | Multi-area time series within one province | `r/03` |
+| Secondary Rental | CMHC Srms (condo / secondary) for surveyed centres | `r/06` |
+| Housing Starts | CMHC Scss starts / completions | `r/05` |
+| Housing Stock | Census dwelling type / age / condition + choropleth map | `r/07`–`r/10`, `r/12b`, `r/20` |
+| Census Profile | Population & dwelling trends + demographics + choropleth map | `r/12`, `r/12b`, `r/20` (run-once) |
+| Affordability | Royal-LePage-style affordability factor + choropleth map | `r/16`, `r/18`, census, `r/20` |
+| RTB (MB) | Manitoba rent-increase guideline history + CPI overlay | `r/19` |
+| Current Snapshot / Market Indicators | BoC / StatsCan / OSB economic indicators | `r/10`,`r/11`,`r/13`,`r/14`,`r/17` |
+| MB Economic Update | Auto narrative report (economy + HPI + outlook) | `r/15`, `r/16` |
 
 The Tables tab generates appraisal-ready comparison tables (vacancy / median rent by bedroom type, rent range, year built) with copy-to-clipboard (rich HTML for pasting into Word), Word (.docx), and Excel (.xlsx) export — this replaces the retired CMHC-VacancyMedianRents Shiny tool. It is **province-scoped** (pick a province — always the first row, default Manitoba — then the second–fourth areas are centres within it; no cross-province comparison), and each table has a grouped-bar chart card beside it (same chrome as the Rental Charts cards — title, subtitle, right-side legend, Download PNG). The **Compare Areas** tab is the multi-area counterpart to Rental Charts: it overlays several areas *within one province* as time-series lines for a fixed breakdown category (e.g. pre-1960 stock across MB centres), with a matching areas × years table beside each chart — one chart+table pair per metric (median rent, average rent, vacancy, avg rent change). The pipeline also pulls the Secondary Rental Market Survey (Srms — condo rental data) into `web/public/data/secondary.json`, replacing the retired "CMHC Rental Data Scrape" project. Both retired projects are archived under `$Projects in Progress\old projects maybe`.
 
@@ -145,7 +163,7 @@ plus the in-app indicator chart captions.
   (2025) [`cmhc`](https://github.com/mountainMath/cmhc): R package to
   access, retrieve, and work with CMHC data. Use or reproduction of any
   CMHC data shown here is subject to the [CMHC Licence Agreement for the
-  Use of Data](https://www.cmhc-schl.gc.ca/about-us/terms-of-use),
+  Use of Data](https://www.cmhc-schl.gc.ca/professionals/housing-markets-data-and-research/housing-data/cmhc-licence-agreement-use-of-data),
   including its attribution requirements. This product is not affiliated
   with or endorsed by CMHC.
 - **Statistics Canada Web Data Service** via the [`cansim`](https://github.com/mountainMath/cansim) R package.

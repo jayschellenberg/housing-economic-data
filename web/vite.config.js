@@ -29,8 +29,10 @@ export default defineConfig({
           // of the eager vendor bundle without binding it to either consumer.
           if (p.includes('jszip')) return 'jszip';
           if (p.includes('html-to-image')) return 'html-to-image';
-          if (p.includes('@observablehq/plot')) return 'plot';
-          if (p.includes('d3-')) return 'd3';
+          // Plot + d3 are left in `vendor` (not their own chunk): they load
+          // eagerly anyway (charts is the default tab), and they share transitive
+          // deps with vendor, so any split produced a benign but noisy circular
+          // chunk warning. Keeping them together removes the cycle.
           return 'vendor';
         },
       },
