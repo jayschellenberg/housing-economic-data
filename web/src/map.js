@@ -19,7 +19,6 @@ import { escapeHtml } from './escape.js';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const NO_DATA_FILL = '#e5e7eb';   // grey — matches the "**" missing-data convention
 const SEL_STROKE    = '#111827';  // near-black outline for the selected polygon
-const HOVER_STROKE  = '#111827';  // outline drawn on the area under the pointer
 const EXPORT_RATIO  = 3;          // device-pixel scale for crisp PNGs (matches the chart cards)
 const CHORO_RAMP    = ['#dbeafe', '#93c5fd', '#3b82f6', '#1d4ed8', '#1e3a8a'];  // light→dark blue
 
@@ -158,7 +157,7 @@ function setupZoom(svg, group, controls, W, H, z, pan) {
   svg.addEventListener('pointerdown', (e) => {
     pan.didPan = false;
     if (z.k <= 1) return;
-    dragging = true; pan.dragging = true; lastX = downX = e.clientX; lastY = downY = e.clientY;
+    dragging = true; lastX = downX = e.clientX; lastY = downY = e.clientY;
     svg.style.cursor = 'grabbing';
   });
   svg.addEventListener('pointermove', (e) => {
@@ -170,7 +169,7 @@ function setupZoom(svg, group, controls, W, H, z, pan) {
     if (Math.abs(e.clientX - downX) + Math.abs(e.clientY - downY) > 4) pan.didPan = true;
     clampPan(); apply();
   });
-  const end = () => { dragging = false; pan.dragging = false; svg.style.cursor = z.k > 1 ? 'grab' : ''; };
+  const end = () => { dragging = false; svg.style.cursor = z.k > 1 ? 'grab' : ''; };
   svg.addEventListener('pointerup', end);
   svg.addEventListener('pointerleave', end);
   svg.style.cursor = z.k > 1 ? 'grab' : '';
@@ -281,7 +280,7 @@ export function mapCard(container, { className = '' } = {}) {
     // All polygons live in a group so zoom/pan is a single transform on it.
     const zoomG = document.createElementNS(SVG_NS, 'g');
     zoomG.setAttribute('class', 'cmhc-map-zoom');
-    const panState = { didPan: false, dragging: false };
+    const panState = { didPan: false };
     let selPath = null;
     for (const f of features) {
       const id = String(f.properties.id);
@@ -299,24 +298,10 @@ export function mapCard(container, { className = '' } = {}) {
         if (typeof onSelect === 'function')
           path.addEventListener('click', () => { if (!panState.didPan) onSelect(id); });
       }
-      // Highlight the area under the pointer: fuller fill + a crisp outline, and
-      // raise it so the outline isn't clipped by neighbours. Suppressed mid-drag
-      // so panning doesn't strobe. On leave, restore the polygon's base style
-      // (the selected one keeps its heavier outline) and re-raise the selection.
-      path.addEventListener('mouseenter', () => {
-        if (panState.dragging) return;
-        path.setAttribute('fill-opacity', '1');
-        path.setAttribute('stroke', HOVER_STROKE);
-        path.setAttribute('stroke-width', '1.5');
-        zoomG.appendChild(path);
-      });
-      path.addEventListener('mouseleave', () => {
-        const isSel = selPath === path;
-        path.setAttribute('fill-opacity', '0.85');
-        path.setAttribute('stroke', isSel ? SEL_STROKE : '#ffffff');
-        path.setAttribute('stroke-width', isSel ? '2' : '0.5');
-        if (selPath && !isSel) zoomG.appendChild(selPath);
-      });
+      // Hover highlight is CSS-driven (.cmhc-map-zoom path:hover) — a fuller fill
+      // and a crisp outline. Doing it in CSS (rather than moving the node to the
+      // top on mouseenter) avoids the re-parent that was breaking mouseleave and
+      // leaving areas stuck lit.
       if (selectedId != null && id === String(selectedId)) selPath = path;
       zoomG.appendChild(path);
     }
