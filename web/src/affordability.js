@@ -23,6 +23,7 @@ import { getPref, setPref, resolveProvince, rememberProvince } from './prefs.js'
 import { escapeHtml } from './escape.js';
 import { miss, fUsd, fPct1 as fPct } from './format.js';
 import { PROV_LABEL, provOfUid, cleanName } from './geography.js';
+import { loadCensusProfile } from './census-profile.js';
 
 const DEFAULT_RATE = 4.64;     // % — Royal LePage 2026 report assumption (3-yr fixed special)
 const DOWN_PCT     = 20;       // % down payment
@@ -51,7 +52,7 @@ export async function initAffordability() {
   if (!$area || !$tables) return;
 
   const [profile, mls, mortgage, extra] = await Promise.all([
-    fetch('./data/housing/census_profile.json').then(r => r.ok ? r.json() : null).catch(() => null),
+    loadCensusProfile(),
     fetch('./data/economy/mls_benchmark.json').then(r => r.ok ? r.json() : null).catch(() => null),
     fetch('./data/indicators/mortgage_market.json').then(r => r.ok ? r.json() : null).catch(() => null),
     fetch('./data/economy/affordability_extra.json').then(r => r.ok ? r.json() : null).catch(() => null),

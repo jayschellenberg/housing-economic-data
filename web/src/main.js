@@ -96,7 +96,14 @@ function setDataAsOf(text) {
   if (el) el.textContent = text;
 }
 
-function setupTabs(initial) {
+// Run `fn` at most once; later calls return the first call's result. Used to
+// memoise per-tab initialisation so re-activating a tab doesn't re-init it.
+function once(fn) {
+  let ran = false, value;
+  return () => { if (!ran) { ran = true; value = fn(); } return value; };
+}
+
+function setupTabs(initial, onActivate) {
   const tabs = {
     charts:     { btn: document.getElementById('tab-btn-charts'),     panel: document.getElementById('tab-panel-charts') },
     tables:     { btn: document.getElementById('tab-btn-tables'),     panel: document.getElementById('tab-panel-tables') },
@@ -126,6 +133,11 @@ function setupTabs(initial) {
       url.hash = hash;
       window.history.replaceState(null, '', url.toString());
     }
+    // First-activation init for the tab's view. The `once` wrappers dedupe, and
+    // async inits swallow their own errors, so a try/catch here only guards the
+    // synchronous inits (tables/compare/starts) — one failing tab must not wedge
+    // tab switching.
+    try { onActivate?.(name); } catch (e) { console.error('[tab init]', name, e); }
   }
 
   for (const [key, t] of Object.entries(tabs)) {
@@ -213,21 +225,30 @@ async function bootstrap() {
         ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 1000);
   }
-  setupTabs(initialTab);
-
-  // Bootstrap the other views eagerly at page load. (Task 2.1 in the audit
-  // plan: convert to lazy first-activation initialisation so first paint
-  // doesn't fetch 7MB of JSON the user may never look at.)
-  initTables({ geographies, manifest, loadShard });
-  initCompare({ geographies, capabilities, manifest, categoryOrder: CATEGORY_ORDER, loadShard });
-  initStarts({ manifest });
-  initSecondary({ manifest }).catch(err => console.error('[secondary bootstrap]', err));
-  initIndicators().catch(err => console.error('[indicators bootstrap]', err));
-  initHousing().catch(err => console.error('[housing bootstrap]', err));
-  initCensus().catch(err => console.error('[census bootstrap]', err));
-  initEconomicUpdate().catch(err => console.error('[economic bootstrap]', err));
-  initAffordability().catch(err => console.error('[affordability bootstrap]', err));
-  initRtb().catch(err => console.error('[rtb bootstrap]', err));
+  // Lazy first-activation init. Each non-charts view is built the first time its
+  // tab is shown, so first paint only pays for the charts landing view — not the
+  // ~7MB of JSON the census/housing/indicators tabs pull. `once` dedupes repeat
+  // activations; async inits log-and-swallow so one failing tab can't wedge the
+  // rest. The charts tab (the default) has no entry — it's rendered by renderAll
+  // below. The snapshot tab's KPIs live in the indicators view, so it shares that
+  // init.
+  const initIndicatorsOnce = once(() =>
+    initIndicators().catch(err => console.error('[indicators bootstrap]', err)));
+  const tabInit = {
+    tables:        once(() => initTables({ geographies, manifest, loadShard })),
+    compare:       once(() => initCompare({ geographies, capabilities, manifest, categoryOrder: CATEGORY_ORDER, loadShard })),
+    starts:        once(() => initStarts({ manifest })),
+    secondary:     once(() => initSecondary({ manifest }).catch(err => console.error('[secondary bootstrap]', err))),
+    indicators:    initIndicatorsOnce,
+    snapshot:      initIndicatorsOnce,
+    housing:       once(() => initHousing().catch(err => console.error('[housing bootstrap]', err))),
+    census:        once(() => initCensus().catch(err => console.error('[census bootstrap]', err))),
+    economic:      once(() => initEconomicUpdate().catch(err => console.error('[economic bootstrap]', err))),
+    affordability: once(() => initAffordability().catch(err => console.error('[affordability bootstrap]', err))),
+    rtb:           once(() => initRtb().catch(err => console.error('[rtb bootstrap]', err))),
+  };
+  // Trigger the initial tab's init (charts → no-op); wiring runs it on click too.
+  setupTabs(initialTab, (name) => tabInit[name]?.());
 
   // Per-tab "Download Word/Excel (charts)" exports — every rendered chart in
   // the active tab captured as a PNG and embedded one per page / worksheet.

@@ -22,6 +22,7 @@ import { resolveProvince, rememberProvince } from './prefs.js';
 import { escapeHtml } from './escape.js';
 import { miss, fInt as fmtN, fPct1 as fmtP } from './format.js';
 import { PROV_LABEL } from './geography.js';
+import { loadCensusProfile } from './census-profile.js';
 
 // Common age buckets for the comparison view — each census's own bands rolled
 // up to a shared set so the years line up despite different banding.
@@ -112,8 +113,7 @@ export async function initHousing() {
   // Synthesised from the City-of-Winnipeg cluster/CA data (r/12 + r/12b): dwelling
   // type comes from `trends`, age + condition from `demo`. They carry their own
   // age/condition labels because the City banding differs from census_housing's.
-  const profile = await fetch('./data/housing/census_profile.json')
-    .then(r => r.ok ? r.json() : null).catch(() => null);
+  const profile = await loadCensusProfile();
   const DT_FROM_TREND = ['single_detached', 'semi_detached', 'row_house', 'apt_duplex',
                          'apt_lt5', 'apt_ge5', 'other_attached', 'movable'];  // → DT_SHORT order
   const AGE_KEYS = ['built_1960', 'built_1961_1980', 'built_1981_1990', 'built_1991_2000',
