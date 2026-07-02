@@ -20,6 +20,7 @@ import { mapCard, quantileChoropleth } from './map.js';
 import { provinceGeo, hasProvinceGeo } from './geo.js';
 import { resolveProvince, rememberProvince } from './prefs.js';
 import { escapeHtml } from './escape.js';
+import { miss, fInt as fmtN, fPct1 as fmtP } from './format.js';
 
 // Common age buckets for the comparison view — each census's own bands rolled
 // up to a shared set so the years line up despite different banding.
@@ -151,9 +152,7 @@ export async function initHousing() {
   const nameByUid = new Map([...dByUid].map(([u, a]) => [u, a.name]).concat(
     [...hByUid].map(([u, a]) => [u, a.name])));   // census_housing / cluster names win on overlap
 
-  const miss = (v) => v == null || !Number.isFinite(Number(v));   // null / NaN / Infinity → "**"
-  const fmtN = (v) => miss(v) ? '**' : Number(v).toLocaleString();
-  const fmtP = (v) => miss(v) ? '**' : `${Number(v).toFixed(1)}%`;
+  // fmtN/fmtP/miss come from ./format.js; fmtP takes an already-computed percent.
   const major = (yd) => yd?.condition?.[yd.condition.length - 1];   // last condition cat = major
   const rollAge = (spec, age) => spec.map(ix => ix.reduce((s, i) => s + (age?.[i] || 0), 0));
   const dwellingYearsAsc = (dd) => ALL_YEARS.filter(y => dd.census?.[y]);

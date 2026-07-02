@@ -16,6 +16,7 @@
 import { buildChartCard } from './chart.js';
 import { resolveProvince, rememberProvince } from './prefs.js';
 import { escapeHtml as esc } from './escape.js';
+import { fUsd, fPct1 } from './format.js';
 
 const METRICS = ['Median Rent', 'Average Rent', 'Vacancy Rate', 'Average Rent Change'];
 const AREA_LEVELS = ['province', 'cma', 'csd', 'zone', 'neighbourhood'];
@@ -95,10 +96,10 @@ export function initCompare({ geographies, capabilities, manifest, categoryOrder
     return { level: c.value.slice(0, i), uid: c.value.slice(i + 1), name: c.dataset.name };
   });
 
-  const miss = (v) => v == null || !Number.isFinite(Number(v));   // null / NaN / Infinity → "**" (rendered downstream)
+  // Pass null as the missing marker: this table paints blanks downstream.
   const fmtFor = (metric) => (metric === 'Vacancy Rate' || metric === 'Average Rent Change')
-    ? (v) => (miss(v) ? null : `${Number(v).toFixed(1)}%`)
-    : (v) => (miss(v) ? null : `$${Math.round(Number(v)).toLocaleString()}`);
+    ? (v) => fPct1(v, null)
+    : (v) => fUsd(v, null);
   const dimsFor = (metric) => capabilities?.series?.[metric]?.dimensions || [];
 
   let lastTables = [];

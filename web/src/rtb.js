@@ -14,10 +14,7 @@ import * as Plot from '@observablehq/plot';
 import { themed, gridMarks, frameMark, PALETTE } from './plot-theme.js';
 import { downloadCard } from './chart.js';
 import { escapeHtml } from './escape.js';
-
-const miss = (v) => v == null || !Number.isFinite(Number(v));
-const fPct = (v) => miss(v) ? '**' : `${Number(v).toFixed(1)}%`;
-const fUsd = (v) => miss(v) ? '**' : `$${Math.round(Number(v)).toLocaleString()}`;
+import { miss, fUsd, fPct1 as fPct } from './format.js';
 const longDate = (iso) => {
   if (!iso) return null;
   const [y, m, d] = String(iso).split('-').map(Number);
