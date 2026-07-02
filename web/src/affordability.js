@@ -21,15 +21,12 @@ import { mapCard } from './map.js';
 import { provinceGeo, hasProvinceGeo } from './geo.js';
 import { getPref, setPref, resolveProvince, rememberProvince } from './prefs.js';
 import { escapeHtml } from './escape.js';
+import { miss, fUsd, fPct1 as fPct } from './format.js';
 
 const DEFAULT_RATE = 4.64;     // % — Royal LePage 2026 report assumption (3-yr fixed special)
 const DOWN_PCT     = 20;       // % down payment
 const AMORT_YEARS  = 25;       // amortization
 const AFFORD_LINE  = 30;       // % of income = the affordability threshold
-
-const miss = (v) => v == null || !Number.isFinite(Number(v));
-const fPct = (v) => miss(v) ? '**' : `${Number(v).toFixed(1)}%`;
-const fUsd = (v) => miss(v) ? '**' : `$${Math.round(Number(v)).toLocaleString()}`;
 
 // Monthly payment to amortize `principal` at annual `ratePct` over `years`.
 // Exported for unit testing (pure).
