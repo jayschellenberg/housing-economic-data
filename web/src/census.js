@@ -21,6 +21,7 @@ import { resolveProvince, rememberProvince } from './prefs.js';
 import { escapeHtml } from './escape.js';
 import { fInt, fUsd, fDec1, fPctFrac0, fPctFrac1, fPctInt } from './format.js';
 import { PROV_LABEL, PROV_ORDER, provOfUid, cleanName } from './geography.js';
+import { loadCensusProfile } from './census-profile.js';
 
 // Geography levels, in dropdown group order.
 const LEVEL_GROUPS = [
@@ -178,8 +179,7 @@ export async function initCensus() {
   const $tables   = document.getElementById('census-tables');
   if (!$area[0] || !$tables) return;
 
-  const data = await fetch('./data/housing/census_profile.json')
-    .then(r => r.ok ? r.json() : null).catch(() => null);
+  const data = await loadCensusProfile();
   if (!data || !Array.isArray(data.regions)) {
     $tables.innerHTML = '<p class="text-sm text-red-700">Census profile data not found. Run r/12_census_profile.R.</p>';
     return;
