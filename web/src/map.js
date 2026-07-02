@@ -19,6 +19,7 @@ import { escapeHtml } from './escape.js';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const NO_DATA_FILL = '#e5e7eb';   // grey — matches the "**" missing-data convention
 const SEL_STROKE    = '#111827';  // near-black outline for the selected polygon
+const HOVER_STROKE  = '#111827';  // outline drawn on the area under the pointer
 const EXPORT_RATIO  = 3;          // device-pixel scale for crisp PNGs (matches the chart cards)
 const CHORO_RAMP    = ['#dbeafe', '#93c5fd', '#3b82f6', '#1d4ed8', '#1e3a8a'];  // light→dark blue
 
@@ -148,13 +149,16 @@ function setupZoom(svg, group, controls, W, H, z, pan) {
   }, { passive: false });
   controls.querySelector('[data-zoom="in"]').addEventListener('click', () => zoomAt(W / 2, H / 2, 1.4));
   controls.querySelector('[data-zoom="out"]').addEventListener('click', () => zoomAt(W / 2, H / 2, 1 / 1.4));
+  // Home: reset the view to the full extent.
+  const reset = () => { z.k = 1; z.tx = 0; z.ty = 0; svg.style.cursor = ''; apply(); };
+  controls.querySelector('[data-zoom="reset"]')?.addEventListener('click', reset);
 
   // Drag to pan (only meaningful once zoomed in).
   let dragging = false, lastX = 0, lastY = 0, downX = 0, downY = 0;
   svg.addEventListener('pointerdown', (e) => {
     pan.didPan = false;
     if (z.k <= 1) return;
-    dragging = true; lastX = downX = e.clientX; lastY = downY = e.clientY;
+    dragging = true; pan.dragging = true; lastX = downX = e.clientX; lastY = downY = e.clientY;
     svg.style.cursor = 'grabbing';
   });
   svg.addEventListener('pointermove', (e) => {
@@ -166,7 +170,7 @@ function setupZoom(svg, group, controls, W, H, z, pan) {
     if (Math.abs(e.clientX - downX) + Math.abs(e.clientY - downY) > 4) pan.didPan = true;
     clampPan(); apply();
   });
-  const end = () => { dragging = false; svg.style.cursor = z.k > 1 ? 'grab' : ''; };
+  const end = () => { dragging = false; pan.dragging = false; svg.style.cursor = z.k > 1 ? 'grab' : ''; };
   svg.addEventListener('pointerup', end);
   svg.addEventListener('pointerleave', end);
   svg.style.cursor = z.k > 1 ? 'grab' : '';
@@ -277,7 +281,7 @@ export function mapCard(container, { className = '' } = {}) {
     // All polygons live in a group so zoom/pan is a single transform on it.
     const zoomG = document.createElementNS(SVG_NS, 'g');
     zoomG.setAttribute('class', 'cmhc-map-zoom');
-    const panState = { didPan: false };
+    const panState = { didPan: false, dragging: false };
     let selPath = null;
     for (const f of features) {
       const id = String(f.properties.id);
@@ -295,6 +299,24 @@ export function mapCard(container, { className = '' } = {}) {
         if (typeof onSelect === 'function')
           path.addEventListener('click', () => { if (!panState.didPan) onSelect(id); });
       }
+      // Highlight the area under the pointer: fuller fill + a crisp outline, and
+      // raise it so the outline isn't clipped by neighbours. Suppressed mid-drag
+      // so panning doesn't strobe. On leave, restore the polygon's base style
+      // (the selected one keeps its heavier outline) and re-raise the selection.
+      path.addEventListener('mouseenter', () => {
+        if (panState.dragging) return;
+        path.setAttribute('fill-opacity', '1');
+        path.setAttribute('stroke', HOVER_STROKE);
+        path.setAttribute('stroke-width', '1.5');
+        zoomG.appendChild(path);
+      });
+      path.addEventListener('mouseleave', () => {
+        const isSel = selPath === path;
+        path.setAttribute('fill-opacity', '0.85');
+        path.setAttribute('stroke', isSel ? SEL_STROKE : '#ffffff');
+        path.setAttribute('stroke-width', isSel ? '2' : '0.5');
+        if (selPath && !isSel) zoomG.appendChild(selPath);
+      });
       if (selectedId != null && id === String(selectedId)) selPath = path;
       zoomG.appendChild(path);
     }
@@ -313,7 +335,11 @@ export function mapCard(container, { className = '' } = {}) {
     controls.className = 'cmhc-map-zoom-controls';
     controls.innerHTML =
       '<button type="button" data-zoom="in" aria-label="Zoom in">+</button>' +
-      '<button type="button" data-zoom="out" aria-label="Zoom out">−</button>';
+      '<button type="button" data-zoom="out" aria-label="Zoom out">−</button>' +
+      '<button type="button" data-zoom="reset" aria-label="Reset view" title="Reset view">' +
+        '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">' +
+        '<path fill="currentColor" d="M12 3l9 8h-3v9h-4v-6h-4v6H6v-9H3z"/></svg>' +
+      '</button>';
     frame.appendChild(controls);
     $plot.appendChild(frame);
 
