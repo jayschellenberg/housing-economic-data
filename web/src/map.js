@@ -217,7 +217,7 @@ export function mapCard(container, { className = '' } = {}) {
   // (which rebuilds the SVG) doesn't reset the user's view.
   const zoomState = { k: 1, tx: 0, ty: 0 };
 
-  function render({ geojson, values, selectedId, onSelect, title, sub, source, legend, filename }) {
+  function render({ geojson, values, selectedId, selectedIds, onSelect, title, sub, source, legend, filename }) {
     $title.textContent = title || '';
     $sub.textContent   = sub || '';
     if (source) $source.textContent = source;
@@ -281,7 +281,10 @@ export function mapCard(container, { className = '' } = {}) {
     const zoomG = document.createElementNS(SVG_NS, 'g');
     zoomG.setAttribute('class', 'cmhc-map-zoom');
     const panState = { didPan: false };
-    let selPath = null;
+    // One or many polygons can be outlined as "selected": single-geo tabs pass
+    // selectedId, the comparison tabs pass selectedIds for every compared area.
+    const selSet = new Set([selectedId, ...(selectedIds || [])].filter(v => v != null).map(String));
+    const selPaths = [];
     for (const f of features) {
       const id = String(f.properties.id);
       const path = document.createElementNS(SVG_NS, 'path');
@@ -293,19 +296,18 @@ export function mapCard(container, { className = '' } = {}) {
       const titleEl = document.createElementNS(SVG_NS, 'title');
       titleEl.textContent = labelFor(f);
       path.appendChild(titleEl);
-      if (vals.has(id)) {
-        path.style.cursor = 'pointer';
-        if (typeof onSelect === 'function')
-          path.addEventListener('click', () => { if (!panState.didPan) onSelect(id); });
+      if (vals.has(id) && typeof onSelect === 'function') {
+        path.style.cursor = 'pointer';   // only interactive when a click handler is wired
+        path.addEventListener('click', () => { if (!panState.didPan) onSelect(id); });
       }
       // Hover highlight is CSS-driven (.cmhc-map-zoom path:hover) — a fuller fill
       // and a crisp outline. Doing it in CSS (rather than moving the node to the
       // top on mouseenter) avoids the re-parent that was breaking mouseleave and
       // leaving areas stuck lit.
-      if (selectedId != null && id === String(selectedId)) selPath = path;
+      if (selSet.has(id)) selPaths.push(path);
       zoomG.appendChild(path);
     }
-    if (selPath) {
+    for (const selPath of selPaths) {
       selPath.setAttribute('stroke', SEL_STROKE);
       selPath.setAttribute('stroke-width', '2');
       zoomG.appendChild(selPath);   // raise to top so the outline isn't clipped
