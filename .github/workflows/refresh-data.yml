@@ -28,9 +28,11 @@ jobs:
       contents: write
       issues: write        # for the failure-notification step
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
-          fetch-depth: 2   # 98_sanity_check.R diffs new manifest vs HEAD~
+          # Full history: 98_sanity_check.R diffs the new manifest vs HEAD~, and
+          # the commit step rebases the data commit if main advanced mid-run.
+          fetch-depth: 0
 
       - uses: r-lib/actions/setup-r@v2
         with:
@@ -92,7 +94,17 @@ jobs:
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             git commit -m "data: refresh (${{ steps.stamp.outputs.date }})"
-            git push
+            # This job can run for hours; main may have advanced (e.g. a merged
+            # PR), which makes a plain push non-fast-forward. Rebase our single
+            # data commit onto the latest main and retry a few times.
+            pushed=false
+            for attempt in 1 2 3; do
+              if git push origin HEAD:main; then pushed=true; break; fi
+              echo "push rejected (attempt $attempt) — rebasing onto origin/main"
+              git fetch origin main
+              git rebase origin/main || { echo "rebase conflict — aborting"; git rebase --abort || true; exit 1; }
+            done
+            [ "$pushed" = true ] || { echo "push failed after retries"; exit 1; }
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
