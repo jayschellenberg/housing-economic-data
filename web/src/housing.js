@@ -14,7 +14,7 @@
  */
 
 import * as Plot from '@observablehq/plot';
-import { themed, gridMarks, frameMark, PALETTE } from './plot-theme.js';
+import { themed, frameMark, PALETTE } from './plot-theme.js';
 import { downloadCard } from './chart.js';
 import { mapCard, quantileChoropleth } from './map.js';
 import { provinceGeo, hasProvinceGeo } from './geo.js';

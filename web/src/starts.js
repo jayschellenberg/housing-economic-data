@@ -113,8 +113,6 @@ export async function initStarts({ manifest }) {
     }).join('') || '<option>&nbsp;</option>';
   }
 
-  function setRadio(nodes, value) { nodes.forEach(n => { n.checked = (n.value === value); }); }
-
   function updateZoneBanner() {
     const show = (state.geoLevel === 'zone' || state.geoLevel === 'neighbourhood');
     $banner.hidden = !show;

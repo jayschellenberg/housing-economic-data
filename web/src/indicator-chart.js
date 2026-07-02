@@ -45,12 +45,6 @@ function pickFormatter(units, values) {
   return fmt(units);
 }
 
-// Months between two ISO dates.
-function monthsBetween(isoA, isoB) {
-  const a = new Date(isoA), b = new Date(isoB);
-  return (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth());
-}
-
 // Freshness thresholds in days, by frequency. Each threshold combines the
 // publisher's typical release lag and a generous buffer for our monthly
 // refresh cadence — so the "stale" banner fires only when something is

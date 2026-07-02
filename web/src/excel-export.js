@@ -49,7 +49,7 @@ export async function exportTablesToExcel(built, { filename, maxYear, titleNote 
     // ── Header row ──
     const headerRow = ws.getRow(row);
     headerRow.values = ['', ...table.columns];
-    headerRow.eachCell((cell, col) => {
+    headerRow.eachCell((cell) => {
       cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
       cell.alignment = { horizontal: 'center', vertical: 'middle' };
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND_RED } };

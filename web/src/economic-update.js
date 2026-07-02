@@ -19,18 +19,9 @@ import { captureNodes } from './doc-image-export.js';
 import { escapeHtml } from './escape.js';
 
 // --- Formatters --------------------------------------------------------------
-const fmt1 = (v) => (v == null || isNaN(v)) ? '—' : Number(v).toFixed(1);
 const fmt0 = (v) => (v == null || isNaN(v)) ? '—' : Math.round(Number(v)).toLocaleString();
 const pct1 = (v) => (v == null || isNaN(v)) ? '—' : `${Number(v).toFixed(1)}%`;
 const pct0 = (v) => (v == null || isNaN(v)) ? '—' : `${Math.round(Math.abs(Number(v)))}%`;
-
-function money(v) {
-  if (v == null || isNaN(v)) return '—';
-  const n = Number(v);
-  if (Math.abs(n) >= 1e9) return `$${(n / 1e9).toFixed(2)} billion`;
-  if (Math.abs(n) >= 1e6) return `$${(n / 1e6).toFixed(1)} million`;
-  return `$${Math.round(n).toLocaleString()}`;
-}
 const dollars = (v) => (v == null || isNaN(v)) ? '—' : `$${Math.round(Number(v)).toLocaleString()}`;
 const wage = (v) => (v == null || isNaN(v)) ? '—' : `$${Number(v).toFixed(2)}`;   // keep cents
 
@@ -78,7 +69,6 @@ const T = {
   manufacturing: (m) => `Manufacturing sales ${moveBy(m.changePct, m.direction)} as of ${escapeHtml(m.period)} (${escapeHtml(m.comparison)}).`,
   wholesale: (m) => `Wholesale trade ${moveBy(m.changePct, m.direction)} as of ${escapeHtml(m.period)} (${escapeHtml(m.comparison)}).`,
   farm: (m) => {
-    const dir = m.totalDirection || (m.totalChangePct > 0 ? 'up' : 'down');
     return `Manitoba farm cash receipts in ${escapeHtml(m.period)} were ${upDown(m.totalChangePct)} versus the prior year. `
       + `Crop receipts were ${upDown(m.cropChangePct)} while livestock receipts were ${upDown(m.livestockChangePct)}.`;
   },

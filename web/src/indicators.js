@@ -71,13 +71,6 @@ let state = {
 };
 let lastRender = { cards: [], shards: {}, catalog: null };
 
-// Geo label helpers — display strings on chips/checkboxes.
-const GEO_LABEL = {
-  'CA':            'Canada',
-  'MB':            'Manitoba',
-  'Winnipeg-CMA':  'Winnipeg',
-};
-
 export async function initIndicators() {
   if (initialised) return;
   initialised = true;

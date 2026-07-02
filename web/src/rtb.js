@@ -98,7 +98,7 @@ export async function initRtb() {
   // Render the narrative, wrapping consecutive bullets in a single <ul>.
   let narrBody = '';
   let inList = false;
-  blocks.forEach((b, i) => {
+  blocks.forEach((b) => {
     if (b.type === 'bullet') {
       if (!inList) { narrBody += '<ul class="list-disc pl-6 mb-2 space-y-0.5">'; inList = true; }
       narrBody += `<li>${linkify(b.text)}</li>`;
