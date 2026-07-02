@@ -127,13 +127,15 @@ const DEMO_PERIODS = ['2021', '2016', '2011'];
 // ---- Map (choropleth) config ----------------------------------------------
 // Metrics the Manitoba-municipality choropleth can shade by. `kind` drives the
 // value/legend formatting; `renter_share` is derived from renter / tenure_total.
+// Ordered to match the Demographics table top-to-bottom (Age Range → Tenure →
+// Shelter Values → Income), so the Map-metric picker reads the same as the page.
 const MAP_METRICS = [
+  { key: 'population',          label: 'Population',              kind: 'int' },
+  { key: 'median_age',          label: 'Median age',             kind: 'dec1' },
+  { key: 'renter_share',        label: 'Renter share',           kind: 'pct' },
+  { key: 'median_dwelling_val', label: 'Median dwelling value',  kind: 'usd' },
+  { key: 'median_rent',         label: 'Median monthly rent',    kind: 'usd' },
   { key: 'median_hh_income',    label: 'Median household income', kind: 'usd' },
-  { key: 'median_rent',         label: 'Median monthly rent',     kind: 'usd' },
-  { key: 'median_dwelling_val', label: 'Median dwelling value',   kind: 'usd' },
-  { key: 'renter_share',        label: 'Renter share',            kind: 'pct' },
-  { key: 'median_age',          label: 'Median age',              kind: 'dec1' },
-  { key: 'population',           label: 'Population',              kind: 'int' },
 ];
 
 const metricValue = (region, key, period) => {

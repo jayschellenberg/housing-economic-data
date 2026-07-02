@@ -41,11 +41,14 @@ const ALL_YEARS = ['2006', '2011', '2016', '2021'];
 const CLUSTER_ROLLUP = [[0], [1], [2], [3], [4, 5], [6, 7]];
 
 // ---- Map (choropleth) config ----------------------------------------------
+// Ordered to match the page top-to-bottom: the housing-stock summary leads with
+// Total private dwellings then Needing major repairs, then the Age (period of
+// construction) section runs oldest→newest.
 const HOUSING_MAP_METRICS = [
+  { key: 'total',    label: 'Total private dwellings',  kind: 'int' },
   { key: 'major',    label: 'Needing major repairs',   kind: 'pct' },
   { key: 'pre1961',  label: 'Built 1960 or before',    kind: 'pct' },
   { key: 'post2000', label: 'Built 2001 or later',     kind: 'pct' },
-  { key: 'total',    label: 'Total private dwellings',  kind: 'int' },
 ];
 // Compute a map metric from one census year's { total, age[], condition[ok,major] }.
 // Exported (with housingMetricLatest) for unit testing — both are pure.
