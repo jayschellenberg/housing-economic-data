@@ -89,6 +89,17 @@ const AG_CHARTS = [
     subtitle: (p) => `${p.name} • avg per farm • annual, 2009–2023` },
 ];
 
+// Section grouping + display order for the charts, with a matching jump-link
+// bar. The map is a fixed section (rendered separately) appended at the end.
+const SECTIONS = [
+  { key: 'land',      label: 'Farmland values',     charts: ['farmland_value', 'farmland_yoy'] },
+  { key: 'prices',    label: 'Commodity prices',    charts: ['crop_prices', 'livestock_prices', 'poultry_prices', 'egg_price', 'milk_price'] },
+  { key: 'finances',  label: 'Receipts & finances', charts: ['farm_cash', 'farm_income', 'farm_balance'] },
+  { key: 'inputs',    label: 'Input costs',         charts: ['farm_input_index'] },
+  { key: 'structure', label: 'Farm structure',      charts: ['farm_count', 'farm_size', 'operator_age', 'farms_by_type'] },
+];
+const SPEC_BY_ID = Object.fromEntries(AG_CHARTS.map((s) => [s.chartId, s]));
+
 let done = false;
 
 export async function initAgriculture() {
@@ -155,6 +166,18 @@ export async function initAgriculture() {
     $yearTo.addEventListener('change', renderCharts);
   }
 
+  // Jump-to-section bar (built once; section ids are stable across re-renders).
+  const $jump = document.getElementById('ag-jump');
+  if ($jump) {
+    const links = SECTIONS.map((s) => `<a href="#ag-sec-${s.key}" data-jump="ag-sec-${s.key}" class="text-accent-600 hover:text-accent-700 hover:underline">${s.label}</a>`);
+    links.push('<a href="#ag-sec-map" data-jump="ag-sec-map" class="text-accent-600 hover:text-accent-700 hover:underline">Within-province map</a>');
+    $jump.innerHTML = '<span class="text-neutral-500 font-medium mr-1">Jump to:</span>' + links.join('');
+    $jump.querySelectorAll('a').forEach((a) => a.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById(a.dataset.jump)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }));
+  }
+
   // Province dropdown — shares the site-wide "home province" (SGC code) so the
   // choice carries across tabs. Only the four ag-covered provinces are offered.
   const provOptions = PROVS.map((p) => p.sgc);
@@ -180,30 +203,43 @@ export async function initAgriculture() {
     const monthFrom = $yearFrom && $yearFrom.value ? `${$yearFrom.value}-01` : null;
     const monthTo   = $yearTo && $yearTo.value ? `${$yearTo.value}-12` : null;
     $grid.replaceChildren();
-    let rendered = 0;
-    for (const spec of AG_CHARTS) {
-      const cfg = (catalog.charts || {})[spec.chartId];
-      if (!cfg) continue;
+    let total = 0;
+    // One <section> per group (header + 2-col grid), matching the jump bar.
+    for (const sec of SECTIONS) {
+      const section = document.createElement('section');
+      section.id = `ag-sec-${sec.key}`;
+      section.className = 'scroll-mt-16';
+      section.innerHTML =
+        `<h2 class="cmhc-mi-section-title">${sec.label}</h2>` +
+        '<div class="cmhc-mi-section-grid grid md:grid-cols-2 gap-4"></div>';
+      const $secGrid = section.querySelector('.cmhc-mi-section-grid');
+      let n = 0;
+      for (const chartId of sec.charts) {
+        const spec = SPEC_BY_ID[chartId];
+        const cfg = (catalog.charts || {})[chartId];
+        if (!spec || !cfg) continue;
 
-      let meta = Object.values(seriesById).filter((s) => s.chartId === spec.chartId);
-      if (spec.scope === 'prov') meta = meta.filter((s) => s.geo === prov.abbr);
-      meta.sort((a, b) => (orderOf.get(a.id) ?? 1e9) - (orderOf.get(b.id) ?? 1e9));
-      if (!meta.length) continue;
+        let meta = Object.values(seriesById).filter((s) => s.chartId === chartId);
+        if (spec.scope === 'prov') meta = meta.filter((s) => s.geo === prov.abbr);
+        meta.sort((a, b) => (orderOf.get(a.id) ?? 1e9) - (orderOf.get(b.id) ?? 1e9));
+        if (!meta.length) continue;
 
-      const records = meta.flatMap((s) => recordsById[s.id] || []);
-      if (!records.length) continue;
+        const records = meta.flatMap((s) => recordsById[s.id] || []);
+        if (!records.length) continue;
 
-      const card = buildIndicatorCard($grid, {
-        chartId: spec.chartId,
-        title: spec.title(prov),
-        sourceLabel: 'Statistics Canada',
-        description: spec.desc || cfg.description,
-      });
-      card.render(records, meta, { subtitle: spec.subtitle(prov), monthFrom, monthTo });
-      rendered += 1;
+        const card = buildIndicatorCard($secGrid, {
+          chartId,
+          title: spec.title(prov),
+          sourceLabel: 'Statistics Canada',
+          description: spec.desc || cfg.description,
+        });
+        card.render(records, meta, { subtitle: spec.subtitle(prov), monthFrom, monthTo });
+        n += 1; total += 1;
+      }
+      if (n > 0) $grid.appendChild(section);   // skip a section with no data
     }
 
-    if (!rendered) {
+    if (!total) {
       $grid.innerHTML =
         '<p class="text-sm text-neutral-600">Agricultural series have not been built yet. They populate on the next data refresh (r/11 + r/14).</p>';
     }
