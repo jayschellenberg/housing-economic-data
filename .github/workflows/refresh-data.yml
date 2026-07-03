@@ -94,6 +94,11 @@ jobs:
           Rscript r/15_build_economic_update.R
           Rscript r/19_scrape_rtb.R
           Rscript r/23_scrape_population_estimates.R   # annual CSD/province population estimates (Census Profile chart)
+          # Agriculture-tab time-series (prices, input costs, farm cash, farm structure) refresh above via
+          # r/11 + r/14 (catalog-driven). The within-province farm-structure MAP is 2021-Census-of-Agriculture
+          # data — static until the next census (~2027) — so this best-effort step just re-confirms it and will
+          # pick up the new census automatically; a transient census-table outage must not fail the refresh.
+          Rscript r/24_build_farm_structure_map.R || echo "[refresh] r/24 farm-structure map skipped — keeping the committed 2021 data"
 
       - name: Verify samples against live API
         run: Rscript r/99_verify_samples.R
