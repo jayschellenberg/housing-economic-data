@@ -8,6 +8,15 @@
 #   - provider="boc":     GET /valet/series/{id}/json -> compare label/description
 #   - provider="statscan": POST getSeriesInfoFromVector -> compare seriesTitleEn
 #   - provider="cba":      GET https://cba.ca/mortgages-in-arrears -> sanity check
+#
+# Transient vs. drift: the gate hard-fails only on evidence of genuine catalog
+# drift — a 200 response whose payload proves the series was renamed, archived
+# or removed (incl. a 404 that means the id is gone). A *transient* infra error
+# on a validation-only metadata endpoint (no response / timeout / 5xx / 429)
+# soft-passes with a WARN instead: those endpoints (StatsCan WDS, CKAN
+# package_show) are separate from the ones the scrapers actually pull from
+# (cansim / the CSV directly), so a momentary blip there must not nuke the whole
+# weekly refresh. This mirrors the existing StatsCan release-embargo soft-pass.
 # =============================================================================
 
 .this_dir <- {
@@ -42,12 +51,26 @@ matches <- function(actual, expected) {
   all(vapply(parts, function(p) grepl(norm(p), actual_n, fixed = TRUE), logical(1)))
 }
 
+# A transient infrastructure failure is anything that doesn't carry a verdict
+# about the *series*: no response at all (timeout / DNS / connection reset) or a
+# server-side/throttling status. A 4xx like 404 is NOT transient — it means the
+# id is gone (drift) — so it must fall through to a hard fail.
+.transient_http <- function(resp) {
+  if (is.null(resp)) return(TRUE)
+  status_code(resp) %in% c(408L, 425L, 429L, 500L, 502L, 503L, 504L)
+}
+
 validate_boc <- function(row) {
   url <- sprintf("https://www.bankofcanada.ca/valet/series/%s/json", row$seriesId)
   resp <- tryCatch(GET(url, timeout(15)), error = function(e) NULL)
-  if (is.null(resp) || status_code(resp) != 200) {
+  if (.transient_http(resp)) {
+    return(list(ok = TRUE, actualTitle = row$expectedTitle, latest = NA,
+                reason = sprintf("WARN: transient BoC Valet error (%s) — title not verified this run",
+                                 if (is.null(resp)) "no response" else status_code(resp))))
+  }
+  if (status_code(resp) != 200) {
     return(list(ok = FALSE, actualTitle = NA, latest = NA,
-                reason = sprintf("HTTP %s", if (is.null(resp)) "no response" else status_code(resp))))
+                reason = sprintf("HTTP %s", status_code(resp))))
   }
   body <- content(resp, as = "parsed", encoding = "UTF-8")
   # /valet/series/{id}/json returns body$seriesDetails (singular!) with
@@ -92,6 +115,13 @@ validate_statscan <- function(row) {
     if (!is.null(resp) && status_code(resp) == 409 && grepl("not released", body_txt, ignore.case = TRUE)) {
       return(list(ok = TRUE, actualTitle = row$expectedTitle, latest = NA,
                   reason = "WARN: WDS embargo (product not released yet) — title not verified this run"))
+    }
+    # The WDS metadata endpoint is separate from cansim (which the scraper uses),
+    # so a transient outage here shouldn't abort the run — soft-pass with a WARN.
+    if (.transient_http(resp)) {
+      return(list(ok = TRUE, actualTitle = row$expectedTitle, latest = NA,
+                  reason = sprintf("WARN: transient StatsCan WDS error (%s) — title not verified this run",
+                                   if (is.null(resp)) "no response" else status_code(resp))))
     }
     return(list(ok = FALSE, actualTitle = NA, latest = NA,
                 reason = sprintf("HTTP %s", if (is.null(resp)) "no response" else status_code(resp))))
@@ -158,9 +188,16 @@ validate_osb <- function(row) {
   # Government (CKAN) dataset still resolves to a monthly CSV resource.
   api <- sprintf("https://open.canada.ca/data/api/3/action/package_show?id=%s", row$ckanDataset %||% "")
   resp <- tryCatch(GET(api, timeout(30)), error = function(e) NULL)
-  if (is.null(resp) || status_code(resp) != 200) {
+  if (.transient_http(resp)) {
+    # CKAN package_show is a metadata endpoint distinct from the CSV the scraper
+    # downloads — a blip here shouldn't fail the whole refresh.
+    return(list(ok = TRUE, actualTitle = row$expectedTitle, latest = NA,
+                reason = sprintf("WARN: transient CKAN error (%s) — dataset not verified this run",
+                                 if (is.null(resp)) "no response" else status_code(resp))))
+  }
+  if (status_code(resp) != 200) {
     return(list(ok = FALSE, actualTitle = NA, latest = NA,
-                reason = sprintf("CKAN HTTP %s", if (is.null(resp)) "no response" else status_code(resp))))
+                reason = sprintf("CKAN HTTP %s", status_code(resp))))
   }
   j <- tryCatch(content(resp, as = "parsed", encoding = "UTF-8"), error = function(e) NULL)
   res <- if (!is.null(j) && !is.null(j$result)) j$result$resources else list()
