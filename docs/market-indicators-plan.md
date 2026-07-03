@@ -1,5 +1,19 @@
 # Market Indicators Tab — Build Plan (v2, revised)
 
+> **STATUS (2026-07-03): SHIPPED — retained as design reference.** Phases 1–2 and most of
+> Phase 3 are live: catalog + validator (`r/13`), BoC (`r/10`), StatsCan (`r/11`), OSB
+> insolvencies (`r/17`), builder (`r/14`), Current Snapshot KPI bar, the derived indicators
+> (cap-rate pressure, feasibility, payment pressure, rent-vs-wage, permits per capita,
+> time-adjustment helper), Excel export with Metadata sheet, and the province/CMA multi-geo
+> selector. Mortgage delinquency shipped 2026-07-03 via the **CMHC/Equifax quarterly** table
+> (`r/22_scrape_cmhc_arrears.R`, PR #29) — cba.ca turned out to be WAF-blocked, so §2.3's CBA
+> scrape was **replaced**, not built. Coverage also grew beyond this plan's MB+Canada scope:
+> SK/AB/BC + seven CMAs (see `GEOGRAPHY-EXPANSION.md`).
+>
+> **Still open:** the §2.4/§7.1 manual-import bucket (`data/manual/`), §3.3
+> employment-by-industry, the §3.3 four-way permit split (industrial/commercial/
+> institutional), and the SLOS non-mortgage trio (6 of the 9 SLOS series are built).
+
 A planning document for a new "Market Indicators" tab on
 [housing-economic-data](https://housing-economic-data.vercel.app/). One tab, grouped sections,
 appraiser-focused. Manitoba + national coverage with Winnipeg breakouts

@@ -4,7 +4,7 @@ How geographic coverage (provinces and cities/CMAs) is wired into each tab/data
 source, what's covered today, and the step‑by‑step to add more. Written as a
 resume point — pick any data source below and follow its "to add" steps.
 
-_Last updated: 2026‑06 (after British Columbia — full CMHC + indicators + census; municipal CSDs for every full province; AB/BC Affordability)._
+_Last updated: 2026‑07‑03 (truth refresh — §1 table, §3c–§3e, §8 brought in line with shipped PRs #1–#5/#11/#29; BC full; municipal CSDs + census back‑years + Affordability for all four western provinces)._
 
 ---
 
@@ -18,16 +18,16 @@ Province SGC codes: **CA**=Canada, **46**=MB, **47**=SK, **48**=AB, 59=BC, 35=ON
 | **Rental Charts/Tables/Compare** (CMHC RMS) | r/00–03 | – | **full** (prov+CMA/CA + survey zones + neighbourhoods, full history) | **full** (Regina/Saskatoon zones+nbhds, 15‑yr) | **full** (Calgary/Edmonton zones+nbhds, 15‑yr) | **basic** (prov + CMA/CA, last 15 yr) | via CMHC survey zones/neighbourhoods |
 | **Housing Starts** (CMHC SCSS) | r/05 | – | full | full | full | basic | same CMHC geos |
 | **Secondary Rental** (CMHC Srms) | r/06 | – | Winnipeg | Regina, Saskatoon | Calgary, Edmonton | – | hardcoded centre list |
-| **Housing Stock / Dwelling Type** (Census) | r/07–10d | Canada + 13 provinces | **all ~213 CSDs, 2006–2021** | CSDs **2016+2021 only** | CSDs **2016+2021 only** | province + (national bulk) CMA back‑years | – |
-| **Census Profile** (cancensus) | r/12, r/12b | – | **all levels + Winnipeg virtual geos, 2006–2021** | **PR/CMA/CD, 2016+2021** | **PR/CMA/CD, 2016+2021** | – | – |
-| **Affordability** | r/18 + census/mls/mortgage | – | **full** (census income+rent; Winnipeg purchase) | province + major centres (rental, CMHC rent) | **not covered** | – | purchase = Winnipeg only (CREA MLS HPI) |
-| **Market Indicators / Current Snapshot** | catalog + r/11/13/14/17 | rates, bonds, insolvencies, + national of every series | **full** (every province‑published series) | **full** | **full** | population / immigration / NPR only | **Winnipeg, Calgary, Edmonton, Regina, Saskatoon** (for NHPI, BCPI, CPI, permits, CRSPI*, CMHC rent, employment/unemployment) |
-| **MB Economic Update** | r/15, r/16 | – | MB only — **tab HIDDEN/shelved** | – | – | – | – |
+| **Housing Stock / Dwelling Type** (Census) | r/07–10d | Canada + 13 provinces | **all ~213 CSDs, 2006–2021** | CSDs **2011+2016+2021** | CSDs **2011+2016+2021** | province + (national bulk) CMA back‑years | – |
+| **Census Profile** (cancensus) | r/12, r/12b | – | **all levels + Winnipeg virtual geos, 2006–2021** | **PR/CMA/CD + municipal CSDs, 2011/2016/2021** | **PR/CMA/CD + municipal CSDs, 2011/2016/2021** | – | – |
+| **Affordability** | r/18 + census/mls/mortgage | – | **full** (all levels incl. municipalities; census income+rent) | province + major centres + municipalities | province + major centres + municipalities | – | purchase = Winnipeg, Calgary, Edmonton, Regina, Saskatoon, Vancouver, Victoria (per‑city CREA MLS HPI) |
+| **Market Indicators / Current Snapshot** | catalog + r/11/13/14/17/22 | rates, bonds, SLOS, insolvencies, mortgage delinquency, + national of every series | **full** (every province‑published series) | **full** | **full** | population / immigration / NPR only | **Winnipeg, Calgary, Edmonton, Regina, Saskatoon, Vancouver, Victoria** (for NHPI, BCPI, CPI, permits, CRSPI*, CMHC rent, employment/unemployment; delinquency = Winnipeg only) |
+| **MB Economic Update** | r/15, r/16 | – | MB only — **live** (revived 2026‑07, PR #11) | – | – | – | – |
 
-\* CRSPI (commercial leasing) has no Regina value.
+\* CRSPI (commercial leasing) has no Regina or Victoria value.
 
 **2026‑06 (BC expansion):** British Columbia is now a fourth **full** province (Vancouver +
-Victoria zones/neighbourhoods, 10‑yr). **Municipal CSDs** are now scraped for every full
+Victoria zones/neighbourhoods, 15‑yr rolling floor — PR #4 raised 10→15). **Municipal CSDs** are now scraped for every full
 province's CMAs — ~88 total (MB 13, SK 14, AB 27, BC 34) — via the per‑CMA breakdown
 (r/02 RMS + r/05 SCSS). **Affordability** now covers AB + BC (rental). The province‑column
 table above predates this; read **BC as a fourth full province**.
@@ -81,35 +81,40 @@ block, add the province row to the `geos` tibble, add it to the `bind_rows`, and
 `provName` recode. `safe_srms` drops centres with no Srms data automatically.
 
 ### 3c. Housing Stock — Dwelling Type + Condition (Census, run locally)
-Decision so far: **MB = all 4 censuses; SK/AB = 2016+2021 only** (CSD back‑years are MB‑only).
-To add a province at the same 2016+2021 tier:
+Decision so far: **MB = all 4 censuses; SK/AB/BC = 2011+2016+2021** (PR #3 added the western
+2011 back‑year; only the 2006 CSD back‑year is MB‑only).
+To add a province at the 2016+2021 tier:
 - `r/10` (2021 dwelling type): add the SGC code to the CSD filter `... %in% c("46","47","48")`.
 - `r/07` (2021+2016 condition): add the code to its CSD filter `substr(code,1,2) %in% c(...)`.
-- Leave `r/10c`/`r/10d` (2011/2006 dwelling) and `r/08`/`r/09` (2011/2006 condition) **MB‑only**.
+- `r/10c` (2011 dwelling, filter `^(46|47|48|59)`) + `r/08` (2011 condition) already cover the
+  four western provinces; leave `r/10d`/`r/09` (2006) **MB‑only**.
 - **Gotcha:** `r/07` rebuilds `census_housing.json` from scratch (2021+2016), so after re‑running
   it you MUST re‑run `r/08` + `r/09` to put MB's 2011/2006 back. Run order: r/07 → r/08 → r/09.
 - Run order for dwelling type: r/10 → r/10b → r/10c → r/10d (10d last sets the source string).
 - Frontend (`housing.js`) is data‑driven — the province appears automatically.
 
 ### 3d. Census Profile (`r/12_census_profile.R`, run locally with a CensusMapper key)
-MB = full; SK/AB = PR/CMA/CD at 2016+2021. To add a province at that tier, edit the
+MB = full; SK/AB/BC = PR/CMA/CD **+ municipal CSDs** at 2011/2016/2021 (PR #3 — CSD cascade +
+back‑years; 2021 = all 1,776 western CSDs, 2011 ≈ 97%, the rest NHS‑suppressed = final).
+To add a province at that tier, edit the
 `ADD_PR` / `ADD_YEARS` / `ADD_LEVELS` config near the top (the only change needed —
 `fetch_level` swaps the province set per dataset‑year + level). Run with the key:
 `R_ENVIRON_USER="C:/Users/Jason/Documents/.Renviron" Rscript r/12_census_profile.R`
 (MB/Winnipeg replay from the cancensus cache; only the new ~65 PR/CMA/CD region IDs are fresh).
 Frontend (`census.js`) is data‑driven; the name cleanup already strips any `(Abbr.)`/`(B)`/`(D)`/`(CDR)` code.
-**To go to municipalities (CSDs):** that needs (a) multi‑day or paid CensusMapper runs
-(free cap = 500 regions/day; a province has hundreds of CSDs) AND (b) a Province→Area
-cascade on the (currently flat) Census Profile picker.
+**Municipalities (CSDs): DONE for MB/SK/AB/BC** (PR #3 — the Province→Area cascade + western
+CSDs). A NEW province's CSDs still need multi‑day or paid CensusMapper runs (free cap =
+500 regions/day; a province has hundreds of CSDs).
 
 ### 3e. Affordability (`r/18_affordability_sk.R`, `web/src/affordability.js`)
-MB + SK today; AB not yet. To add a province (Saskatchewan is the template):
+MB/SK/AB/BC today (province + major centres + municipalities — PR #3). Saskatchewan is still
+the template for adding another province:
 - In `r/18`, add a province tibble (PR + its CMAs/CAs with cube‑98‑10‑0055 geo member IDs)
   → fetch median income (98‑10‑0055) + CMHC average rent → write into `affordability_extra.json`.
 - In `affordability.js`, add the prov to `PROV_LABEL` + `GROUP_ORDER` and a loop that reads
   `extra.<prov>` (mirror the `extra.sk` loop).
-- Purchase factor stays Winnipeg‑only until a home‑price benchmark (CREA MLS HPI) is wired for
-  the new geo.
+- Purchase factor: r/16 carries per‑city CREA MLS HPI benchmarks for Winnipeg, Calgary,
+  Edmonton, Regina, Saskatoon, Vancouver, Victoria — a new city needs its benchmark added there.
 - **Gotcha:** the census loop in affordability.js is scoped to MB (`uid /^(46|WPG)/`) because
   `census_profile.json` now also carries SK/AB — don't widen it or other provinces leak in
   tagged as Manitoba.
@@ -130,7 +135,7 @@ for each province‑published family by **swapping the geography member** in the
 ## 4. Process — add a new CITY / CMA
 
 Cities only exist where StatsCan/CMHC publish at CMA level. Today the catalog covers
-Winnipeg, Calgary, Edmonton, Regina, Saskatoon.
+Winnipeg, Calgary, Edmonton, Regina, Saskatoon, Vancouver, Victoria.
 
 ### 4a. Market Indicators (the main place cities live)
 1. **Discover the CMA vector** for each family that publishes at CMA (§5). Families that do:
@@ -231,13 +236,14 @@ with attribution and no CMHC marks — map cards carry an "adapted from CMHC" li
 
 ## 8. Open / next candidates
 
-- **Affordability → Alberta** (and fuller SK): wire `extra.ab` via r/18 (income 98‑10‑0055 +
-  CMHC rent). Purchase factor needs an AB home‑price benchmark.
-- **Census Profile → CSDs for SK/AB** (and other provinces): needs the CensusMapper‑cap
-  workaround + a province cascade on the picker.
+- ~~Affordability → Alberta / fuller SK~~ **DONE** (PR #3 — AB/BC + municipalities everywhere).
+- ~~Census Profile → CSDs for SK/AB~~ **DONE for the west** (PR #3); a NEW province's CSDs still
+  face the CensusMapper cap (§3d).
 - **More CMAs** (e.g. Lethbridge, Red Deer, other provinces' CMAs): same §4 recipe; note not
   every family publishes every CMA (CRSPI/NHPI coverage varies).
-- **Other "basic" provinces → full CMHC** (BC/ON/etc.): §3a, but each adds ~20 min of CI scrape.
+- **Other "basic" provinces → full CMHC** (ON/QC/Atlantic): §3a, but each adds ~20 min of CI scrape.
+- **Non‑geography leftovers** live in `docs/market-indicators-plan.md` (status header there):
+  manual‑import bucket, employment‑by‑industry, 4‑way permit split, SLOS non‑mortgage trio.
 
 Related deep‑dive notes live in the assistant's memory (per‑tab files); this doc is the
 single resume point.
