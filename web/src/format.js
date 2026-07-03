@@ -58,6 +58,10 @@ export const INDICATOR_FMT = {
   percent:            (v) => v == null ? '—' : `${Number(v).toFixed(2)}%`,
   dollar:             (v) => v == null ? '—' : `$${Math.round(Number(v)).toLocaleString()}`,
   dollar_millions:    (v) => v == null ? '—' : `$${(Number(v) / 1e6).toFixed(1)}M`,
+  // Agricultural commodity prices: crops in $/tonne (whole dollars), livestock
+  // in $/hundredweight (cents matter at these levels).
+  dollar_per_tonne:   (v) => v == null ? '—' : `$${Math.round(Number(v)).toLocaleString()}/t`,
+  dollar_per_cwt:     (v) => v == null ? '—' : `$${Number(v).toFixed(2)}/cwt`,
   index:              (v) => v == null ? '—' : Number(v).toFixed(1),
   units:              (v) => v == null ? '—' : Math.round(Number(v)).toLocaleString(),
   persons:            (v) => v == null ? '—' : Math.round(Number(v)).toLocaleString(),
