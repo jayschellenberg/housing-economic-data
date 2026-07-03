@@ -16,6 +16,7 @@
 
 import { buildIndicatorCard } from './indicator-chart.js';
 import { resolveProvince, rememberProvince } from './prefs.js';
+import { initAgMap } from './ag-map.js';
 
 const loadJson = (path) =>
   fetch(path).then((r) => (r.ok ? r.json() : Promise.reject(new Error(r.status)))).catch(() => null);
@@ -114,6 +115,9 @@ export async function initAgriculture() {
   }
   const orderOf = new Map((catalog.series || []).map((s, i) => [s.id, i]));
 
+  // Within-province Census-of-Agriculture choropleth (below the charts).
+  const agMap = initAgMap({ host: 'ag-map' });
+
   // Province dropdown — shares the site-wide "home province" (SGC code) so the
   // choice carries across tabs. Only the four ag-covered provinces are offered.
   const provOptions = PROVS.map((p) => p.sgc);
@@ -126,6 +130,7 @@ export async function initAgriculture() {
 
   function render(sgc) {
     const prov = PROVS.find((p) => p.sgc === sgc) || PROVS[0];
+    agMap.render(sgc);
     $grid.replaceChildren();
     let rendered = 0;
     for (const spec of AG_CHARTS) {
