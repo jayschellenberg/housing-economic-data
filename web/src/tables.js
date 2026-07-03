@@ -240,9 +240,27 @@ export function initTables({ geographies, manifest, loadShard }) {
   }
   populateAreaDropdowns();
 
-  // Bottom-of-page context map (display-only): shows when the comparison areas
-  // share one CMA, shaded by a metric picker, with the compared areas outlined.
-  const tablesMap = initTablesMap({ geographies });
+  // Bottom-of-page context map: shows when the comparison areas share one CMA,
+  // shaded by a metric picker, with the compared areas outlined. Clicking an
+  // outlined area removes it (later slots shift up); any other area fills — or
+  // replaces — the optional Fourth slot.
+  const tablesMap = initTablesMap({ geographies, onSelect: (level, uid) => toggleArea(level, uid) });
+  function toggleArea(level, uid) {
+    const val = `${level}:${uid}`;
+    const slots = [$second, $third, $fourth];
+    if (slots.some(s => s.value === val)) {
+      // Remove — compact so the required Second/Third slots stay filled.
+      const rest = slots.map(s => s.value).filter(v => v && v !== val);
+      if (rest.length < 2) return;   // the tables need two areas
+      $second.value = rest[0];
+      $third.value  = rest[1];
+      $fourth.value = rest[2] || '';
+    } else {
+      if (![...$fourth.options].some(o => o.value === val)) return;   // not in this province's list
+      $fourth.value = val;
+    }
+    scheduleRender();
+  }
 
   // Vintage label.
   const maxYear = manifest?.cmhcMaxYear ?? new Date().getFullYear();
