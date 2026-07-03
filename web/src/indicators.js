@@ -22,7 +22,7 @@ import { indicatorFmt } from './format.js';
 const PROVIDER_LABEL = {
   boc:      'Bank of Canada Valet',
   statscan: 'Statistics Canada (WDS)',
-  cba:      'Canadian Bankers Association',
+  cmhc_arrears: 'CMHC Mortgage Delinquency Data Tables (Equifax)',
   osb:      'Office of the Superintendent of Bankruptcy (Open Government)',
   cmhc:     'CMHC Rental Market Survey',
   derived:  'computed from source series',
