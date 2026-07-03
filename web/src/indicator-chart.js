@@ -18,24 +18,9 @@ import * as Plot from '@observablehq/plot';
 import { toPng } from 'html-to-image';
 import { themed, PALETTE, gridMarks, frameMark } from './plot-theme.js';
 import { escapeHtml } from './escape.js';
+import { INDICATOR_FMT as FMT, indicatorFmt as fmt } from './format.js';
 
 // --- Formatters --------------------------------------------------------------
-const FMT = {
-  percent:           (v) => `${Number(v).toFixed(2)}%`,
-  dollar:            (v) => `$${Math.round(Number(v)).toLocaleString()}`,
-  dollar_millions:   (v) => `$${(Number(v) / 1e6).toFixed(1)}M`,
-  index:             (v) => Number(v).toFixed(1),
-  units:             (v) => Math.round(Number(v)).toLocaleString(),
-  persons:           (v) => Math.round(Number(v)).toLocaleString(),
-  // StatsCan's "Persons in thousands" series — cansim's val_norm has already
-  // applied the ×1000 scalar, so the value is in raw persons. Render as
-  // millions for readability (e.g. 21,034,500 → "21.0M").
-  persons_thousands: (v) => `${(Number(v) / 1e6).toFixed(1)}M`,
-  ratio:             (v) => Number(v).toFixed(2),
-  balance_of_opinion:(v) => `${Number(v).toFixed(0)}`,
-};
-const fmt = (units) => FMT[units] || ((v) => String(v));
-
 // Permits raw values are dollars and span 6-10 figures; render as $M.
 function pickFormatter(units, values) {
   if (units === 'dollar') {

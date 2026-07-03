@@ -49,3 +49,24 @@ export const fPctFrac1 = (v, missing = '**') =>
 // 32.6 → "33%" (used for shelter-cost-to-income ratios).
 export const fPctInt = (v, missing = '**') =>
   miss(v) ? missing : `${Math.round(Number(v))}%`;
+
+// Indicator / economic-series formatters keyed by the series `units`. These
+// render missing values as "—" (the indicators convention, not the "**" of the
+// tables above). Shared by indicators.js (KPI tiles) and indicator-chart.js
+// (chart axis + latest-value chip).
+export const INDICATOR_FMT = {
+  percent:            (v) => v == null ? '—' : `${Number(v).toFixed(2)}%`,
+  dollar:             (v) => v == null ? '—' : `$${Math.round(Number(v)).toLocaleString()}`,
+  dollar_millions:    (v) => v == null ? '—' : `$${(Number(v) / 1e6).toFixed(1)}M`,
+  index:              (v) => v == null ? '—' : Number(v).toFixed(1),
+  units:              (v) => v == null ? '—' : Math.round(Number(v)).toLocaleString(),
+  persons:            (v) => v == null ? '—' : Math.round(Number(v)).toLocaleString(),
+  // StatsCan "Persons in thousands": cansim's val_norm already applied the ×1000
+  // scalar, so the value is raw persons — render as millions (21,034,500 → "21.0M").
+  persons_thousands:  (v) => v == null ? '—' : `${(Number(v) / 1e6).toFixed(1)}M`,
+  ratio:              (v) => v == null ? '—' : Number(v).toFixed(2),
+  balance_of_opinion: (v) => v == null ? '—' : `${Number(v).toFixed(0)}`,
+};
+
+// Formatter for a series' `units`, defaulting to a plain string cast.
+export const indicatorFmt = (units) => INDICATOR_FMT[units] || ((v) => String(v));
