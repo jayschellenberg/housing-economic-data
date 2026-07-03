@@ -17,6 +17,7 @@
 
 import { buildIndicatorCard } from './indicator-chart.js';
 import { escapeHtml } from './escape.js';
+import { indicatorFmt } from './format.js';
 
 const PROVIDER_LABEL = {
   boc:      'Bank of Canada Valet',
@@ -27,17 +28,6 @@ const PROVIDER_LABEL = {
   derived:  'computed from source series',
 };
 
-const FMT = {
-  percent:           (v) => v == null ? '—' : `${Number(v).toFixed(2)}%`,
-  dollar:            (v) => v == null ? '—' : `$${Math.round(Number(v)).toLocaleString()}`,
-  dollar_millions:   (v) => v == null ? '—' : `$${(Number(v) / 1e6).toFixed(1)}M`,
-  index:             (v) => v == null ? '—' : Number(v).toFixed(1),
-  units:             (v) => v == null ? '—' : Math.round(Number(v)).toLocaleString(),
-  persons:           (v) => v == null ? '—' : Math.round(Number(v)).toLocaleString(),
-  persons_thousands: (v) => v == null ? '—' : `${(Number(v) / 1e6).toFixed(1)}M`,
-  ratio:             (v) => v == null ? '—' : Number(v).toFixed(2),
-  balance_of_opinion:(v) => v == null ? '—' : `${Number(v).toFixed(0)}`,
-};
 
 async function loadJson(path) {
   const r = await fetch(path);
@@ -348,7 +338,7 @@ function renderSnapshotTile(c, meta, shard, $bar) {
   `;
   const fmtKey = (meta.units === 'dollar' && Math.abs(meta.latestValue ?? 0) >= 1e6)
     ? 'dollar_millions' : meta.units;
-  tile.querySelector('.cmhc-kpi-value').textContent = (FMT[fmtKey] || ((v) => String(v)))(meta.latestValue);
+  tile.querySelector('.cmhc-kpi-value').textContent = indicatorFmt(fmtKey)(meta.latestValue);
   tile.querySelector('.cmhc-kpi-meta').textContent =
     `${meta.chartLabel || meta.id} • as of ${meta.latestDate}`;
 
