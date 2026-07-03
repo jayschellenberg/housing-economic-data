@@ -1,19 +1,21 @@
 /*
- * Agricultural tab — a curated, Manitoba-focused view of the agricultural
- * indicators an appraiser uses for farm and farmland work: farm cash receipts,
- * farmland value per acre (vs the prairie provinces), crop and livestock prices,
- * and the Farm Input Price Index.
+ * Agricultural tab — a curated view of the agricultural indicators an appraiser
+ * uses for farm and farmland work: farm cash receipts, farmland value per acre,
+ * crop / livestock / supply-managed (poultry, egg, milk) prices, and the Farm
+ * Input Price Index. A province dropdown (BC / AB / SK / MB) scopes every chart
+ * except farmland, which stays a cross-province comparison.
  *
  * It is NOT a second copy of the Market Indicators renderer (which is coupled to
  * its own `mi-` DOM and sidebar). Instead it reuses the shared chart component
  * (buildIndicatorCard) over an explicit chart spec, pulling series from the same
  * indicator shards. Farm cash receipts is referenced from the existing "economy"
  * shard (it lives in both tabs — a genuine economic *and* agricultural series);
- * the other families are new catalog groups tagged `tab: "agriculture"`, which
- * keeps them off the Market Indicators tab.
+ * the other families are catalog groups tagged `tab: "agriculture"`, which keeps
+ * them off the Market Indicators tab.
  */
 
 import { buildIndicatorCard } from './indicator-chart.js';
+import { resolveProvince, rememberProvince } from './prefs.js';
 
 const loadJson = (path) =>
   fetch(path).then((r) => (r.ok ? r.json() : Promise.reject(new Error(r.status)))).catch(() => null);
@@ -22,18 +24,46 @@ const loadJson = (path) =>
 // axis without adding signal. All ag series comfortably cover this window.
 const MONTH_FROM = '2005-01';
 
-// Curated charts, in display order. `chartId` names a catalog chart; `geos`
-// (when present) restricts the drawn lines — farm cash / prices / inputs are
-// Manitoba-scoped, farmland compares provinces. `subtitle` overrides the card's
-// default (the shared component's auto-subtitle assumes the Market Indicators
-// geo filter, which this tab doesn't have).
+// The four covered provinces, keyed by SGC code (what prefs.js stores as the
+// shared "home province"), mapped to the series `geo` abbreviation and a label.
+const PROVS = [
+  { sgc: '46', abbr: 'MB', name: 'Manitoba' },
+  { sgc: '47', abbr: 'SK', name: 'Saskatchewan' },
+  { sgc: '48', abbr: 'AB', name: 'Alberta' },
+  { sgc: '59', abbr: 'BC', name: 'British Columbia' },
+];
+
+// Curated charts, in display order. `chartId` names a catalog chart; `scope`
+// 'prov' filters series to the selected province, 'all' shows every geography
+// (farmland is inherently a cross-province comparison). `title`/`subtitle` are
+// functions of the selected province; `desc` optionally overrides the catalog
+// description (used for farm cash, whose catalog copy is Manitoba-specific).
 const AG_CHARTS = [
-  { chartId: 'farm_cash',        geos: ['MB'], title: 'Farm cash receipts — Manitoba',
-    subtitle: 'Manitoba • annual, by receipt type' },
-  { chartId: 'farmland_value',   subtitle: 'Value per acre by province • annual' },
-  { chartId: 'crop_prices',      subtitle: 'Manitoba • monthly • $/tonne' },
-  { chartId: 'livestock_prices', subtitle: 'Manitoba • monthly • $/cwt' },
-  { chartId: 'farm_input_index', subtitle: 'Manitoba • quarterly • rebased index' },
+  { chartId: 'farm_cash', scope: 'prov',
+    title: (p) => `Farm cash receipts — ${p.name}`,
+    subtitle: (p) => `${p.name} • annual, by receipt type`,
+    desc: 'Annual farm cash receipts (StatsCan table 32-10-0045), split into total, crop, and livestock. Agriculture is a pillar of the prairie economy; crop and livestock receipts swing with commodity prices and trade access (e.g. canola tariffs).' },
+  { chartId: 'farmland_value', scope: 'all',
+    title: () => 'Farmland value per acre',
+    subtitle: () => 'Value per acre by province • annual (comparison)' },
+  { chartId: 'crop_prices', scope: 'prov',
+    title: (p) => `Crop prices — ${p.name}`,
+    subtitle: (p) => `${p.name} • monthly • $/tonne` },
+  { chartId: 'livestock_prices', scope: 'prov',
+    title: (p) => `Livestock prices — ${p.name}`,
+    subtitle: (p) => `${p.name} • monthly • $/cwt` },
+  { chartId: 'poultry_prices', scope: 'prov',
+    title: (p) => `Poultry meat prices — ${p.name}`,
+    subtitle: (p) => `${p.name} • monthly • $/kg (supply-managed)` },
+  { chartId: 'egg_price', scope: 'prov',
+    title: (p) => `Egg prices — ${p.name}`,
+    subtitle: (p) => `${p.name} • monthly • $/dozen (supply-managed)` },
+  { chartId: 'milk_price', scope: 'prov',
+    title: (p) => `Milk price — ${p.name}`,
+    subtitle: (p) => `${p.name} • monthly • $/kL, ÷10 = $/hL (supply-managed)` },
+  { chartId: 'farm_input_index', scope: 'prov',
+    title: (p) => `Farm Input Price Index — ${p.name}`,
+    subtitle: (p) => `${p.name} • quarterly • rebased index` },
 ];
 
 let done = false;
@@ -43,6 +73,7 @@ export async function initAgriculture() {
   done = true;
 
   const $grid = document.getElementById('ag-chart-grid');
+  const $prov = document.getElementById('ag-prov');
   if (!$grid) return;
 
   const [catalog, manifest] = await Promise.all([
@@ -69,31 +100,45 @@ export async function initAgriculture() {
   }
   const orderOf = new Map((catalog.series || []).map((s, i) => [s.id, i]));
 
-  let rendered = 0;
-  for (const spec of AG_CHARTS) {
-    const cfg = (catalog.charts || {})[spec.chartId];
-    if (!cfg) continue;
-
-    let meta = Object.values(seriesById).filter((s) => s.chartId === spec.chartId);
-    if (spec.geos) meta = meta.filter((s) => spec.geos.includes(s.geo));
-    meta.sort((a, b) => (orderOf.get(a.id) ?? 1e9) - (orderOf.get(b.id) ?? 1e9));
-    if (!meta.length) continue;
-
-    const records = meta.flatMap((s) => recordsById[s.id] || []);
-    if (!records.length) continue;
-
-    const card = buildIndicatorCard($grid, {
-      chartId: spec.chartId,
-      title: spec.title || cfg.title,
-      sourceLabel: 'Statistics Canada',
-      description: cfg.description,
-    });
-    card.render(records, meta, { subtitle: spec.subtitle, monthFrom: MONTH_FROM });
-    rendered += 1;
+  // Province dropdown — shares the site-wide "home province" (SGC code) so the
+  // choice carries across tabs. Only the four ag-covered provinces are offered.
+  const provOptions = PROVS.map((p) => p.sgc);
+  if ($prov) {
+    $prov.innerHTML = PROVS.map((p) => `<option value="${p.sgc}">${p.name}</option>`).join('');
+    $prov.value = resolveProvince(provOptions, '46');
+    $prov.addEventListener('change', () => { rememberProvince($prov.value); render($prov.value); });
   }
+  render($prov ? $prov.value : '46');
 
-  if (!rendered) {
-    $grid.innerHTML =
-      '<p class="text-sm text-neutral-600">Agricultural series have not been built yet. They populate on the next data refresh (r/11 + r/14).</p>';
+  function render(sgc) {
+    const prov = PROVS.find((p) => p.sgc === sgc) || PROVS[0];
+    $grid.replaceChildren();
+    let rendered = 0;
+    for (const spec of AG_CHARTS) {
+      const cfg = (catalog.charts || {})[spec.chartId];
+      if (!cfg) continue;
+
+      let meta = Object.values(seriesById).filter((s) => s.chartId === spec.chartId);
+      if (spec.scope === 'prov') meta = meta.filter((s) => s.geo === prov.abbr);
+      meta.sort((a, b) => (orderOf.get(a.id) ?? 1e9) - (orderOf.get(b.id) ?? 1e9));
+      if (!meta.length) continue;
+
+      const records = meta.flatMap((s) => recordsById[s.id] || []);
+      if (!records.length) continue;
+
+      const card = buildIndicatorCard($grid, {
+        chartId: spec.chartId,
+        title: spec.title(prov),
+        sourceLabel: 'Statistics Canada',
+        description: spec.desc || cfg.description,
+      });
+      card.render(records, meta, { subtitle: spec.subtitle(prov), monthFrom: MONTH_FROM });
+      rendered += 1;
+    }
+
+    if (!rendered) {
+      $grid.innerHTML =
+        '<p class="text-sm text-neutral-600">Agricultural series have not been built yet. They populate on the next data refresh (r/11 + r/14).</p>';
+    }
   }
 }

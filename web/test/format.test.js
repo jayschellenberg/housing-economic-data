@@ -73,4 +73,12 @@ describe('INDICATOR_FMT — agricultural commodity units', () => {
     expect(INDICATOR_FMT.dollar_per_tonne(null)).toBe('—');
     expect(INDICATOR_FMT.dollar_per_cwt(null)).toBe('—');
   });
+  it('supply-managed units: $/kg, $/dozen, $/kL', () => {
+    expect(INDICATOR_FMT.dollar_per_kg(2.89)).toBe('$2.89/kg');
+    expect(INDICATOR_FMT.dollar_per_dozen(2.4)).toBe('$2.40/doz');
+    expect(INDICATOR_FMT.dollar_per_kl(891.29)).toBe('$891/kL');
+    expect(INDICATOR_FMT.dollar_per_kg(null)).toBe('—');
+    expect(INDICATOR_FMT.dollar_per_dozen(null)).toBe('—');
+    expect(INDICATOR_FMT.dollar_per_kl(null)).toBe('—');
+  });
 });
