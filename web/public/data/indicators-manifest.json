@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated": "2026-07-03T17:55:55Z",
+  "generated": "2026-07-03T19:33:53Z",
   "groups": [
     {
       "group": "mortgage_market",
@@ -47,8 +47,8 @@
     {
       "group": "ag_land",
       "file": "ag_land.json",
-      "seriesCount": 5,
-      "recordCount": 525,
+      "seriesCount": 9,
+      "recordCount": 941,
       "latestDate": "2025-01-01"
     },
     {
@@ -71,6 +71,13 @@
       "seriesCount": 36,
       "recordCount": 292,
       "latestDate": "2021-01-01"
+    },
+    {
+      "group": "ag_finance",
+      "file": "ag_finance.json",
+      "seriesCount": 24,
+      "recordCount": 192,
+      "latestDate": "2023-01-01"
     },
     {
       "group": "construction_cost",
@@ -101,6 +108,6 @@
       "latestDate": "2026-07-02"
     }
   ],
-  "totalSeries": 384,
-  "totalRecords": 142946
+  "totalSeries": 412,
+  "totalRecords": 143554
 }
