@@ -799,11 +799,17 @@
         comparison. Sourced from Statistics Canada; each chart exports to PNG, and the whole tab to
         Word or Excel.
       </p>
-      <div id="ag-chart-grid" class="cmhc-mi-section-grid grid md:grid-cols-2 gap-4"></div>
+      <!-- Jump-to-section bar (sticky); links are built by agriculture.js. -->
+      <nav id="ag-jump" class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm sticky top-0 z-10 bg-neutral-50/95 backdrop-blur py-2 border-b border-neutral-200" aria-label="Jump to section"></nav>
+      <!-- Chart sections (built by agriculture.js: a header + grid per section). -->
+      <div id="ag-chart-grid" class="space-y-8"></div>
       <!-- Within-province Census-of-Agriculture choropleth (mounted by ag-map.js);
            shades the selected province's consolidated subdivisions by farm size,
            farm count, operator age, or dominant farm type. -->
-      <section id="ag-map" class="max-w-3xl"></section>
+      <section id="ag-sec-map" class="scroll-mt-16">
+        <h2 class="cmhc-mi-section-title">Within-province map</h2>
+        <div id="ag-map" class="max-w-3xl"></div>
+      </section>
       <footer class="text-xs text-neutral-500 pt-4 mt-4 border-t border-neutral-200">
         Source: Statistics Canada Web Data Service — farm cash receipts (32-10-0045), value per acre of
         farm land and buildings (32-10-0047), farm product prices including supply-managed poultry, eggs
