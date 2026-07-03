@@ -68,6 +68,7 @@ jobs:
           Rscript r/03_build_data_files.R
           node web/scripts/build-rental-summary.mjs   # rental_summary.json for the choropleth maps (reads r/03's shards)
           node web/scripts/build-starts-summary.mjs   # starts_summary.json for the Starts choropleth (reads r/03's starts shards)
+          node web/scripts/build-schema.mjs           # schema.json category fingerprint for the sanity gate (r/98)
           Rscript r/04_build_manifest.R
           Rscript r/13_validate_indicators.R
           Rscript r/10_scrape_boc.R

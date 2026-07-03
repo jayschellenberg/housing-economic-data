@@ -1,0 +1,219 @@
+{
+  "version": 1,
+  "generated": "2026-07-03T00:16:10Z",
+  "rental": {
+    "Availability Rate": {
+      "Bedroom Type": [
+        "1 Bedroom",
+        "2 Bedroom",
+        "3 Bedroom +",
+        "Studio",
+        "Total"
+      ],
+      "Structure Size": [
+        "20-49 Units",
+        "200+ Units",
+        "3-5 Units",
+        "50-199 Units",
+        "6-19 Units",
+        "Total"
+      ],
+      "Year of Construction": [
+        "1960 - 1979",
+        "1980 - 1999",
+        "2000 or Later",
+        "Before 1960",
+        "Total"
+      ]
+    },
+    "Average Rent": {
+      "Bedroom Type": [
+        "1 Bedroom",
+        "2 Bedroom",
+        "3 Bedroom +",
+        "Studio",
+        "Total"
+      ],
+      "Structure Size": [
+        "20-49 Units",
+        "200+ Units",
+        "3-5 Units",
+        "50-199 Units",
+        "6-19 Units",
+        "Total"
+      ],
+      "Year of Construction": [
+        "1960 - 1979",
+        "1980 - 1999",
+        "2000 or Later",
+        "Before 1960",
+        "Total"
+      ]
+    },
+    "Average Rent Change": {
+      "Bedroom Type": [
+        "1 Bedroom",
+        "2 Bedroom",
+        "3 Bedroom +",
+        "Studio",
+        "Total"
+      ]
+    },
+    "Median Rent": {
+      "Bedroom Type": [
+        "1 Bedroom",
+        "2 Bedroom",
+        "3 Bedroom +",
+        "Studio",
+        "Total"
+      ],
+      "Structure Size": [
+        "20-49 Units",
+        "200+ Units",
+        "3-5 Units",
+        "50-199 Units",
+        "6-19 Units",
+        "Total"
+      ],
+      "Year of Construction": [
+        "1960 - 1979",
+        "1980 - 1999",
+        "2000 or Later",
+        "Before 1960",
+        "Total"
+      ]
+    },
+    "Rental Universe": {
+      "Bedroom Type": [
+        "1 Bedroom",
+        "2 Bedroom",
+        "3 Bedroom +",
+        "Studio",
+        "Total"
+      ],
+      "Structure Size": [
+        "20-49 Units",
+        "200+ Units",
+        "3-5 Units",
+        "50-199 Units",
+        "6-19 Units",
+        "Total"
+      ],
+      "Year of Construction": [
+        "1960 - 1979",
+        "1980 - 1999",
+        "2000 or Later",
+        "Before 1960",
+        "Total"
+      ]
+    },
+    "Vacancy Rate": {
+      "Bedroom Type": [
+        "1 Bedroom",
+        "2 Bedroom",
+        "3 Bedroom +",
+        "Studio",
+        "Total"
+      ],
+      "Rent Ranges": [
+        "$1,000 - $1,249",
+        "$1,250 - $1,499",
+        "$1,500 +",
+        "$750 - $999",
+        "Less Than $750",
+        "Non-Market/Unknown",
+        "Total"
+      ],
+      "Structure Size": [
+        "20-49 Units",
+        "200+ Units",
+        "3-5 Units",
+        "50-199 Units",
+        "6-19 Units",
+        "Total"
+      ],
+      "Year of Construction": [
+        "1960 - 1979",
+        "1980 - 1999",
+        "2000 or Later",
+        "Before 1960",
+        "Total"
+      ]
+    }
+  },
+  "starts": {
+    "Absorbed Units": {
+      "Dwelling Type": [
+        "All",
+        "Apartment",
+        "Row",
+        "Semi-Detached",
+        "Single"
+      ],
+      "Intended Market": [
+        "All",
+        "Condo",
+        "Homeowner"
+      ]
+    },
+    "Completions": {
+      "Dwelling Type": [
+        "All",
+        "Apartment",
+        "Row",
+        "Semi-Detached",
+        "Single"
+      ],
+      "Intended Market": [
+        "All",
+        "Co-Op",
+        "Condo",
+        "Homeowner",
+        "Rental"
+      ]
+    },
+    "Starts": {
+      "Dwelling Type": [
+        "All",
+        "Apartment",
+        "Row",
+        "Semi-Detached",
+        "Single"
+      ],
+      "Intended Market": [
+        "All",
+        "Co-Op",
+        "Condo",
+        "Homeowner",
+        "Rental",
+        "Unknown"
+      ]
+    },
+    "Unabsorbed Inventory": {
+      "Dwelling Type": [
+        "All",
+        "Apartment",
+        "Row",
+        "Semi-Detached",
+        "Single"
+      ]
+    },
+    "Under Construction": {
+      "Dwelling Type": [
+        "All",
+        "Apartment",
+        "Row",
+        "Semi-Detached",
+        "Single"
+      ],
+      "Intended Market": [
+        "All",
+        "Co-Op",
+        "Condo",
+        "Homeowner",
+        "Rental",
+        "Unknown"
+      ]
+    }
+  }
+}
