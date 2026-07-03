@@ -8,15 +8,6 @@
 #   - provider="boc":     GET /valet/series/{id}/json -> compare label/description
 #   - provider="statscan": POST getSeriesInfoFromVector -> compare seriesTitleEn
 #   - provider="cba":      GET https://cba.ca/mortgages-in-arrears -> sanity check
-#
-# Transient vs. drift: the gate hard-fails only on evidence of genuine catalog
-# drift — a 200 response whose payload proves the series was renamed, archived
-# or removed (incl. a 404 that means the id is gone). A *transient* infra error
-# on a validation-only metadata endpoint (no response / timeout / 5xx / 429)
-# soft-passes with a WARN instead: those endpoints (StatsCan WDS, CKAN
-# package_show) are separate from the ones the scrapers actually pull from
-# (cansim / the CSV directly), so a momentary blip there must not nuke the whole
-# weekly refresh. This mirrors the existing StatsCan release-embargo soft-pass.
 # =============================================================================
 
 .this_dir <- {
@@ -51,10 +42,15 @@ matches <- function(actual, expected) {
   all(vapply(parts, function(p) grepl(norm(p), actual_n, fixed = TRUE), logical(1)))
 }
 
-# A transient infrastructure failure is anything that doesn't carry a verdict
-# about the *series*: no response at all (timeout / DNS / connection reset) or a
-# server-side/throttling status. A 4xx like 404 is NOT transient — it means the
-# id is gone (drift) — so it must fall through to a hard fail.
+# Transient infra failure vs. genuine catalog drift. The strict gate must still
+# abort on drift — a renamed or terminated series can't be allowed to reach
+# production — but a momentary blip on a validation-only metadata endpoint
+# (StatsCan WDS, CKAN package_show) must not nuke the whole weekly refresh,
+# because the scrapers hit different endpoints (cansim / the CSV directly) that
+# may be perfectly fine. So a "transient" failure — no response at all (timeout /
+# DNS / connection reset) or a server-side/throttling status — soft-passes with a
+# WARN, while a 4xx like 404 (the id is gone) is NOT transient and falls through
+# to a hard fail. Mirrors the existing StatsCan release-embargo soft-pass.
 .transient_http <- function(resp) {
   if (is.null(resp)) return(TRUE)
   status_code(resp) %in% c(408L, 425L, 429L, 500L, 502L, 503L, 504L)
