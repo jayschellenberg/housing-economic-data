@@ -23,8 +23,6 @@ const loadJson = (path) =>
 
 // Only modern history is useful for appraisal context; older data compresses the
 // axis without adding signal. All ag series comfortably cover this window.
-const MONTH_FROM = '2005-01';
-
 // The four covered provinces, keyed by SGC code (what prefs.js stores as the
 // shared "home province"), mapped to the series `geo` abbreviation and a label.
 const PROVS = [
@@ -66,17 +64,17 @@ const AG_CHARTS = [
     title: (p) => `Farm Input Price Index — ${p.name}`,
     subtitle: (p) => `${p.name} • quarterly • rebased index` },
   // Farm-structure charts run on Census-of-Agriculture data (5-year steps back
-  // to 1921); `from: null` shows their full history rather than the 2005 default.
-  { chartId: 'farm_count', scope: 'prov', from: null,
+  // to 1921). Range is controlled by the tab's global year selectors.
+  { chartId: 'farm_count', scope: 'prov',
     title: (p) => `Number of farms — ${p.name}`,
     subtitle: (p) => `${p.name} • Census of Agriculture, every 5 years since 1921` },
-  { chartId: 'farm_size', scope: 'prov', from: null,
+  { chartId: 'farm_size', scope: 'prov',
     title: (p) => `Average farm size — ${p.name}`,
     subtitle: (p) => `${p.name} • acres per farm • Census of Agriculture since 1921` },
-  { chartId: 'operator_age', scope: 'prov', from: null,
+  { chartId: 'operator_age', scope: 'prov',
     title: (p) => `Average operator age — ${p.name}`,
     subtitle: (p) => `${p.name} • years • Census of Agriculture, 1991–2021` },
-  { chartId: 'farms_by_type', scope: 'prov', from: null,
+  { chartId: 'farms_by_type', scope: 'prov',
     title: (p) => `Farms by type — ${p.name}`,
     subtitle: (p) => `${p.name} • number of farms by NAICS type • 2001–2021` },
 ];
@@ -118,6 +116,35 @@ export async function initAgriculture() {
   // Within-province Census-of-Agriculture choropleth (below the charts).
   const agMap = initAgMap({ host: 'ag-map' });
 
+  // Global year-range control — applies to every chart, default "all data" (no
+  // bounds). Options span the actual data range across all ag series.
+  const $yearFrom = document.getElementById('ag-year-from');
+  const $yearTo = document.getElementById('ag-year-to');
+  // Year bounds from the ag charts' own series (not every indicator shard).
+  // Track min/max in a loop — the record set is large, so spreading it into
+  // Math.min/max would blow the call stack.
+  const agChartIds = new Set(AG_CHARTS.map((s) => s.chartId));
+  let minYear = Infinity;
+  let maxYear = -Infinity;
+  for (const s of Object.values(seriesById)) {
+    if (!agChartIds.has(s.chartId)) continue;
+    for (const r of recordsById[s.id] || []) {
+      const y = +String(r.date).slice(0, 4);
+      if (Number.isFinite(y)) { if (y < minYear) minYear = y; if (y > maxYear) maxYear = y; }
+    }
+  }
+  if (!Number.isFinite(minYear)) { minYear = 1990; maxYear = new Date().getFullYear(); }
+  const yearOpts = ['<option value="">All</option>'];
+  for (let y = maxYear; y >= minYear; y--) yearOpts.push(`<option value="${y}">${y}</option>`);
+  if ($yearFrom && $yearTo) {
+    $yearFrom.innerHTML = yearOpts.join('');
+    $yearTo.innerHTML = yearOpts.join('');
+    // Re-render on change; the map is a 2021 snapshot, so year changes only touch
+    // the charts (renderCharts), not the choropleth.
+    $yearFrom.addEventListener('change', renderCharts);
+    $yearTo.addEventListener('change', renderCharts);
+  }
+
   // Province dropdown — shares the site-wide "home province" (SGC code) so the
   // choice carries across tabs. Only the four ag-covered provinces are offered.
   const provOptions = PROVS.map((p) => p.sgc);
@@ -126,11 +153,22 @@ export async function initAgriculture() {
     $prov.value = resolveProvince(provOptions, '46');
     $prov.addEventListener('change', () => { rememberProvince($prov.value); render($prov.value); });
   }
-  render($prov ? $prov.value : '46');
+  let currentProv = PROVS.find((p) => p.sgc === ($prov ? $prov.value : '46')) || PROVS[0];
+  render(currentProv.sgc);
 
+  // Province change redraws both the choropleth and the charts.
   function render(sgc) {
-    const prov = PROVS.find((p) => p.sgc === sgc) || PROVS[0];
+    currentProv = PROVS.find((p) => p.sgc === sgc) || PROVS[0];
     agMap.render(sgc);
+    renderCharts();
+  }
+
+  // Charts only — re-run on a year-range change (the map is a fixed 2021 snapshot).
+  function renderCharts() {
+    const prov = currentProv;
+    // Global year range; empty selectors ⇒ all data (no bound).
+    const monthFrom = $yearFrom && $yearFrom.value ? `${$yearFrom.value}-01` : null;
+    const monthTo   = $yearTo && $yearTo.value ? `${$yearTo.value}-12` : null;
     $grid.replaceChildren();
     let rendered = 0;
     for (const spec of AG_CHARTS) {
@@ -151,10 +189,7 @@ export async function initAgriculture() {
         sourceLabel: 'Statistics Canada',
         description: spec.desc || cfg.description,
       });
-      // Structure charts opt into full history via `from: null`; the rest use
-      // the modern-window default.
-      const monthFrom = spec.from === undefined ? MONTH_FROM : spec.from;
-      card.render(records, meta, { subtitle: spec.subtitle(prov), monthFrom });
+      card.render(records, meta, { subtitle: spec.subtitle(prov), monthFrom, monthTo });
       rendered += 1;
     }
 

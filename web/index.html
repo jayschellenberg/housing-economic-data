@@ -770,9 +770,17 @@
          ============================================================ -->
     <div id="tab-panel-agriculture" class="p-4 space-y-4" role="tabpanel" aria-labelledby="tab-btn-agriculture" hidden>
       <div class="flex flex-wrap gap-3 items-center justify-between">
-        <div class="flex items-center gap-2">
-          <label for="ag-prov" class="text-sm font-medium text-neutral-700">Province</label>
-          <select id="ag-prov" class="border border-neutral-300 rounded px-2 py-1 text-sm" aria-label="Province"></select>
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <div class="flex items-center gap-2">
+            <label for="ag-prov" class="text-sm font-medium text-neutral-700">Province</label>
+            <select id="ag-prov" class="border border-neutral-300 rounded px-2 py-1 text-sm" aria-label="Province"></select>
+          </div>
+          <div class="flex items-center gap-2">
+            <label for="ag-year-from" class="text-sm font-medium text-neutral-700">Years</label>
+            <select id="ag-year-from" class="border border-neutral-300 rounded px-2 py-1 text-sm" aria-label="From year"></select>
+            <span class="text-neutral-400">–</span>
+            <select id="ag-year-to" class="border border-neutral-300 rounded px-2 py-1 text-sm" aria-label="To year"></select>
+          </div>
         </div>
         <div class="flex gap-2">
           <button id="ag-download-docx-charts" type="button"
