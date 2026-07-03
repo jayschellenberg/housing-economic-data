@@ -47,12 +47,16 @@ BASE_URL  <- "https://www12.statcan.gc.ca/census-recensement/2021/geo/sip-pis/bo
 PRECISION <- 0.0001                        # mapshaper coordinate precision (~11 m)
 
 LEVELS <- list(
-  cd  = list(zip = "lcd_000b21a_e.zip", id = "CDUID",  name = "CDNAME",  simplify = "1.5%"),
-  csd = list(zip = "lcsd000b21a_e.zip", id = "CSDUID", name = "CSDNAME", simplify = "1%")
+  cd  = list(zip = "lcd_000b21a_e.zip",  id = "CDUID",  name = "CDNAME",  simplify = "1.5%"),
+  csd = list(zip = "lcsd000b21a_e.zip",  id = "CSDUID", name = "CSDNAME", simplify = "1%"),
+  # Census Consolidated Subdivisions — the geography the Census of Agriculture
+  # publishes farm data at below the census division. Feature id = CCSUID, which
+  # joins the ag-structure map data (r/24).
+  ccs = list(zip = "lccs000b21a_e.zip",  id = "CCSUID", name = "CCSNAME", simplify = "1%")
 )
 # BC's fjorded coastline has huge vertex counts, so it needs a much harder simplify
 # than the prairie provinces to keep the files a reasonable size (keeps all features).
-SIMPLIFY_OVERRIDE <- list("59" = c(cd = "0.2%", csd = "0.2%"))
+SIMPLIFY_OVERRIDE <- list("59" = c(cd = "0.2%", csd = "0.2%", ccs = "0.2%"))
 
 # --- mapshaper (topology-preserving simplify) ------------------------------
 ms_bin <- (function() {
