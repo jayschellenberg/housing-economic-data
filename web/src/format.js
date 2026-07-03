@@ -68,6 +68,9 @@ export const INDICATOR_FMT = {
   dollar_per_kl:      (v) => v == null ? '—' : `$${Math.round(Number(v)).toLocaleString()}/kL`,
   index:              (v) => v == null ? '—' : Number(v).toFixed(1),
   units:              (v) => v == null ? '—' : Math.round(Number(v)).toLocaleString(),
+  // Farm-structure units (Census of Agriculture).
+  acres:              (v) => v == null ? '—' : `${Math.round(Number(v)).toLocaleString()} ac`,
+  years:              (v) => v == null ? '—' : `${Number(v).toFixed(1)} yrs`,
   persons:            (v) => v == null ? '—' : Math.round(Number(v)).toLocaleString(),
   // StatsCan "Persons in thousands": cansim's val_norm already applied the ×1000
   // scalar, so the value is raw persons — render as millions (21,034,500 → "21.0M").
