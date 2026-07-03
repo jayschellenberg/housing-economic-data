@@ -16,7 +16,7 @@ A multi-tab static website of Canadian housing & economic data, built for a comm
 | Secondary Rental | CMHC Srms (condo / secondary) for surveyed centres | `r/06` |
 | Housing Starts | CMHC Scss starts / completions | `r/05` |
 | Housing Stock | Census dwelling type / age / condition + choropleth map | `r/07`–`r/10`, `r/12b`, `r/20` |
-| Census Profile | Population & dwelling trends + demographics + choropleth map | `r/12`, `r/12b`, `r/20` (run-once) |
+| Census Profile | Population & dwelling trends + annual estimates + demographics + choropleth map | `r/12`, `r/12b`, `r/20` (run-once); `r/23` (monthly) |
 | Affordability | Royal-LePage-style affordability factor + choropleth map | `r/16`, `r/18`, census, `r/20` |
 | RTB (MB) | Manitoba rent-increase guideline history + CPI overlay | `r/19` |
 | Current Snapshot / Market Indicators | BoC / StatsCan / OSB economic indicators | `r/10`,`r/11`,`r/13`,`r/14`,`r/17` |
@@ -82,6 +82,14 @@ CensusMapper key. Re-run it manually only when a new census is released:
 # CensusMapper key (see MBCensusData/"Cancensus API Key.R") — pass via env:
 $env:CM_API_KEY="CensusMapper_xxx"; npm --prefix web run data:census
 ```
+
+Separately from the run-once census build, `r/23_scrape_population_estimates.R`
+(part of `data:all` and the monthly refresh) pulls StatsCan's **annual July-1
+population estimates** (table 17-10-0155, 2001–present, 2021 boundaries) for
+every western municipality and province into
+`web/public/data/housing/population_estimates.json` — the Census Profile tab
+renders these as a "Population — annual estimates" chart, giving a
+between-censuses trend for any selected province or municipality.
 
 A companion script, `r/12b_wpg_city_history.R`, then **appends earlier-census
 history (2006/2011/2016) to the Winnipeg clusters + community areas** from the

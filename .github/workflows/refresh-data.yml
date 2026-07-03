@@ -93,6 +93,7 @@ jobs:
           Rscript r/16_scrape_mls.R
           Rscript r/15_build_economic_update.R
           Rscript r/19_scrape_rtb.R
+          Rscript r/23_scrape_population_estimates.R   # annual CSD/province population estimates (Census Profile chart)
 
       - name: Verify samples against live API
         run: Rscript r/99_verify_samples.R
