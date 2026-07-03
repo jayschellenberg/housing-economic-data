@@ -45,6 +45,9 @@ const AG_CHARTS = [
   { chartId: 'farmland_value', scope: 'all',
     title: () => 'Farmland value per acre',
     subtitle: () => 'Value per acre by province • annual (comparison)' },
+  { chartId: 'farmland_yoy', scope: 'all',
+    title: () => 'Farmland value — year-over-year % change',
+    subtitle: () => 'Annual % change by province • official analogue of the FCC report' },
   { chartId: 'crop_prices', scope: 'prov',
     title: (p) => `Crop prices — ${p.name}`,
     subtitle: (p) => `${p.name} • monthly • $/tonne` },
@@ -77,6 +80,13 @@ const AG_CHARTS = [
   { chartId: 'farms_by_type', scope: 'prov',
     title: (p) => `Farms by type — ${p.name}`,
     subtitle: (p) => `${p.name} • number of farms by NAICS type • 2001–2021` },
+  // Farm Financial Survey (StatsCan 32-10-0102), average per farm, annual.
+  { chartId: 'farm_income', scope: 'prov',
+    title: (p) => `Farm income & expenses — ${p.name}`,
+    subtitle: (p) => `${p.name} • avg per farm • annual, 2009–2023` },
+  { chartId: 'farm_balance', scope: 'prov',
+    title: (p) => `Farm balance sheet — ${p.name}`,
+    subtitle: (p) => `${p.name} • avg per farm • annual, 2009–2023` },
 ];
 
 let done = false;
