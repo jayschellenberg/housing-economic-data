@@ -64,6 +64,20 @@ const AG_CHARTS = [
   { chartId: 'farm_input_index', scope: 'prov',
     title: (p) => `Farm Input Price Index — ${p.name}`,
     subtitle: (p) => `${p.name} • quarterly • rebased index` },
+  // Farm-structure charts run on Census-of-Agriculture data (5-year steps back
+  // to 1921); `from: null` shows their full history rather than the 2005 default.
+  { chartId: 'farm_count', scope: 'prov', from: null,
+    title: (p) => `Number of farms — ${p.name}`,
+    subtitle: (p) => `${p.name} • Census of Agriculture, every 5 years since 1921` },
+  { chartId: 'farm_size', scope: 'prov', from: null,
+    title: (p) => `Average farm size — ${p.name}`,
+    subtitle: (p) => `${p.name} • acres per farm • Census of Agriculture since 1921` },
+  { chartId: 'operator_age', scope: 'prov', from: null,
+    title: (p) => `Average operator age — ${p.name}`,
+    subtitle: (p) => `${p.name} • years • Census of Agriculture, 1991–2021` },
+  { chartId: 'farms_by_type', scope: 'prov', from: null,
+    title: (p) => `Farms by type — ${p.name}`,
+    subtitle: (p) => `${p.name} • number of farms by NAICS type • 2001–2021` },
 ];
 
 let done = false;
@@ -132,7 +146,10 @@ export async function initAgriculture() {
         sourceLabel: 'Statistics Canada',
         description: spec.desc || cfg.description,
       });
-      card.render(records, meta, { subtitle: spec.subtitle(prov), monthFrom: MONTH_FROM });
+      // Structure charts opt into full history via `from: null`; the rest use
+      // the modern-window default.
+      const monthFrom = spec.from === undefined ? MONTH_FROM : spec.from;
+      card.render(records, meta, { subtitle: spec.subtitle(prov), monthFrom });
       rendered += 1;
     }
 

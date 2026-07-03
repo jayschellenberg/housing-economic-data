@@ -81,4 +81,10 @@ describe('INDICATOR_FMT — agricultural commodity units', () => {
     expect(INDICATOR_FMT.dollar_per_dozen(null)).toBe('—');
     expect(INDICATOR_FMT.dollar_per_kl(null)).toBe('—');
   });
+  it('farm-structure units: acres and years', () => {
+    expect(INDICATOR_FMT.acres(1234.6)).toBe('1,235 ac');
+    expect(INDICATOR_FMT.years(58.24)).toBe('58.2 yrs');
+    expect(INDICATOR_FMT.acres(null)).toBe('—');
+    expect(INDICATOR_FMT.years(null)).toBe('—');
+  });
 });
