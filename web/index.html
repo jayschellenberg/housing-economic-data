@@ -769,12 +769,11 @@
          Rendered by agriculture.js over the shared indicator shards.
          ============================================================ -->
     <div id="tab-panel-agriculture" class="p-4 space-y-4" role="tabpanel" aria-labelledby="tab-btn-agriculture" hidden>
-      <div class="flex flex-wrap gap-2 items-center justify-between">
-        <p class="text-sm text-neutral-600 max-w-3xl">
-          Agricultural indicators for farm and farmland work in Manitoba, with the prairie
-          provinces shown for land-value context. Sourced from Statistics Canada; each chart
-          exports to PNG, and the whole tab to Word or Excel.
-        </p>
+      <div class="flex flex-wrap gap-3 items-center justify-between">
+        <div class="flex items-center gap-2">
+          <label for="ag-prov" class="text-sm font-medium text-neutral-700">Province</label>
+          <select id="ag-prov" class="border border-neutral-300 rounded px-2 py-1 text-sm" aria-label="Province"></select>
+        </div>
         <div class="flex gap-2">
           <button id="ag-download-docx-charts" type="button"
             class="text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
@@ -786,13 +785,21 @@
           </button>
         </div>
       </div>
+      <p class="text-sm text-neutral-600 max-w-3xl">
+        Agricultural indicators for farm and farmland work — pick a province above to scope the
+        prices, input costs, and farm cash receipts; farmland value is shown across provinces for
+        comparison. Sourced from Statistics Canada; each chart exports to PNG, and the whole tab to
+        Word or Excel.
+      </p>
       <div id="ag-chart-grid" class="cmhc-mi-section-grid grid md:grid-cols-2 gap-4"></div>
       <footer class="text-xs text-neutral-500 pt-4 mt-4 border-t border-neutral-200">
         Source: Statistics Canada Web Data Service — farm cash receipts (32-10-0045), value per acre of
-        farm land and buildings (32-10-0047), farm product prices (32-10-0077), and the Farm Input Price
-        Index (18-10-0258). Contains information licensed under the Statistics Canada Open Licence.
-        Provincial averages mask within-province variation; treat as trend and relativity indicators, not
-        a substitute for local sales evidence.
+        farm land and buildings (32-10-0047), farm product prices including supply-managed poultry, eggs
+        and milk (32-10-0077), and the Farm Input Price Index (18-10-0258). Contains information licensed
+        under the Statistics Canada Open Licence. Provincial averages mask within-province variation; treat
+        as trend and relativity indicators, not a substitute for local sales evidence. Supply-managed
+        quota values (milk, poultry, egg) are set and traded by provincial marketing boards and are not
+        published by Statistics Canada.
       </footer>
     </div>
 

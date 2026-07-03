@@ -58,10 +58,14 @@ export const INDICATOR_FMT = {
   percent:            (v) => v == null ? '—' : `${Number(v).toFixed(2)}%`,
   dollar:             (v) => v == null ? '—' : `$${Math.round(Number(v)).toLocaleString()}`,
   dollar_millions:    (v) => v == null ? '—' : `$${(Number(v) / 1e6).toFixed(1)}M`,
-  // Agricultural commodity prices: crops in $/tonne (whole dollars), livestock
-  // in $/hundredweight (cents matter at these levels).
+  // Agricultural commodity prices, in their StatsCan farm-gate units. Crops are
+  // whole $/tonne; the rest keep cents (they trade in small per-unit amounts).
   dollar_per_tonne:   (v) => v == null ? '—' : `$${Math.round(Number(v)).toLocaleString()}/t`,
   dollar_per_cwt:     (v) => v == null ? '—' : `$${Number(v).toFixed(2)}/cwt`,
+  dollar_per_kg:      (v) => v == null ? '—' : `$${Number(v).toFixed(2)}/kg`,
+  dollar_per_dozen:   (v) => v == null ? '—' : `$${Number(v).toFixed(2)}/doz`,
+  // Unprocessed milk is reported $/kilolitre; ÷10 gives the industry-standard $/hL.
+  dollar_per_kl:      (v) => v == null ? '—' : `$${Math.round(Number(v)).toLocaleString()}/kL`,
   index:              (v) => v == null ? '—' : Number(v).toFixed(1),
   units:              (v) => v == null ? '—' : Math.round(Number(v)).toLocaleString(),
   persons:            (v) => v == null ? '—' : Math.round(Number(v)).toLocaleString(),
