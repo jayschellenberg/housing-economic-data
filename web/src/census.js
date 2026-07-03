@@ -22,6 +22,7 @@ import { escapeHtml } from './escape.js';
 import { fInt, fUsd, fDec1, fPctFrac0, fPctFrac1, fPctInt } from './format.js';
 import { PROV_LABEL, PROV_ORDER, provOfUid, cleanName } from './geography.js';
 import { loadCensusProfile } from './census-profile.js';
+import { loadPopulationEstimates } from './population-estimates.js';
 
 // Geography levels, in dropdown group order.
 const LEVEL_GROUPS = [
@@ -181,7 +182,9 @@ export async function initCensus() {
   const $tables   = document.getElementById('census-tables');
   if (!$area[0] || !$tables) return;
 
-  const data = await loadCensusProfile();
+  // popEst is optional garnish (annual-estimates chart) — census profile data
+  // is the hard requirement, so a missing estimates file must not block init.
+  const [data, popEst] = await Promise.all([loadCensusProfile(), loadPopulationEstimates()]);
   if (!data || !Array.isArray(data.regions)) {
     $tables.innerHTML = '<p class="text-sm text-red-700">Census profile data not found. Run r/12_census_profile.R.</p>';
     return;
@@ -506,6 +509,43 @@ export async function initCensus() {
       appendCard('Population trend', `${loY}–${hiY} — ${regionNames.join(' vs ')}`, svg);
     }
 
+    // 1b. Population — ANNUAL estimates (StatsCan July 1 estimates, 2021
+    // boundaries): the between-censuses trend the 5-yearly chart above can't
+    // show. Only provinces + municipalities carry estimates — areas without an
+    // entry (CMAs, CDs, Winnipeg virtual geos) simply contribute no line, and
+    // the card is skipped entirely when no selected area has one. Deliberately
+    // NOT capped to the selected census period: the annual series is about the
+    // current trajectory.
+    if (popEst?.series) {
+      const estRows = [];
+      for (const r of cols) {
+        for (const [y, v] of popEst.series[r.uid] || []) {
+          if (Number.isFinite(v)) estRows.push({ region: r.name, year: y, value: v });
+        }
+      }
+      if (estRows.length) {
+        const loY = Math.min(...estRows.map(d => d.year));
+        const hiY = Math.max(...estRows.map(d => d.year));
+        const maxV = Math.max(...estRows.map(d => d.value));
+        const estRegions = regionNames.filter(n => estRows.some(d => d.region === n));
+        const estRange = estRegions.map(n => PALETTE[regionNames.indexOf(n) % PALETTE.length]);
+        const svg = Plot.plot(themed({
+          height: 250,
+          x: { domain: [loY - 0.5, hiY + 0.5], tickFormat: 'd' },
+          y: { label: 'Population', tickFormat: v => Number(v).toLocaleString(), domain: [0, maxV * 1.12] },
+          color: { domain: estRegions, range: estRange, legend: estRegions.length > 1 },
+          marks: [
+            ...gridMarks(),
+            Plot.lineY(estRows, { x: 'year', y: 'value', stroke: 'region', strokeWidth: 1.8 }),
+            frameMark(),
+          ],
+        }));
+        appendCard('Population — annual estimates',
+          `${loY}–${hiY} July 1 estimates — undercoverage-adjusted, so they differ from census counts`,
+          svg, 'StatsCan table 17-10-0155');
+      }
+    }
+
     // 2. Occupied dwellings by type — stacked bar by census year (Area 1), up
     //    to the selected census.
     const typeOrder = TYPE_SERIES.map(([, lbl]) => lbl);
@@ -570,14 +610,14 @@ export async function initCensus() {
     appendCard(title, period + ' — ' + regionNames.join(' vs '), svg);
   }
 
-  function appendCard(title, sub, svgNode) {
+  function appendCard(title, sub, svgNode, source = 'StatsCan Census') {
     const card = document.createElement('section');
     card.className = 'chart-card';
     card.innerHTML = `<header class="chart-title">${escapeHtml(title)}</header>
       <p class="chart-sub">${escapeHtml(sub)}</p>
       <div data-role="plot"></div>
       <div class="chart-caption"><span class="chart-caption-left"></span>
-        <span class="chart-source">Source: StatsCan Census</span></div>
+        <span class="chart-source">Source: ${escapeHtml(source)}</span></div>
       <div class="chart-actions"><button type="button" data-role="dl-png">Download PNG</button></div>`;
     card.querySelector('[data-role="plot"]').appendChild(svgNode);
     const slug = String(title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
