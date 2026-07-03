@@ -20,6 +20,7 @@ import { initCensus } from './census.js';
 import { initEconomicUpdate } from './economic-update.js';
 import { initAffordability } from './affordability.js';
 import { initRtb } from './rtb.js';
+import { initAgriculture } from './agriculture.js';
 import { wireChartDocExports } from './doc-image-export.js';
 
 const SERIES_PANELS = [
@@ -114,6 +115,7 @@ function setupTabs(initial, onActivate) {
     census:     { btn: document.getElementById('tab-btn-census'),     panel: document.getElementById('tab-panel-census') },
     snapshot:   { btn: document.getElementById('tab-btn-snapshot'),   panel: document.getElementById('tab-panel-snapshot') },
     indicators: { btn: document.getElementById('tab-btn-indicators'), panel: document.getElementById('tab-panel-indicators') },
+    agriculture:{ btn: document.getElementById('tab-btn-agriculture'), panel: document.getElementById('tab-panel-agriculture') },
     economic:   { btn: document.getElementById('tab-btn-economic'),   panel: document.getElementById('tab-panel-economic') },
     affordability: { btn: document.getElementById('tab-btn-affordability'), panel: document.getElementById('tab-panel-affordability') },
     rtb:        { btn: document.getElementById('tab-btn-rtb'),        panel: document.getElementById('tab-panel-rtb') },
@@ -246,6 +248,7 @@ async function bootstrap() {
     economic:      once(() => initEconomicUpdate().catch(err => console.error('[economic bootstrap]', err))),
     affordability: once(() => initAffordability().catch(err => console.error('[affordability bootstrap]', err))),
     rtb:           once(() => initRtb().catch(err => console.error('[rtb bootstrap]', err))),
+    agriculture:   once(() => initAgriculture().catch(err => console.error('[agriculture bootstrap]', err))),
   };
   // Trigger the initial tab's init (charts → no-op); wiring runs it on click too.
   setupTabs(initialTab, (name) => tabInit[name]?.());
@@ -290,6 +293,12 @@ async function bootstrap() {
     xlsxBtnId: 'census-download-xlsx-charts',
     baseName:  'CensusProfile',
     getNodes:  () => [...document.querySelectorAll('#census-chart-grid .chart-card')].filter(hasPlot),
+  });
+  wireChartDocExports({
+    docxBtnId: 'ag-download-docx-charts',
+    xlsxBtnId: 'ag-download-xlsx-charts',
+    baseName:  'Agriculture',
+    getNodes:  () => [...document.querySelectorAll('#ag-chart-grid .chart-card')].filter(hasPlot),
   });
   // Snapshot is a 22-tile KPI grid, not a chart grid — capture each tile
   // individually so the export stays under a few MB and Excel gets one

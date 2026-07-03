@@ -119,8 +119,10 @@ export async function exportIndicatorsToExcel({ catalog, shards }) {
     balance_of_opinion: '0',
   };
 
-  // One sheet per group, in catalog order.
+  // One sheet per group, in catalog order. Groups tagged for another tab (e.g.
+  // Agriculture) are exported from that tab, not the Market Indicators workbook.
   const groupOrder = Object.entries(catalog.displayGroups || {})
+    .filter(([, g]) => (g.tab || 'indicators') === 'indicators')
     .sort((a, b) => (a[1].order || 99) - (b[1].order || 99))
     .map(([id]) => id);
 

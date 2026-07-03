@@ -293,6 +293,9 @@ function buildSnapshot(catalog, shards) {
   const tiers = { national: [], provincial: [], urban: [] };
   Object.entries(catalog.charts || {}).forEach(([chartId, c]) => {
     if (!c.snapshotPick) return;
+    // Skip charts belonging to another tab's groups (e.g. Agriculture).
+    const grp = (catalog.displayGroups || {})[c.displayGroup];
+    if (grp && grp.tab && grp.tab !== 'indicators') return;
     const shard = shards[c.displayGroup];
     if (!shard) return;
     const pick = (shard.series || []).find(s => s.id === c.snapshotPick);
@@ -431,6 +434,9 @@ function buildChartSections(catalog, shards) {
   lastRender.cards = [];
 
   const groupsInOrder = Object.entries(catalog.displayGroups || {})
+    // Groups tagged for another tab (e.g. the Agricultural tab) render there,
+    // not in Market Indicators.
+    .filter(([, g]) => (g.tab || 'indicators') === 'indicators')
     .sort((a, b) => (a[1].order || 99) - (b[1].order || 99))
     .map(([id, g]) => ({ id, ...g }));
 

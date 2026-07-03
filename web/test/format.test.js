@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { miss, fInt, fUsd, fDec1, fPct1, fPctFrac0, fPctFrac1, fPctInt } from '../src/format.js';
+import { miss, fInt, fUsd, fDec1, fPct1, fPctFrac0, fPctFrac1, fPctInt, INDICATOR_FMT } from '../src/format.js';
 
 describe('miss (missing-value predicate)', () => {
   it('treats null / undefined / NaN / ±Infinity as missing', () => {
@@ -57,5 +57,20 @@ describe('formatters — missing values', () => {
     expect(fPct1(NaN, '—')).toBe('—');
     expect(fUsd(null, null)).toBeNull();
     expect(fInt(Infinity, null)).toBeNull();
+  });
+});
+
+describe('INDICATOR_FMT — agricultural commodity units', () => {
+  it('dollar_per_tonne rounds to whole dollars with a /t suffix', () => {
+    expect(INDICATOR_FMT.dollar_per_tonne(672.08)).toBe('$672/t');
+    expect(INDICATOR_FMT.dollar_per_tonne(1234.5)).toBe('$1,235/t');
+  });
+  it('dollar_per_cwt keeps two decimals with a /cwt suffix', () => {
+    expect(INDICATOR_FMT.dollar_per_cwt(296.78)).toBe('$296.78/cwt');
+    expect(INDICATOR_FMT.dollar_per_cwt(112)).toBe('$112.00/cwt');
+  });
+  it('both render null as the indicator "—" marker', () => {
+    expect(INDICATOR_FMT.dollar_per_tonne(null)).toBe('—');
+    expect(INDICATOR_FMT.dollar_per_cwt(null)).toBe('—');
   });
 });

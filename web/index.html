@@ -63,6 +63,10 @@
         class="cmhc-tab" data-tab="indicators" aria-selected="false">
         Market Indicators
       </button>
+      <button type="button" role="tab" id="tab-btn-agriculture"
+        class="cmhc-tab" data-tab="agriculture" aria-selected="false">
+        Agriculture
+      </button>
       <!-- MB Economic Update — revived 2026-07 (was hidden 2026-06). Its
            pipeline (r/15/r/16) kept refreshing on the scheduled workflows
            throughout, so the narrative data is current. -->
@@ -756,6 +760,40 @@
           Sources: Statistics Canada Web Data Service (retail, manufacturing, wholesale trade, farm cash receipts, CPI, employment, building permits, housing starts — contains information licensed under the Statistics Canada Open Licence); Canada Mortgage and Housing Corporation; the Winnipeg Regional Real Estate Board (WRREB); and the Canadian Real Estate Association MLS&reg; Home Price Index. Real GDP, minimum wage, and the Economic Outlook commentary are maintained manually (see <code>r/config/economic_update_manual.json</code>). This product is not affiliated with or endorsed by any of these organizations.
         </footer>
       </section>
+    </div>
+
+    <!-- ============================================================
+         Agriculture tab — curated agricultural indicators for farm /
+         farmland appraisal: farm cash receipts, farmland value per acre,
+         crop + livestock prices, and the Farm Input Price Index.
+         Rendered by agriculture.js over the shared indicator shards.
+         ============================================================ -->
+    <div id="tab-panel-agriculture" class="p-4 space-y-4" role="tabpanel" aria-labelledby="tab-btn-agriculture" hidden>
+      <div class="flex flex-wrap gap-2 items-center justify-between">
+        <p class="text-sm text-neutral-600 max-w-3xl">
+          Agricultural indicators for farm and farmland work in Manitoba, with the prairie
+          provinces shown for land-value context. Sourced from Statistics Canada; each chart
+          exports to PNG, and the whole tab to Word or Excel.
+        </p>
+        <div class="flex gap-2">
+          <button id="ag-download-docx-charts" type="button"
+            class="text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+            Download Word (charts)
+          </button>
+          <button id="ag-download-xlsx-charts" type="button"
+            class="text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+            Download Excel (charts)
+          </button>
+        </div>
+      </div>
+      <div id="ag-chart-grid" class="cmhc-mi-section-grid grid md:grid-cols-2 gap-4"></div>
+      <footer class="text-xs text-neutral-500 pt-4 mt-4 border-t border-neutral-200">
+        Source: Statistics Canada Web Data Service — farm cash receipts (32-10-0045), value per acre of
+        farm land and buildings (32-10-0047), farm product prices (32-10-0077), and the Farm Input Price
+        Index (18-10-0258). Contains information licensed under the Statistics Canada Open Licence.
+        Provincial averages mask within-province variation; treat as trend and relativity indicators, not
+        a substitute for local sales evidence.
+      </footer>
     </div>
 
     <!-- ============================================================
