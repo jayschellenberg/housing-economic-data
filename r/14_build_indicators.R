@@ -1,6 +1,6 @@
 # =============================================================================
 # r/14_build_indicators.R
-# Read every *_indicators.csv (currently boc + statscan; cba once unblocked),
+# Read every *_indicators.csv (boc, statscan, osb + cmhc_arrears.csv),
 # join with the catalog metadata, and write web/public/data/indicators/
 # shards plus indicators-manifest.json.
 #
@@ -36,10 +36,10 @@ read_safe <- function(path) {
 
 boc <- read_safe(file.path(DATA_DIR, "boc_indicators.csv"))
 stc <- read_safe(file.path(DATA_DIR, "statscan_indicators.csv"))
-cba <- read_safe(file.path(DATA_DIR, "cba_arrears.csv"))   # not yet produced; harmless empty
+arr <- read_safe(file.path(DATA_DIR, "cmhc_arrears.csv"))
 osb <- read_safe(file.path(DATA_DIR, "osb_indicators.csv"))
 
-all_obs <- bind_rows(boc, stc, cba, osb)
+all_obs <- bind_rows(boc, stc, arr, osb)
 # Normalise date column to character — read_csv may auto-detect Date type
 # on some columns; downstream binds + JSON serialisation expect ISO strings.
 if (nrow(all_obs) > 0) all_obs$date <- as.character(all_obs$date)

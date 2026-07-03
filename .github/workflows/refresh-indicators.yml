@@ -71,6 +71,7 @@ jobs:
           Rscript r/10_scrape_boc.R
           Rscript r/11_scrape_statscan.R
           Rscript r/17_scrape_osb.R
+          Rscript r/22_scrape_cmhc_arrears.R
           Rscript r/14_build_indicators.R
           Rscript r/16_scrape_mls.R
           Rscript r/15_build_economic_update.R
@@ -85,6 +86,10 @@ jobs:
 
       - name: Commit refreshed data if changed
         id: commit
+        # Guarded to main: dispatching this workflow on a feature branch is the
+        # supervised way to test pipeline changes (PRs #27, #29), and a branch
+        # run must never push its code to main alongside the data.
+        if: github.ref == 'refs/heads/main'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -197,5 +202,8 @@ jobs:
              a series ID. Inspect the validation step output.
           4. **Indicators sanity-check shrink** — re-run via workflow_dispatch
              with `allow_shrink=1` if the shrink is intentional.
+          5. **CMHC delinquency scrape** — `r/22_scrape_cmhc_arrears.R` failed
+             (landing-page ReportDocumentId or workbook layout changed; the
+             script dumps the workbook structure to the log on parse failure).
           EOF
           )" || echo "issue create failed (likely a duplicate or token scope) — continuing"

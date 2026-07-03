@@ -5,9 +5,10 @@
 # silent rename or terminated series can never make it into production.
 #
 # For each catalog row:
-#   - provider="boc":     GET /valet/series/{id}/json -> compare label/description
-#   - provider="statscan": POST getSeriesInfoFromVector -> compare seriesTitleEn
-#   - provider="cba":      GET https://cba.ca/mortgages-in-arrears -> sanity check
+#   - provider="boc":          GET /valet/series/{id}/json -> compare label/description
+#   - provider="statscan":     POST getSeriesInfoFromVector -> compare seriesTitleEn
+#   - provider="cmhc_arrears": GET the CMHC delinquency data-table landing page
+#                              -> confirm the ReportDocumentId GUID is present
 # =============================================================================
 
 .this_dir <- {
@@ -133,24 +134,33 @@ validate_cmhc <- function(row) {
   list(ok = TRUE, actualTitle = row$expectedTitle, latest = NA, reason = "")
 }
 
-validate_cba <- function(row) {
-  # cba.ca canonicalises to .../mortgages-in-arrears (and may redirect via 307
-  # to a different sub-path) — follow redirects, fetch text, look for the
-  # arrears section anchor.
-  resp <- tryCatch(GET("https://cba.ca/mortgages-in-arrears",
-                       timeout(20), config(followlocation = TRUE)),
-                   error = function(e) NULL)
-  if (is.null(resp) || status_code(resp) != 200) {
-    return(list(ok = FALSE, actualTitle = NA, latest = NA,
-                reason = sprintf("HTTP %s", if (is.null(resp)) "no response" else status_code(resp))))
+.cmhc_arrears_checked <- NULL   # memoised — one landing-page fetch covers all rows
+validate_cmhc_arrears <- function(row) {
+  # The scraper (r/22_scrape_cmhc_arrears.R) resolves the XLSX from the data-
+  # table landing page at run time, so the pre-flight check here is "the page
+  # is reachable and still links a delinquency .xlsx". Per-geo titles can only
+  # be verified against the workbook itself, which the scraper gates on.
+  if (is.null(.cmhc_arrears_checked)) {
+    ua <- user_agent(paste0("Mozilla/5.0 (Windows NT 10.0; Win64; x64) ",
+                            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"))
+    resp <- tryCatch(GET(row$sourceUrl, ua, timeout(30), config(followlocation = TRUE)),
+                     error = function(e) NULL)
+    res <- if (is.null(resp) || status_code(resp) != 200) {
+      list(ok = FALSE, actualTitle = NA, latest = NA,
+           reason = sprintf("landing page HTTP %s", if (is.null(resp)) "no response" else status_code(resp)))
+    } else {
+      txt <- content(resp, as = "text", encoding = "UTF-8")
+      # The workbook is resolved from the hidden ReportDocumentId GUID (there is
+      # no static .xlsx href on the page) — see r/22_scrape_cmhc_arrears.R.
+      has_guid <- grepl('\\{[0-9A-Fa-f-]{36}\\}"\\s*id="ReportDocumentId"', txt)
+      list(ok = has_guid,
+           actualTitle = if (has_guid) "landing page reachable, ReportDocumentId present" else "landing page reachable, no ReportDocumentId",
+           latest = NA,
+           reason = if (!has_guid) "no ReportDocumentId GUID on landing page" else "")
+    }
+    .cmhc_arrears_checked <<- res
   }
-  txt <- content(resp, as = "text", encoding = "UTF-8")
-  has_link <- grepl("mortgage[s]?\\s+in\\s+arrears|residential[- ]mortgages?\\s+in\\s+arrears",
-                    txt, ignore.case = TRUE)
-  list(ok = has_link,
-       actualTitle = if (has_link) "page reachable, arrears section present" else "page reachable, arrears section missing",
-       latest      = NA,
-       reason      = if (!has_link) "expected arrears section not found on page" else "")
+  .cmhc_arrears_checked
 }
 
 validate_osb <- function(row) {
@@ -198,11 +208,11 @@ results <- lapply(series, function(row) {
                                       paste(setdiff(needed, src_ids), collapse=", "))))
   }
   res <- switch(row$provider,
-                boc      = validate_boc(row),
-                statscan = validate_statscan(row),
-                cba      = validate_cba(row),
-                cmhc     = validate_cmhc(row),
-                osb      = validate_osb(row),
+                boc          = validate_boc(row),
+                statscan     = validate_statscan(row),
+                cmhc         = validate_cmhc(row),
+                cmhc_arrears = validate_cmhc_arrears(row),
+                osb          = validate_osb(row),
                 list(ok = FALSE, actualTitle = NA, latest = NA,
                      reason = sprintf("unknown provider '%s'", row$provider)))
   cat(sprintf("  [%s] %-44s %s %s\n",
