@@ -120,6 +120,57 @@ for (c in checks) {
               if (c$ok) "OK" else "SHRINK"))
 }
 
+# --- Schema check: category sets per (series, dimension) vs HEAD -------------
+# A CMHC rename ("Total" -> "All") or a dropped category keeps record counts
+# identical, so it slips past the count checks above — but it breaks the
+# frontend, which filters by exact category strings. Abort if any category
+# present on HEAD has disappeared. Override with REFRESH_ALLOW_SCHEMA_CHANGE=1
+# for an intended CMHC change (then update the frontend category constants).
+ALLOW_SCHEMA_CHANGE <- identical(Sys.getenv("REFRESH_ALLOW_SCHEMA_CHANGE"), "1")
+prev_s <- read_prev_json("web/public/data/schema.json")
+curr_s <- read_curr_json("web/public/data/schema.json")
+
+schema_removals  <- character(0)
+schema_additions <- character(0)
+if (is.null(prev_s)) {
+  cat("\n[sanity] no prior schema.json on HEAD — skipping category-set check (first run).\n")
+} else if (is.null(curr_s)) {
+  cat("\n[sanity] current schema.json missing — skipping category-set check.\n")
+} else {
+  for (grp in c("rental", "starts")) {
+    pg <- prev_s[[grp]]; cg <- curr_s[[grp]]
+    if (is.null(pg)) next
+    for (series in names(pg)) {
+      for (dim in names(pg[[series]])) {
+        prev_cats <- as.character(unlist(pg[[series]][[dim]]))
+        curr_cats <- as.character(unlist((cg[[series]] %||% list())[[dim]] %||% list()))
+        removed <- setdiff(prev_cats, curr_cats)
+        added   <- setdiff(curr_cats, prev_cats)
+        if (length(removed))
+          schema_removals <- c(schema_removals, sprintf("%s / %s / %s: removed %s",
+            grp, series, dim, paste(sprintf('"%s"', removed), collapse = ", ")))
+        if (length(added))
+          schema_additions <- c(schema_additions, sprintf("%s / %s / %s: added %s",
+            grp, series, dim, paste(sprintf('"%s"', added), collapse = ", ")))
+      }
+    }
+  }
+}
+if (length(schema_additions)) {
+  cat("\n[sanity] new categories appeared (informational):\n")
+  for (a in schema_additions) cat("  +", a, "\n")
+}
+if (length(schema_removals)) {
+  cat("\n[sanity] CATEGORY SET CHANGED — categories present last refresh are gone:\n")
+  for (r in schema_removals) cat("  -", r, "\n")
+  if (!ALLOW_SCHEMA_CHANGE) {
+    cat("\n[sanity] Aborting: a rename/removal like this breaks the frontend's exact category filters.\n")
+    cat("[sanity] If this CMHC change is intended, update the frontend category constants and set REFRESH_ALLOW_SCHEMA_CHANGE=1.\n")
+    quit(status = 1L)
+  }
+  cat("\n[sanity] REFRESH_ALLOW_SCHEMA_CHANGE=1 — proceeding despite category changes.\n")
+}
+
 failures <- Filter(function(c) !c$ok, checks)
 if (length(failures) == 0) {
   cat("\n[sanity] all metrics within tolerance.\n")
