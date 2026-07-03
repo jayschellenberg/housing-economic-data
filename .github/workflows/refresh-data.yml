@@ -36,7 +36,10 @@ jobs:
 
       - uses: r-lib/actions/setup-r@v2
         with:
-          r-version: "release"
+          # Pinned (was "release") so an R minor bump can't silently change
+          # behaviour — kept in sync with the package snapshot date below. This is
+          # the version the last known-good refresh used. Bump both together.
+          r-version: "4.6.1"
           # Pre-compiled Linux binaries (avoids source-compiling curl/httr/cmhc,
           # which fails on the runner for lack of system libs).
           use-public-rspm: true
@@ -47,8 +50,21 @@ jobs:
 
       - name: Install R packages
         run: |
-          # No explicit repos= — it would override the RSPM binary repo that
-          # use-public-rspm: true configured, forcing slow source compilation.
+          # Pin all CRAN packages to a Posit PPM dated snapshot for reproducible
+          # refreshes, while keeping use-public-rspm's fast Linux binaries (the
+          # dated snapshot serves binaries for the same distro + R version). Reuse
+          # the repo PPM already configured and just freeze the date, so the distro
+          # codename is never hard-coded. If the repo isn't the expected PPM shape,
+          # fall back to unpinned so an install can never break. Bump SNAPSHOT with
+          # the r-version above.
+          SNAPSHOT <- "2026-07-01"
+          repos <- getOption("repos")
+          i <- grepl("packagemanager\\.posit\\.co/cran", repos)
+          if (any(i)) {
+            repos[i] <- sub("/(latest|[0-9]{4}-[0-9]{2}-[0-9]{2})/?$", paste0("/", SNAPSHOT), repos[i])
+            options(repos = repos)
+          }
+          cat("[install] repos:\n"); print(getOption("repos"))
           install.packages(c("cmhc", "cansim", "httr", "dplyr", "tidyr",
                              "purrr", "readr", "jsonlite", "readxl", "rvest"))
         shell: Rscript {0}
