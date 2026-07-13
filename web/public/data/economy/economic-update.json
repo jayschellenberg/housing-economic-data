@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "generated": "2026-07-06T11:50:06Z",
-  "dataAsOf": "2026-07-06",
+  "generated": "2026-07-13T10:41:12Z",
+  "dataAsOf": "2026-07-13",
   "intro": {
     "censusYear": 2021,
     "provincePopulation": 1342153,
@@ -78,10 +78,10 @@
       "stale": false
     },
     "employment": {
-      "value": 749600,
-      "changePct": 2.6,
+      "value": 749700,
+      "changePct": 1.6,
       "direction": "up",
-      "period": "May 2026",
+      "period": "June 2026",
       "comparison": "year-over-year",
       "source": "Statistics Canada",
       "stale": false
@@ -96,18 +96,18 @@
       "stale": false
     },
     "unemployment_rate": {
-      "value": 5.5,
-      "changePP": -0.3,
-      "period": "May 2026",
+      "value": 5.4,
+      "changePP": -0.1,
+      "period": "June 2026",
       "comparison": "year-over-year",
       "source": "Statistics Canada (Labour Force Survey)",
       "stale": false
     },
     "exports": {
-      "value": 5896488000,
-      "ytdChangePct": -20.1,
+      "value": 7544367000,
+      "ytdChangePct": -14.6,
       "direction": "down",
-      "period": "year-to-date to April 2026",
+      "period": "year-to-date to May 2026",
       "comparison": "year-to-date change",
       "source": "Statistics Canada (international merchandise trade, table 12-10-0175)",
       "stale": false
@@ -148,19 +148,19 @@
       "stale": false
     },
     "building_permits": {
-      "value": 268882000,
-      "changePct": -14.4,
+      "value": 217392000,
+      "changePct": -18.3,
       "direction": "down",
-      "period": "April 2026",
+      "period": "May 2026",
       "comparison": "month-to-month, seasonally adjusted",
       "source": "Statistics Canada",
       "stale": false
     }
   },
   "mls": {
-    "asOf": "March 2026",
-    "source": "Winnipeg Regional Real Estate Board (WRREB)",
-    "stale": true,
+    "asOf": "June 2026",
+    "source": "Winnipeg Regional Real Estate Board (WRREB) — https://www.winnipegregionalrealestatenews.com/market-statistics/market-releases/article/625/all-mls-r-sales-for-june-outpace-last-year-for-the-first-month-in-2026",
+    "stale": false,
     "sales": {
       "value": 1135,
       "vsPriorYearPct": -4,
@@ -172,7 +172,7 @@
       "vs5yrAvgPct": -4
     },
     "sfd_avg_price": {
-      "value": 474567,
+      "value": 483910,
       "vsPriorYearPct": 1,
       "vs5yrAvgPct": 8,
       "priorYearValue": 469832,
@@ -186,7 +186,7 @@
       "fiveYrAvg": 363560
     },
     "condo_avg_price": {
-      "value": 292696,
+      "value": 289141,
       "vsPriorYearPct": 6,
       "vs5yrAvgPct": 9,
       "priorYearValue": 277068,
@@ -219,8 +219,8 @@
           "units": "persons_thousands",
           "geo": "MB",
           "frequency": "monthly",
-          "latestDate": "2026-05-01",
-          "latestValue": 749600
+          "latestDate": "2026-06-01",
+          "latestValue": 749700
         }
       ],
       "records": [
@@ -608,6 +608,11 @@
           "id": "statscan.employment.manitoba",
           "date": "2026-05-01",
           "value": 749600
+        },
+        {
+          "id": "statscan.employment.manitoba",
+          "date": "2026-06-01",
+          "value": 749700
         }
       ]
     },
