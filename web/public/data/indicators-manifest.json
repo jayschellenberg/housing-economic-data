@@ -1,13 +1,13 @@
 {
   "version": 1,
-  "generated": "2026-07-13T10:41:08Z",
+  "generated": "2026-07-20T10:53:46Z",
   "groups": [
     {
       "group": "mortgage_market",
       "file": "mortgage_market.json",
       "seriesCount": 12,
-      "recordCount": 27190,
-      "latestDate": "2026-07-09"
+      "recordCount": 27214,
+      "latestDate": "2026-07-16"
     },
     {
       "group": "credit_conditions",
@@ -41,8 +41,8 @@
       "group": "economy",
       "file": "economy.json",
       "seriesCount": 42,
-      "recordCount": 15643,
-      "latestDate": "2026-05-01"
+      "recordCount": 15655,
+      "latestDate": "2026-06-01"
     },
     {
       "group": "ag_land",
@@ -104,10 +104,10 @@
       "group": "derived",
       "file": "derived.json",
       "seriesCount": 12,
-      "recordCount": 22871,
-      "latestDate": "2026-07-09"
+      "recordCount": 22892,
+      "latestDate": "2026-07-16"
     }
   ],
   "totalSeries": 412,
-  "totalRecords": 143734
+  "totalRecords": 143791
 }

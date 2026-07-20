@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "generated": "2026-07-13T10:41:12Z",
-  "dataAsOf": "2026-07-13",
+  "generated": "2026-07-20T10:53:51Z",
+  "dataAsOf": "2026-07-20",
   "intro": {
     "censusYear": 2021,
     "provincePopulation": 1342153,
@@ -51,31 +51,25 @@
       "stale": false
     },
     "manufacturing_sales": {
-      "value": 2342096000,
-      "changePct": -6.1,
+      "value": 2375542000,
+      "changePct": -1.3,
       "direction": "down",
-      "period": "April 2026",
+      "period": "May 2026",
       "comparison": "month-to-month, seasonally adjusted",
       "source": "Statistics Canada",
       "stale": false
     },
     "wholesale_trade": {
-      "value": 3790722000,
-      "changePct": 6.7,
-      "direction": "up",
-      "period": "April 2026",
+      "value": 3713883000,
+      "changePct": -1.6,
+      "direction": "down",
+      "period": "May 2026",
       "comparison": "month-to-month, seasonally adjusted",
       "source": "Statistics Canada",
       "stale": false
     },
     "cpi": {
-      "value": 171.8,
-      "changePct": 4.6,
-      "direction": "up",
-      "period": "May 2026",
-      "comparison": "year-over-year",
-      "source": "Statistics Canada",
-      "stale": false
+      "stale": true
     },
     "employment": {
       "value": 749700,
@@ -139,10 +133,10 @@
   },
   "housing": {
     "starts": {
-      "value": 3189,
-      "ytdChangePct": 24.9,
+      "value": 4157,
+      "ytdChangePct": 38.7,
       "direction": "up",
-      "period": "year-to-date to May 2026",
+      "period": "year-to-date to June 2026",
       "comparison": "year-to-date change",
       "source": "CMHC / Statistics Canada",
       "stale": false
