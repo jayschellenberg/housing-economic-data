@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "lastUpdated": "2026-07-02T20:43:51Z",
+  "lastUpdated": "2026-07-28T14:28:51Z",
   "cmhcMaxYear": 2025,
   "shardCount": 634,
   "totalRecords": 1266003,
@@ -5713,1078 +5713,1078 @@
     }
   ],
   "startsShardCount": 706,
-  "startsTotalRecords": 1385415,
+  "startsTotalRecords": 1392840,
   "startsShards": [
     {
       "file": "cma_001.json",
       "geoUid": "001",
       "geoName": "St. John's",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_010.json",
       "geoUid": "010",
       "geoName": "Grand Falls-Windsor",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_011.json",
       "geoUid": "011",
       "geoName": "Gander",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_015.json",
       "geoUid": "015",
       "geoName": "Corner Brook",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_105.json",
       "geoUid": "105",
       "geoName": "Charlottetown",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_110.json",
       "geoUid": "110",
       "geoName": "Summerside",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_205.json",
       "geoUid": "205",
       "geoName": "Halifax",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_210.json",
       "geoUid": "210",
       "geoName": "Kentville",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_215.json",
       "geoUid": "215",
       "geoName": "Truro",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_220.json",
       "geoUid": "220",
       "geoName": "New Glasgow",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_225.json",
       "geoUid": "225",
       "geoName": "Cape Breton",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_24505.json",
       "geoUid": "24505",
       "geoName": "Gatineau",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_305.json",
       "geoUid": "305",
       "geoName": "Moncton",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_310.json",
       "geoUid": "310",
       "geoName": "Saint John",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_320.json",
       "geoUid": "320",
       "geoName": "Fredericton",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_328.json",
       "geoUid": "328",
       "geoName": "Bathurst",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_329.json",
       "geoUid": "329",
       "geoName": "Miramichi",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_330.json",
       "geoUid": "330",
       "geoName": "Campbellton",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_335.json",
       "geoUid": "335",
       "geoName": "Edmundston",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_35505.json",
       "geoUid": "35505",
       "geoName": "Ottawa",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_403.json",
       "geoUid": "403",
       "geoName": "Matane",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_404.json",
       "geoUid": "404",
       "geoName": "Rimouski",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_405.json",
       "geoUid": "405",
       "geoName": "Rivière-du-Loup",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_406.json",
       "geoUid": "406",
       "geoName": "Baie-Comeau",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_408.json",
       "geoUid": "408",
       "geoName": "Saguenay",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_410.json",
       "geoUid": "410",
       "geoName": "Alma",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_411.json",
       "geoUid": "411",
       "geoName": "Dolbeau-Mistassini",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_412.json",
       "geoUid": "412",
       "geoName": "Sept-Îles",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_421.json",
       "geoUid": "421",
       "geoName": "Québec",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_423.json",
       "geoUid": "423",
       "geoName": "Sainte-Marie",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_428.json",
       "geoUid": "428",
       "geoName": "Saint-Georges",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_430.json",
       "geoUid": "430",
       "geoName": "Thetford Mines",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_433.json",
       "geoUid": "433",
       "geoName": "Sherbrooke",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_437.json",
       "geoUid": "437",
       "geoName": "Cowansville",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_440.json",
       "geoUid": "440",
       "geoName": "Victoriaville",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_442.json",
       "geoUid": "442",
       "geoName": "Trois-Rivières",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_444.json",
       "geoUid": "444",
       "geoName": "Shawinigan",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_447.json",
       "geoUid": "447",
       "geoName": "Drummondville",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_450.json",
       "geoUid": "450",
       "geoName": "Granby",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_452.json",
       "geoUid": "452",
       "geoName": "Saint-Hyacinthe",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_454.json",
       "geoUid": "454",
       "geoName": "Sorel-Tracy",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_456.json",
       "geoUid": "456",
       "geoName": "Joliette",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_462.json",
       "geoUid": "462",
       "geoName": "Montréal",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_465.json",
       "geoUid": "465",
       "geoName": "Salaberry-de-Valleyfield",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_467.json",
       "geoUid": "467",
       "geoName": "Sainte-Agathe-des-Monts",
       "geoLevel": "cma",
-      "recordCount": 2970
+      "recordCount": 3015
     },
     {
       "file": "cma_468.json",
       "geoUid": "468",
       "geoName": "Lachute",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_480.json",
       "geoUid": "480",
       "geoName": "Val-d'Or",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_481.json",
       "geoUid": "481",
       "geoName": "Amos V",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_485.json",
       "geoUid": "485",
       "geoName": "Rouyn-Noranda",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_501.json",
       "geoUid": "501",
       "geoName": "Cornwall",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_502.json",
       "geoUid": "502",
       "geoName": "Hawkesbury",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_512.json",
       "geoUid": "512",
       "geoName": "Brockville",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_515.json",
       "geoUid": "515",
       "geoName": "Pembroke",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_516.json",
       "geoUid": "516",
       "geoName": "Petawawa",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_521.json",
       "geoUid": "521",
       "geoName": "Kingston",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_522.json",
       "geoUid": "522",
       "geoName": "Belleville - Quinte West",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_527.json",
       "geoUid": "527",
       "geoName": "Cobourg",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_528.json",
       "geoUid": "528",
       "geoName": "Port Hope",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_529.json",
       "geoUid": "529",
       "geoName": "Peterborough",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_530.json",
       "geoUid": "530",
       "geoName": "Kawartha Lakes",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_531.json",
       "geoUid": "531",
       "geoName": "Centre Wellington",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_532.json",
       "geoUid": "532",
       "geoName": "Oshawa",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_533.json",
       "geoUid": "533",
       "geoName": "Ingersoll",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_535.json",
       "geoUid": "535",
       "geoName": "Toronto",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_537.json",
       "geoUid": "537",
       "geoName": "Hamilton",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_539.json",
       "geoUid": "539",
       "geoName": "St. Catharines - Niagara",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_541.json",
       "geoUid": "541",
       "geoName": "Kitchener - Cambridge - Waterloo",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_543.json",
       "geoUid": "543",
       "geoName": "Brantford",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_544.json",
       "geoUid": "544",
       "geoName": "Woodstock",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_546.json",
       "geoUid": "546",
       "geoName": "Tillsonburg",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_547.json",
       "geoUid": "547",
       "geoName": "Norfolk",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_550.json",
       "geoUid": "550",
       "geoName": "Guelph",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_553.json",
       "geoUid": "553",
       "geoName": "Stratford",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_555.json",
       "geoUid": "555",
       "geoName": "London",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_556.json",
       "geoUid": "556",
       "geoName": "Chatham-Kent",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_559.json",
       "geoUid": "559",
       "geoName": "Windsor",
       "geoLevel": "cma",
-      "recordCount": 720
+      "recordCount": 765
     },
     {
       "file": "cma_562.json",
       "geoUid": "562",
       "geoName": "Sarnia",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_565.json",
       "geoUid": "565",
       "geoName": "Wasaga Beach",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_566.json",
       "geoUid": "566",
       "geoName": "Owen Sound",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_567.json",
       "geoUid": "567",
       "geoName": "Collingwood",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_568.json",
       "geoUid": "568",
       "geoName": "Barrie",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_569.json",
       "geoUid": "569",
       "geoName": "Orillia",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_571.json",
       "geoUid": "571",
       "geoName": "Midland",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_575.json",
       "geoUid": "575",
       "geoName": "North Bay",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_580.json",
       "geoUid": "580",
       "geoName": "Greater Sudbury / Grand Sudbury",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_582.json",
       "geoUid": "582",
       "geoName": "Elliot Lake",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_586.json",
       "geoUid": "586",
       "geoName": "Timmins",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_590.json",
       "geoUid": "590",
       "geoName": "Sault Ste. Marie",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_595.json",
       "geoUid": "595",
       "geoName": "Thunder Bay",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_598.json",
       "geoUid": "598",
       "geoName": "Kenora",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_602.json",
       "geoUid": "602",
       "geoName": "Winnipeg",
       "geoLevel": "cma",
-      "recordCount": 8145
+      "recordCount": 8190
     },
     {
       "file": "cma_603.json",
       "geoUid": "603",
       "geoName": "Winkler",
       "geoLevel": "cma",
-      "recordCount": 2970
+      "recordCount": 3015
     },
     {
       "file": "cma_605.json",
       "geoUid": "605",
       "geoName": "Steinbach",
       "geoLevel": "cma",
-      "recordCount": 4095
+      "recordCount": 4140
     },
     {
       "file": "cma_607.json",
       "geoUid": "607",
       "geoName": "Portage la Prairie",
       "geoLevel": "cma",
-      "recordCount": 8145
+      "recordCount": 8190
     },
     {
       "file": "cma_610.json",
       "geoUid": "610",
       "geoName": "Brandon",
       "geoLevel": "cma",
-      "recordCount": 8145
+      "recordCount": 8190
     },
     {
       "file": "cma_640.json",
       "geoUid": "640",
       "geoName": "Thompson",
       "geoLevel": "cma",
-      "recordCount": 8145
+      "recordCount": 8190
     },
     {
       "file": "cma_705.json",
       "geoUid": "705",
       "geoName": "Regina",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_710.json",
       "geoUid": "710",
       "geoName": "Yorkton",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_715.json",
       "geoUid": "715",
       "geoName": "Moose Jaw",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_720.json",
       "geoUid": "720",
       "geoName": "Swift Current",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_725.json",
       "geoUid": "725",
       "geoName": "Saskatoon",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_735.json",
       "geoUid": "735",
       "geoName": "North Battleford",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_745.json",
       "geoUid": "745",
       "geoName": "Prince Albert",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_750.json",
       "geoUid": "750",
       "geoName": "Estevan",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_755.json",
       "geoUid": "755",
       "geoName": "Weyburn",
       "geoLevel": "cma",
-      "recordCount": 2970
+      "recordCount": 3015
     },
     {
       "file": "cma_805.json",
       "geoUid": "805",
       "geoName": "Medicine Hat",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_806.json",
       "geoUid": "806",
       "geoName": "Brooks",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_810.json",
       "geoUid": "810",
       "geoName": "Lethbridge",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_820.json",
       "geoUid": "820",
       "geoName": "Okotoks",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_821.json",
       "geoUid": "821",
       "geoName": "High River",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_825.json",
       "geoUid": "825",
       "geoName": "Calgary",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_826.json",
       "geoUid": "826",
       "geoName": "Strathmore",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_828.json",
       "geoUid": "828",
       "geoName": "Canmore",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_830.json",
       "geoUid": "830",
       "geoName": "Red Deer",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_831.json",
       "geoUid": "831",
       "geoName": "Sylvan Lake",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_832.json",
       "geoUid": "832",
       "geoName": "Lacombe",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_833.json",
       "geoUid": "833",
       "geoName": "Camrose",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_835.json",
       "geoUid": "835",
       "geoName": "Edmonton",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_840.json",
       "geoUid": "840",
       "geoName": "Lloydminster",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_850.json",
       "geoUid": "850",
       "geoName": "Grande Prairie",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_860.json",
       "geoUid": "860",
       "geoName": "Wood Buffalo",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_865.json",
       "geoUid": "865",
       "geoName": "Wetaskiwin",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_905.json",
       "geoUid": "905",
       "geoName": "Cranbrook",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_907.json",
       "geoUid": "907",
       "geoName": "Nelson",
       "geoLevel": "cma",
-      "recordCount": 2970
+      "recordCount": 3015
     },
     {
       "file": "cma_910.json",
       "geoUid": "910",
       "geoName": "Trail",
       "geoLevel": "cma",
-      "recordCount": 720
+      "recordCount": 765
     },
     {
       "file": "cma_913.json",
       "geoUid": "913",
       "geoName": "Penticton",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_915.json",
       "geoUid": "915",
       "geoName": "Kelowna",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_918.json",
       "geoUid": "918",
       "geoName": "Vernon",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_920.json",
       "geoUid": "920",
       "geoName": "Salmon Arm",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_925.json",
       "geoUid": "925",
       "geoName": "Kamloops",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_930.json",
       "geoUid": "930",
       "geoName": "Chilliwack",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_932.json",
       "geoUid": "932",
       "geoName": "Abbotsford - Mission",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_933.json",
       "geoUid": "933",
       "geoName": "Vancouver",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_934.json",
       "geoUid": "934",
       "geoName": "Squamish",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_935.json",
       "geoUid": "935",
       "geoName": "Victoria",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_936.json",
       "geoUid": "936",
       "geoName": "Ladysmith",
       "geoLevel": "cma",
-      "recordCount": 720
+      "recordCount": 765
     },
     {
       "file": "cma_937.json",
       "geoUid": "937",
       "geoName": "Duncan",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_938.json",
       "geoUid": "938",
       "geoName": "Nanaimo",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_939.json",
       "geoUid": "939",
       "geoName": "Parksville",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_940.json",
       "geoUid": "940",
       "geoName": "Port Alberni",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_943.json",
       "geoUid": "943",
       "geoName": "Courtenay",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_944.json",
       "geoUid": "944",
       "geoName": "Campbell River",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_945.json",
       "geoUid": "945",
       "geoName": "Powell River",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_950.json",
       "geoUid": "950",
       "geoName": "Williams Lake",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_952.json",
       "geoUid": "952",
       "geoName": "Quesnel",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_955.json",
       "geoUid": "955",
       "geoName": "Prince Rupert",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_965.json",
       "geoUid": "965",
       "geoName": "Terrace",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_970.json",
       "geoUid": "970",
       "geoName": "Prince George",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_975.json",
       "geoUid": "975",
       "geoName": "Dawson Creek",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_977.json",
       "geoUid": "977",
       "geoName": "Fort St. John",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_990.json",
       "geoUid": "990",
       "geoName": "Whitehorse",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "cma_995.json",
       "geoUid": "995",
       "geoName": "Yellowknife",
       "geoLevel": "cma",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "csd_4613047.json",
       "geoUid": "4613047",
       "geoName": "Selkirk CY",
       "geoLevel": "csd",
-      "recordCount": 1845
+      "recordCount": 1890
     },
     {
       "file": "csd_602-east-st-paul-rm.json",
@@ -9892,84 +9892,84 @@
       "geoUid": "10",
       "geoName": "Newfoundland and Labrador",
       "geoLevel": "province",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "province_11.json",
       "geoUid": "11",
       "geoName": "Prince Edward Island",
       "geoLevel": "province",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "province_12.json",
       "geoUid": "12",
       "geoName": "Nova Scotia",
       "geoLevel": "province",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "province_13.json",
       "geoUid": "13",
       "geoName": "New Brunswick",
       "geoLevel": "province",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "province_24.json",
       "geoUid": "24",
       "geoName": "Quebec",
       "geoLevel": "province",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "province_35.json",
       "geoUid": "35",
       "geoName": "Ontario",
       "geoLevel": "province",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "province_46.json",
       "geoUid": "46",
       "geoName": "Manitoba",
       "geoLevel": "province",
-      "recordCount": 8145
+      "recordCount": 8190
     },
     {
       "file": "province_47.json",
       "geoUid": "47",
       "geoName": "Saskatchewan",
       "geoLevel": "province",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "province_48.json",
       "geoUid": "48",
       "geoName": "Alberta",
       "geoLevel": "province",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "province_59.json",
       "geoUid": "59",
       "geoName": "British Columbia",
       "geoLevel": "province",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "province_60.json",
       "geoUid": "60",
       "geoName": "Yukon",
       "geoLevel": "province",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "province_61.json",
       "geoUid": "61",
       "geoName": "Northwest Territories",
       "geoLevel": "province",
-      "recordCount": 3420
+      "recordCount": 3465
     },
     {
       "file": "zone_602-assiniboine-park.json",
