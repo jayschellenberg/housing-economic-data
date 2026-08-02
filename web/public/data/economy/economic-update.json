@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "generated": "2026-07-28T14:35:10Z",
-  "dataAsOf": "2026-07-28",
+  "generated": "2026-08-02T14:31:14Z",
+  "dataAsOf": "2026-08-02",
   "intro": {
     "censusYear": 2021,
     "provincePopulation": 1342153,
@@ -87,10 +87,10 @@
       "stale": false
     },
     "weekly_earnings": {
-      "value": 1229.72,
-      "changePct": 6.1,
+      "value": 1221.49,
+      "changePct": 5.1,
       "direction": "up",
-      "period": "April 2026",
+      "period": "May 2026",
       "comparison": "year-over-year",
       "source": "Statistics Canada",
       "stale": false
