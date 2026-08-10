@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "generated": "2026-08-03T11:11:14Z",
-  "dataAsOf": "2026-08-03",
+  "generated": "2026-08-10T09:38:36Z",
+  "dataAsOf": "2026-08-10",
   "intro": {
     "censusYear": 2021,
     "provincePopulation": 1342153,
@@ -78,10 +78,10 @@
       "stale": false
     },
     "employment": {
-      "value": 749700,
-      "changePct": 1.6,
+      "value": 755600,
+      "changePct": 1.9,
       "direction": "up",
-      "period": "June 2026",
+      "period": "July 2026",
       "comparison": "year-over-year",
       "source": "Statistics Canada",
       "stale": false
@@ -96,18 +96,18 @@
       "stale": false
     },
     "unemployment_rate": {
-      "value": 5.4,
-      "changePP": -0.1,
-      "period": "June 2026",
+      "value": 5,
+      "changePP": -0.5,
+      "period": "July 2026",
       "comparison": "year-over-year",
       "source": "Statistics Canada (Labour Force Survey)",
       "stale": false
     },
     "exports": {
-      "value": 7544367000,
-      "ytdChangePct": -14.6,
+      "value": 9193927000,
+      "ytdChangePct": -11.3,
       "direction": "down",
-      "period": "year-to-date to May 2026",
+      "period": "year-to-date to June 2026",
       "comparison": "year-to-date change",
       "source": "Statistics Canada (international merchandise trade, table 12-10-0175)",
       "stale": false
@@ -158,11 +158,11 @@
     }
   },
   "mls": {
-    "asOf": "June 2026",
-    "source": "Winnipeg Regional Real Estate Board (WRREB) — https://www.winnipegregionalrealestatenews.com/market-statistics/market-releases/article/625/all-mls-r-sales-for-june-outpace-last-year-for-the-first-month-in-2026",
+    "asOf": "July 2026",
+    "source": "Winnipeg Regional Real Estate Board (WRREB) — https://www.winnipegregionalrealestatenews.com/market-statistics/market-releases/article/626/residential-detached-homes-and-condominiums-set-new-july-average-price-records",
     "stale": false,
     "sales": {
-      "value": 1135,
+      "value": 2026,
       "vsPriorYearPct": -4,
       "vs5yrAvgPct": -3
     },
@@ -172,7 +172,7 @@
       "vs5yrAvgPct": -4
     },
     "sfd_avg_price": {
-      "value": 483910,
+      "value": 454264,
       "vsPriorYearPct": 1,
       "vs5yrAvgPct": 8,
       "priorYearValue": 469832,
@@ -186,7 +186,7 @@
       "fiveYrAvg": 363560
     },
     "condo_avg_price": {
-      "value": 289141,
+      "value": 289508,
       "vsPriorYearPct": 6,
       "vs5yrAvgPct": 9,
       "priorYearValue": 277068,
@@ -219,8 +219,8 @@
           "units": "persons_thousands",
           "geo": "MB",
           "frequency": "monthly",
-          "latestDate": "2026-06-01",
-          "latestValue": 749700
+          "latestDate": "2026-07-01",
+          "latestValue": 755600
         }
       ],
       "records": [
@@ -613,6 +613,11 @@
           "id": "statscan.employment.manitoba",
           "date": "2026-06-01",
           "value": 749700
+        },
+        {
+          "id": "statscan.employment.manitoba",
+          "date": "2026-07-01",
+          "value": 755600
         }
       ]
     },

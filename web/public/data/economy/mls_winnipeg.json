@@ -1,11 +1,11 @@
 {
   "_comment": "HAND-ENTRY: WRREB MLS headline figures. The auto-scrape (r/16) currently can't parse the WRREB prose reliably, so update this by hand each month: copy the latest monthly release from https://www.winnipegregionalrealestatenews.com/market-statistics/market-releases , fill every value below, set asOf to the new month, set stale to false, then run `npm --prefix web run data:economic` and commit. vsPriorYearPct / vs5yrAvgPct are whole percents (negative = down). Latest complete set found: March 2026 (the May 2026 release reported sales 1,707 (-4% yoy, +1% vs 5yr), listings 3,739 (+2% yoy), detached $477,313 (+4% yoy, +7% vs 5yr), condo -1% yoy/+5% vs 5yr, but did not state attached/condo prices).",
-  "asOf": "June 2026",
-  "source": "Winnipeg Regional Real Estate Board (WRREB) — https://www.winnipegregionalrealestatenews.com/market-statistics/market-releases/article/625/all-mls-r-sales-for-june-outpace-last-year-for-the-first-month-in-2026",
-  "fetched": "2026-08-03",
+  "asOf": "July 2026",
+  "source": "Winnipeg Regional Real Estate Board (WRREB) — https://www.winnipegregionalrealestatenews.com/market-statistics/market-releases/article/626/residential-detached-homes-and-condominiums-set-new-july-average-price-records",
+  "fetched": "2026-08-10",
   "stale": false,
   "sales": {
-    "value": 1135,
+    "value": 2026,
     "vsPriorYearPct": -4,
     "vs5yrAvgPct": -3
   },
@@ -15,7 +15,7 @@
     "vs5yrAvgPct": -4
   },
   "sfd_avg_price": {
-    "value": 483910,
+    "value": 454264,
     "vsPriorYearPct": 1,
     "vs5yrAvgPct": 8,
     "priorYearValue": 469832,
@@ -29,7 +29,7 @@
     "fiveYrAvg": 363560
   },
   "condo_avg_price": {
-    "value": 289141,
+    "value": 289508,
     "vsPriorYearPct": 6,
     "vs5yrAvgPct": 9,
     "priorYearValue": 277068,
