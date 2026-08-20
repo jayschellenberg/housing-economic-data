@@ -156,6 +156,23 @@ export function renderDataTable($wrap, periods, seriesMeta, frequency, yFormatte
   return grid.map(row => row.join('\t')).join('\n');
 }
 
+/**
+ * The card's collapsible panels, by key. A tab that keeps its cards (Market
+ * Indicators) never needs these — the open state survives a re-render on its
+ * own. A tab that discards and rebuilds its cards on every control change
+ * (Agriculture) must snapshot what was open with `readOpenPanels(cardEl)`
+ * before the wipe and hand it to the new card's `setOpenPanels`, or the panel
+ * the user just opened to read closes under them.
+ */
+const PANEL_SELECTORS = { table: '.cmhc-chart-table', explainer: '.cmhc-explainer' };
+
+export function readOpenPanels(cardEl) {
+  if (!cardEl) return [];
+  return Object.entries(PANEL_SELECTORS)
+    .filter(([, selector]) => cardEl.querySelector(`${selector}[open]`))
+    .map(([key]) => key);
+}
+
 // Copy the table as TSV — pastes into Excel or Word as real columns.
 async function copyTsv($btn, tsv) {
   const original = $btn.textContent;
@@ -525,17 +542,18 @@ export function buildIndicatorCard(container, {
     $png.onclick = () => exportCard(card, lastFilename, 'png');
   }
 
-  // Open (or close) the data table programmatically, building it if needed.
-  // The Agriculture tab discards and rebuilds its cards on every control
-  // change, so it uses this to carry the open table across the rebuild.
-  function setTableOpen(open) {
-    if (!$tableBox) return;
-    $tableBox.open = !!open;
-    if (open && !tableFresh) buildTableNow();
+  // Restore a set of open panels (see readOpenPanels). Panels not named are
+  // closed, which is a no-op on a freshly built card.
+  function setOpenPanels(keys) {
+    const want = new Set(keys || []);
+    for (const [key, selector] of Object.entries(PANEL_SELECTORS)) {
+      const el = card.querySelector(selector);
+      if (el) el.open = want.has(key);
+    }
+    if (want.has('table') && !tableFresh) buildTableNow();
   }
-  const isTableOpen = () => !!$tableBox?.open;
 
-  return { card, render, setTableOpen, isTableOpen };
+  return { card, render, setOpenPanels };
 }
 
 async function exportCard(card, filename, kind) {
