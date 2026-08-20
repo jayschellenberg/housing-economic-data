@@ -111,8 +111,12 @@ export function buildTipRows(points, frequency, formatter) {
  * column per visible series. Returns the same grid as TSV for the copy button.
  * Built with DOM nodes rather than an HTML string — series labels and values
  * are never string-injected.
+ *
+ * Called on demand (see the deferred build in `render`), not on every chart
+ * render: the Agriculture tab defaults to the full history, so monthly crop
+ * prices alone would be ~500 rows per card that nobody has asked to see.
  */
-function renderDataTable($wrap, periods, seriesMeta, frequency, yFormatter) {
+export function renderDataTable($wrap, periods, seriesMeta, frequency, yFormatter) {
   const labels = seriesMeta.map(s => s.chartLabel || s.id);
   const table = document.createElement('table');
   table.className = 'cmhc-table';
@@ -282,6 +286,37 @@ export function buildIndicatorCard(container, {
   const $table    = card.querySelector('[data-role="table"]');
   const $tableNote = card.querySelector('[data-role="table-note"]');
   const $copyTable = card.querySelector('[data-role="copy-table"]');
+  const $tableBox = card.querySelector('.cmhc-chart-table');
+
+  // Deferred table build. `render` only stashes what the table needs; the rows
+  // are materialised when the user actually opens it (or copies it), and
+  // rebuilt on the next open if the chart re-rendered in the meantime.
+  let tableInput = null;
+  let tableTsv = '';
+  let tableFresh = false;
+
+  function buildTableNow() {
+    if (!$table || !tableInput) return;
+    const { periods, seriesMeta, freq, yFormatter } = tableInput;
+    tableTsv = renderDataTable($table, periods, seriesMeta, freq, yFormatter);
+    $tableNote.textContent =
+      `${periods.length} periods, ${periodLabel(periods[0].date, freq)}–` +
+      `${periodLabel(periods[periods.length - 1].date, freq)}, newest first. ` +
+      `Follows the tab's date range. “${MISSING}” = no observation.`;
+    tableFresh = true;
+  }
+
+  if ($tableBox) {
+    $tableBox.addEventListener('toggle', () => {
+      if ($tableBox.open && !tableFresh) buildTableNow();
+    });
+  }
+  if ($copyTable) {
+    $copyTable.addEventListener('click', () => {
+      if (!tableFresh) buildTableNow();
+      copyTsv($copyTable, tableTsv);
+    });
+  }
 
   $source.textContent = `Source: ${sourceLabel || 'see series'}`;
   let lastFilename = `cmhc_${chartId}.png`;
@@ -292,7 +327,13 @@ export function buildIndicatorCard(container, {
     $stale.textContent = '';
     $latest.replaceChildren();
     $capLeft.textContent = '';
-    if ($table) { $table.replaceChildren(); $tableNote.textContent = ''; }
+    if ($table) {
+      $table.replaceChildren();
+      $tableNote.textContent = '';
+      tableInput = null;
+      tableTsv = '';
+      tableFresh = false;
+    }
 
     const ids = new Set(seriesMeta.map(s => s.id));
     const rows = records.filter(r => ids.has(r.id));
@@ -473,20 +514,28 @@ export function buildIndicatorCard(container, {
 
     // Data table — the readable counterpart to the hover tooltip, so a
     // specific period (say May 2023) can be looked up, copied, or quoted.
+    // Built when opened rather than now; see buildTableNow above.
     if ($table) {
-      const tsv = renderDataTable($table, periods, seriesMeta, freq, yFormatter);
-      $tableNote.textContent =
-        `${periods.length} periods, ${periodLabel(periods[0].date, freq)}–` +
-        `${periodLabel(periods[periods.length - 1].date, freq)}, newest first. ` +
-        `Follows the date range in the sidebar. “${MISSING}” = no observation.`;
-      if ($copyTable) $copyTable.onclick = () => copyTsv($copyTable, tsv);
+      tableInput = { periods, seriesMeta, freq, yFormatter };
+      tableFresh = false;
+      if ($tableBox?.open) buildTableNow();
     }
 
     lastFilename = `cmhc_${chartId}_${new Date().toISOString().slice(0,10)}.png`;
     $png.onclick = () => exportCard(card, lastFilename, 'png');
   }
 
-  return { card, render };
+  // Open (or close) the data table programmatically, building it if needed.
+  // The Agriculture tab discards and rebuilds its cards on every control
+  // change, so it uses this to carry the open table across the rebuild.
+  function setTableOpen(open) {
+    if (!$tableBox) return;
+    $tableBox.open = !!open;
+    if (open && !tableFresh) buildTableNow();
+  }
+  const isTableOpen = () => !!$tableBox?.open;
+
+  return { card, render, setTableOpen, isTableOpen };
 }
 
 async function exportCard(card, filename, kind) {
