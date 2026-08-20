@@ -71,11 +71,15 @@
         class="cmhc-tab" data-tab="agriculture" aria-selected="false">
         Agriculture
       </button>
-      <!-- MB Economic Update — revived 2026-07 (was hidden 2026-06). Its
-           pipeline (r/15/r/16) kept refreshing on the scheduled workflows
-           throughout, so the narrative data is current. -->
+      <!-- MB Economic Update — hidden again 2026-08 (previously hidden 2026-06,
+           revived 2026-07). PARKED, NOT REMOVED: the tab panel below,
+           economic-update.js, and the r/15 + r/16 pipeline are all intact and
+           the scheduled workflows keep refreshing its data, so the narrative
+           stays current while it is out of the nav. It remains reachable at
+           #economic for anyone with the link. Delete `hidden` to bring it back.
+           Flagged for future build-out — see README "Parked features". -->
       <button type="button" role="tab" id="tab-btn-economic"
-        class="cmhc-tab" data-tab="economic" aria-selected="false">
+        class="cmhc-tab" data-tab="economic" aria-selected="false" hidden>
         MB Economic Update
       </button>
     </nav>
