@@ -340,6 +340,17 @@
   word-break: break-word;
 }
 
+/* Annotation key under the legend (the BoC inflation-control band). Reads as
+   a note, not as another series — no swatch, smaller, muted. */
+.cmhc-plot-legend-note {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--color-neutral-200);
+  font-size: 10.5px;
+  line-height: 1.3;
+  color: var(--color-neutral-500);
+}
+
 
 /* --- Market Indicators tab ------------------------------------------------ */
 
@@ -546,6 +557,54 @@
 .cmhc-mi-jump-list .cmhc-mi-jump-link:hover {
   background: var(--color-neutral-100);
   border-left-color: var(--cmhc-brand-red);
+}
+
+/* Collapsible data table below an indicator chart — same affordance as the
+   explainer, with a scroll box so a 60-month window doesn't push the card
+   down the page. */
+.cmhc-chart-table {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: var(--color-neutral-50);
+  border: 1px solid var(--color-neutral-200);
+  border-radius: 4px;
+}
+.cmhc-chart-table summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--cmhc-brand-red);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  list-style: none;
+}
+.cmhc-chart-table summary::-webkit-details-marker { display: none; }
+.cmhc-chart-table summary::before {
+  content: "▸ ";
+  display: inline-block;
+  transition: transform 0.15s;
+}
+.cmhc-chart-table[open] summary::before { transform: rotate(90deg); }
+.cmhc-chart-table .chart-actions { margin-top: 6px; }
+.cmhc-chart-table-scroll {
+  max-height: 320px;
+  overflow: auto;
+  margin-top: 6px;
+  background: #fff;
+  border: 1px solid var(--color-neutral-200);
+  border-radius: 4px;
+}
+/* Keep the header visible while scrolling a long window of months. */
+.cmhc-chart-table-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.cmhc-chart-table-note {
+  margin: 6px 0 0;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--color-neutral-500);
 }
 
 /* Collapsible explainer below each indicator chart. */

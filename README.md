@@ -19,7 +19,7 @@ A multi-tab static website of Canadian housing & economic data, built for a comm
 | Census Profile | Population & dwelling trends + annual estimates + demographics + choropleth map | `r/12`, `r/12b`, `r/20` (run-once); `r/23` (monthly) |
 | Affordability | Royal-LePage-style affordability factor + choropleth map | `r/16`, `r/18`, census, `r/20` |
 | RTB (MB) | Manitoba rent-increase guideline history + CPI overlay | `r/19` |
-| Current Snapshot / Market Indicators | BoC / StatsCan / OSB economic indicators | `r/10`,`r/11`,`r/13`,`r/14`,`r/17` |
+| Current Snapshot / Market Indicators | BoC / StatsCan / OSB economic indicators, incl. CPI inflation (headline, core, shelter, annual average) | `r/10`,`r/11`,`r/13`,`r/14`,`r/17` |
 | Agriculture | Farm cash / farmland value / crop, livestock & supply-managed prices / input costs / farm structure (consolidation) + within-province CCS choropleth | catalog + `r/11`,`r/14`; `r/20`,`r/24` (run-once map) |
 | MB Economic Update | Auto narrative report (economy + HPI + outlook) | `r/15`, `r/16` |
 

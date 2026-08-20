@@ -90,6 +90,7 @@ export async function initIndicators() {
   buildSnapshot(catalogResolved, shards);
   buildChartSections(catalogResolved, shards);
   buildTimeAdjustmentTool(catalogResolved, shards);
+  buildInflationLookupTool(catalogResolved, shards);
   wireSidebar(catalogResolved, manifest);
   wireExcelDownload(catalogResolved, shards);
 }
@@ -236,6 +237,176 @@ function buildTimeAdjustmentTool(catalog, shards) {
   $sale.value = oneYearAgo.toISOString().slice(0, 10);
 }
 
+// --- Inflation lookup -------------------------------------------------------
+// Answers the two questions an inflation chart gets asked. "What was the rate
+// at May 2023?" reads the 12-month rate straight off the derived YoY series.
+// "How much have prices risen between two dates?" is the ratio of the two CPI
+// index levels — deliberately not the sum of the annual rates, which
+// double-counts compounding and is the usual way this gets done wrong.
+const INFLATION_MEASURES = [
+  { key: 'allitems', label: 'All-items (headline)', level: 'statscan.cpi_allitems.', yoy: 'derived.cpi_allitems.' },
+  { key: 'shelter',  label: 'Shelter component',    level: 'statscan.cpi_shelter.',  yoy: 'derived.cpi_shelter.' },
+];
+
+function buildInflationLookupTool(catalog, shards) {
+  const $grid = document.getElementById('mi-chart-grid');
+  if (!$grid) return;
+
+  // Index (level) + rate (YoY) records, keyed by series id and date-sorted.
+  const seriesById = {};
+  const recordsById = {};
+  Object.values(shards).forEach(sh => {
+    (sh.series || []).forEach(s => { seriesById[s.id] = s; });
+    (sh.records || []).forEach(r => {
+      if (!recordsById[r.id]) recordsById[r.id] = [];
+      recordsById[r.id].push(r);
+    });
+  });
+  Object.values(recordsById).forEach(arr => arr.sort((a, b) => a.date.localeCompare(b.date)));
+  const has = (id) => (recordsById[id]?.length || 0) > 0;
+
+  // Geographies offered = those with both a level and a rate series for at
+  // least one measure, in the tab's usual display order.
+  const geoSlugs = [...new Set(
+    Object.keys(seriesById)
+      .filter(id => id.startsWith('statscan.cpi_allitems.') || id.startsWith('statscan.cpi_shelter.'))
+      .map(id => id.split('.')[2])
+  )];
+  const geoChoices = geoSlugs
+    .map(slug => {
+      const meta = seriesById[`statscan.cpi_allitems.${slug}`] || seriesById[`statscan.cpi_shelter.${slug}`];
+      return { slug, label: meta?.chartLabel || slug, geo: meta?.geo };
+    })
+    .filter(g => INFLATION_MEASURES.some(m => has(m.level + g.slug) && has(`${m.yoy}${g.slug}.yoy`)))
+    .sort((a, b) => (GEO_ORDER.indexOf(a.geo) + 1 || 99) - (GEO_ORDER.indexOf(b.geo) + 1 || 99));
+  if (geoChoices.length === 0) return;
+
+  const allDates = geoChoices
+    .flatMap(g => recordsById[`statscan.cpi_allitems.${g.slug}`] || [])
+    .map(r => r.date).sort();
+  const minDate = allDates[0] || '1980-01-01';
+  const maxDate = allDates[allDates.length - 1] || new Date().toISOString().slice(0, 10);
+  // Default "as at" = three years back from the newest observation, which is
+  // the kind of gap a dated comparable or a lease review usually spans.
+  const defaultFrom = (() => {
+    const d = new Date(`${maxDate}T00:00:00Z`);
+    d.setUTCFullYear(d.getUTCFullYear() - 3);
+    return d.toISOString().slice(0, 10);
+  })();
+
+  const section = document.getElementById('mi-section-tools') || (() => {
+    const s = document.createElement('section');
+    s.className = 'cmhc-mi-section';
+    s.dataset.group = 'tools';
+    s.id = 'mi-section-tools';
+    s.innerHTML = '<h2 class="cmhc-mi-section-title">Tools</h2>';
+    $grid.appendChild(s);
+    return s;
+  })();
+
+  const card = document.createElement('section');
+  card.className = 'chart-card cmhc-time-adjust cmhc-inflation-lookup';
+  card.innerHTML = `
+    <header class="chart-title">Inflation lookup</header>
+    <p class="chart-sub">The inflation rate at any past month, and the total price change between two dates.</p>
+    <div class="cmhc-time-adjust-form">
+      <label>Measure
+        <select data-role="il-measure">
+          ${INFLATION_MEASURES.map(m => `<option value="${escapeHtml(m.key)}">${escapeHtml(m.label)}</option>`).join('')}
+        </select>
+      </label>
+      <label>Geography
+        <select data-role="il-geo">
+          ${geoChoices.map(g => `<option value="${escapeHtml(g.slug)}">${escapeHtml(g.label)}</option>`).join('')}
+        </select>
+      </label>
+      <label>As at<input type="date" data-role="il-from" min="${minDate}" max="${maxDate}" value="${defaultFrom}" /></label>
+      <label>Compare to<input type="date" data-role="il-to" min="${minDate}" max="${maxDate}" value="${maxDate}" /></label>
+      <button type="button" data-role="il-go">Look up</button>
+    </div>
+    <div data-role="il-result" class="cmhc-time-adjust-result" hidden></div>
+  `;
+  section.appendChild(card);
+
+  const $measure = card.querySelector('[data-role="il-measure"]');
+  const $geo     = card.querySelector('[data-role="il-geo"]');
+  const $from    = card.querySelector('[data-role="il-from"]');
+  const $to      = card.querySelector('[data-role="il-to"]');
+  const $go      = card.querySelector('[data-role="il-go"]');
+  const $out     = card.querySelector('[data-role="il-result"]');
+  // Default to Manitoba where it's offered — the home geography for this tab.
+  if (geoChoices.some(g => g.slug === 'manitoba')) $geo.value = 'manitoba';
+
+  // Newest record at or before the target date (monthly CPI, so any day inside
+  // a month resolves to that month's observation).
+  function at(seriesId, targetIso) {
+    const recs = recordsById[seriesId];
+    if (!recs || !targetIso) return null;
+    let hit = null;
+    for (const r of recs) {
+      if (r.date <= targetIso) hit = r; else break;
+    }
+    return hit;
+  }
+  const monthLabel = (iso) => {
+    const d = new Date(`${iso}T00:00:00Z`);
+    return d.toLocaleDateString('en-CA', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+  };
+  const pct = (v) => `${v >= 0 ? '+' : ''}${v.toFixed(2)}%`;
+
+  function lookup() {
+    $out.hidden = false;
+    const m = INFLATION_MEASURES.find(x => x.key === $measure.value);
+    const slug = $geo.value;
+    const fromIso = $from.value, toIso = $to.value;
+    const geoLabel = geoChoices.find(g => g.slug === slug)?.label || slug;
+    if (!m || !fromIso || !toIso) {
+      $out.innerHTML = `<p class="cmhc-time-adjust-error">Pick a measure, a geography, and both dates.</p>`;
+      return;
+    }
+    if (fromIso >= toIso) {
+      $out.innerHTML = `<p class="cmhc-time-adjust-error">“Compare to” must be after “as at”.</p>`;
+      return;
+    }
+    const levelId = m.level + slug;
+    const yoyId   = `${m.yoy}${slug}.yoy`;
+    const a = at(levelId, fromIso), b = at(levelId, toIso);
+    const rateA = at(yoyId, fromIso), rateB = at(yoyId, toIso);
+    if (!a || !b) {
+      $out.innerHTML = `<p class="cmhc-time-adjust-error">No ${escapeHtml(m.label)} observations for ${escapeHtml(geoLabel)} near those dates.</p>`;
+      return;
+    }
+
+    // Cumulative change from the index levels, plus the compound annual rate
+    // that produces it over the elapsed span.
+    const ratio = b.value / a.value;
+    const cumulative = (ratio - 1) * 100;
+    const years = (new Date(b.date) - new Date(a.date)) / (365.2425 * 86400000);
+    const annualised = years > 0 ? (Math.pow(ratio, 1 / years) - 1) * 100 : NaN;
+
+    const rateLine = (rec, iso) => rec
+      ? `<p>Inflation rate — 12 months to ${escapeHtml(monthLabel(rec.date))}: <strong>${pct(rec.value)}</strong></p>`
+      : `<p class="cmhc-time-adjust-detail">No 12-month rate available at ${escapeHtml(monthLabel(iso))}.</p>`;
+
+    $out.innerHTML = `
+      ${rateLine(rateA, fromIso)}
+      ${rateLine(rateB, toIso)}
+      <p>Prices rose <strong>${pct(cumulative)}</strong> in total between ${escapeHtml(monthLabel(a.date))} and ${escapeHtml(monthLabel(b.date))}${
+        Number.isFinite(annualised) ? ` <span class="cmhc-time-adjust-pct">(${annualised.toFixed(2)}% a year, compounded)</span>` : ''}.</p>
+      <p>$100 in ${escapeHtml(monthLabel(a.date))} buys what <strong>$${(100 * ratio).toFixed(2)}</strong> buys in ${escapeHtml(monthLabel(b.date))}.</p>
+      <p class="cmhc-time-adjust-detail">
+        ${escapeHtml(m.label)} CPI, ${escapeHtml(geoLabel)} — index ${a.value.toFixed(1)} (${escapeHtml(a.date)})
+        → ${b.value.toFixed(1)} (${escapeHtml(b.date)}), 2002=100. Each date resolves to the newest month
+        published on or before it. Cumulative change is the ratio of the two index levels, not the sum of
+        the yearly rates.
+      </p>
+    `;
+  }
+
+  $go.addEventListener('click', lookup);
+  [$measure, $geo].forEach(el => el.addEventListener('change', () => { if (!$out.hidden) lookup(); }));
+}
+
 // --- Current Snapshot KPI bar -----------------------------------------------
 // Map a geo string to the id token(s) it appears as in series ids — so a
 // snapshotPick can be grouped with its same-metric siblings across geographies.
@@ -278,6 +449,12 @@ function effectiveGeos(enabled) {
     return !prov || enabled.has(prov);
   }));
 }
+// Geographies a chart pins regardless of the toggles. Used where one line is
+// the reference the others are read against — Canada on the inflation charts,
+// since the national rate is the benchmark even when the view is Manitoba.
+function alwaysGeos(chartCfg) {
+  return new Set(chartCfg?.alwaysGeos || []);
+}
 // Geography tier for a tile (drives the snapshot's section grouping).
 function geoTier(geo) {
   if (geo && /-CMA$/.test(geo)) return 'urban';
@@ -308,8 +485,9 @@ function buildSnapshot(catalog, shards) {
     const sibs = (shard.series || [])
       .filter(s => s.chartId === chartId && geoStripId(s.id, s.geo) === key);
     const filterApplies = new Set(sibs.map(s => s.geo)).size > 1 && c.geoFilter !== false;
+    const pinned = alwaysGeos(c);
     sibs
-      .filter(s => !filterApplies || eff.has(s.geo))
+      .filter(s => !filterApplies || eff.has(s.geo) || pinned.has(s.geo))
       .sort((a, b) => (GEO_ORDER.indexOf(a.geo) + 1 || 99) - (GEO_ORDER.indexOf(b.geo) + 1 || 99))
       .forEach(meta => tiers[geoTier(meta.geo)].push({ c, meta, shard }));
   });
@@ -470,6 +648,9 @@ function buildChartSections(catalog, shards) {
         title: chartCfg.title,
         sourceLabel,
         description: chartCfg.description,
+        refBand: chartCfg.refBand,
+        refLine: chartCfg.refLine,
+        table:   chartCfg.table,
       });
       // Only apply the geo filter on charts that have more than one
       // geography available. Charts where every series is the same geo
@@ -481,7 +662,7 @@ function buildChartSections(catalog, shards) {
       const filterApplies = chartGeos.size > 1 && chartCfg.geoFilter !== false;
       const eff = effectiveGeos(state.geosEnabled);
       const seriesMeta = filterApplies
-        ? seriesMetaAll.filter(s => eff.has(s.geo))
+        ? seriesMetaAll.filter(s => eff.has(s.geo) || alwaysGeos(chartCfg).has(s.geo))
         : seriesMetaAll;
       const ids = new Set(seriesMeta.map(s => s.id));
       const records = recordsAll.filter(r => ids.has(r.id));
@@ -694,7 +875,7 @@ function rerenderCards() {
     const filterApplies = chartGeos.size > 1 && chartCfg?.geoFilter !== false;
     const eff = effectiveGeos(state.geosEnabled);
     const seriesMeta = filterApplies
-      ? seriesMetaAll.filter(s => eff.has(s.geo))
+      ? seriesMetaAll.filter(s => eff.has(s.geo) || alwaysGeos(chartCfg).has(s.geo))
       : seriesMetaAll;
     const ids = new Set(seriesMeta.map(s => s.id));
     const records = recordsAll.filter(r => ids.has(r.id));
