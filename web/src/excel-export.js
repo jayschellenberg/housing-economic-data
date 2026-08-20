@@ -19,11 +19,11 @@ const BORDER_THIN = { style: 'thin', color: { argb: 'FF595959' } };
  * @param {Array} built  list of rendered tables (output of tables.js render)
  * @param {Object} opts  { filename, maxYear }
  */
-export async function exportTablesToExcel(built, { filename, maxYear, titleNote }) {
+export async function exportTablesToExcel(built, { filename, maxYear, titleNote, sheetName }) {
   const wb = new ExcelJS.Workbook();
   wb.creator = 'Housing & Economic Data';
   wb.created = new Date();
-  const ws = wb.addWorksheet('CMHC Tables', {
+  const ws = wb.addWorksheet(sheetName || 'CMHC Tables', {
     properties: { defaultColWidth: 14 },
     pageSetup: { paperSize: 9, orientation: 'landscape' },
   });
