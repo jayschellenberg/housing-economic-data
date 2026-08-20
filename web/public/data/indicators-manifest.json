@@ -1,13 +1,13 @@
 {
   "version": 1,
-  "generated": "2026-08-17T08:37:18Z",
+  "generated": "2026-08-20T16:52:14Z",
   "groups": [
     {
       "group": "mortgage_market",
       "file": "mortgage_market.json",
       "seriesCount": 12,
-      "recordCount": 27312,
-      "latestDate": "2026-08-13"
+      "recordCount": 27333,
+      "latestDate": "2026-08-20"
     },
     {
       "group": "credit_conditions",
@@ -17,11 +17,18 @@
       "latestDate": "2026-01-01"
     },
     {
+      "group": "economy",
+      "file": "economy.json",
+      "seriesCount": 72,
+      "recordCount": 28497,
+      "latestDate": "2026-07-01"
+    },
+    {
       "group": "prices",
       "file": "prices.json",
-      "seriesCount": 25,
-      "recordCount": 13859,
-      "latestDate": "2026-06-01"
+      "seriesCount": 38,
+      "recordCount": 21140,
+      "latestDate": "2026-07-01"
     },
     {
       "group": "supply",
@@ -36,13 +43,6 @@
       "seriesCount": 87,
       "recordCount": 25689,
       "latestDate": "2026-07-01"
-    },
-    {
-      "group": "economy",
-      "file": "economy.json",
-      "seriesCount": 42,
-      "recordCount": 15681,
-      "latestDate": "2026-06-01"
     },
     {
       "group": "ag_land",
@@ -90,8 +90,8 @@
       "group": "commercial_leasing",
       "file": "commercial_leasing.json",
       "seriesCount": 12,
-      "recordCount": 444,
-      "latestDate": "2026-01-01"
+      "recordCount": 456,
+      "latestDate": "2026-04-01"
     },
     {
       "group": "distress",
@@ -104,10 +104,10 @@
       "group": "derived",
       "file": "derived.json",
       "seriesCount": 12,
-      "recordCount": 22974,
-      "latestDate": "2026-08-13"
+      "recordCount": 22991,
+      "latestDate": "2026-08-19"
     }
   ],
-  "totalSeries": 412,
-  "totalRecords": 144160
+  "totalSeries": 455,
+  "totalRecords": 164307
 }
