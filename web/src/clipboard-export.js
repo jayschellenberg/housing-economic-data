@@ -19,7 +19,7 @@ const FONT = 'Calibri, sans-serif';
  * @param {Array} built  list of rendered tables (output of tables.js render)
  * @param {Object} opts  { maxYear, titleNote } — titleNote overrides the
  *   default "— CMHC <year> October" suffix for callers outside the CMHC
- *   tables (the Court tab passes its own source note).
+ *   tables (the Court (MB) tab passes its own source note).
  */
 export function buildTablesHtml(built, { maxYear, titleNote }) {
   const note = titleNote != null ? titleNote : `— CMHC ${maxYear} October`;
