@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { periodLabel, yDomainFor, buildTipRows, renderDataTable } from '../src/indicator-chart.js';
+import { periodLabel, yDomainFor, buildTipRows, renderDataTable, readOpenPanels } from '../src/indicator-chart.js';
 
 const utc = (iso) => new Date(iso);
 
@@ -126,5 +126,34 @@ describe('renderDataTable', () => {
     renderDataTable(wrap, periods, seriesMeta, 'monthly', fmt);
     renderDataTable(wrap, periods, seriesMeta, 'monthly', fmt);
     expect(wrap.querySelectorAll('table')).toHaveLength(1);
+  });
+});
+
+describe('readOpenPanels', () => {
+  // The Agriculture tab rebuilds its cards on every control change, so it
+  // snapshots the open panels off the old card element before the wipe.
+  const cardWith = ({ table = false, explainer = false } = {}) => {
+    const card = document.createElement('section');
+    card.className = 'cmhc-indicator-card';
+    card.innerHTML =
+      `<details class="cmhc-chart-table"${table ? ' open' : ''}></details>` +
+      `<details class="cmhc-explainer"${explainer ? ' open' : ''}></details>`;
+    return card;
+  };
+
+  it('reports nothing when both panels are closed', () => {
+    expect(readOpenPanels(cardWith())).toEqual([]);
+  });
+  it('reports each open panel by key', () => {
+    expect(readOpenPanels(cardWith({ table: true }))).toEqual(['table']);
+    expect(readOpenPanels(cardWith({ explainer: true }))).toEqual(['explainer']);
+    expect(readOpenPanels(cardWith({ table: true, explainer: true })))
+      .toEqual(['table', 'explainer']);
+  });
+  it('ignores a card that has no panels at all', () => {
+    expect(readOpenPanels(document.createElement('section'))).toEqual([]);
+  });
+  it('tolerates a missing card', () => {
+    expect(readOpenPanels(null)).toEqual([]);
   });
 });
