@@ -96,6 +96,8 @@ if (nrow(all_obs) == 0) stop("[14] no indicator data found — run the scrape sc
 # Supported ops:
 #   yoy     — year-over-year % change of a single source series (lag matched
 #              to its native frequency)
+#   annual_avg_yoy — calendar-year mean of a monthly series vs the prior
+#              year's mean (annual average inflation); complete years only
 #   shift   — single-source value + offset (e.g. 5-yr GoC + 300 bps for a
 #              representative cap rate)
 #   ratio   — ratio of two source series aligned by date (inner join), times
@@ -153,6 +155,41 @@ compute_ratio <- function(s) {
   )
 }
 
+# annual_avg_yoy: calendar-year mean of a monthly series, then the % change
+# against the prior year's mean — "annual average inflation", the figure cited
+# for a full year and used to index contracts. It is NOT the December
+# year-over-year rate: the two diverge whenever the rate moved during the year.
+#
+# Only complete calendar years qualify (n == 12). A partial year's mean is
+# biased by whichever months happen to be in it, so the current year enters
+# only once its December observation publishes. Non-consecutive years are
+# dropped rather than compared across a gap, which would overstate the change.
+# Observations are dated Jan 1 of the year they describe, matching how the
+# other annual StatsCan series in the catalog are dated.
+compute_annual_avg_yoy <- function(s) {
+  src <- all_obs %>% filter(id == s$derivedFrom) %>% arrange(date)
+  if (nrow(src) == 0) return(NULL)
+  yearly <- src %>%
+    mutate(year = as.integer(substr(date, 1, 4))) %>%
+    filter(!is.na(value)) %>%
+    group_by(year) %>%
+    summarise(n = dplyr::n(), avg = mean(value), .groups = "drop") %>%
+    filter(n == 12L) %>%
+    arrange(year)
+  if (nrow(yearly) < 2) return(NULL)
+  v <- (yearly$avg / dplyr::lag(yearly$avg) - 1) * 100
+  consecutive <- c(NA_integer_, diff(yearly$year)) == 1L
+  v[is.na(consecutive) | !consecutive] <- NA_real_
+  keep <- !is.na(v)
+  if (!any(keep)) return(NULL)
+  tibble::tibble(
+    id = s$id, seriesId = s$id,
+    date = sprintf("%d-01-01", yearly$year[keep]), value = v[keep],
+    units = "percent", geo = s$geo,
+    frequency = "annual", transform = "annual_avg_yoy"
+  )
+}
+
 # mortgage_payment: standard P&I = P × [r(1+r)^n] / [(1+r)^n - 1] where the
 # source series carries the annual rate as a percent. principal and
 # amortMonths come from the catalog row.
@@ -204,6 +241,7 @@ if (length(derived_series) > 0) {
   derived_rows <- bind_rows(lapply(derived_series, function(s) {
     res <- switch(s$derivedOp %||% "",
                   yoy              = compute_yoy(s),
+                  annual_avg_yoy   = compute_annual_avg_yoy(s),
                   shift            = compute_shift(s),
                   ratio            = compute_ratio(s),
                   mortgage_payment = compute_mortgage_payment(s),

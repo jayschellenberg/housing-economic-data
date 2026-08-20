@@ -10,6 +10,12 @@
 > scrape was **replaced**, not built. Coverage also grew beyond this plan's MB+Canada scope:
 > SK/AB/BC + seven CMAs (see `GEOGRAPHY-EXPANSION.md`).
 >
+> **Added 2026-08-20:** CPI inflation charts — headline all-items YoY, annual-average
+> (calendar year), Bank of Canada core (CPI-trim / median / common, via Valet) and shelter
+> YoY, all with the 1-3% control band, a hover tooltip, a monthly data table, and an
+> "Inflation lookup" tool (rate at a date + cumulative change between two dates). Canada and
+> Winnipeg all-items and Winnipeg shelter vectors were added to the catalog at the same time.
+>
 > **Still open:** the §2.4/§7.1 manual-import bucket (`data/manual/`), §3.3
 > employment-by-industry, the §3.3 four-way permit split (industrial/commercial/
 > institutional), and the SLOS non-mortgage trio (6 of the 9 SLOS series are built).
