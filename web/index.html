@@ -55,6 +55,10 @@
         class="cmhc-tab" data-tab="rtb" aria-selected="false">
         RTB (MB)
       </button>
+      <button type="button" role="tab" id="tab-btn-court"
+        class="cmhc-tab" data-tab="court" aria-selected="false">
+        Court
+      </button>
       <button type="button" role="tab" id="tab-btn-snapshot"
         class="cmhc-tab" data-tab="snapshot" aria-selected="false">
         Current Snapshot
@@ -67,11 +71,15 @@
         class="cmhc-tab" data-tab="agriculture" aria-selected="false">
         Agriculture
       </button>
-      <!-- MB Economic Update — revived 2026-07 (was hidden 2026-06). Its
-           pipeline (r/15/r/16) kept refreshing on the scheduled workflows
-           throughout, so the narrative data is current. -->
+      <!-- MB Economic Update — hidden again 2026-08 (previously hidden 2026-06,
+           revived 2026-07). PARKED, NOT REMOVED: the tab panel below,
+           economic-update.js, and the r/15 + r/16 pipeline are all intact and
+           the scheduled workflows keep refreshing its data, so the narrative
+           stays current while it is out of the nav. It remains reachable at
+           #economic for anyone with the link. Delete `hidden` to bring it back.
+           Flagged for future build-out — see README "Parked features". -->
       <button type="button" role="tab" id="tab-btn-economic"
-        class="cmhc-tab" data-tab="economic" aria-selected="false">
+        class="cmhc-tab" data-tab="economic" aria-selected="false" hidden>
         MB Economic Update
       </button>
     </nav>
@@ -883,6 +891,18 @@
       </footer>
     </div>
 
+    <!-- Court — Manitoba Court of King's Bench pre/post-judgment interest.
+         r/25_scrape_court.R → court/court_interest.json. -->
+    <div id="tab-panel-court" class="p-4 space-y-4 max-w-6xl" role="tabpanel" aria-labelledby="tab-btn-court" hidden>
+      <div id="court-headline" class="cmhc-hsk-headline"></div>
+      <section id="court-chart" class="grid grid-cols-1 gap-4 md:max-w-2xl"></section>
+      <section id="court-calc" class="grid grid-cols-1 gap-4 md:max-w-2xl"></section>
+      <div id="court-table"></div>
+      <footer class="text-xs text-neutral-500 pt-4 border-t border-neutral-200">
+        Source: Court of King's Bench of Manitoba — Pre-Judgment and Post-Judgment Interest (manitobacourts.mb.ca). One rate applies to both pre-judgment and post-judgment interest, set quarterly under The Court of King's Bench Act, Part XIV, s. 79(1). The court publishes from January 1, 2014 onward. This is an unofficial reproduction for reference, not legal advice; the official table governs.
+      </footer>
+    </div>
+
     <footer id="site-footer" class="bg-neutral-50 border-t border-neutral-200 text-xs text-neutral-600 px-4 py-3 space-y-2">
       <p>
         <strong>Sources &amp; citation.</strong>
@@ -898,6 +918,9 @@
         <a class="underline" href="https://www.statcan.gc.ca/en/developers" rel="noopener" target="_blank">Statistics Canada Web Data Service</a>, the
         <a class="underline" href="https://open.canada.ca/data/en/dataset/eaee474c-4b7f-4940-8d48-59123d0da436" rel="noopener" target="_blank">Office of the Superintendent of Bankruptcy Canada</a>
         (insolvency statistics, via Open Government), the Canadian Real Estate Association MLS&reg; Home Price Index, and the Winnipeg Regional Real Estate Board.
+        The RTB (MB) tab reproduces the Manitoba Residential Tenancies Branch rent increase guideline; the Court tab reproduces the
+        <a class="underline" href="https://www.manitobacourts.mb.ca/court-of-queens-bench/procedure-rules-and-forms/pre-judgment-and-post-judgment-interest/" rel="noopener" target="_blank">Court of King's Bench of Manitoba pre-judgment and post-judgment interest table</a>
+        (set quarterly under The Court of King's Bench Act, Part XIV, s. 79(1)). Both are unofficial reproductions for reference, not legal advice — the official publications govern.
         Statistics Canada data contains information licensed under the
         <a class="underline" href="https://www.statcan.gc.ca/en/reference/licence" rel="noopener" target="_blank">Statistics Canada Open Licence</a>; Open Government data under the Open Government Licence – Canada.
       </p>

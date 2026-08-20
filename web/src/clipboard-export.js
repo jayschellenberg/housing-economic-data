@@ -17,11 +17,14 @@ const FONT = 'Calibri, sans-serif';
 /**
  * Build Word-compatible HTML for the rendered tables.
  * @param {Array} built  list of rendered tables (output of tables.js render)
- * @param {Object} opts  { maxYear }
+ * @param {Object} opts  { maxYear, titleNote } — titleNote overrides the
+ *   default "— CMHC <year> October" suffix for callers outside the CMHC
+ *   tables (the Court tab passes its own source note).
  */
-export function buildTablesHtml(built, { maxYear }) {
+export function buildTablesHtml(built, { maxYear, titleNote }) {
+  const note = titleNote != null ? titleNote : `— CMHC ${maxYear} October`;
   const parts = built.map(table => {
-    const title = `${table.title}${table.dwellingSuffix || ''} — CMHC ${maxYear} October`;
+    const title = `${table.title}${table.dwellingSuffix || ''} ${note}`.trim();
     const th = (text, align) =>
       `<th style="font-family:${FONT};font-size:11pt;font-weight:bold;color:#000;` +
       `border:none;border-bottom:0.75pt solid ${ACCENT};padding:2pt 8pt;text-align:${align};">${escapeHtml(text)}</th>`;
@@ -53,9 +56,10 @@ export function buildTablesHtml(built, { maxYear }) {
 /**
  * Plain-text (TSV) rendition — Excel-pasteable fallback.
  */
-export function buildTablesText(built, { maxYear }) {
+export function buildTablesText(built, { maxYear, titleNote }) {
+  const note = titleNote != null ? titleNote : `— CMHC ${maxYear} October`;
   return built.map(table => {
-    const title = `${table.title}${table.dwellingSuffix || ''} — CMHC ${maxYear} October`;
+    const title = `${table.title}${table.dwellingSuffix || ''} ${note}`.trim();
     const lines = [
       title,
       ['', ...table.columns].join('\t'),

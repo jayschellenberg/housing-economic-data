@@ -93,6 +93,7 @@ jobs:
           Rscript r/16_scrape_mls.R
           Rscript r/15_build_economic_update.R
           Rscript r/19_scrape_rtb.R
+          Rscript r/25_scrape_court.R              # MB Court of King's Bench pre/post-judgment interest (Court tab)
           Rscript r/23_scrape_population_estimates.R   # annual CSD/province population estimates (Census Profile chart)
           # Agriculture-tab time-series (prices, input costs, farm cash, farm structure) refresh above via
           # r/11 + r/14 (catalog-driven). The within-province farm-structure MAP is 2021-Census-of-Agriculture
@@ -150,6 +151,22 @@ jobs:
               || echo "gh issue create failed (continuing)"
           else
             echo "No new RTB guideline this run."
+          fi
+
+      - name: Alert on a new MB court interest rate
+        if: success() && steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # r/25 writes data/court_new_rate.txt only when the newest quarter or
+          # its rate differs from the previously committed file (gitignored, so
+          # still present in the workspace). Raise one issue when that happens.
+          if [ -f data/court_new_rate.txt ]; then
+            BODY="$(cat data/court_new_rate.txt)"
+            echo "Court alert: $BODY"
+            gh issue create               --title "New Manitoba court pre/post-judgment interest rate"               --body "$BODY  —  detected by the monthly court scrape (r/25); the Court tab and web/public/data/court/court_interest.json are updated. Source: https://www.manitobacourts.mb.ca/court-of-queens-bench/procedure-rules-and-forms/pre-judgment-and-post-judgment-interest/"               || echo "gh issue create failed (continuing)"
+          else
+            echo "No new court interest rate this run."
           fi
 
       - name: Notify by email — success with changes
