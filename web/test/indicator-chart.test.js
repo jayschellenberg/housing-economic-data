@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { periodLabel, yDomainFor, buildTipRows } from '../src/indicator-chart.js';
+import { periodLabel, yDomainFor, buildTipRows, renderDataTable } from '../src/indicator-chart.js';
 
 const utc = (iso) => new Date(iso);
 
@@ -76,5 +76,55 @@ describe('buildTipRows', () => {
     const rows = buildTipRows(
       [{ date: utc('2023-05-01'), value: NaN, label: 'Canada' }], 'monthly', fmt);
     expect(rows[0].anchor).toBe(0);
+  });
+});
+
+describe('renderDataTable', () => {
+  const fmt = (v) => `$${v}/t`;
+  const seriesMeta = [{ chartLabel: 'Wheat' }, { chartLabel: 'Flaxseed' }];
+  // Flaxseed reports in the older month only — the gap must render as "**",
+  // which is the house convention for a missing observation.
+  const periods = buildTipRows([
+    { date: utc('2026-05-01'), value: 290, label: 'Wheat' },
+    { date: utc('2026-05-01'), value: 660, label: 'Flaxseed' },
+    { date: utc('2026-06-01'), value: 295, label: 'Wheat' },
+  ], 'monthly', fmt);
+
+  const render = () => {
+    const wrap = document.createElement('div');
+    const tsv = renderDataTable(wrap, periods, seriesMeta, 'monthly', fmt);
+    return { wrap, tsv };
+  };
+
+  it('heads the table with Period plus one column per series', () => {
+    const { wrap } = render();
+    expect([...wrap.querySelectorAll('thead th')].map(th => th.textContent))
+      .toEqual(['Period', 'Wheat', 'Flaxseed']);
+  });
+  it('orders rows newest first', () => {
+    const { wrap } = render();
+    expect([...wrap.querySelectorAll('tbody tr td:first-child')].map(td => td.textContent))
+      .toEqual(['Jun 2026', 'May 2026']);
+  });
+  it('marks a missing observation and flags the cell', () => {
+    const { wrap } = render();
+    const newest = wrap.querySelector('tbody tr');
+    const cells = [...newest.children].map(td => td.textContent);
+    expect(cells).toEqual(['Jun 2026', '$295/t', '**']);
+    expect(newest.lastElementChild.className).toBe('cmhc-table-na');
+  });
+  it('returns the same grid as TSV for the copy button', () => {
+    const { tsv } = render();
+    expect(tsv.split('\n')).toEqual([
+      'Period\tWheat\tFlaxseed',
+      'Jun 2026\t$295/t\t**',
+      'May 2026\t$290/t\t$660/t',
+    ]);
+  });
+  it('replaces any previous table rather than appending', () => {
+    const wrap = document.createElement('div');
+    renderDataTable(wrap, periods, seriesMeta, 'monthly', fmt);
+    renderDataTable(wrap, periods, seriesMeta, 'monthly', fmt);
+    expect(wrap.querySelectorAll('table')).toHaveLength(1);
   });
 });

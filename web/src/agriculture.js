@@ -202,6 +202,14 @@ export async function initAgriculture() {
     // Global year range; empty selectors ⇒ all data (no bound).
     const monthFrom = $yearFrom && $yearFrom.value ? `${$yearFrom.value}-01` : null;
     const monthTo   = $yearTo && $yearTo.value ? `${$yearTo.value}-12` : null;
+    // Cards are rebuilt from scratch on every control change, which would
+    // otherwise snap a data table shut the moment the user narrows the year
+    // range to look at it. Carry the open ones across the rebuild.
+    const openTables = new Set(
+      [...$grid.querySelectorAll('.cmhc-indicator-card')]
+        .filter((c) => c.querySelector('.cmhc-chart-table[open]'))
+        .map((c) => c.dataset.chartId),
+    );
     $grid.replaceChildren();
     let total = 0;
     // One <section> per group (header + 2-col grid), matching the jump bar.
@@ -232,8 +240,16 @@ export async function initAgriculture() {
           title: spec.title(prov),
           sourceLabel: 'Statistics Canada',
           description: spec.desc || cfg.description,
+          // Every ag chart carries a data table (the hover tooltip comes with
+          // buildIndicatorCard). AG_CHARTS is this tab's curated spec, so the
+          // decision lives here rather than in each catalog chart def. The
+          // table builds on open, which matters here: the year range defaults
+          // to the full history — monthly crop prices back to 1985, farm
+          // structure to 1921.
+          table: true,
         });
         card.render(records, meta, { subtitle: spec.subtitle(prov), monthFrom, monthTo });
+        if (openTables.has(chartId)) card.setTableOpen(true);
         n += 1; total += 1;
       }
       if (n > 0) $grid.appendChild(section);   // skip a section with no data
