@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "generated": "2026-08-17T08:37:24Z",
-  "dataAsOf": "2026-08-17",
+  "generated": "2026-08-24T08:32:28Z",
+  "dataAsOf": "2026-08-24",
   "intro": {
     "censusYear": 2021,
     "provincePopulation": 1342153,
@@ -42,10 +42,10 @@
   },
   "indicators": {
     "retail_trade": {
-      "value": 2471339000,
-      "changePct": 2.2,
+      "value": 2498027000,
+      "changePct": 0.7,
       "direction": "up",
-      "period": "May 2026",
+      "period": "June 2026",
       "comparison": "month-to-month, seasonally adjusted",
       "source": "Statistics Canada",
       "stale": false
@@ -69,7 +69,13 @@
       "stale": false
     },
     "cpi": {
-      "stale": true
+      "value": 172.2,
+      "changePct": 4.2,
+      "direction": "up",
+      "period": "July 2026",
+      "comparison": "year-over-year",
+      "source": "Statistics Canada",
+      "stale": false
     },
     "employment": {
       "value": 755600,
@@ -90,8 +96,8 @@
       "stale": false
     },
     "unemployment_rate": {
-      "value": 5,
-      "changePP": -0.5,
+      "value": 0.05,
+      "changePP": -0,
       "period": "July 2026",
       "comparison": "year-over-year",
       "source": "Statistics Canada (Labour Force Survey)",
@@ -133,10 +139,10 @@
   },
   "housing": {
     "starts": {
-      "value": 4157,
-      "ytdChangePct": 38.7,
+      "value": 4782,
+      "ytdChangePct": 36.7,
       "direction": "up",
-      "period": "year-to-date to June 2026",
+      "period": "year-to-date to July 2026",
       "comparison": "year-to-date change",
       "source": "CMHC / Statistics Canada",
       "stale": false
@@ -152,7 +158,7 @@
     }
   },
   "mls": {
-    "asOf": "July 2026",
+    "asOf": "May 2014",
     "source": "Winnipeg Regional Real Estate Board (WRREB) — https://www.winnipegregionalrealestatenews.com/market-statistics/market-releases/article/626/residential-detached-homes-and-condominiums-set-new-july-average-price-records",
     "stale": false,
     "sales": {
