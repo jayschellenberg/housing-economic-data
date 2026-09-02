@@ -198,6 +198,12 @@ jobs:
       - name: Send success email
         if: success() && steps.commit.outputs.changed == 'true' && steps.ok_email_gate.outputs.send == 'true'
         uses: dawidd6/action-send-mail@4226df7daafa6fc901a43789c49bf7ab309066e7 # v3.11.0
+        # A notification is not the job. If SMTP auth breaks (an App Password
+        # revoked, say), that must not turn a healthy data refresh red and
+        # auto-open a "refresh failed" issue -- which is exactly what happened
+        # on 2026-09-02 (issues #51, #52, both closed as false alarms). The
+        # send failure still shows as a step annotation in the run log.
+        continue-on-error: true
         with:
           server_address: ${{ vars.SMTP_HOST || 'smtp.gmail.com' }}
           server_port:    ${{ vars.SMTP_PORT || 587 }}
@@ -236,6 +242,12 @@ jobs:
       - name: Send failure email
         if: failure() && steps.fail_email_gate.outputs.send == 'true'
         uses: dawidd6/action-send-mail@4226df7daafa6fc901a43789c49bf7ab309066e7 # v3.11.0
+        # A notification is not the job. If SMTP auth breaks (an App Password
+        # revoked, say), that must not turn a healthy data refresh red and
+        # auto-open a "refresh failed" issue -- which is exactly what happened
+        # on 2026-09-02 (issues #51, #52, both closed as false alarms). The
+        # send failure still shows as a step annotation in the run log.
+        continue-on-error: true
         with:
           server_address: ${{ vars.SMTP_HOST || 'smtp.gmail.com' }}
           server_port:    ${{ vars.SMTP_PORT || 587 }}
