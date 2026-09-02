@@ -57,7 +57,7 @@ jobs:
           # codename is never hard-coded. If the repo isn't the expected PPM shape,
           # fall back to unpinned so an install can never break. Bump SNAPSHOT with
           # the r-version above.
-          SNAPSHOT <- "2026-07-01"
+          SNAPSHOT <- "2026-09-01"
           repos <- getOption("repos")
           i <- grepl("packagemanager\\.posit\\.co/cran", repos)
           if (any(i)) {
