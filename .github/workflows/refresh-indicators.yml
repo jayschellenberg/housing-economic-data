@@ -53,7 +53,7 @@ jobs:
           # freeze the date, so the distro codename is never hard-coded; fall back
           # to unpinned if the repo isn't the expected shape. Bump SNAPSHOT with the
           # r-version above.
-          SNAPSHOT <- "2026-07-01"
+          SNAPSHOT <- "2026-09-01"
           repos <- getOption("repos")
           i <- grepl("packagemanager\\.posit\\.co/cran", repos)
           if (any(i)) {
