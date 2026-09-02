@@ -201,7 +201,10 @@ jobs:
         with:
           server_address: ${{ vars.SMTP_HOST || 'smtp.gmail.com' }}
           server_port:    ${{ vars.SMTP_PORT || 587 }}
-          secure:         true
+          # 465 = implicit TLS on connect; 587 (the default) = plaintext then
+          # STARTTLS, which nodemailer does only when secure is false. Hard-coding
+          # true against port 587 makes the connection hang rather than send.
+          secure:         ${{ (vars.SMTP_PORT || '587') == '465' }}
           username:       ${{ secrets.MAIL_USERNAME }}
           password:       ${{ secrets.MAIL_PASSWORD }}
           from:           Housing & Economic Data <${{ secrets.MAIL_USERNAME }}>
@@ -236,7 +239,10 @@ jobs:
         with:
           server_address: ${{ vars.SMTP_HOST || 'smtp.gmail.com' }}
           server_port:    ${{ vars.SMTP_PORT || 587 }}
-          secure:         true
+          # 465 = implicit TLS on connect; 587 (the default) = plaintext then
+          # STARTTLS, which nodemailer does only when secure is false. Hard-coding
+          # true against port 587 makes the connection hang rather than send.
+          secure:         ${{ (vars.SMTP_PORT || '587') == '465' }}
           username:       ${{ secrets.MAIL_USERNAME }}
           password:       ${{ secrets.MAIL_PASSWORD }}
           from:           Housing & Economic Data <${{ secrets.MAIL_USERNAME }}>
