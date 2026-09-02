@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "generated": "2026-08-24T08:32:28Z",
-  "dataAsOf": "2026-08-24",
+  "generated": "2026-09-02T17:58:27Z",
+  "dataAsOf": "2026-09-02",
   "intro": {
     "censusYear": 2021,
     "provincePopulation": 1342153,
@@ -87,17 +87,17 @@
       "stale": false
     },
     "weekly_earnings": {
-      "value": 1221.49,
-      "changePct": 5.1,
+      "value": 1213.96,
+      "changePct": 3.3,
       "direction": "up",
-      "period": "May 2026",
+      "period": "June 2026",
       "comparison": "year-over-year",
       "source": "Statistics Canada",
       "stale": false
     },
     "unemployment_rate": {
-      "value": 0.05,
-      "changePP": -0,
+      "value": 5,
+      "changePP": -0.5,
       "period": "July 2026",
       "comparison": "year-over-year",
       "source": "Statistics Canada (Labour Force Survey)",
