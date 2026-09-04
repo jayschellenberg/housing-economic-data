@@ -42,19 +42,50 @@ write_json <- function(obj, p) writeLines(jsonlite::toJSON(obj, auto_unbox = TRU
 # 1. CREA MLS HPI — Winnipeg single-family benchmark history
 # =============================================================================
 scrape_benchmark <- function() {
-  # Predictable monthly drop; data lags ~6 weeks, so walk back a few months.
-  cands <- vapply(0:5, function(k) {
+  # CREA posts one zip per release month (~the 10th-14th, carrying the prior
+  # month's data) but the FILE NAME drifts: MLS_HPI_May_2026.zip,
+  # MLS_HPI-July-2026_EN.zip and MLS_HPI_Aug_2026.zip have all been seen. The
+  # old single-pattern guess silently fell back to the last month that still
+  # matched (May 2026 -> April data, fetched in September). So:
+  #   (a) read the link off the HPI tool page, matching any of those shapes;
+  #   (b) fall back to guessing the last 6 release months in every shape.
+  HPI_PAGE <- "https://www.crea.ca/housing-market-stats/mls-home-price-index/hpi-tool/"
+  HPI_BASE <- "https://www.crea.ca/files/mls-hpi-data/"
+  ua <- add_headers(`User-Agent` = "Mozilla/5.0")
+  month_num <- setNames(rep(1:12, 2), tolower(c(month.name, month.abb)))
+  link_rx <- 'href="([^"]*MLS_HPI[-_]([A-Za-z]+)[-_]([0-9]{4})(?:_EN)?\\.zip)"'
+
+  page_links <- tryCatch({
+    r <- GET(HPI_PAGE, ua, timeout(60))
+    if (status_code(r) != 200) stop("HTTP ", status_code(r))
+    html  <- content(r, as = "text", encoding = "UTF-8")
+    hits  <- regmatches(html, gregexpr(link_rx, html, perl = TRUE))[[1]]
+    parts <- regmatches(hits, regexec(link_rx, hits, perl = TRUE))
+    url <- vapply(parts, `[`, "", 2)
+    mon <- tolower(vapply(parts, `[`, "", 3))
+    yr  <- suppressWarnings(as.integer(vapply(parts, `[`, "", 4)))
+    ok  <- mon %in% names(month_num) & !is.na(yr)
+    url <- url[ok]; ym <- yr[ok] * 12 + month_num[mon[ok]]
+    url <- ifelse(grepl("^https?://", url), url, paste0("https://www.crea.ca", url))
+    message(sprintf("[16] HPI page lists %d zip link(s): %s", length(url), paste(basename(url), collapse = ", ")))
+    unique(url[order(-ym)])                     # newest release first
+  }, error = function(e) { message("[16] HPI page scrape failed: ", conditionMessage(e), " -- guessing URLs"); character(0) })
+
+  guesses <- unlist(lapply(0:5, function(k) {
     d <- seq(today, by = "-1 month", length.out = k + 1)[k + 1]
-    sprintf("https://www.crea.ca/files/mls-hpi-data/MLS_HPI_%s_%d.zip",
-            format(d, "%B"), as.integer(format(d, "%Y")))
-  }, character(1))
+    mi <- as.integer(format(d, "%m")); y <- format(d, "%Y")
+    paste0(HPI_BASE, c(sprintf("MLS_HPI_%s_%s.zip",    month.name[mi], y),
+                       sprintf("MLS_HPI_%s_%s.zip",    month.abb[mi],  y),
+                       sprintf("MLS_HPI-%s-%s_EN.zip", month.name[mi], y),
+                       sprintf("MLS_HPI-%s-%s_EN.zip", month.abb[mi],  y)))
+  }))
+  cands <- unique(c(page_links, guesses))
 
   dest <- file.path(tempdir(), "crea_hpi.zip")
   src <- NULL
   for (u in cands) {
     ok <- tryCatch({
-      r <- GET(u, write_disk(dest, overwrite = TRUE),
-               add_headers(`User-Agent` = "Mozilla/5.0"), timeout(90))
+      r <- GET(u, write_disk(dest, overwrite = TRUE), ua, timeout(90))
       status_code(r) == 200 && file.exists(dest) && file.size(dest) > 1000
     }, error = function(e) FALSE)
     if (isTRUE(ok)) { src <- u; break }
