@@ -46,8 +46,33 @@ for future build-out rather than removal.
 
 - `r/` — R pipeline (uses the [`cmhc`](https://github.com/mountainMath/cmhc) package by mountainMath) that produces long-form JSON shards under `web/public/data/`.
 - `web/` — Vite static site (vanilla JS + Tailwind v4 + [Observable Plot](https://observablehq.com/plot/)).
-- `vercel.json` — points Vercel at the Vite build.
-- `.github/workflows/refresh-data.yml` — monthly cron that re-runs the R pipeline and commits refreshed JSON.
+- `vercel.json` — points Vercel at the Vite build, and rewrites `/gh-data/*` to the shard proxy.
+- `api/gh-data.js` — edge proxy that fetches shards from the data repo (below) with Vercel's edge cache in front of raw.githubusercontent.
+- `.github/workflows/refresh-data.yml` — monthly cron that re-runs the R pipeline, publishes shards, and commits refreshed JSON.
+
+### The shards live in a second repo
+
+The per-geography CMHC shards — `series/` (Rms) and `starts/` (Scss), ~401 MB
+across 1,340 files — are **not** in this repo. They live in
+[housing-economic-shards](https://github.com/jayschellenberg/housing-economic-shards)
+and are fetched at runtime through `/gh-data/...`.
+
+Why: Vercel stores the full build output of every retained deployment
+separately, with no de-duplication between deployments. With the shards here,
+Vite copied all 401 MB into `dist/` on every build, so changing a single shard
+cost another ~425 MB of deployment storage. This project alone was ~25 GB of the
+team's 36 GB. Moving them took the build output to ~25 MB.
+
+`web/src/shards.js` pins the exact commit the app reads. **Pushing shards does
+nothing until that pin moves** — which is the point: production is never exposed
+to a half-pushed tree, and a bad refresh is rolled back by restoring the previous
+SHA rather than by re-uploading data. `refresh-data.yml` publishes and bumps the
+pin automatically; it needs a `SHARDS_TOKEN` secret (a PAT with `contents: write`
+on the shards repo) and fails loudly if the shards changed and no token is set.
+
+The rest of `web/public/data/` — indicators, housing, economy, geo, the manifests,
+~24 MB — deliberately stays here: several parts are read before first paint, so
+the extra hop would not pay for itself.
 
 ## Local development
 
@@ -75,6 +100,14 @@ Three options:
    `gh workflow run refresh-indicators.yml` (indicators only) to trigger
    manually.
 3. Local: `npm --prefix web run data:all && git add web/public/data && git commit -m "data: refresh" && git push`.
+
+   Note that this publishes everything **except** the `series/` and `starts/`
+   shards, which are gitignored here and live in the data repo (see
+   Architecture above). To publish those by hand: copy `web/public/data/series`
+   and `web/public/data/starts` into a checkout of `housing-economic-shards`,
+   commit and push, then set `SHARDS_REVISION` in `web/src/shards.js` to the new
+   commit SHA and push here. Until that pin moves, production keeps serving the
+   previous shards.
 
 ### Census Profile tab (run-once, separate from `data:all`)
 
