@@ -10,14 +10,16 @@
  *     the same dark-red header treatment as the Rental Tables tab.
  *   - Excel download exports every visible table to a single .xlsx.
  *
- * Data source: web/public/data/starts/{level}_{uid}.json shards emitted by
- * r/03_build_data_files.R after r/05_scrape_starts.R writes the Scss CSV.
+ * Data source: data/starts/{level}_{uid}.json in the housing-economic-shards
+ * repo, emitted by r/03_build_data_files.R after r/05_scrape_starts.R writes the
+ * Scss CSV, and fetched through the /gh-data proxy (see web/src/shards.js).
  */
 
 import { buildChartCard } from './chart.js';
 import { resolveProvince, rememberProvince } from './prefs.js';
 import { escapeHtml } from './escape.js';
 import { initStartsMap } from './starts-map.js';
+import { shardUrl } from './shards.js';
 
 const SERIES = ['Starts', 'Completions', 'Under Construction',
                 'Absorbed Units', 'Unabsorbed Inventory'];
@@ -43,7 +45,7 @@ const shardCache = new Map();
 async function loadStartsShard(level, uid) {
   const key = `${level}_${uid}`;
   if (shardCache.has(key)) return shardCache.get(key);
-  const promise = fetch(`./data/starts/${key}.json`).then(r => {
+  const promise = fetch(shardUrl('starts', key)).then(r => {
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     return r.json();
   }).catch(err => {

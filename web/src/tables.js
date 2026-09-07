@@ -8,9 +8,10 @@
  * passes (All / + Apartments / + Row) and rendered as HTML; the same rows can
  * be exported as a styled .xlsx via excel-export.js.
  *
- * Data source: the cached JSON shards under web/public/data/series/ — we hit
- * the most recent year + October season for each geography to match CMHC's
- * canonical RMS reporting cadence.
+ * Data source: the same session-cached series shards main.js loads, served from
+ * the housing-economic-shards repo via the /gh-data proxy (see
+ * web/src/shards.js) — we hit the most recent year + October season for each
+ * geography to match CMHC's canonical RMS reporting cadence.
  */
 
 // ExcelJS is heavy (~940KB minified) — load it on demand when the user clicks

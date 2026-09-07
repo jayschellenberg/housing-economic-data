@@ -16,6 +16,7 @@ package-lock.json
 **/.vite/
 **/vite-dev.*.log
 **/vite.config.js.timestamp-*.mjs
+**/vitest.config.js.timestamp-*.mjs
 **/index.html.tmp.*
 
 # Dropbox / cross-process write-temp side files (e.g. plot-theme.js.tmp.49832...)
@@ -38,3 +39,12 @@ Thumbs.db
 
 # OS
 Desktop.ini
+
+# CMHC per-geography shards — moved to the housing-economic-shards repo
+# (2026-09-07) and served through the /gh-data proxy; see web/src/shards.js.
+# They are ~401 MB, and Vercel stores the build output of every retained
+# deployment separately, so committing them here cost ~400 MB per deploy to
+# change one shard. Kept locally because r/03_build_data_files.R writes them
+# here before they are copied to the data repo.
+/web/public/data/series/
+/web/public/data/starts/
