@@ -3,6 +3,12 @@
   "framework": "vite",
   "buildCommand": "cd web && npm install && npm run build",
   "outputDirectory": "web/dist",
+  "rewrites": [
+    {
+      "source": "/gh-data/:path*",
+      "destination": "/api/gh-data?p=/gh-data/:path*"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",

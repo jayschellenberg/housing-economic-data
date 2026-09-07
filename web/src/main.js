@@ -11,6 +11,7 @@ import { initChartsMap } from './charts-map.js';
 import { buildChartCard } from './chart.js';
 import { decodeState, syncURL } from './state.js';
 import { initTables } from './tables.js';
+import { shardUrl } from './shards.js';
 import { initCompare } from './compare.js';
 import { initStarts } from './starts.js';
 import { initSecondary } from './secondary.js';
@@ -64,7 +65,7 @@ const shardCache = new Map();
 async function loadShard(level, uid) {
   const key = `${level}_${uid}`;
   if (shardCache.has(key)) return shardCache.get(key);
-  const url = `./data/series/${key}.json`;
+  const url = shardUrl('series', key);
   // Cache the in-flight promise so concurrent callers share one request, but
   // evict on failure so a transient network blip doesn't poison the shard
   // forever (the user would otherwise have to reload the page to retry).
