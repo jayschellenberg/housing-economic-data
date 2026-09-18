@@ -497,9 +497,11 @@ export function buildCapVsInterest(shards, rangeRef) {
       chartId: 'cap_vs_interest',
       // Not CMHC data — export without the shared cmhc_ prefix.
       fileStem: 'cap_vs_interest',
+      // Titles as the reference appraisal chart words them (the Quarto
+      // project's COMBO_TITLE and its rates-only chart).
       title: capTypes.length
-        ? 'Rate environment & cap rates'
-        : 'Rate environment',
+        ? 'Overnight, 5-Year, 10-Year Yields & Cap Rates'
+        : 'Canadian Rate Environment',
       sourceLabel,
       table: true,
       description:
@@ -517,9 +519,12 @@ export function buildCapVsInterest(shards, rangeRef) {
     const records = [...ui.rateRecords, ...capRecords];
     const { monthFrom, monthTo } = ui.rangeRef;
     card.render(records, seriesMeta, {
+      // "Aug-2021 to Aug-2026; Source: …", matching the reference chart's
+      // subtitle (its date_range + COMBINED / BOC_SHORT source line).
+      rangePrefix: true,
       subtitle: capTypes.length
-        ? `Canada + ${(stored.meta?.markets || ['local'])[0]} • monthly`
-        : 'Canada • monthly',
+        ? 'Source: Bank of Canada & Colliers Average Cap Rates (CR)'
+        : 'Source: Bank of Canada',
       monthFrom,
       monthTo,
     });
