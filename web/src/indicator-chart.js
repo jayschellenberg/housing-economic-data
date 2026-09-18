@@ -244,9 +244,14 @@ export function buildIndicatorCard(container, {
   //   table   true                — render a collapsible data table under the
   //                                 chart, one row per period in the window
   refBand, refLine, table,
-  // `sourceLabel: null` suppresses the caption row entirely — for a card
-  // that already carries its source in the subtitle (Cap vs Interest), where
-  // a caption would just repeat it. Any other value renders as usual.
+  // `sourceLabel: null` suppresses the "Source: …" caption — for a card that
+  // already carries its source in the subtitle (Cap vs Interest), where a
+  // caption would just repeat it. Any other value renders as usual.
+  //
+  // `captionRight` puts an arbitrary string in the caption slot instead, with
+  // no "Source:" prefix — the reference appraisal chart signs its figures with
+  // the firm name there. With neither, the row is hidden outright.
+  captionRight,
   // Download filename stem. Defaults to the `cmhc_` prefix every CMHC-sourced
   // card uses; a card whose data isn't CMHC's passes its own (Cap vs Interest
   // exports as cap_vs_interest_<date>.png).
@@ -342,7 +347,9 @@ export function buildIndicatorCard(container, {
     });
   }
 
-  if (sourceLabel === null) {
+  if (captionRight) {
+    $source.textContent = captionRight;
+  } else if (sourceLabel === null) {
     // Hide the whole row, not just the text: it carries a top border and
     // padding that would otherwise leave a stray rule under the chart.
     card.querySelector('.chart-caption').hidden = true;
