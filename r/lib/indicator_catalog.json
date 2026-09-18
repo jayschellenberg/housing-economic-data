@@ -2,6 +2,8 @@
   "version": 2,
   "description": "Source-of-truth manifest for the Market Indicators tab. Every series has an expected title that the validator confirms against the live provider before scraping. chartId groups series that should render on the same chart panel; chartLabel is the legend label inside that chart. Unit codes map to formatters in web/src/indicator-chart.js: percent | dollar | dollar_millions | index | units | persons | ratio | balance_of_opinion.",
   "displayGroups": {
+    "_comment_cap_vs_interest": "cap_vs_interest has no shard and no series: the section is rendered by web/src/cap-vs-interest.js from the committed BoC series plus a cap-rate CSV the user loads in their own browser. It is declared here only so the sidebar section toggle and jump link pick it up; buildChartSections and the Excel export both skip a group with no shard. order must stay > 0 (the sort treats 0 as unset).",
+    "cap_vs_interest": { "title": "Cap vs Interest", "order": 0.5 },
     "mortgage_market":     { "title": "Mortgage Market",      "order": 1 },
     "credit_conditions":   { "title": "Credit Conditions",    "order": 2 },
     "distress":            { "title": "Insolvency & Distress", "order": 2.5 },

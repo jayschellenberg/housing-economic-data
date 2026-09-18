@@ -18,13 +18,35 @@ A multi-tab static website of Canadian housing & economic data, built for a comm
 | Housing Stock | Census dwelling type / age / condition + choropleth map | `r/07`–`r/10`, `r/12b`, `r/20` |
 | Census Profile | Population & dwelling trends + annual estimates + demographics + choropleth map | `r/12`, `r/12b`, `r/20` (run-once); `r/23` (monthly) |
 | Affordability | Royal-LePage-style affordability factor + choropleth map | `r/16`, `r/18`, census, `r/20` |
-| Current Snapshot / Market Indicators | BoC / StatsCan / OSB economic indicators, incl. CPI inflation (headline, core, shelter, annual average) | `r/10`,`r/11`,`r/13`,`r/14`,`r/17` |
+| Current Snapshot / Market Indicators | BoC / StatsCan / OSB economic indicators, incl. CPI inflation (headline, core, shelter, annual average), plus the Cap vs Interest section (bring your own cap-rate CSV) | `r/10`,`r/11`,`r/13`,`r/14`,`r/17` |
 | Agriculture | Farm cash / farmland value / crop, livestock & supply-managed prices / input costs / farm structure (consolidation) + within-province CCS choropleth | catalog + `r/11`,`r/14`; `r/20`,`r/24` (run-once map) |
 | RTB (MB) | Manitoba rent-increase guideline history + CPI overlay | `r/19` |
 | Court (MB) | Manitoba Court of King's Bench pre/post-judgment interest rates by quarter, with an interest calculator | `r/25` |
 | MB Economic Update | Auto narrative report (economy + HPI + outlook) — **parked, hidden from the nav** (see Parked features) | `r/15`, `r/16` |
 
 The Tables tab generates appraisal-ready comparison tables (vacancy / median rent by bedroom type, rent range, year built) with copy-to-clipboard (rich HTML for pasting into Word), Word (.docx), and Excel (.xlsx) export — this replaces the retired CMHC-VacancyMedianRents Shiny tool. It is **province-scoped** (pick a province — always the first row, default Manitoba — then the second–fourth areas are centres within it; no cross-province comparison), and each table has a grouped-bar chart card beside it (same chrome as the Rental Charts cards — title, subtitle, right-side legend, Download PNG). The **Compare Areas** tab is the multi-area counterpart to Rental Charts: it overlays several areas *within one province* as time-series lines for a fixed breakdown category (e.g. pre-1960 stock across MB centres), with a matching areas × years table beside each chart — one chart+table pair per metric (median rent, average rent, vacancy, avg rent change). The pipeline also pulls the Secondary Rental Market Survey (Srms — condo rental data) into `web/public/data/secondary.json`, replacing the retired "CMHC Rental Data Scrape" project. Both retired projects are archived under `$Projects in Progress\old projects maybe`.
+
+### Cap vs Interest (Market Indicators)
+
+The first section of the Market Indicators tab puts the BoC overnight target and the 5- and
+10-year Government of Canada yields on one axis with average commercial cap rates by property
+type, so the risk premium between them is visible directly. It is the web version of the
+`IntChartALL` / `IntChartO` / `IntChartMF` family from the "Interest Rate Charts" Quarto project
+(`D:\Dropbox\Appraisal\RProjects\appraisal-templates\$ Interest Rate Charts`), collapsed into one
+card whose overlays are chosen with checkboxes instead of being baked into fifteen PNGs. It
+follows the tab's existing date range, and both halves are resampled to monthly means so the
+daily rate series and the quarterly cap rates share x-values.
+
+**No cap-rate data ships with the site.** The rate lines come from the committed BoC shard; the
+cap rates are read from a CSV the user picks in their own browser (`web/src/cap-vs-interest.js`,
+read with `File.text()` — nothing is uploaded), and the parsed per-type averages are held in that
+browser's `localStorage` only. No other visitor sees them, and they are never committed. The
+CSV is the Colliers extract's shape: `Source, Market, Date, Quarter, MajorType, PropType,
+Subtype, Low, High`, with `Date` as `MM-DD-YYYY` (ISO and `M/D/YYYY` are accepted too). Each
+row contributes the mid-point of its Low-High range, averaged within a property type and date.
+Because the section is not shard-backed it is rendered by its own module rather than the
+catalog loop; `cap_vs_interest` appears in `displayGroups` only so the sidebar toggle and jump
+link pick it up.
 
 Built as a Vite + vanilla JS static site, with an R-based data pipeline. Deployed to Vercel from this GitHub repo.
 
