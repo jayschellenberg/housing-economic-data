@@ -244,6 +244,9 @@ export function buildIndicatorCard(container, {
   //   table   true                — render a collapsible data table under the
   //                                 chart, one row per period in the window
   refBand, refLine, table,
+  // `sourceLabel: null` suppresses the caption row entirely — for a card
+  // that already carries its source in the subtitle (Cap vs Interest), where
+  // a caption would just repeat it. Any other value renders as usual.
   // Download filename stem. Defaults to the `cmhc_` prefix every CMHC-sourced
   // card uses; a card whose data isn't CMHC's passes its own (Cap vs Interest
   // exports as cap_vs_interest_<date>.png).
@@ -339,7 +342,13 @@ export function buildIndicatorCard(container, {
     });
   }
 
-  $source.textContent = `Source: ${sourceLabel || 'see series'}`;
+  if (sourceLabel === null) {
+    // Hide the whole row, not just the text: it carries a top border and
+    // padding that would otherwise leave a stray rule under the chart.
+    card.querySelector('.chart-caption').hidden = true;
+  } else {
+    $source.textContent = `Source: ${sourceLabel || 'see series'}`;
+  }
   const stem = fileStem || `cmhc_${chartId}`;
   let lastFilename = `${stem}.png`;
 

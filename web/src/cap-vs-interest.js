@@ -197,17 +197,13 @@ function rateNumber(raw) {
 }
 
 /**
- * How the cap-rate publisher is credited in the chart caption. The CSV's Source
- * column carries a short name ("Colliers"); the caption wants the publication
- * it actually came from, matching the COLLIERS caption in the Quarto project.
- * An unrecognised source is credited verbatim rather than guessed at.
+ * Who published the cap rates, for the subtitle's source line. Taken from the
+ * CSV's Source column so a file from someone other than Colliers is credited
+ * correctly rather than mislabelled.
  */
-const SOURCE_CREDIT = { colliers: 'Colliers International Quarterly Cap Rate Reports' };
-
-export function sourceCredit(sources) {
-  const names = (sources || []).filter(Boolean);
-  if (names.length === 0) return 'a locally loaded file';
-  return names.map(n => SOURCE_CREDIT[n.trim().toLowerCase()] || n.trim()).join(', ');
+export function capPublisher(sources) {
+  const names = (sources || []).map(n => String(n).trim()).filter(Boolean);
+  return names.length ? names.join(' & ') : 'a locally loaded file';
 }
 
 function normaliseType(raw) {
@@ -489,9 +485,8 @@ export function buildCapVsInterest(shards, rangeRef) {
         value,
       })));
 
-    const sourceLabel = capTypes.length
-      ? `Bank of Canada; Cap Rates from ${sourceCredit(stored.meta?.sources)}`
-      : 'Bank of Canada';
+    // The source rides in the subtitle (see the render call below), so the
+    // caption row is suppressed rather than repeating it under the chart.
 
     const card = buildIndicatorCard($cardGrid, {
       chartId: 'cap_vs_interest',
@@ -502,7 +497,7 @@ export function buildCapVsInterest(shards, rangeRef) {
       title: capTypes.length
         ? 'Overnight, 5-Year, 10-Year Yields & Cap Rates'
         : 'Canadian Rate Environment',
-      sourceLabel,
+      sourceLabel: null,
       table: true,
       description:
         'The BoC overnight target with the 5- and 10-year Government of Canada yields — the ' +
@@ -523,7 +518,7 @@ export function buildCapVsInterest(shards, rangeRef) {
       // subtitle (its date_range + COMBINED / BOC_SHORT source line).
       rangePrefix: true,
       subtitle: capTypes.length
-        ? 'Source: Bank of Canada & Colliers Average Cap Rates (CR)'
+        ? `Source: Bank of Canada & ${capPublisher(stored.meta?.sources)} Average Cap Rates (CR)`
         : 'Source: Bank of Canada',
       monthFrom,
       monthTo,

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  parseCsvRows, parseCapDate, parseCapRateCsv, orderTypes, monthlyMean, sourceCredit,
+  parseCsvRows, parseCapDate, parseCapRateCsv, orderTypes, monthlyMean, capPublisher,
 } from '../src/cap-vs-interest.js';
 
 // A cut-down slice of the Colliers extract, in the shape the real file uses:
@@ -132,20 +132,19 @@ describe('monthlyMean', () => {
   });
 });
 
-describe('sourceCredit', () => {
-  it('credits Colliers by the publication the numbers come from', () => {
-    expect(sourceCredit(['Colliers'])).toBe('Colliers International Quarterly Cap Rate Reports');
-    expect(sourceCredit(['colliers'])).toBe('Colliers International Quarterly Cap Rate Reports');
+describe('capPublisher', () => {
+  it('credits whoever the CSV says published the cap rates', () => {
+    expect(capPublisher(['Colliers'])).toBe('Colliers');
+    expect(capPublisher([' Colliers '])).toBe('Colliers');
   });
 
-  it('passes an unrecognised publisher through verbatim', () => {
-    expect(sourceCredit(['CBRE'])).toBe('CBRE');
-    expect(sourceCredit(['Colliers', 'CBRE']))
-      .toBe('Colliers International Quarterly Cap Rate Reports, CBRE');
+  it('joins several publishers rather than picking one', () => {
+    expect(capPublisher(['Colliers', 'CBRE'])).toBe('Colliers & CBRE');
   });
 
   it('falls back when the CSV carried no Source column', () => {
-    expect(sourceCredit([])).toBe('a locally loaded file');
-    expect(sourceCredit(undefined)).toBe('a locally loaded file');
+    expect(capPublisher([])).toBe('a locally loaded file');
+    expect(capPublisher(undefined)).toBe('a locally loaded file');
+    expect(capPublisher(['', '  '])).toBe('a locally loaded file');
   });
 });
