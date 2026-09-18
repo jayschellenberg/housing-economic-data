@@ -7,11 +7,12 @@
  */
 
 import { toPng } from 'html-to-image';
+import { CHART_EXPORT_FILTER } from './indicator-chart.js';
 
-const EXPORT_FILTER = (n) => !(n.classList && (
-  n.classList.contains('chart-actions') ||
-  n.classList.contains('cmhc-stale-warning') ||
-  n.classList.contains('cmhc-explainer')));
+// The per-tab Word/Excel chart exports capture the same shape as the
+// single-card PNG button, so they share its filter. (It also drops the
+// collapsible data table, which these cards render closed anyway.)
+const EXPORT_FILTER = CHART_EXPORT_FILTER;
 
 /**
  * Capture DOM nodes as PNGs, sequentially (html-to-image is not re-entrant

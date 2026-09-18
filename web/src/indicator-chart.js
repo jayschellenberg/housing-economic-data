@@ -510,12 +510,24 @@ export function buildIndicatorCard(container, {
     $plot.appendChild(wrap);
 
     // Subtitle + caption + latest-value row.
-    // Embed the year range in the subtitle (moved out of the caption row
-    // per user request — the caption now only carries the source label).
-    const minD = filtered[0].date, maxD = filtered[filtered.length - 1].date;
-    const yearRange = `${minD.getUTCFullYear()}–${maxD.getUTCFullYear()}`;
+    // Embed the plotted date range in the subtitle (moved out of the caption
+    // row per user request — the caption now only carries the source label).
+    // Use xMin/xMax, not filtered's ends: `filtered` is id-major, so its first
+    // and last rows are the ends of the FIRST and LAST series, which are not
+    // the earliest and latest dates once series start at different times.
+    //
+    // `rangePrefix` switches to the reference chart's wording —
+    // "Aug-2021 to Aug-2026; Source: …" — instead of the default
+    // "<subtitle> • 2021–2026".
     const baseSub = opts.subtitle || '';
-    $sub.textContent = baseSub ? `${baseSub} • ${yearRange}` : yearRange;
+    if (opts.rangePrefix) {
+      const monthYear = (d) => `${MONTH_ABBR[d.getUTCMonth()]}-${d.getUTCFullYear()}`;
+      const range = `${monthYear(xMin)} to ${monthYear(xMax)}`;
+      $sub.textContent = baseSub ? `${range}; ${baseSub}` : range;
+    } else {
+      const yearRange = `${xMin.getUTCFullYear()}–${xMax.getUTCFullYear()}`;
+      $sub.textContent = baseSub ? `${baseSub} • ${yearRange}` : yearRange;
+    }
     $capLeft.textContent = '';
 
     // Latest-value row: one chip per series.
@@ -572,6 +584,23 @@ export function buildIndicatorCard(container, {
   return { card, render, setOpenPanels };
 }
 
+/**
+ * What stays OUT of an exported chart image: the on-screen helpers (action
+ * row, stale-data banner, data table, explainer) and the latest-value chips.
+ * What is left is title → subtitle → chart → source caption, the shape of the
+ * reference appraisal chart. The chips
+ * ("BoC overnight target: 2.25% (as of …)") are a reading aid on the page; in
+ * a report the figure is the chart and the numbers belong in the surrounding
+ * text. Exported so it can be unit-tested — html-to-image only runs in a
+ * visible browser, so the predicate is the testable part.
+ */
+export const CHART_EXPORT_FILTER = (n) => !(n.classList && (
+  n.classList.contains('chart-actions') ||
+  n.classList.contains('cmhc-stale-warning') ||
+  n.classList.contains('cmhc-chart-table') ||
+  n.classList.contains('cmhc-latest-row') ||
+  n.classList.contains('cmhc-explainer')));
+
 async function exportCard(card, filename, kind) {
   card.classList.add('cmhc-exporting');
   try {
@@ -582,15 +611,7 @@ async function exportCard(card, filename, kind) {
       // Skip the cross-origin Google Fonts inline attempt (CORS SecurityError,
       // ~3s stall, system-font fallback regardless) — matches doc-image-export.js.
       skipFonts: true,
-      // Drop the action row, stale-data banner, and explainer from the export
-      // so the rendered image stays scoped to title → chart → latest values →
-      // caption. These are on-screen helpers, not part of the chart someone
-      // embeds in an appraisal report.
-      filter: (n) => !(n.classList && (
-        n.classList.contains('chart-actions') ||
-        n.classList.contains('cmhc-stale-warning') ||
-        n.classList.contains('cmhc-chart-table') ||
-        n.classList.contains('cmhc-explainer'))),
+      filter: CHART_EXPORT_FILTER,
     };
     const dataUrl = await toPng(card, opts);
     const blob = await (await fetch(dataUrl)).blob();
