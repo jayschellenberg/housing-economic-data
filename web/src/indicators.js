@@ -16,6 +16,7 @@
  */
 
 import { buildIndicatorCard } from './indicator-chart.js';
+import { buildCapVsInterest, rerenderCapVsInterest } from './cap-vs-interest.js';
 import { escapeHtml } from './escape.js';
 import { indicatorFmt } from './format.js';
 
@@ -89,6 +90,10 @@ export async function initIndicators() {
 
   buildSnapshot(catalogResolved, shards);
   buildChartSections(catalogResolved, shards);
+  // Prepends its own section to #mi-chart-grid, so it must run after
+  // buildChartSections (which wipes the grid) and before wireSidebar (which
+  // reads the rendered sections to build the toggles and jump list).
+  buildCapVsInterest(shards, state);
   buildTimeAdjustmentTool(catalogResolved, shards);
   buildInflationLookupTool(catalogResolved, shards);
   wireSidebar(catalogResolved, manifest);
@@ -885,6 +890,9 @@ function rerenderCards() {
       monthTo:   state.monthTo,
     });
   });
+  // The Cap vs Interest card isn't catalog-driven, so it isn't in
+  // lastRender.cards — re-render it explicitly for the date range.
+  rerenderCapVsInterest();
   // Re-render the KPI bar too — geo filter affects which tiles are visible.
   if (lastRender.catalog && lastRender.shards) {
     buildSnapshot(lastRender.catalog, lastRender.shards);
