@@ -28,7 +28,7 @@ export const FRAME_STROKE     = '#18181b';
 export function themed(spec = {}) {
   const merged = {
     className: 'cmhc-plot',
-    style: { background: 'white', fontSize: '12px', color: '#3f3f46' },
+    style: { background: 'white', fontSize: '13.5px', color: '#3f3f46' },
     marginLeft:   86,   // room for rotated y-axis label + currency ticks
     marginRight:  18,
     marginTop:    6,    // tighten the gap between subtitle and plot area
@@ -39,6 +39,7 @@ export function themed(spec = {}) {
       label: null,
       tickFormat: 'd',
       labelAnchor: 'center',
+      labelArrow: 'none',
       labelOffset: 34,
       inset: 16,         // breathing room on the left + right edges
       grid: false,
@@ -75,6 +76,47 @@ export function gridMarks() {
 
 export function frameMark() {
   return Plot.frame({ stroke: FRAME_STROKE, strokeWidth: 1 });
+}
+
+/**
+ * Mirror the y scale on the right edge of the frame, the way the reference
+ * appraisal chart's ggplot `sec_axis` does. On a wide chart the right-hand
+ * values save the reader tracking back across the plot. Pair it with
+ * `MIRROR_Y_MARGIN` as the spec's marginRight, or the labels are clipped.
+ *
+ * Ticks only — no duplicate axis title, which would just be noise.
+ */
+export const MIRROR_Y_MARGIN = 62;
+
+export function mirrorYMarks(tickFormat, { label = null, labelOffset } = {}) {
+  // BOTH axes have to be declared. Plot drops its implicit y axis as soon as
+  // any explicit axisY mark exists, so adding only the right-hand one MOVES
+  // the axis across instead of mirroring it. The left axis carries the label;
+  // repeating it on the right would just be noise.
+  return [
+    Plot.axisY({
+      anchor: 'left', tickFormat, tickSize: 3,
+      label, labelOffset, labelAnchor: 'center', labelArrow: 'none',
+    }),
+    Plot.axisY({ anchor: 'right', tickFormat, tickSize: 3, label: null }),
+  ];
+}
+
+/**
+ * Tick format for a percent axis, with the decimals chosen from how much
+ * ground the axis covers. A 0-8% vacancy axis reads "6%"; a 2.4-3.1% yield
+ * axis still needs "2.8%", and a hair-thin spread needs two places. The
+ * reference chart's axis is whole percents, and the precise value is always
+ * one hover (or the data table) away, so the axis itself stays uncluttered.
+ *
+ * Values are already scaled to percent (3.41 means 3.41%), matching how every
+ * percent series on the site is stored.
+ */
+export function percentTickFormat(domain) {
+  const [lo, hi] = domain || [];
+  const span = Number.isFinite(lo) && Number.isFinite(hi) ? Math.abs(hi - lo) : 0;
+  const places = span >= 4 ? 0 : span >= 1 ? 1 : 2;
+  return (v) => `${Number(v).toFixed(places)}%`;
 }
 
 /**

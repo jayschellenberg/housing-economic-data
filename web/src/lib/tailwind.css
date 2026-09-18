@@ -227,7 +227,7 @@
 }
 
 .chart-card [data-role="plot"] {
-  min-height: 260px;
+  min-height: 330px;
 }
 
 .chart-card .chart-caption {
@@ -274,25 +274,29 @@
 
 /* --- Observable Plot tuning ----------------------------------------------- */
 
+/* `.cmhc-plot` is the <svg> itself (Plot puts className on the root element),
+   so these use a plain descendant combinator — an earlier `.cmhc-plot svg`
+   matched nothing and every rule here was silently dead. */
+.cmhc-plot,
 .cmhc-plot svg {
   font-family: var(--font-sans);
   overflow: visible;
 }
 
-/* Tick labels — small grey */
-.cmhc-plot svg [aria-label="x-axis tick label"] text,
-.cmhc-plot svg [aria-label="y-axis tick label"] text,
-.cmhc-plot svg g[aria-label="x-axis"] text,
-.cmhc-plot svg g[aria-label="y-axis"] text {
-  font-size: 11.5px;
+/* Tick labels — grey, sized to stay legible in an exported PNG */
+.cmhc-plot [aria-label="x-axis tick label"] text,
+.cmhc-plot [aria-label="y-axis tick label"] text,
+.cmhc-plot g[aria-label="x-axis"] text,
+.cmhc-plot g[aria-label="y-axis"] text {
+  font-size: 13px;
   fill: var(--color-neutral-600);
 }
 
 /* Axis titles — bold black */
-.cmhc-plot svg [aria-label="x-axis label"],
-.cmhc-plot svg [aria-label="y-axis label"] {
+.cmhc-plot [aria-label="x-axis label"],
+.cmhc-plot [aria-label="y-axis label"] {
   font-weight: 700 !important;
-  font-size: 13px !important;
+  font-size: 15px !important;
   fill: var(--cmhc-frame) !important;
 }
 
@@ -301,8 +305,11 @@
    so this is the only legend rendered. */
 .cmhc-plot-wrap {
   display: flex;
-  align-items: center;  /* vertically centre the legend against the chart */
-  gap: 14px;
+  flex-direction: column;   /* legend sits UNDER the chart, as on the
+                               reference appraisal chart — the plot area then
+                               gets the card's full width */
+  align-items: stretch;
+  gap: 8px;
 }
 
 .cmhc-plot-wrap > .cmhc-plot {
@@ -313,12 +320,15 @@
 
 .cmhc-plot-legend {
   display: flex;
-  flex-direction: column;
-  gap: 5px;
-  font-size: 12px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  column-gap: 16px;
+  row-gap: 4px;
+  font-size: 13px;
   color: var(--color-neutral-800);
   flex-shrink: 0;
-  max-width: 140px;
 }
 
 .cmhc-plot-legend-item {
@@ -343,7 +353,9 @@
 /* Annotation key under the legend (the BoC inflation-control band). Reads as
    a note, not as another series — no swatch, smaller, muted. */
 .cmhc-plot-legend-note {
-  margin-top: 4px;
+  flex-basis: 100%;
+  text-align: center;
+  margin-top: 2px;
   padding-top: 4px;
   border-top: 1px solid var(--color-neutral-200);
   font-size: 10.5px;

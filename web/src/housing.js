@@ -300,7 +300,7 @@ export async function initHousing() {
     }
     if (data.length) {
       const svg = Plot.plot(themed({
-        height: 250, marginBottom: 30,
+        height: 320, marginBottom: 30,
         x: { type: 'band', label: null },
         y: { label: 'Occupied dwellings', tickFormat: v => Number(v).toLocaleString() },
         color: { domain: DT_SHORT, range: PALETTE, legend: true },
@@ -334,7 +334,7 @@ export async function initHousing() {
     const data = DT_SHORT.map((lbl, i) => ({ type: lbl, value: c.types?.[i] })).filter(d => d.value != null);
     if (data.length) {
       const svg = Plot.plot(themed({
-        height: 250, marginLeft: 110, marginBottom: 28,
+        height: 320, marginLeft: 110, marginBottom: 28,
         x: { label: 'Occupied dwellings', tickFormat: v => Number(v).toLocaleString(), inset: 0 },
         y: { label: null },
         color: { legend: false },
@@ -413,7 +413,7 @@ export async function initHousing() {
       const ageData = [];
       for (const y of ageYears) COMMON_AGE.forEach((lbl, i) => ageData.push({ year: y, band: lbl, value: rolled[y][i] }));
       const ageChart = Plot.plot(themed({
-        height: 250, marginBottom: 30,
+        height: 320, marginBottom: 30,
         x: { type: 'band', label: null },
         y: { label: 'Occupied dwellings', tickFormat: v => Number(v).toLocaleString() },
         color: { domain: COMMON_AGE, range: PALETTE, legend: true },
@@ -528,7 +528,7 @@ export async function initHousing() {
     if (!data.length) return;
     const maxV = Math.max(...data.map(d => d.value));
     const svg = Plot.plot(themed({
-      height: 260, marginBottom: 42,
+      height: 320, marginBottom: 42,
       fx: { label: null }, x: { axis: null, label: null },
       y: { label: '% of dwellings', tickFormat: v => `${v}%`, domain: [0, maxV * 1.15] },
       color: { domain: areas.map(a => a.name), range: PALETTE, legend: true },
