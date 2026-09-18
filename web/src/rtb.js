@@ -11,7 +11,7 @@
  */
 
 import * as Plot from '@observablehq/plot';
-import { themed, gridMarks, frameMark, PALETTE } from './plot-theme.js';
+import { themed, gridMarks, frameMark, mirrorYMarks, percentTickFormat, MIRROR_Y_MARGIN, PALETTE } from './plot-theme.js';
 import { downloadCard } from './chart.js';
 import { escapeHtml } from './escape.js';
 import { miss, fUsd, fPct1 as fPct } from './format.js';
@@ -169,12 +169,13 @@ function renderChart($chart, data, cpiByYear) {
   const maxV = Math.max(...rows.map(d => d.value), 5);
   const minV = Math.min(0, ...rows.map(d => d.value));
   const svg = Plot.plot(themed({
-    height: 280, marginBottom: 34, marginLeft: 40,   // no fixed width → Plot's ~640px default with max-width:100%, matching the Rental Charts page cards
-    x: { label: null, tickFormat: 'd' },
-    y: { label: '% change', tickFormat: v => `${v}%`, domain: [minV, maxV * 1.1], grid: true },
+    height: 330, marginBottom: 52, marginLeft: 40, marginRight: MIRROR_Y_MARGIN,   // no fixed width → Plot's ~640px default with max-width:100%, matching the Rental Charts page cards
+    x: { label: 'Year', labelOffset: 42, tickFormat: 'd' },
+    y: { label: null, tickFormat: percentTickFormat([minV, maxV * 1.1]), domain: [minV, maxV * 1.1], grid: true },
     color: { domain: series, range: [PALETTE[0], '#dc2626', '#16a34a'], legend: true },
     marks: [
       ...gridMarks(),
+      ...mirrorYMarks(percentTickFormat([minV, maxV * 1.1]), { label: '% change', labelOffset: 44 }),
       Plot.ruleY([0], { stroke: '#9ca3af' }),
       Plot.lineY(rows, { x: 'year', y: 'value', stroke: 'series', strokeWidth: 1.8 }),
       Plot.dot(rows.filter(d => d.series === 'Rent guideline' || d.series === 'Economic adjustment factor'), { x: 'year', y: 'value', fill: 'series', r: 2.5 }),

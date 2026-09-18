@@ -14,7 +14,7 @@
 
 import * as Plot from '@observablehq/plot';
 import { toPng } from 'html-to-image';
-import { themed, fmt, PALETTE, gridMarks, frameMark } from './plot-theme.js';
+import { themed, fmt, PALETTE, gridMarks, frameMark, mirrorYMarks, percentTickFormat, MIRROR_Y_MARGIN } from './plot-theme.js';
 import { escapeHtml } from './escape.js';
 
 const COUNT_FMT = (v) => Number(v).toLocaleString();
@@ -152,18 +152,30 @@ export function buildChartCard(container, { series }) {
     for (let y = yMinYr; y <= yMaxYr; y += step) tickYears.push(y);
     if (tickYears[tickYears.length - 1] !== yMaxYr) tickYears.push(yMaxYr);
 
+    // Whole-percent ticks once the axis spans enough ground; the precise value
+    // is still in the point tooltip and the tables. Non-percent panels (rents,
+    // unit counts) keep their own formatter.
+    const isPercentAxis = yFormatter === fmt.percent || yFormatter === fmt.pctChange;
+    const yTickFormat = isPercentAxis ? percentTickFormat(yDomain) : yFormatter;
+
     const spec = themed({
-      height: 280,
+      height: 340,
+      marginRight: MIRROR_Y_MARGIN,
+      marginBottom: 52,      // room for the x-axis title under the tick labels
       x: {
         // Half-year padding on each side so the first/last tick labels
         // sit inside the frame instead of being clipped at the edge.
         domain: [yMinYr - 0.5, yMaxYr + 0.5],
         ticks:  tickYears,
         tickFormat: 'd',
+        label: 'Year',
+        labelOffset: 42,
       },
       y: {
-        label: Y_LABEL[series] || null,
-        tickFormat: yFormatter,
+        // The label rides on the explicit left-axis mark below (an explicit
+        // axis replaces the implicit one, label and all).
+        label: null,
+        tickFormat: yTickFormat,
         domain: yDomain,
       },
       // Plot's built-in legend is disabled; we render a custom right-side
@@ -179,6 +191,7 @@ export function buildChartCard(container, { series }) {
           strokeWidth: 1.7,
           defined: (d) => d.value != null && d._gap <= 1,
         }),
+        ...mirrorYMarks(yTickFormat, { label: Y_LABEL[series] || null, labelOffset: 72 }),
         Plot.dot(rows, {
           x: 'year',
           y: 'value',
@@ -268,7 +281,7 @@ export function buildBarCard(container, { title }) {
     const yFmt = isVac ? (v) => `${v}%` : (v) => `$${Number(v).toLocaleString()}`;
     const maxV = Math.max(...data.map(d => d.value));
     const svgEl = Plot.plot(themed({
-      height: 280, marginTop: 24, marginBottom: 22, marginLeft: 54,
+      height: 340, marginTop: 24, marginBottom: 22, marginLeft: 54,
       fx: { label: null, domain: categories },
       x: { axis: null, label: null, domain: areas },
       y: { label: isVac ? 'Vacancy Rate (%)' : 'Median Rent ($)', tickFormat: yFmt, domain: [0, maxV * 1.12] },

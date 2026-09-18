@@ -16,7 +16,7 @@
 
 import * as Plot from '@observablehq/plot';
 import { toPng } from 'html-to-image';
-import { themed, PALETTE, gridMarks, frameMark } from './plot-theme.js';
+import { themed, PALETTE, gridMarks, frameMark, mirrorYMarks, percentTickFormat, MIRROR_Y_MARGIN } from './plot-theme.js';
 import { escapeHtml } from './escape.js';
 import { INDICATOR_FMT as FMT, indicatorFmt as fmt } from './format.js';
 
@@ -422,11 +422,21 @@ export function buildIndicatorCard(container, {
     const freq = seriesMeta[0]?.frequency;
     const periods = buildTipRows(filtered, freq, yFormatter);
 
+    // Axis ticks are formatted for readability, not precision: a percent axis
+    // drops to whole percents when it spans enough ground (see
+    // percentTickFormat). The exact value stays available in the hover tip,
+    // the latest-value chips and the data table, which all use yFormatter.
+    const isPercentAxis = seriesMeta.every(s => s.units === 'percent');
+    const yTickFormat = isPercentAxis ? percentTickFormat(yDomain) : yFormatter;
+
     const spec = themed({
-      height: 260,
+      height: 330,
+      marginRight: MIRROR_Y_MARGIN,
+      marginBottom: 52,      // room for the x-axis title under the tick labels
       x: {
         type: 'utc',
-        label: null,
+        label: 'Date',
+        labelOffset: 42,
         tickFormat: (d) => {
           const yr = d.getUTCFullYear();
           return yr.toString();
@@ -435,7 +445,7 @@ export function buildIndicatorCard(container, {
       },
       y: {
         label: null,
-        tickFormat: yFormatter,
+        tickFormat: yTickFormat,
         domain: yDomain,
         nice: true,
         insetTop: 10,
@@ -458,6 +468,7 @@ export function buildIndicatorCard(container, {
           strokeWidth: 1.6,
           defined: (d) => d.value != null,
         }),
+        ...mirrorYMarks(yTickFormat),
         Plot.tip(periods, Plot.pointerX({
           x: 'date',
           y: 'anchor',

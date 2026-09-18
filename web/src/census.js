@@ -13,7 +13,7 @@
  */
 
 import * as Plot from '@observablehq/plot';
-import { themed, gridMarks, frameMark, PALETTE } from './plot-theme.js';
+import { themed, gridMarks, frameMark, mirrorYMarks, MIRROR_Y_MARGIN, PALETTE } from './plot-theme.js';
 import { downloadCard } from './chart.js';
 import { mapCard, quantileChoropleth } from './map.js';
 import { provinceGeo, hasProvinceGeo } from './geo.js';
@@ -495,12 +495,15 @@ export async function initCensus() {
       const popRegions = regionNames.filter(n => popRows.some(d => d.region === n));
       const popRange = popRegions.map(n => PALETTE[regionNames.indexOf(n) % PALETTE.length]);
       const svg = Plot.plot(themed({
-        height: 250,
-        x: { domain: [loY - 0.5, hiY + 0.5], ticks: yrs, tickFormat: 'd' },
-        y: { label: 'Population', tickFormat: v => Number(v).toLocaleString(), domain: [0, maxV * 1.12] },
+        height: 330,
+        marginRight: MIRROR_Y_MARGIN,
+        marginBottom: 52,
+        x: { domain: [loY - 0.5, hiY + 0.5], ticks: yrs, tickFormat: 'd', label: 'Year', labelOffset: 42 },
+        y: { label: null, tickFormat: v => Number(v).toLocaleString(), domain: [0, maxV * 1.12] },
         color: { domain: popRegions, range: popRange, legend: popRegions.length > 1 },
         marks: [
           ...gridMarks(),
+          ...mirrorYMarks(v => Number(v).toLocaleString(), { label: 'Population', labelOffset: 72 }),
           Plot.lineY(popRows, { x: 'year', y: 'value', stroke: 'region', strokeWidth: 1.8 }),
           Plot.dot(popRows,  { x: 'year', y: 'value', fill: 'region', r: 3 }),
           frameMark(),
@@ -530,12 +533,15 @@ export async function initCensus() {
         const estRegions = regionNames.filter(n => estRows.some(d => d.region === n));
         const estRange = estRegions.map(n => PALETTE[regionNames.indexOf(n) % PALETTE.length]);
         const svg = Plot.plot(themed({
-          height: 250,
-          x: { domain: [loY - 0.5, hiY + 0.5], tickFormat: 'd' },
-          y: { label: 'Population', tickFormat: v => Number(v).toLocaleString(), domain: [0, maxV * 1.12] },
+          height: 330,
+          marginRight: MIRROR_Y_MARGIN,
+          marginBottom: 52,
+          x: { domain: [loY - 0.5, hiY + 0.5], tickFormat: 'd', label: 'Year', labelOffset: 42 },
+          y: { label: null, tickFormat: v => Number(v).toLocaleString(), domain: [0, maxV * 1.12] },
           color: { domain: estRegions, range: estRange, legend: estRegions.length > 1 },
           marks: [
             ...gridMarks(),
+            ...mirrorYMarks(v => Number(v).toLocaleString(), { label: 'Population', labelOffset: 72 }),
             Plot.lineY(estRows, { x: 'year', y: 'value', stroke: 'region', strokeWidth: 1.8 }),
             frameMark(),
           ],
@@ -558,7 +564,7 @@ export async function initCensus() {
     }
     if (barData.length) {
       const svg = Plot.plot(themed({
-        height: 250, marginBottom: 30,
+        height: 320, marginBottom: 30,
         x: { type: 'band', label: null },
         y: { label: 'Occupied dwellings', tickFormat: v => Number(v).toLocaleString() },
         color: { domain: typeOrder, range: categorical(typeOrder.length), legend: true },
@@ -594,7 +600,7 @@ export async function initCensus() {
     if (!rows.length) return;
     const maxV = Math.max(...rows.map(d => d.value));
     const svg = Plot.plot(themed({
-      height: 250, marginBottom: 34,
+      height: 320, marginBottom: 34,
       // Pin the facet (category) order to the noted sequence and the within-group
       // bar order to regionNames so both match the legend — otherwise Plot sorts
       // each band domain alphabetically (e.g. Manitoba before Winnipeg (CMA)).
