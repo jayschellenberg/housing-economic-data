@@ -318,10 +318,13 @@
   margin: 0;
 }
 
+/* Legend under the chart, at most THREE entries per row. A wrapping flex row
+   packed as many as would fit, which on an 8-series card ran the legend wider
+   than the plot and squeezed it in the exported PNG. A 3-column grid also
+   left-aligns the swatches down each column, as the reference chart does. */
 .cmhc-plot-legend {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, max-content);
   justify-content: center;
   align-items: center;
   column-gap: 16px;
@@ -353,7 +356,7 @@
 /* Annotation key under the legend (the BoC inflation-control band). Reads as
    a note, not as another series — no swatch, smaller, muted. */
 .cmhc-plot-legend-note {
-  flex-basis: 100%;
+  grid-column: 1 / -1;
   text-align: center;
   margin-top: 2px;
   padding-top: 4px;

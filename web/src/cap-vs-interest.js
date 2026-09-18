@@ -30,12 +30,17 @@
  */
 
 import { buildIndicatorCard, readOpenPanels } from './indicator-chart.js';
+import { getPref, setPref } from './prefs.js';
 
 export const CAP_GROUP_ID = 'cap_vs_interest';
 
 // Bumped if the stored shape changes, so an old payload is ignored rather than
 // mis-read. v1: { types: {[type]: [[iso, value], …]}, meta, selected }.
 const STORAGE_KEY = 'hed.capRates.v1';
+
+// Shared prefs key (prefs.js), not this section's own storage — the firm name
+// belongs to whoever is using the site, not to the cap-rate file.
+const FIRM_PREF = 'firmName';
 
 // Always drawn, in this order. Series ids are what the committed BoC shard
 // (mortgage_market) uses; chartLabel overrides the catalog's terse labels,
@@ -280,6 +285,12 @@ function sectionMarkup() {
       </div>
       <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
         <label class="flex items-center gap-2">
+          <span class="text-xs text-neutral-600">Firm name</span>
+          <input type="text" data-role="cvi-firm" maxlength="60"
+                 placeholder="shown under the chart"
+                 class="w-52 border border-neutral-300 rounded px-2 py-1 text-xs" />
+        </label>
+        <label class="flex items-center gap-2">
           <span class="text-xs text-neutral-600">Cap-rate CSV</span>
           <input type="file" data-role="cvi-file" accept=".csv,text/csv"
                  class="text-xs file:mr-2 file:rounded file:border file:border-neutral-300 file:bg-white file:px-2 file:py-1 file:text-xs" />
@@ -290,7 +301,7 @@ function sectionMarkup() {
       <p data-role="cvi-status" class="text-xs text-neutral-600"></p>
       <p data-role="cvi-error" class="text-xs text-red-700" hidden></p>
     </div>
-    <div data-role="cvi-card-grid" class="grid gap-4"></div>
+    <div data-role="cvi-card-grid" class="grid md:grid-cols-2 gap-4"></div>
   `;
 }
 
@@ -341,6 +352,7 @@ export function buildCapVsInterest(shards, rangeRef) {
   const $status = section.querySelector('[data-role="cvi-status"]');
   const $error  = section.querySelector('[data-role="cvi-error"]');
   const $cardGrid = section.querySelector('[data-role="cvi-card-grid"]');
+  const $firm     = section.querySelector('[data-role="cvi-firm"]');
 
   let stored = loadStored();
 
@@ -351,6 +363,15 @@ export function buildCapVsInterest(shards, rangeRef) {
     set stored(v) { stored = v; },
     card: null,
   };
+
+  // The firm name signs the chart (and so the exported PNG). Kept in the
+  // shared per-browser prefs rather than this section's own storage: it is a
+  // property of whoever is using the site, not of the cap-rate file.
+  $firm.value = getPref(FIRM_PREF) || '';
+  $firm.addEventListener('change', () => {
+    setPref(FIRM_PREF, $firm.value.trim());
+    renderCard();
+  });
 
   renderControls();
   renderCard();
@@ -468,7 +489,10 @@ export function buildCapVsInterest(shards, rangeRef) {
       return {
         id: `cap.${type}`,
         provider: 'local',
-        chartLabel: `${type} cap rate`,
+        // 'Retail CR', as the reference chart's legend abbreviates it. This is
+        // the series label everywhere — legend, hover tip, latest-value chips and
+        // the data table's column heading — so they all read the same.
+        chartLabel: `${type} CR`,
         units: 'percent',
         frequency: 'quarterly',
         geo: (stored.meta?.markets || [])[0] || 'local',
@@ -498,6 +522,7 @@ export function buildCapVsInterest(shards, rangeRef) {
         ? 'Overnight, 5-Year, 10-Year Yields & Cap Rates'
         : 'Canadian Rate Environment',
       sourceLabel: null,
+      captionRight: (getPref(FIRM_PREF) || '').trim() || null,
       table: true,
       description:
         'The BoC overnight target with the 5- and 10-year Government of Canada yields — the ' +
