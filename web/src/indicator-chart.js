@@ -244,6 +244,10 @@ export function buildIndicatorCard(container, {
   //   table   true                — render a collapsible data table under the
   //                                 chart, one row per period in the window
   refBand, refLine, table,
+  // Download filename stem. Defaults to the `cmhc_` prefix every CMHC-sourced
+  // card uses; a card whose data isn't CMHC's passes its own (Cap vs Interest
+  // exports as cap_vs_interest_<date>.png).
+  fileStem,
 }) {
   const card = document.createElement('section');
   card.className = 'chart-card cmhc-indicator-card';
@@ -336,7 +340,8 @@ export function buildIndicatorCard(container, {
   }
 
   $source.textContent = `Source: ${sourceLabel || 'see series'}`;
-  let lastFilename = `cmhc_${chartId}.png`;
+  const stem = fileStem || `cmhc_${chartId}`;
+  let lastFilename = `${stem}.png`;
 
   function render(records, seriesMeta, opts = {}) {
     $plot.replaceChildren();
@@ -538,7 +543,7 @@ export function buildIndicatorCard(container, {
       if ($tableBox?.open) buildTableNow();
     }
 
-    lastFilename = `cmhc_${chartId}_${new Date().toISOString().slice(0,10)}.png`;
+    lastFilename = `${stem}_${new Date().toISOString().slice(0,10)}.png`;
     $png.onclick = () => exportCard(card, lastFilename, 'png');
   }
 

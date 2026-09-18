@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  parseCsvRows, parseCapDate, parseCapRateCsv, orderTypes, monthlyMean,
+  parseCsvRows, parseCapDate, parseCapRateCsv, orderTypes, monthlyMean, sourceCredit,
 } from '../src/cap-vs-interest.js';
 
 // A cut-down slice of the Colliers extract, in the shape the real file uses:
@@ -129,5 +129,23 @@ describe('monthlyMean', () => {
       { date: '2026-01-02', value: null },
       { date: '2026-01-03', value: 2.0 },
     ])).toEqual([{ date: '2026-01-01', value: 2.0 }]);
+  });
+});
+
+describe('sourceCredit', () => {
+  it('credits Colliers by the publication the numbers come from', () => {
+    expect(sourceCredit(['Colliers'])).toBe('Colliers International Quarterly Cap Rate Reports');
+    expect(sourceCredit(['colliers'])).toBe('Colliers International Quarterly Cap Rate Reports');
+  });
+
+  it('passes an unrecognised publisher through verbatim', () => {
+    expect(sourceCredit(['CBRE'])).toBe('CBRE');
+    expect(sourceCredit(['Colliers', 'CBRE']))
+      .toBe('Colliers International Quarterly Cap Rate Reports, CBRE');
+  });
+
+  it('falls back when the CSV carried no Source column', () => {
+    expect(sourceCredit([])).toBe('a locally loaded file');
+    expect(sourceCredit(undefined)).toBe('a locally loaded file');
   });
 });

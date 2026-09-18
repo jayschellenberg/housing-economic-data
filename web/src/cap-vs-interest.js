@@ -196,6 +196,20 @@ function rateNumber(raw) {
   return s === '' ? NaN : Number(s);
 }
 
+/**
+ * How the cap-rate publisher is credited in the chart caption. The CSV's Source
+ * column carries a short name ("Colliers"); the caption wants the publication
+ * it actually came from, matching the COLLIERS caption in the Quarto project.
+ * An unrecognised source is credited verbatim rather than guessed at.
+ */
+const SOURCE_CREDIT = { colliers: 'Colliers International Quarterly Cap Rate Reports' };
+
+export function sourceCredit(sources) {
+  const names = (sources || []).filter(Boolean);
+  if (names.length === 0) return 'a locally loaded file';
+  return names.map(n => SOURCE_CREDIT[n.trim().toLowerCase()] || n.trim()).join(', ');
+}
+
 function normaliseType(raw) {
   const s = String(raw || '').trim();
   if (!s) return null;
@@ -476,11 +490,13 @@ export function buildCapVsInterest(shards, rangeRef) {
       })));
 
     const sourceLabel = capTypes.length
-      ? `Bank of Canada; cap rates from ${(stored.meta?.sources || ['a local file']).join(', ')} (loaded locally)`
+      ? `Bank of Canada; Cap Rates from ${sourceCredit(stored.meta?.sources)}`
       : 'Bank of Canada';
 
     const card = buildIndicatorCard($cardGrid, {
       chartId: 'cap_vs_interest',
+      // Not CMHC data — export without the shared cmhc_ prefix.
+      fileStem: 'cap_vs_interest',
       title: capTypes.length
         ? 'Rate environment & cap rates'
         : 'Rate environment',
