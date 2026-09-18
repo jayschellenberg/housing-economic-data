@@ -57,6 +57,12 @@ const RATE_SHARD = 'mortgage_market';
 // the CSV's MajorType column is carried through as-is after these.
 const KNOWN_TYPES = ['Multi-Family', 'Office', 'Industrial', 'Retail', 'Hotel'];
 
+// Present in the CSV but off until asked for. The reference chart never plots
+// hotel cap rates, and the series is thin and stale next to the others (it
+// stops in 2019), so it would otherwise add a line that just trails off.
+// "All" still turns it on.
+const DEFAULT_OFF_TYPES = new Set(['Hotel']);
+
 // The CSV writes both spellings across its history.
 const TYPE_ALIASES = { Multifamily: 'Multi-Family', 'Multi Family': 'Multi-Family' };
 
@@ -368,10 +374,13 @@ export function buildCapVsInterest(shards, rangeRef) {
   // shared per-browser prefs rather than this section's own storage: it is a
   // property of whoever is using the site, not of the cap-rate file.
   $firm.value = getPref(FIRM_PREF) || '';
-  $firm.addEventListener('change', () => {
-    setPref(FIRM_PREF, $firm.value.trim());
-    renderCard();
-  });
+  // Update the caption in place rather than through renderCard(). Rebuilding
+  // the card on every keystroke would be wasteful, and rebuilding it on blur
+  // swallowed the next click: tabbing from the box to "Download PNG" fired
+  // `change`, which replaced the card — and the button under the cursor —
+  // before the click landed.
+  $firm.addEventListener('input', applyFirmCaption);
+  $firm.addEventListener('change', () => setPref(FIRM_PREF, currentFirm()));
 
   renderControls();
   renderCard();
@@ -387,7 +396,8 @@ export function buildCapVsInterest(shards, rangeRef) {
       stored = {
         types,
         meta: { ...meta, filename: file.name, loadedAt: new Date().toISOString() },
-        selected: names,          // a fresh file starts with every type shown
+        // A fresh file shows every type except the ones defaulted off.
+        selected: names.filter(t => !DEFAULT_OFF_TYPES.has(t)),
       };
       saveStored(stored);
       renderControls();
@@ -474,6 +484,23 @@ export function buildCapVsInterest(shards, rangeRef) {
       `From ${m.filename || 'a local file'}, held in this browser only.`;
   }
 
+  /** The firm name as typed, falling back to what was saved earlier. */
+  function currentFirm() {
+    return ($firm?.value ?? getPref(FIRM_PREF) ?? '').trim();
+  }
+
+  /** Sign the chart (and so the exported PNG); no name, no caption row. */
+  function applyFirmCaption() {
+    const cardEl = ui.card?.card;
+    if (!cardEl) return;
+    const name = currentFirm();
+    const row = cardEl.querySelector('.chart-caption');
+    const slot = cardEl.querySelector('[data-role="source"]');
+    if (!row || !slot) return;
+    slot.textContent = name;
+    row.hidden = !name;
+  }
+
   function renderCard() {
     // The card is rebuilt rather than re-rendered because the series set
     // changes with the checkboxes; carry the open panels across so a data
@@ -522,7 +549,7 @@ export function buildCapVsInterest(shards, rangeRef) {
         ? 'Overnight, 5-Year, 10-Year Yields & Cap Rates'
         : 'Canadian Rate Environment',
       sourceLabel: null,
-      captionRight: (getPref(FIRM_PREF) || '').trim() || null,
+      captionRight: currentFirm() || null,
       table: true,
       description:
         'The BoC overnight target with the 5- and 10-year Government of Canada yields — the ' +
