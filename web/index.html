@@ -28,11 +28,11 @@
       <!-- Signs every indicator chart's caption, and so every PNG exported from
            one (see firm.js). The only place it is set; saved per browser once
            typed, so it is already on the chart the next time the site opens. -->
-      <label class="shrink-0 flex items-center gap-2 text-sm">
+      <label class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm min-w-0">
         <span class="text-xs text-primary-100 whitespace-nowrap">Company (signs your charts)</span>
         <input id="app-firm" type="text" maxlength="60" placeholder="Your firm name"
                title="Shown under every indicator chart and in the PNG you download. Saved in this browser. Leave blank for no caption."
-               class="w-56 rounded border border-primary-400 bg-white/95 px-2 py-1 text-sm text-neutral-900 placeholder:text-neutral-400" />
+               class="w-56 max-w-full rounded border border-primary-400 bg-white/95 px-2 py-1 text-sm text-neutral-900 placeholder:text-neutral-400" />
       </label>
     </header>
 
