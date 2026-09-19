@@ -15,7 +15,7 @@
  * snapshotPick) is available without round-tripping through R.
  */
 
-import { buildIndicatorCard, aggregateDashedIds } from './indicator-chart.js';
+import { buildIndicatorCard, aggregateDashedIds, geoQualifiedLabels } from './indicator-chart.js';
 import { buildCapVsInterest, rerenderCapVsInterest } from './cap-vs-interest.js';
 import { escapeHtml } from './escape.js';
 import { indicatorFmt } from './format.js';
@@ -491,9 +491,12 @@ function buildSnapshot(catalog, shards) {
       .filter(s => s.chartId === chartId && geoStripId(s.id, s.geo) === key);
     const filterApplies = new Set(sibs.map(s => s.geo)).size > 1 && c.geoFilter !== false;
     const pinned = alwaysGeos(c);
-    sibs
+    // Tiles carry only the chart title and the series label, so a metric whose
+    // siblings share one label across geographies (farm cash receipts is
+    // "Total" in every province) needs the geography added to tell them apart.
+    geoQualifiedLabels(sibs
       .filter(s => !filterApplies || eff.has(s.geo) || pinned.has(s.geo))
-      .sort((a, b) => (GEO_ORDER.indexOf(a.geo) + 1 || 99) - (GEO_ORDER.indexOf(b.geo) + 1 || 99))
+      .sort((a, b) => (GEO_ORDER.indexOf(a.geo) + 1 || 99) - (GEO_ORDER.indexOf(b.geo) + 1 || 99)))
       .forEach(meta => tiers[geoTier(meta.geo)].push({ c, meta, shard }));
   });
   [['national', 'National'], ['provincial', 'Provincial'], ['urban', 'Urban Centre']]

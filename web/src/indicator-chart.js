@@ -114,6 +114,40 @@ export function aggregateDashedIds(seriesMeta = []) {
 }
 
 /**
+ * Append the geography to any chart label that more than one series on the
+ * chart shares, so a per-geography breakdown stays readable when several
+ * geographies are on at once.
+ *
+ * A breakdown labels its series by component, not by province: farm cash
+ * receipts is "Crops" / "Livestock" / "Total" in every province, because on
+ * the Agriculture tab only one province is ever shown. Market Indicators can
+ * show four at once, and there a bare "Crops" three times over is not just
+ * ambiguous — the label is the key for the colour scale, the legend and the
+ * data table's columns, so duplicates would collapse into one series.
+ *
+ * Labels that are already unique are left alone (the usual case: a chart
+ * comparing provinces labels each line with its province), and so is the
+ * series meta array itself — a new array is returned only when something
+ * actually needs qualifying.
+ *
+ * Call this for display only. `aggregateDashedIds` must see the unqualified
+ * labels: it reads "Total" as naming a whole and treats a compound label as a
+ * cross-geography comparison with no aggregate at all.
+ *
+ * @param {Array<{id:string, geo?:string, chartLabel?:string}>} seriesMeta
+ * @returns {Array<object>} series meta with collided labels geo-qualified
+ */
+export function geoQualifiedLabels(seriesMeta = []) {
+  const labelOf = (s) => s.chartLabel || s.id;
+  const counts = new Map();
+  seriesMeta.forEach(s => counts.set(labelOf(s), (counts.get(labelOf(s)) || 0) + 1));
+  if (![...counts.values()].some(n => n > 1)) return seriesMeta;
+  return seriesMeta.map(s => (counts.get(labelOf(s)) > 1 && s.geo)
+    ? { ...s, chartLabel: `${labelOf(s)} — ${s.geo}` }
+    : s);
+}
+
+/**
  * Y-axis domain for a chart panel.
  *
  * Positive-only series keep the axis anchored at (or near) zero, which is how
@@ -471,7 +505,10 @@ export function buildIndicatorCard(container, {
   const stem = fileStem || `cmhc_${chartId}`;
   let lastFilename = `${stem}.png`;
 
-  function render(records, seriesMeta, opts = {}) {
+  function render(records, seriesMetaIn, opts = {}) {
+    // Display labels only: `opts.dashedIds` names ids, and the caller computed
+    // them from the unqualified labels (see geoQualifiedLabels).
+    const seriesMeta = geoQualifiedLabels(seriesMetaIn);
     $plot.replaceChildren();
     $stale.hidden = true;
     $stale.textContent = '';
