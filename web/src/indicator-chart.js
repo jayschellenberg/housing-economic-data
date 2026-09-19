@@ -56,16 +56,28 @@ export function periodLabel(d, frequency) {
  * Market Indicators counterpart of the CMHC charts' "components dashed, Total
  * solid" rule. The aggregate of an indicator chart is, in order:
  *
- *   - a series whose label names the whole: "Total", "Overall" (the SLOS
- *     balance), or "Headline (all-items)" against the core CPI measures;
+ *   - a series whose label names the whole: one that IS the summarising word
+ *     ("Total", "Overall" — the SLOS balance), one that ENDS with it ("Farm
+ *     input total"), or "Headline (all-items)" against the core CPI measures;
  *   - otherwise, on a chart that compares geographies, the national line
  *     (geo "CA": "Canada", the "15-CMA composite").
  *
+ * "Total revenue" / "Total expenses" (farm income) and "Total assets" /
+ * "Total liabilities" (farm balance sheet) deliberately do NOT count: there
+ * the word qualifies one narrower measure standing beside its peers, so the
+ * chart has no aggregate and every line stays solid.
+ *
+ * A named aggregate only dashes the series sharing ITS geography, because a
+ * chart can carry one province's breakdown beside other provinces' own totals
+ * (farm cash receipts on the Market Indicators tab) and only the breakdown is
+ * a component of anything.
+ *
  * A chart with no aggregate keeps every line solid: the yield curve, the
- * mortgage-rate ladder, the policy rates, employment by industry. So does a
- * chart whose labels are compound ("Canada — House only", "Rent — Winnipeg"):
- * those pair up measures across geographies rather than break one down, and
- * dashing everything but the one Canada line there would mislead.
+ * mortgage-rate ladder, the policy rates, employment by industry, the farm
+ * balance sheet. So does a chart whose labels are compound ("Canada — House
+ * only", "Rent — Winnipeg"): those pair up measures across geographies rather
+ * than break one down, and dashing everything but the one Canada line there
+ * would mislead.
  *
  * The caller passes the series actually on the chart, so toggling Canada off
  * turns the remaining lines solid: a dash only means something next to the
@@ -76,16 +88,28 @@ export function periodLabel(d, frequency) {
  */
 export function aggregateDashedIds(seriesMeta = []) {
   if (seriesMeta.length < 2) return [];
-  const label = (s) => s.chartLabel || s.id || '';
+  const label = (s) => (s.chartLabel || s.id || '').trim();
   if (seriesMeta.some(s => /\s[—–]\s/.test(label(s)))) return [];
-  const isNamedAggregate = (s) => /^(Total|Overall|Headline)\b/i.test(label(s));
-  let aggregate = seriesMeta.filter(isNamedAggregate);
-  if (aggregate.length === 0) {
-    const geos = new Set(seriesMeta.map(s => s.geo));
-    if (geos.size > 1) aggregate = seriesMeta.filter(s => s.geo === 'CA');
+
+  const isNamedAggregate = (s) => /(^|\s)total$|^overall$|^headline\b/i.test(label(s));
+  const named = seriesMeta.filter(isNamedAggregate);
+  if (named.length) {
+    // Count per geography: a second named series in the same geography means
+    // the word isn't naming a whole (the farm balance sheet's "Total assets"
+    // beside "Total liabilities"), so that geography's lines stay solid.
+    const namedPerGeo = new Map();
+    named.forEach(s => namedPerGeo.set(s.geo, (namedPerGeo.get(s.geo) || 0) + 1));
+    const solid = new Set(named.map(s => s.id));
+    return seriesMeta
+      .filter(s => namedPerGeo.get(s.geo) === 1 && !solid.has(s.id))
+      .map(s => s.id);
   }
-  if (aggregate.length === 0 || aggregate.length === seriesMeta.length) return [];
-  const solid = new Set(aggregate.map(s => s.id));
+
+  const geos = new Set(seriesMeta.map(s => s.geo));
+  if (geos.size < 2) return [];
+  const national = seriesMeta.filter(s => s.geo === 'CA');
+  if (national.length === 0) return [];
+  const solid = new Set(national.map(s => s.id));
   return seriesMeta.filter(s => !solid.has(s.id)).map(s => s.id);
 }
 

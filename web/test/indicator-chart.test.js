@@ -188,6 +188,29 @@ describe('aggregateDashedIds', () => {
     expect(aggregateDashedIds([geo('ca', 'CA', 'Canada')])).toEqual([]);
   });
 
+  it('treats a label ending in "total" as the aggregate (farm input index)', () => {
+    const meta = [geo('f', 'MB', 'Fertilizer'), geo('c', 'MB', 'Commercial feed'),
+                  geo('m', 'MB', 'Machinery fuel'), geo('t', 'MB', 'Farm input total')];
+    expect(aggregateDashedIds(meta)).toEqual(['f', 'c', 'm']);
+  });
+
+  it('does not treat "Total revenue" / "Total assets" as an aggregate', () => {
+    const income = [geo('r', 'MB', 'Total revenue'), geo('e', 'MB', 'Total expenses'),
+                    geo('n', 'MB', 'Net cash farm income')];
+    expect(aggregateDashedIds(income)).toEqual([]);
+    const balance = [geo('a', 'MB', 'Total assets'), geo('l', 'MB', 'Total liabilities'),
+                     geo('w', 'MB', 'Net worth')];
+    expect(aggregateDashedIds(balance)).toEqual([]);
+  });
+
+  it('dashes only the geography its aggregate belongs to', () => {
+    // Farm cash receipts on Market Indicators: Manitoba is broken down, the
+    // other provinces carry their own totals and are nobody's component.
+    const meta = [geo('t', 'MB', 'Total'), geo('c', 'MB', 'Crops'),
+                  geo('l', 'MB', 'Livestock'), geo('ab', 'AB', 'Alberta')];
+    expect(aggregateDashedIds(meta)).toEqual(['c', 'l']);
+  });
+
   it('leaves a compound-label comparison chart solid', () => {
     const meta = [geo('ch', 'CA', 'Canada — House only'), geo('cl', 'CA', 'Canada — Land only'),
                   geo('wh', 'Winnipeg-CMA', 'Winnipeg — House only')];
