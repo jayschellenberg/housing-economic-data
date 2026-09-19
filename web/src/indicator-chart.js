@@ -16,7 +16,8 @@
 
 import * as Plot from '@observablehq/plot';
 import { toPng } from 'html-to-image';
-import { themed, PALETTE, gridMarks, frameMark, mirrorYMarks, percentTickFormat, MIRROR_Y_MARGIN } from './plot-theme.js';
+import { themed, PALETTE, gridMarks, frameMark, mirrorYMarks, percentTickFormat, MIRROR_Y_MARGIN,
+         plotWidth, plotHeight, fitPlotWidth } from './plot-theme.js';
 import { escapeHtml } from './escape.js';
 import { INDICATOR_FMT as FMT, indicatorFmt as fmt } from './format.js';
 
@@ -505,7 +506,7 @@ export function buildIndicatorCard(container, {
   const stem = fileStem || `cmhc_${chartId}`;
   let lastFilename = `${stem}.png`;
 
-  function render(records, seriesMetaIn, opts = {}) {
+  function draw(records, seriesMetaIn, opts = {}) {
     // Display labels only: `opts.dashedIds` names ids, and the caller computed
     // them from the unqualified labels (see geoQualifiedLabels).
     const seriesMeta = geoQualifiedLabels(seriesMetaIn);
@@ -616,8 +617,14 @@ export function buildIndicatorCard(container, {
     // ~10% more width to the plot itself instead of to blank margin.
     const sideMargin = isPercentAxis ? 48 : null;
 
+    // Fill the card rather than sitting at Plot's 640px default in the corner
+    // of a wide one (see plotWidth); the PNG export rasterises the card, so
+    // this is also what keeps a band of white out of every exported image.
+    const width = plotWidth($plot);
+
     const spec = themed({
-      height: 330,
+      width,
+      height: plotHeight(width, 330),
       ...(sideMargin ? { marginLeft: sideMargin } : {}),
       marginRight: sideMargin || MIRROR_Y_MARGIN,
       marginBottom: 52,      // room for the x-axis title under the tick labels
@@ -773,6 +780,17 @@ export function buildIndicatorCard(container, {
     lastFilename = `${stem}_${new Date().toISOString().slice(0,10)}.png`;
     $png.onclick = () => exportCard(card, lastFilename, 'png');
   }
+
+  // Redraw at the new width when the card resizes — including the first time
+  // its tab is shown, since a hidden panel measures zero and the initial draw
+  // fell back to Plot's default width. Re-running the last render is enough:
+  // everything else about it is unchanged.
+  let lastRender = null;
+  function render(records, seriesMeta, opts = {}) {
+    lastRender = [records, seriesMeta, opts];
+    draw(records, seriesMeta, opts);
+  }
+  fitPlotWidth($plot, () => { if (lastRender) draw(...lastRender); });
 
   // Restore a set of open panels (see readOpenPanels). Panels not named are
   // closed, which is a no-op on a freshly built card.

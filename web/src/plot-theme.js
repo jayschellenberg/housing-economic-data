@@ -127,3 +127,83 @@ export const fmt = {
   dollar:    (v) => `$${Math.round(Number(v)).toLocaleString()}`,
   pctChange: (v) => `${Number(v).toFixed(1)}%`,
 };
+
+/* --- Fitting a plot to its card ------------------------------------------- */
+
+/*
+ * Observable Plot defaults to a 640px-wide SVG, and the stylesheet only lets
+ * that shrink (`max-width: 100%`), never grow. On a wide monitor a chart card
+ * is comfortably wider than 640, so the chart sat in the top-left corner of
+ * its card with a band of white to the right — and, because the PNG export
+ * rasterises the whole card, that band was baked into every exported image.
+ *
+ * Measuring the plot host and handing Plot an explicit width fixes both at
+ * once: the chart fills the card on screen, and the export follows.
+ */
+
+/** Plot's own default, used when the host has no width to measure yet. */
+export const PLOT_FALLBACK_WIDTH = 640;
+
+/** Narrowest we will ask Plot to draw; below this the CSS scales it down. */
+const PLOT_MIN_WIDTH = 420;
+
+/**
+ * The width to give a Plot spec so the chart fills `host`.
+ *
+ * A host inside a hidden tab panel measures 0 — every tab but the open one is
+ * `hidden` — so fall back to Plot's default and let `fitPlotWidth` redraw at
+ * the real width once the panel is shown.
+ *
+ * @param {Element} host   the element the SVG is appended to
+ * @param {number} [fallback]
+ * @returns {number} width in CSS pixels
+ */
+export function plotWidth(host, fallback = PLOT_FALLBACK_WIDTH) {
+  const w = Math.round(host?.clientWidth || 0);
+  return w > 0 ? Math.max(w, PLOT_MIN_WIDTH) : fallback;
+}
+
+/**
+ * Height for a plot drawn at `width`, from the card's base height.
+ *
+ * The base heights are tuned for a ~640px chart; stretched to 900+ without
+ * gaining any height, a time series turns into a letterbox. Grow the height
+ * with the width, but gently and to a ceiling — a chart that fills a wide
+ * card should stay a chart, not become a square. A card at the base width is
+ * left exactly as it was.
+ *
+ * @param {number} width   the width the plot will draw at
+ * @param {number} base    the card's height at Plot's default width
+ * @returns {number} height in CSS pixels
+ */
+export function plotHeight(width, base) {
+  if (!Number.isFinite(width) || !Number.isFinite(base)) return base;
+  return Math.round(Math.min(base * 1.3, Math.max(base, width * 0.45)));
+}
+
+/**
+ * Redraw a card when its plot host changes width: a window resize, the
+ * sidebar-bearing tabs' layout shifting, or the panel simply becoming visible
+ * (hidden panels measure 0, so the first draw used the fallback width).
+ *
+ * Small changes are ignored — a one-pixel scrollbar reflow is not worth a
+ * redraw, and re-entering the observer from our own draw is how a resize loop
+ * starts. The host is a plain block element whose width comes from the card,
+ * never from the SVG inside it, so a redraw cannot widen it.
+ *
+ * @param {Element} host      the plot host to watch
+ * @param {Function} redraw   called when the width moves materially
+ * @returns {Function} stop watching
+ */
+export function fitPlotWidth(host, redraw) {
+  if (!host || typeof ResizeObserver !== 'function') return () => {};
+  let last = Math.round(host.clientWidth || 0);
+  const ro = new ResizeObserver(() => {
+    const now = Math.round(host.clientWidth || 0);
+    if (now === 0 || Math.abs(now - last) < 8) return;
+    last = now;
+    redraw();
+  });
+  ro.observe(host);
+  return () => ro.disconnect();
+}

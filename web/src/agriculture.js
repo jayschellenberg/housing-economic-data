@@ -223,6 +223,10 @@ export async function initAgriculture() {
         `<h2 class="cmhc-mi-section-title">${sec.label}</h2>` +
         '<div class="cmhc-mi-section-grid grid md:grid-cols-2 gap-4"></div>';
       const $secGrid = section.querySelector('.cmhc-mi-section-grid');
+      // Attached before the cards are built: each card measures its own width
+      // to size its plot (plotWidth), and a detached section measures zero.
+      // A section that ends up with no cards is removed again below.
+      $grid.appendChild(section);
       let n = 0;
       for (const chartId of sec.charts) {
         const spec = SPEC_BY_ID[chartId];
@@ -262,7 +266,7 @@ export async function initAgriculture() {
         if (panels) card.setOpenPanels(panels);
         n += 1; total += 1;
       }
-      if (n > 0) $grid.appendChild(section);   // skip a section with no data
+      if (n === 0) section.remove();   // a section with no data shows nothing
     }
 
     if (!total) {
