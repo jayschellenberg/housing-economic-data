@@ -14,7 +14,7 @@
  * them off the Market Indicators tab.
  */
 
-import { buildIndicatorCard, readOpenPanels } from './indicator-chart.js';
+import { buildIndicatorCard, readOpenPanels, aggregateDashedIds } from './indicator-chart.js';
 import { resolveProvince, rememberProvince } from './prefs.js';
 import { initAgMap } from './ag-map.js';
 
@@ -249,7 +249,14 @@ export async function initAgriculture() {
           // structure to 1921.
           table: true,
         });
-        card.render(records, meta, { subtitle: spec.subtitle(prov), monthFrom, monthTo });
+        // Components dashed, aggregate solid (see aggregateDashedIds): farm
+        // cash receipts dash crops + livestock under Total, the input index
+        // dashes fertilizer / feed / fuel / crop production under the farm
+        // input total, and farmland value dashes the provinces under Canada.
+        card.render(records, meta, {
+          subtitle: spec.subtitle(prov), monthFrom, monthTo,
+          dashedIds: aggregateDashedIds(meta),
+        });
         const panels = openPanels.get(chartId);
         if (panels) card.setOpenPanels(panels);
         n += 1; total += 1;
