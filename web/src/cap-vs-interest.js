@@ -293,8 +293,10 @@ function sectionMarkup() {
         <label class="flex items-center gap-2">
           <span class="text-xs text-neutral-600">Firm name</span>
           <input type="text" data-role="cvi-firm" maxlength="60"
-                 placeholder="shown under the chart"
+                 placeholder="e.g. Red River Group"
+                 title="Signs the chart and the downloaded PNG. Leave blank for no caption."
                  class="w-52 border border-neutral-300 rounded px-2 py-1 text-xs" />
+          <span class="text-xs text-neutral-500">signs the chart &amp; the PNG</span>
         </label>
         <label class="flex items-center gap-2">
           <span class="text-xs text-neutral-600">Cap-rate CSV</span>
@@ -569,6 +571,9 @@ export function buildCapVsInterest(shards, rangeRef) {
       // "Aug-2021 to Aug-2026; Source: …", matching the reference chart's
       // subtitle (its date_range + COMBINED / BOC_SHORT source line).
       rangePrefix: true,
+      // Cap rates dashed, interest rates solid — as on the reference chart,
+      // where the distinction matters more than colour alone at a glance.
+      dashedIds: capMeta.map(s => s.id),
       subtitle: capTypes.length
         ? `Source: Bank of Canada & ${capPublisher(stored.meta?.sources)} Average Cap Rates (CR)`
         : 'Source: Bank of Canada',

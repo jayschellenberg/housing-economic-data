@@ -438,6 +438,13 @@ export function buildIndicatorCard(container, {
     const freq = seriesMeta[0]?.frequency;
     const periods = buildTipRows(filtered, freq, yFormatter);
 
+    // `opts.dashedIds` names the series to draw as dashed lines.
+    const dashedIds = new Set(opts.dashedIds || []);
+    const dashedLabels = new Set(
+      seriesMeta.filter(s => dashedIds.has(s.id)).map(s => s.chartLabel || s.id));
+    const solidPoints  = filtered.filter(p => !dashedIds.has(p.id));
+    const dashedPoints = filtered.filter(p => dashedIds.has(p.id));
+
     // Axis ticks are formatted for readability, not precision: a percent axis
     // drops to whole percents when it spans enough ground (see
     // percentTickFormat). The exact value stays available in the hover tip,
@@ -477,13 +484,20 @@ export function buildIndicatorCard(container, {
           stroke: REF_COLOUR, strokeWidth: 1, strokeDasharray: '4 3',
         })] : []),
         ...(allowsNegative ? [Plot.ruleY([0], { stroke: '#52525b', strokeWidth: 0.8 })] : []),
-        Plot.lineY(filtered, {
-          x: 'date',
-          y: 'value',
-          stroke: 'label',
-          strokeWidth: 1.6,
-          defined: (d) => d.value != null,
-        }),
+        // Two line marks rather than one, so a subset of the series can be
+        // drawn dashed (the reference chart dashes cap rates to set them
+        // apart from the interest rates). Both read `stroke: 'label'` off the
+        // same colour scale, so a series keeps its colour either way.
+        ...[[solidPoints, null], [dashedPoints, '7 4']]
+          .filter(([pts]) => pts.length)
+          .map(([pts, dash]) => Plot.lineY(pts, {
+            x: 'date',
+            y: 'value',
+            stroke: 'label',
+            strokeWidth: 1.6,
+            ...(dash ? { strokeDasharray: dash } : {}),
+            defined: (d) => d.value != null,
+          })),
         ...mirrorYMarks(yTickFormat),
         Plot.tip(periods, Plot.pointerX({
           x: 'date',
@@ -504,8 +518,13 @@ export function buildIndicatorCard(container, {
       const colour = PALETTE[i % PALETTE.length];
       const item = document.createElement('div');
       item.className = 'cmhc-plot-legend-item';
+      // A dashed series gets a dashed swatch, so the legend says which line
+      // is which without having to trace it back to the chart.
+      const swatch = dashedLabels.has(cat)
+        ? `repeating-linear-gradient(90deg, ${colour} 0 5px, transparent 5px 8px)`
+        : colour;
       item.innerHTML =
-        `<span class="cmhc-plot-legend-swatch" style="background:${colour}"></span>` +
+        `<span class="cmhc-plot-legend-swatch" style="background:${swatch}"></span>` +
         `<span class="cmhc-plot-legend-text"></span>`;
       item.querySelector('.cmhc-plot-legend-text').textContent = cat;
       legendEl.appendChild(item);
