@@ -14,7 +14,14 @@
   </head>
   <body class="bg-neutral-50 text-neutral-900 font-sans">
     <header class="bg-primary-700 text-white px-6 py-3 shadow">
-      <h1 class="text-lg font-semibold">Housing &amp; Economic Data</h1>
+      <!-- The site name is the way back to the landing view. It points at the
+           bare root, so it drops both the #tab fragment and the ?gl/?gu/... filter
+           query and lands on Rental Charts with the defaults — which is what
+           "home" means here. -->
+      <h1 class="text-lg font-semibold">
+        <a href="./" class="text-inherit no-underline hover:underline focus-visible:underline"
+           title="Back to the home view">Housing &amp; Economic Data</a>
+      </h1>
       <p class="text-sm text-primary-100">Historical trends, comparison tables and charts spanning Canadian rental, construction, housing stock, affordability, census demographics and economic indicators — Manitoba, Saskatchewan, Alberta &amp; British Columbia in full detail (incl. municipalities); major centres elsewhere.</p>
     </header>
 
