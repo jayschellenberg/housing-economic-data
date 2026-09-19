@@ -111,6 +111,7 @@ export function buildChartCard(container, { series }) {
       ? categoryOrder.filter(c => present.includes(c))
           .concat(present.filter(c => !categoryOrder.includes(c)))
       : present.sort();
+    const dashedCats = dashedCategories(colorDomain, categoryOrder);
 
     // Sort within each category by year so the line draws in order, and
     // tag each row with the gap to the prior point in the same category
@@ -178,19 +179,28 @@ export function buildChartCard(container, { series }) {
         tickFormat: yTickFormat,
         domain: yDomain,
       },
-      // Plot's built-in legend is disabled; we render a custom right-side
-      // vertical legend below so it sits beside the chart area.
+      // Plot's built-in legend is disabled; we render a custom legend under
+      // the chart (one row when it fits) that can show dashed swatches.
       color: { domain: colorDomain, range: PALETTE, legend: false, label: null },
       marks: [
         ...gridMarks(),
         ...(allowsNegative ? [Plot.ruleY([0], { stroke: '#52525b', strokeWidth: 0.8 })] : []),
-        Plot.lineY(lineData, {
-          x: 'year',
-          y: 'value',
-          stroke: 'category',
-          strokeWidth: 2.4,
-          defined: (d) => d.value != null && d._gap <= 1,
-        }),
+        // Two line marks rather than one, so the individual categories can be
+        // drawn dashed while the aggregate ("Total" / "All") stays solid —
+        // the reader's eye lands on the aggregate first, and the components
+        // read as its breakdown. Both marks share the colour scale, so a
+        // category keeps its colour either way.
+        ...[[lineData.filter(d => !dashedCats.has(d.category)), null],
+            [lineData.filter(d =>  dashedCats.has(d.category)), DASH]]
+          .filter(([pts]) => pts.length)
+          .map(([pts, dash]) => Plot.lineY(pts, {
+            x: 'year',
+            y: 'value',
+            stroke: 'category',
+            strokeWidth: 2.4,
+            ...(dash ? { strokeDasharray: dash } : {}),
+            defined: (d) => d.value != null && d._gap <= 1,
+          })),
         ...mirrorYMarks(yTickFormat, { label: Y_LABEL[series] || null, labelOffset: 72 }),
         Plot.dot(rows, {
           x: 'year',
@@ -206,8 +216,8 @@ export function buildChartCard(container, { series }) {
 
     const svgEl = Plot.plot(spec);
 
-    // Custom legend to the right of the chart (see plotWrapWithLegend).
-    $plot.appendChild(plotWrapWithLegend(svgEl, colorDomain));
+    // Custom legend under the chart (see plotWrapWithLegend).
+    $plot.appendChild(plotWrapWithLegend(svgEl, colorDomain, dashedCats));
 
     lastFilename = buildFilename(series, sub);
     // Export the entire card (title + subtitle + chart + legend + caption),
@@ -219,18 +229,48 @@ export function buildChartCard(container, { series }) {
   return { render, card };
 }
 
-// Build the chart + right-side vertical legend wrapper (shared by the line
-// cards and the bar cards). Plot's built-in legend renders horizontally above
-// the SVG; our own sits beside the plot and matches the appraisal template.
-function plotWrapWithLegend(svgEl, colorDomain) {
+// Dash pattern for the individual (non-aggregate) lines.
+const DASH = '7 4';
+
+// The aggregate category of a breakdown: "Total" on the CMHC rental tabs,
+// "All" on Starts & Completions.
+const AGGREGATE_CATEGORIES = new Set(['Total', 'All']);
+
+/**
+ * Which categories draw dashed. The individual categories dash and the
+ * aggregate stays solid — but only on a breakdown that HAS an aggregate,
+ * which is read off the canonical `categoryOrder` (so hiding "Total" with a
+ * toggle doesn't flip the rest to solid). A chart with no aggregate at all —
+ * Compare Areas, where each line is an area — keeps every line solid.
+ */
+export function dashedCategories(colorDomain, categoryOrder = []) {
+  const known = categoryOrder.length ? categoryOrder : colorDomain;
+  const hasAggregate = known.some(c => AGGREGATE_CATEGORIES.has(c));
+  if (!hasAggregate) return new Set();
+  return new Set(colorDomain.filter(c => !AGGREGATE_CATEGORIES.has(c)));
+}
+
+// Build the chart + legend wrapper (shared by the line cards and the bar
+// cards). Plot's built-in legend renders horizontally above the SVG; our own
+// sits under the plot, one row when it fits, and matches the appraisal
+// template. Categories in `dashedCats` get a dashed swatch to match their
+// dashed line.
+function plotWrapWithLegend(svgEl, colorDomain, dashedCats = new Set()) {
   const legendEl = document.createElement('div');
   legendEl.className = 'cmhc-plot-legend';
   colorDomain.forEach((cat, i) => {
     const colour = PALETTE[i % PALETTE.length];
     const item = document.createElement('div');
     item.className = 'cmhc-plot-legend-item';
+    const isDashed = dashedCats.has(cat);
+    const swatchClass = `cmhc-plot-legend-swatch${isDashed ? ' cmhc-plot-legend-swatch-dashed' : ''}`;
+    // background-IMAGE, not the shorthand: the shorthand would reset the
+    // size/position rules that turn the gradient into a dashed line.
+    const swatchStyle = isDashed
+      ? `background-image:repeating-linear-gradient(90deg, ${colour} 0 5px, transparent 5px 9px)`
+      : `background:${colour}`;
     item.innerHTML =
-      `<span class="cmhc-plot-legend-swatch" style="background:${colour}"></span>` +
+      `<span class="${swatchClass}" style="${swatchStyle}"></span>` +
       `<span class="cmhc-plot-legend-text"></span>`;
     item.querySelector('.cmhc-plot-legend-text').textContent = cat;
     legendEl.appendChild(item);
