@@ -308,7 +308,7 @@ jobs:
             --body "$(cat <<'EOF'
           The scheduled \`Refresh CMHC data\` workflow did not complete
           (job status: ${{ job.status }}). \`cancelled\` means it hit the
-          330-minute \`timeout-minutes\` ceiling; nothing was committed and a
+          \`timeout-minutes\` ceiling; nothing was committed and a
           re-run via workflow_dispatch is the fix.
 
           - Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

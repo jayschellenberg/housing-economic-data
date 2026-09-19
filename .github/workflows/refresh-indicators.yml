@@ -233,7 +233,7 @@ jobs:
           - Trigger: ${{ github.event_name }}
           - Commit: ${{ github.sha }}
 
-          \`cancelled\` means the run hit its 60-minute \`timeout-minutes\`
+          \`cancelled\` means the run hit its \`timeout-minutes\`
           ceiling, almost always the StatsCan WDS being slow rather than
           anything broken here. Nothing was rebuilt or committed — just
           re-run via workflow_dispatch.
