@@ -163,8 +163,8 @@ jobs:
 
             Vercel will redeploy automatically from main.
 
-      - name: Email gate — failure
-        if: failure()
+      - name: Email gate — failure or timeout
+        if: failure() || (cancelled() && github.event_name == 'schedule')
         id: fail_email_gate
         env:
           MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
@@ -177,8 +177,8 @@ jobs:
           else
             echo "send=true" >> "$GITHUB_OUTPUT"
           fi
-      - name: Send failure email
-        if: failure() && steps.fail_email_gate.outputs.send == 'true'
+      - name: Send failure or timeout email
+        if: (failure() || (cancelled() && github.event_name == 'schedule')) && steps.fail_email_gate.outputs.send == 'true'
         uses: dawidd6/action-send-mail@4226df7daafa6fc901a43789c49bf7ab309066e7 # v3.11.0
         # A notification is not the job. If SMTP auth breaks (an App Password
         # revoked, say), that must not turn a healthy data refresh red and
@@ -197,30 +197,41 @@ jobs:
           password:       ${{ secrets.MAIL_PASSWORD }}
           from:           Housing & Economic Data <${{ secrets.MAIL_USERNAME }}>
           to:             ${{ vars.MAIL_TO }}
-          subject:        "[Housing & Economic Data] Indicators refresh FAILED — ${{ steps.stamp.outputs.date }}"
+          subject:        "[Housing & Economic Data] Indicators refresh ${{ job.status == 'cancelled' && 'TIMED OUT' || 'FAILED' }} — ${{ steps.stamp.outputs.date }}"
           body: |
-            The weekly indicators refresh FAILED.
+            The weekly indicators refresh ${{ job.status == 'cancelled' && 'TIMED OUT' || 'FAILED' }}.
+
+            A cancelled job means the run hit its timeout-minutes ceiling,
+            which is normally the upstream being slow rather than anything
+            broken here. Nothing was rebuilt or committed and the site still
+            serves the previous refresh, so re-run the workflow by hand.
 
             Trigger:  ${{ github.event_name }}
             Run log:  ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
             Commit:   ${{ github.sha }}
 
-      - name: Open issue on failure
-        if: failure()
+      - name: Open issue on failure or timeout
+        if: failure() || (cancelled() && github.event_name == 'schedule')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh issue create \
-            --title "Indicators refresh failed: ${{ steps.stamp.outputs.date }}" \
+            --title "Indicators refresh ${{ job.status == 'cancelled' && 'timed out' || 'failed' }}: ${{ steps.stamp.outputs.date }}" \
             --label "automation" \
             --body "$(cat <<'EOF'
-          The scheduled \`Refresh Market Indicators (weekly)\` workflow failed.
+          The scheduled \`Refresh Market Indicators (weekly)\` workflow did not
+          complete (job status: ${{ job.status }}).
 
           - Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           - Trigger: ${{ github.event_name }}
           - Commit: ${{ github.sha }}
 
-          Most common causes:
+          \`cancelled\` means the run hit its 60-minute \`timeout-minutes\`
+          ceiling, almost always the StatsCan WDS being slow rather than
+          anything broken here. Nothing was rebuilt or committed — just
+          re-run via workflow_dispatch.
+
+          Causes of an outright failure:
           1. **BoC Valet API outage** — `r/10_scrape_boc.R` failed.
           2. **StatsCan WDS outage** — `r/11_scrape_statscan.R` failed.
           3. **Series catalog drift** — `r/13_validate_indicators.R` rejected
