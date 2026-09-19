@@ -332,16 +332,16 @@
   margin: 0;
 }
 
-/* Legend under the chart, at most FOUR entries per row. A wrapping flex row
-   packed as many as would fit, which on an 8-series card ran the legend wider
-   than the plot and squeezed it in the exported PNG. A fixed-column grid also
-   left-aligns the swatches down each column, as the reference chart does. */
+/* Legend under the chart: one centred row when every entry fits, wrapping to
+   a second row only when it doesn't (the 7-entry Rent Ranges breakdown). The
+   flex-wrap is what keeps it inside the card — an earlier fixed 4-column grid
+   forced a 5-entry bedroom legend onto two rows for no reason. */
 .cmhc-plot-legend {
-  display: grid;
-  grid-template-columns: repeat(4, max-content);
+  display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   align-items: center;
-  column-gap: 16px;
+  column-gap: 14px;
   row-gap: 4px;
   font-size: 13px;
   color: var(--color-neutral-800);
@@ -384,7 +384,7 @@
 /* Annotation key under the legend (the BoC inflation-control band). Reads as
    a note, not as another series — no swatch, smaller, muted. */
 .cmhc-plot-legend-note {
-  grid-column: 1 / -1;
+  flex-basis: 100%;
   text-align: center;
   margin-top: 2px;
   padding-top: 4px;
