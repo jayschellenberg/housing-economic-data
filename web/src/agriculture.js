@@ -36,7 +36,8 @@ const PROVS = [
 // 'prov' filters series to the selected province, 'all' shows every geography
 // (farmland is inherently a cross-province comparison). `title`/`subtitle` are
 // functions of the selected province; `desc` optionally overrides the catalog
-// description (used for farm cash, whose catalog copy is Manitoba-specific).
+// description (used for farm cash, to read as prairie rather than provincial
+// context on this tab).
 const AG_CHARTS = [
   { chartId: 'farm_cash', scope: 'prov',
     title: (p) => `Farm cash receipts — ${p.name}`,
