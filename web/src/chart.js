@@ -14,7 +14,8 @@
 
 import * as Plot from '@observablehq/plot';
 import { toPng } from 'html-to-image';
-import { themed, fmt, PALETTE, gridMarks, frameMark, mirrorYMarks, percentTickFormat, MIRROR_Y_MARGIN } from './plot-theme.js';
+import { themed, fmt, PALETTE, gridMarks, frameMark, mirrorYMarks, percentTickFormat, MIRROR_Y_MARGIN,
+         plotWidth, plotHeight, fitPlotWidth } from './plot-theme.js';
 import { escapeHtml } from './escape.js';
 
 const COUNT_FMT = (v) => Number(v).toLocaleString();
@@ -82,7 +83,7 @@ export function buildChartCard(container, { series }) {
 
   let lastFilename = `cmhc_${series.replace(/\s+/g, '_').toLowerCase()}.png`;
 
-  function render(rows, sub, categoryOrder = [], meta = {}) {
+  function draw(rows, sub, categoryOrder = [], meta = {}) {
     $plot.replaceChildren();
     // Left caption slot. The season/year range lives in the subtitle; this
     // slot is opt-in via meta.captionLeft (the Housing Starts tab uses it to
@@ -159,8 +160,13 @@ export function buildChartCard(container, { series }) {
     const isPercentAxis = yFormatter === fmt.percent || yFormatter === fmt.pctChange;
     const yTickFormat = isPercentAxis ? percentTickFormat(yDomain) : yFormatter;
 
+    // Fill the card instead of leaving Plot at its 640px default (plotWidth);
+    // the PNG export rasterises the whole card, white band included.
+    const width = plotWidth($plot);
+
     const spec = themed({
-      height: 340,
+      width,
+      height: plotHeight(width, 340),
       marginRight: MIRROR_Y_MARGIN,
       marginBottom: 52,      // room for the x-axis title under the tick labels
       x: {
@@ -225,6 +231,16 @@ export function buildChartCard(container, { series }) {
     // the actions row (Download buttons) is hidden during capture.
     $png.onclick = () => downloadCard(card, lastFilename, 'png');
   }
+
+  // Redraw when the card's width moves — a window resize, or the panel simply
+  // becoming visible (a hidden tab measures zero, so the first draw used the
+  // fallback width). Replaying the last render is all it takes.
+  let lastRender = null;
+  function render(rows, sub, categoryOrder = [], meta = {}) {
+    lastRender = [rows, sub, categoryOrder, meta];
+    draw(rows, sub, categoryOrder, meta);
+  }
+  fitPlotWidth($plot, () => { if (lastRender) draw(...lastRender); });
 
   return { render, card };
 }
@@ -311,7 +327,7 @@ export function buildBarCard(container, { title }) {
   const $empty = card.querySelector('[data-role="empty"]');
   const $png   = card.querySelector('[data-role="dl-png"]');
 
-  function render({ data, categories, areas, seriesType, sub }) {
+  function draw({ data, categories, areas, seriesType, sub }) {
     $plot.replaceChildren();
     $sub.textContent = sub || '';
     if (!data || data.length === 0) { $empty.hidden = false; $png.disabled = true; return; }
@@ -320,8 +336,10 @@ export function buildBarCard(container, { title }) {
     const isVac = seriesType === 'vacancy';
     const yFmt = isVac ? (v) => `${v}%` : (v) => `$${Number(v).toLocaleString()}`;
     const maxV = Math.max(...data.map(d => d.value));
+    const width = plotWidth($plot);
     const svgEl = Plot.plot(themed({
-      height: 340, marginTop: 24, marginBottom: 22, marginLeft: 54,
+      width,
+      height: plotHeight(width, 340), marginTop: 24, marginBottom: 22, marginLeft: 54,
       fx: { label: null, domain: categories },
       x: { axis: null, label: null, domain: areas },
       y: { label: isVac ? 'Vacancy Rate (%)' : 'Median Rent ($)', tickFormat: yFmt, domain: [0, maxV * 1.12] },
@@ -336,6 +354,13 @@ export function buildBarCard(container, { title }) {
     $plot.appendChild(plotWrapWithLegend(svgEl, areas));
     $png.onclick = () => downloadCard(card, buildFilename(title, sub), 'png');
   }
+
+  let lastRender = null;
+  function render(args) {
+    lastRender = args;
+    draw(args);
+  }
+  fitPlotWidth($plot, () => { if (lastRender) draw(lastRender); });
 
   return { render, card };
 }

@@ -19,7 +19,7 @@ A multi-tab static website of Canadian housing & economic data, built for a comm
 | Census Profile | Population & dwelling trends + annual estimates + demographics + choropleth map | `r/12`, `r/12b`, `r/20` (run-once); `r/23` (monthly) |
 | Affordability | Royal-LePage-style affordability factor + choropleth map | `r/16`, `r/18`, census, `r/20` |
 | Current Snapshot / Market Indicators | BoC / StatsCan / OSB economic indicators, incl. CPI inflation (headline, core, shelter, annual average), plus the Cap vs Interest section (bring your own cap-rate CSV) | `r/10`,`r/11`,`r/13`,`r/14`,`r/17` |
-| Agriculture | Farm cash / farmland value / crop, livestock & supply-managed prices / input costs / farm structure (consolidation) + within-province CCS choropleth | catalog + `r/11`,`r/14`; `r/20`,`r/24` (run-once map) |
+| Agriculture | Farm cash / farmland value / crop, livestock & supply-managed prices / input costs / farm structure (consolidation) + within-province CCS choropleth; sidebar checks any mix of MB/SK/AB/BC and sets the year range | catalog + `r/11`,`r/14`; `r/20`,`r/24` (run-once map) |
 | RTB (MB) | Manitoba rent-increase guideline history + CPI overlay | `r/19` |
 | MB Economic Update | Auto narrative report (economy + HPI + outlook) — **parked, hidden from the nav** (see Parked features) | `r/15`, `r/16` |
 
@@ -46,6 +46,16 @@ row contributes the mid-point of its Low-High range, averaged within a property 
 Because the section is not shard-backed it is rendered by its own module rather than the
 catalog loop; `cap_vs_interest` appears in `displayGroups` only so the sidebar toggle and jump
 link pick it up.
+
+### Chart captions and the Company name
+
+Every indicator chart (Market Indicators, Agriculture, Cap vs Interest) carries its source in
+the **subtitle** and the **company name** in the caption under the figure, the way the reference
+appraisal chart does — so a chart pasted into a report is attributable on sight. The name is set
+in the page header, saved per browser (`firmName` in the shared prefs, `web/src/firm.js`), and
+picked up live by every open card and by the PNG each one exports. Leave the box blank for
+unsigned charts. The CMHC-sourced cards (Rental Charts, Tables, Starts, Housing Stock, Compare
+Areas) keep `Source: CMHC` in the caption, where the licence attribution has always been.
 
 Built as a Vite + vanilla JS static site, with an R-based data pipeline. Deployed to Vercel from this GitHub repo.
 
