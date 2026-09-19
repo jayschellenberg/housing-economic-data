@@ -42,6 +42,11 @@ const STORAGE_KEY = 'hed.capRates.v1';
 // belongs to whoever is using the site, not to the cap-rate file.
 const FIRM_PREF = 'firmName';
 
+// Seeded on first use; overwrite it and the new value is what gets saved.
+// An explicitly blank name is honoured (no caption) rather than falling back
+// here — only an ABSENT pref takes the default.
+const DEFAULT_FIRM = 'Red River Group';
+
 // Always drawn, in this order. Series ids are what the committed BoC shard
 // (mortgage_market) uses; chartLabel overrides the catalog's terse labels,
 // which read fine under "Government of Canada bond yields" but not next to
@@ -375,7 +380,8 @@ export function buildCapVsInterest(shards, rangeRef) {
   // The firm name signs the chart (and so the exported PNG). Kept in the
   // shared per-browser prefs rather than this section's own storage: it is a
   // property of whoever is using the site, not of the cap-rate file.
-  $firm.value = getPref(FIRM_PREF) || '';
+  const savedFirm = getPref(FIRM_PREF);
+  $firm.value = savedFirm == null ? DEFAULT_FIRM : savedFirm;
   // Update the caption in place rather than through renderCard(). Rebuilding
   // the card on every keystroke would be wasteful, and rebuilding it on blur
   // swallowed the next click: tabbing from the box to "Download PNG" fired
@@ -488,7 +494,9 @@ export function buildCapVsInterest(shards, rangeRef) {
 
   /** The firm name as typed, falling back to what was saved earlier. */
   function currentFirm() {
-    return ($firm?.value ?? getPref(FIRM_PREF) ?? '').trim();
+    if ($firm) return $firm.value.trim();
+    const saved = getPref(FIRM_PREF);
+    return (saved == null ? DEFAULT_FIRM : saved).trim();
   }
 
   /** Sign the chart (and so the exported PNG); no name, no caption row. */
