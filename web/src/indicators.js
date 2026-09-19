@@ -636,6 +636,10 @@ function buildChartSections(catalog, shards) {
     section.id = `mi-section-${g.id}`;
     section.innerHTML = `<h2 class="cmhc-mi-section-title">${escapeHtml(g.title)}</h2><div class="cmhc-mi-section-grid grid md:grid-cols-2 gap-4"></div>`;
     const $sectionGrid = section.querySelector('.cmhc-mi-section-grid');
+    // Attach before building the cards, not after: a card measures its own
+    // width to size its plot (plotWidth), and a detached section measures
+    // zero. An empty section is removed again below.
+    $grid.appendChild(section);
 
     // Iterate chartIds that belong to this group, ordered by chart.order.
     const chartsInGroup = Object.entries(catalog.charts || {})
@@ -692,7 +696,7 @@ function buildChartSections(catalog, shards) {
       });
     });
 
-    if ($sectionGrid.childElementCount > 0) $grid.appendChild(section);
+    if ($sectionGrid.childElementCount === 0) section.remove();
   });
 }
 

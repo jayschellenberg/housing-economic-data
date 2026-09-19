@@ -13,16 +13,27 @@
     <link rel="stylesheet" href="./src/lib/tailwind.css" />
   </head>
   <body class="bg-neutral-50 text-neutral-900 font-sans">
-    <header class="bg-primary-700 text-white px-6 py-3 shadow">
-      <!-- The site name is the way back to the landing view. It points at the
-           bare root, so it drops both the #tab fragment and the ?gl/?gu/... filter
-           query and lands on Rental Charts with the defaults — which is what
-           "home" means here. -->
-      <h1 class="text-lg font-semibold">
-        <a href="./" class="text-inherit no-underline hover:underline focus-visible:underline"
-           title="Back to the home view">Housing &amp; Economic Data</a>
-      </h1>
-      <p class="text-sm text-primary-100">Historical trends, comparison tables and charts spanning Canadian rental, construction, housing stock, affordability, census demographics and economic indicators — Manitoba, Saskatchewan, Alberta &amp; British Columbia in full detail (incl. municipalities); major centres elsewhere.</p>
+    <header class="bg-primary-700 text-white px-6 py-3 shadow flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
+      <div class="min-w-0">
+        <!-- The site name is the way back to the landing view. It points at the
+             bare root, so it drops both the #tab fragment and the ?gl/?gu/... filter
+             query and lands on Rental Charts with the defaults — which is what
+             "home" means here. -->
+        <h1 class="text-lg font-semibold">
+          <a href="./" class="text-inherit no-underline hover:underline focus-visible:underline"
+             title="Back to the home view">Housing &amp; Economic Data</a>
+        </h1>
+        <p class="text-sm text-primary-100">Historical trends, comparison tables and charts spanning Canadian rental, construction, housing stock, affordability, census demographics and economic indicators — Manitoba, Saskatchewan, Alberta &amp; British Columbia in full detail (incl. municipalities); major centres elsewhere.</p>
+      </div>
+      <!-- Signs every indicator chart's caption, and so every PNG exported from
+           one (see firm.js). Saved per browser; the Cap vs Interest section has
+           its own box on the same value. -->
+      <label class="shrink-0 text-sm">
+        <span class="block text-xs text-primary-100 mb-1">Company (signs your charts)</span>
+        <input id="app-firm" type="text" maxlength="60" placeholder="e.g. Red River Group"
+               title="Shown under every indicator chart and in the PNG you download. Leave blank for no caption."
+               class="w-56 rounded border border-primary-400 bg-white/95 px-2 py-1 text-sm text-neutral-900 placeholder:text-neutral-400" />
+      </label>
     </header>
 
     <nav class="bg-neutral-100 border-b border-neutral-200 px-4 flex gap-1" role="tablist" aria-label="Views">
@@ -779,49 +790,60 @@
          crop + livestock prices, and the Farm Input Price Index.
          Rendered by agriculture.js over the shared indicator shards.
          ============================================================ -->
-    <div id="tab-panel-agriculture" class="p-4 space-y-4" role="tabpanel" aria-labelledby="tab-btn-agriculture" hidden>
-      <div class="flex flex-wrap gap-3 items-center justify-between">
-        <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <div class="flex items-center gap-2">
-            <label for="ag-prov" class="text-sm font-medium text-neutral-700">Province</label>
-            <select id="ag-prov" class="border border-neutral-300 rounded px-2 py-1 text-sm" aria-label="Province"></select>
-          </div>
-          <div class="flex items-center gap-2">
-            <label for="ag-year-from" class="text-sm font-medium text-neutral-700">Years</label>
-            <select id="ag-year-from" class="border border-neutral-300 rounded px-2 py-1 text-sm" aria-label="From year"></select>
+    <div id="tab-panel-agriculture" class="grid md:grid-cols-[320px_1fr] min-h-[calc(100vh-110px)]" role="tabpanel" aria-labelledby="tab-btn-agriculture" hidden>
+      <aside class="bg-white border-r border-neutral-200 p-4 space-y-4 overflow-y-auto" aria-label="Agriculture filters">
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Jump to section</h2>
+          <ul id="ag-jump-list" class="cmhc-mi-jump-list grid gap-1 text-sm"></ul>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Provinces</h2>
+          <!-- Checkboxes built by agriculture.js, one per covered province. -->
+          <div id="ag-prov-toggles" class="grid gap-1 text-sm"></div>
+          <p class="text-xs text-neutral-500 mt-1">Check as many as you want to compare; the prices, input costs and receipts charts show every one. Farmland value always spans all four. The map below the charts follows the first province checked.</p>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Years</h2>
+          <div class="flex items-center gap-2 text-sm">
+            <select id="ag-year-from" class="flex-1 min-w-0 border border-neutral-300 rounded px-2 py-1" aria-label="From year"></select>
             <span class="text-neutral-400">–</span>
-            <select id="ag-year-to" class="border border-neutral-300 rounded px-2 py-1 text-sm" aria-label="To year"></select>
+            <select id="ag-year-to" class="flex-1 min-w-0 border border-neutral-300 rounded px-2 py-1" aria-label="To year"></select>
           </div>
-        </div>
-        <div class="flex gap-2">
+          <p class="text-xs text-neutral-500 mt-1">Applies to every chart. Leave both on “All” for the full history — which for farm structure reaches back to 1921.</p>
+        </section>
+
+        <section class="pt-2 border-t border-neutral-200 space-y-2">
           <button id="ag-download-docx-charts" type="button"
-            class="text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+            class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
             Download Word (charts)
           </button>
           <button id="ag-download-xlsx-charts" type="button"
-            class="text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+            class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
             Download Excel (charts)
           </button>
-        </div>
-      </div>
-      <p class="text-sm text-neutral-600 max-w-3xl">
-        Agricultural indicators for farm and farmland work — pick a province above to scope the
-        prices, input costs, and farm cash receipts; farmland value is shown across provinces for
-        comparison. Sourced from Statistics Canada; each chart exports to PNG, and the whole tab to
-        Word or Excel.
-      </p>
-      <!-- Jump-to-section bar (sticky); links are built by agriculture.js. -->
-      <nav id="ag-jump" class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm sticky top-0 z-10 bg-neutral-50/95 backdrop-blur py-2 border-b border-neutral-200" aria-label="Jump to section"></nav>
-      <!-- Chart sections (built by agriculture.js: a header + grid per section). -->
-      <div id="ag-chart-grid" class="space-y-8"></div>
-      <!-- Within-province Census-of-Agriculture choropleth (mounted by ag-map.js);
-           shades the selected province's consolidated subdivisions by farm size,
-           farm count, operator age, or dominant farm type. -->
-      <section id="ag-sec-map" class="scroll-mt-16">
-        <h2 class="cmhc-mi-section-title">Within-province map</h2>
-        <div id="ag-map" class="max-w-3xl"></div>
-      </section>
-      <footer class="text-xs text-neutral-500 pt-4 mt-4 border-t border-neutral-200">
+          <p class="text-xs text-neutral-500">Every visible chart as an image — one per page / worksheet.</p>
+        </section>
+      </aside>
+
+      <main class="p-4 space-y-4 overflow-x-hidden">
+        <p class="text-sm text-neutral-600 max-w-3xl">
+          Agricultural indicators for farm and farmland work — check the provinces on the left to scope the
+          prices, input costs, and farm cash receipts; farmland value is shown across provinces for
+          comparison. Sourced from Statistics Canada; each chart exports to PNG, and the whole tab to
+          Word or Excel.
+        </p>
+        <!-- Chart sections (built by agriculture.js: a header + grid per section). -->
+        <div id="ag-chart-grid" class="space-y-8"></div>
+        <!-- Within-province Census-of-Agriculture choropleth (mounted by ag-map.js);
+             shades the first checked province's consolidated subdivisions by farm
+             size, farm count, operator age, or dominant farm type. -->
+        <section id="ag-sec-map" class="scroll-mt-16">
+          <h2 class="cmhc-mi-section-title" id="ag-map-title">Within-province map</h2>
+          <div id="ag-map" class="max-w-3xl"></div>
+        </section>
+        <footer class="text-xs text-neutral-500 pt-4 mt-4 border-t border-neutral-200">
         Source: Statistics Canada Web Data Service — farm cash receipts (32-10-0045), value per acre of
         farm land and buildings (32-10-0047), farm product prices including supply-managed poultry, eggs
         and milk (32-10-0077), and the Farm Input Price Index (18-10-0258). Contains information licensed
@@ -829,7 +851,8 @@
         as trend and relativity indicators, not a substitute for local sales evidence. Supply-managed
         quota values (milk, poultry, egg) are set and traded by provincial marketing boards and are not
         published by Statistics Canada.
-      </footer>
+        </footer>
+      </main>
     </div>
 
     <!-- ============================================================

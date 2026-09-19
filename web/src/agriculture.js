@@ -2,8 +2,9 @@
  * Agricultural tab — a curated view of the agricultural indicators an appraiser
  * uses for farm and farmland work: farm cash receipts, farmland value per acre,
  * crop / livestock / supply-managed (poultry, egg, milk) prices, and the Farm
- * Input Price Index. A province dropdown (BC / AB / SK / MB) scopes every chart
- * except farmland, which stays a cross-province comparison.
+ * Input Price Index. A sidebar of province checkboxes (BC / AB / SK / MB)
+ * scopes every chart except farmland, which stays a cross-province comparison;
+ * check several and the charts compare them side by side.
  *
  * It is NOT a second copy of the Market Indicators renderer (which is coupled to
  * its own `mi-` DOM and sidebar). Instead it reuses the shared chart component
@@ -15,7 +16,7 @@
  */
 
 import { buildIndicatorCard, readOpenPanels, aggregateDashedIds } from './indicator-chart.js';
-import { resolveProvince, rememberProvince } from './prefs.js';
+import { getPref, setPref, resolveProvince, rememberProvince } from './prefs.js';
 import { initAgMap } from './ag-map.js';
 
 const loadJson = (path) =>
@@ -32,10 +33,50 @@ const PROVS = [
   { sgc: '59', abbr: 'BC', name: 'British Columbia' },
 ];
 
+// Which provinces are checked, remembered per browser so a comparison set
+// survives a reload. The shared "home province" pref (used by every other
+// province-scoped tab) still tracks the FIRST of them, so switching tabs lands
+// on the province this one is centred on.
+const PROV_PREF = 'agProvinces';
+
+/**
+ * The checked provinces, in PROVS order — never empty. A saved selection is
+ * filtered to provinces this tab actually covers, so a stale or hand-edited
+ * pref can't blank the page; with nothing usable saved, the home province is
+ * the selection.
+ *
+ * @param {string[]|null} saved  sgc codes
+ * @returns {Array<{sgc:string, abbr:string, name:string}>}
+ */
+export function resolveProvinces(saved) {
+  const wanted = new Set(Array.isArray(saved) ? saved.map(String) : []);
+  const picked = PROVS.filter((p) => wanted.has(p.sgc));
+  if (picked.length) return picked;
+  const home = resolveProvince(PROVS.map((p) => p.sgc), '46');
+  return PROVS.filter((p) => p.sgc === home);
+}
+
+/**
+ * How a selection reads in a chart title: "Manitoba", "Manitoba &
+ * Saskatchewan", "Manitoba, Saskatchewan & Alberta". Written out rather than
+ * counted ("3 provinces") because these titles are read in a report, where
+ * naming the provinces is the point.
+ *
+ * @param {Array<{name:string}>} provs
+ * @returns {string}
+ */
+export function provincesLabel(provs) {
+  const names = (provs || []).map((p) => p.name);
+  if (names.length <= 1) return names[0] || '';
+  return `${names.slice(0, -1).join(', ')} & ${names[names.length - 1]}`;
+}
+
 // Curated charts, in display order. `chartId` names a catalog chart; `scope`
-// 'prov' filters series to the selected province, 'all' shows every geography
+// 'prov' filters series to the checked provinces, 'all' shows every geography
 // (farmland is inherently a cross-province comparison). `title`/`subtitle` are
-// functions of the selected province; `desc` optionally overrides the catalog
+// functions of the selection — `{ name }` reads as one province ("Manitoba")
+// or as the list ("Manitoba & Saskatchewan"), so the specs below are written
+// the same way whether one province is checked or four; `desc` optionally overrides the catalog
 // description (used for farm cash, to read as prairie rather than provincial
 // context on this tab).
 const AG_CHARTS = [
@@ -108,7 +149,7 @@ export async function initAgriculture() {
   done = true;
 
   const $grid = document.getElementById('ag-chart-grid');
-  const $prov = document.getElementById('ag-prov');
+  const $provToggles = document.getElementById('ag-prov-toggles');
   if (!$grid) return;
 
   const [catalog, manifest] = await Promise.all([
@@ -167,39 +208,84 @@ export async function initAgriculture() {
     $yearTo.addEventListener('change', renderCharts);
   }
 
-  // Jump-to-section bar (built once; section ids are stable across re-renders).
-  const $jump = document.getElementById('ag-jump');
+  // Sidebar jump list (built once; section ids are stable across re-renders).
+  const $jump = document.getElementById('ag-jump-list');
   if ($jump) {
-    const links = SECTIONS.map((s) => `<a href="#ag-sec-${s.key}" data-jump="ag-sec-${s.key}" class="text-accent-600 hover:text-accent-700 hover:underline">${s.label}</a>`);
-    links.push('<a href="#ag-sec-map" data-jump="ag-sec-map" class="text-accent-600 hover:text-accent-700 hover:underline">Within-province map</a>');
-    $jump.innerHTML = '<span class="text-neutral-500 font-medium mr-1">Jump to:</span>' + links.join('');
-    $jump.querySelectorAll('a').forEach((a) => a.addEventListener('click', (e) => {
-      e.preventDefault();
-      document.getElementById(a.dataset.jump)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const targets = [...SECTIONS.map((s) => ({ id: `ag-sec-${s.key}`, label: s.label })),
+                     { id: 'ag-sec-map', label: 'Within-province map' }];
+    $jump.replaceChildren(...targets.map(({ id, label }) => {
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = `#${id}`;
+      a.className = 'cmhc-mi-jump-link';
+      a.textContent = label;
+      a.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+      li.appendChild(a);
+      return li;
     }));
   }
 
-  // Province dropdown — shares the site-wide "home province" (SGC code) so the
-  // choice carries across tabs. Only the four ag-covered provinces are offered.
-  const provOptions = PROVS.map((p) => p.sgc);
-  if ($prov) {
-    $prov.innerHTML = PROVS.map((p) => `<option value="${p.sgc}">${p.name}</option>`).join('');
-    $prov.value = resolveProvince(provOptions, '46');
-    $prov.addEventListener('change', () => { rememberProvince($prov.value); render($prov.value); });
+  // Province checkboxes. The selection is this tab's own pref; its first
+  // province is also written to the site-wide "home province" so the choice
+  // carries to the other province-scoped tabs.
+  let selected = resolveProvinces(getPref(PROV_PREF));
+  if ($provToggles) {
+    $provToggles.replaceChildren(...PROVS.map((p) => {
+      const label = document.createElement('label');
+      label.className = 'flex items-center gap-2';
+      const box = document.createElement('input');
+      box.type = 'checkbox';
+      box.value = p.sgc;
+      box.checked = selected.some((sel) => sel.sgc === p.sgc);
+      box.addEventListener('change', onProvinceToggle);
+      const name = document.createElement('span');
+      name.textContent = p.name;
+      label.append(box, name);
+      return label;
+    }));
   }
-  let currentProv = PROVS.find((p) => p.sgc === ($prov ? $prov.value : '46')) || PROVS[0];
-  render(currentProv.sgc);
+  render();
 
-  // Province change redraws both the choropleth and the charts.
-  function render(sgc) {
-    currentProv = PROVS.find((p) => p.sgc === sgc) || PROVS[0];
-    agMap.render(sgc);
+  /**
+   * Re-read the checkboxes. Unchecking the last one would leave every chart
+   * empty, so that box goes back on: the selection is never empty (the same
+   * guarantee resolveProvinces makes about a saved one).
+   */
+  function onProvinceToggle() {
+    const boxes = [...($provToggles?.querySelectorAll('input[type=checkbox]') || [])];
+    const checked = boxes.filter((b) => b.checked).map((b) => b.value);
+    if (!checked.length) {
+      const keep = selected[0]?.sgc;
+      const box = boxes.find((b) => b.value === keep);
+      if (box) box.checked = true;
+      return;
+    }
+    selected = resolveProvinces(checked);
+    setPref(PROV_PREF, selected.map((p) => p.sgc));
+    rememberProvince(selected[0].sgc);
+    render();
+  }
+
+  // A selection change redraws both the choropleth and the charts.
+  function render() {
+    const first = selected[0];
+    agMap.render(first.sgc);
+    const $mapTitle = document.getElementById('ag-map-title');
+    // The map is one province at a time (it shades that province's own
+    // subdivisions), so say which one is on screen when several are checked.
+    if ($mapTitle) $mapTitle.textContent = `Within-province map — ${first.name}`;
     renderCharts();
   }
 
   // Charts only — re-run on a year-range change (the map is a fixed 2021 snapshot).
   function renderCharts() {
-    const prov = currentProv;
+    // Titles and subtitles are written against a single `{ name }`, which
+    // reads as the province or as the list of them (see provincesLabel).
+    const prov = { name: provincesLabel(selected) };
+    const abbrs = new Set(selected.map((p) => p.abbr));
     // Global year range; empty selectors ⇒ all data (no bound).
     const monthFrom = $yearFrom && $yearFrom.value ? `${$yearFrom.value}-01` : null;
     const monthTo   = $yearTo && $yearTo.value ? `${$yearTo.value}-12` : null;
@@ -223,6 +309,10 @@ export async function initAgriculture() {
         `<h2 class="cmhc-mi-section-title">${sec.label}</h2>` +
         '<div class="cmhc-mi-section-grid grid md:grid-cols-2 gap-4"></div>';
       const $secGrid = section.querySelector('.cmhc-mi-section-grid');
+      // Attached before the cards are built: each card measures its own width
+      // to size its plot (plotWidth), and a detached section measures zero.
+      // A section that ends up with no cards is removed again below.
+      $grid.appendChild(section);
       let n = 0;
       for (const chartId of sec.charts) {
         const spec = SPEC_BY_ID[chartId];
@@ -230,8 +320,17 @@ export async function initAgriculture() {
         if (!spec || !cfg) continue;
 
         let meta = Object.values(seriesById).filter((s) => s.chartId === chartId);
-        if (spec.scope === 'prov') meta = meta.filter((s) => s.geo === prov.abbr);
-        meta.sort((a, b) => (orderOf.get(a.id) ?? 1e9) - (orderOf.get(b.id) ?? 1e9));
+        if (spec.scope === 'prov') meta = meta.filter((s) => abbrs.has(s.geo));
+        // Catalog order within a province, provinces in the order they are
+        // checked: a scoped chart reads province by province ("Total — MB,
+        // Crops — MB, Livestock — MB, Total — SK, …") rather than interleaved,
+        // and the province the map follows comes first. A cross-province chart
+        // (farmland) keeps the catalog's own order, which opens with Canada.
+        const provRank = spec.scope === 'prov'
+          ? (s) => selected.findIndex((p) => p.abbr === s.geo)
+          : () => 0;
+        meta.sort((a, b) => (provRank(a) - provRank(b))
+          || ((orderOf.get(a.id) ?? 1e9) - (orderOf.get(b.id) ?? 1e9)));
         if (!meta.length) continue;
 
         const records = meta.flatMap((s) => recordsById[s.id] || []);
@@ -262,7 +361,7 @@ export async function initAgriculture() {
         if (panels) card.setOpenPanels(panels);
         n += 1; total += 1;
       }
-      if (n > 0) $grid.appendChild(section);   // skip a section with no data
+      if (n === 0) section.remove();   // a section with no data shows nothing
     }
 
     if (!total) {

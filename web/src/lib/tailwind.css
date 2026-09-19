@@ -266,6 +266,17 @@
   display: none !important;
 }
 
+/* Collapsing those blocks only shrinks the card if the card is free to shrink.
+   The chart grids are two-column, and a grid item stretches to its row — so a
+   short card next to a tall one kept its neighbour's height, and the export
+   rasterised the difference as blank pixels under the caption. Opt out of the
+   stretch for the duration of the capture, so the image ends where the content
+   does vertically just as it does horizontally. */
+.cmhc-exporting {
+  align-self: start !important;
+  height: max-content !important;
+}
+
 .chart-card .chart-actions {
   display: flex;
   gap: 6px;
