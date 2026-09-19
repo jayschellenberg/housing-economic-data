@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { periodLabel, yDomainFor, buildTipRows, renderDataTable, readOpenPanels } from '../src/indicator-chart.js';
+import { periodLabel, yDomainFor, buildTipRows, renderDataTable, readOpenPanels, aggregateDashedIds } from '../src/indicator-chart.js';
 
 const utc = (iso) => new Date(iso);
 
@@ -155,5 +155,42 @@ describe('readOpenPanels', () => {
   });
   it('tolerates a missing card', () => {
     expect(readOpenPanels(null)).toEqual([]);
+  });
+});
+
+describe('aggregateDashedIds', () => {
+  const geo = (id, g, label) => ({ id, geo: g, chartLabel: label });
+
+  it('dashes the provinces and CMAs and keeps Canada solid', () => {
+    const meta = [geo('ca', 'CA', 'Canada'), geo('mb', 'MB', 'Manitoba'), geo('wpg', 'Winnipeg-CMA', 'Winnipeg')];
+    expect(aggregateDashedIds(meta)).toEqual(['mb', 'wpg']);
+  });
+
+  it('treats the 15-CMA composite (geo CA) as the aggregate', () => {
+    const meta = [geo('comp', 'CA', '15-CMA composite'), geo('wpg', 'Winnipeg-CMA', 'Winnipeg')];
+    expect(aggregateDashedIds(meta)).toEqual(['wpg']);
+  });
+
+  it('prefers a named aggregate: Headline vs core, Overall vs price / non-price', () => {
+    const cpi = [geo('h', 'CA', 'Headline (all-items)'), geo('t', 'CA', 'CPI-trim'), geo('m', 'CA', 'CPI-median')];
+    expect(aggregateDashedIds(cpi)).toEqual(['t', 'm']);
+    const slos = [geo('o', 'CA', 'Overall'), geo('p', 'CA', 'Price'), geo('n', 'CA', 'Non-price')];
+    expect(aggregateDashedIds(slos)).toEqual(['p', 'n']);
+    const farm = [geo('c', 'MB', 'Crops'), geo('l', 'MB', 'Livestock'), geo('t', 'MB', 'Total')];
+    expect(aggregateDashedIds(farm)).toEqual(['c', 'l']);
+  });
+
+  it('leaves a chart with no aggregate fully solid', () => {
+    const yields = [geo('y2', 'CA', '2-year'), geo('y5', 'CA', '5-year'), geo('y10', 'CA', '10-year')];
+    expect(aggregateDashedIds(yields)).toEqual([]);
+    const starts = [geo('ab', 'AB', 'Alberta'), geo('mb', 'MB', 'Manitoba')];
+    expect(aggregateDashedIds(starts)).toEqual([]);
+    expect(aggregateDashedIds([geo('ca', 'CA', 'Canada')])).toEqual([]);
+  });
+
+  it('leaves a compound-label comparison chart solid', () => {
+    const meta = [geo('ch', 'CA', 'Canada — House only'), geo('cl', 'CA', 'Canada — Land only'),
+                  geo('wh', 'Winnipeg-CMA', 'Winnipeg — House only')];
+    expect(aggregateDashedIds(meta)).toEqual([]);
   });
 });
