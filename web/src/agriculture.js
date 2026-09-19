@@ -3,8 +3,8 @@
  * uses for farm and farmland work: farm cash receipts, farmland value per acre,
  * crop / livestock / supply-managed (poultry, egg, milk) prices, and the Farm
  * Input Price Index. A sidebar of province checkboxes (BC / AB / SK / MB)
- * scopes every chart except farmland, which stays a cross-province comparison;
- * check several and the charts compare them side by side.
+ * scopes every chart, with Canada as a fifth box for the national line where a
+ * chart has one; check several and the charts compare them side by side.
  *
  * It is NOT a second copy of the Market Indicators renderer (which is coupled to
  * its own `mi-` DOM and sidebar). Instead it reuses the shared chart component
@@ -39,6 +39,22 @@ const PROVS = [
 // on the province this one is centred on.
 const PROV_PREF = 'agProvinces';
 
+// The national line is a checkbox of its own rather than a rule in the code,
+// and it starts on: farmland value per acre is read against Canada, so the
+// benchmark is what you want on screen before you decide otherwise.
+const CANADA_PREF = 'agCanada';
+
+/**
+ * Whether the Canada box is checked, from the saved pref. Absent means "never
+ * touched it", which is on; only an explicit `false` turns it off.
+ *
+ * @param {*} saved
+ * @returns {boolean}
+ */
+export function resolveCanada(saved) {
+  return saved !== false;
+}
+
 /**
  * The checked provinces, in PROVS order — never empty. A saved selection is
  * filtered to provinces this tab actually covers, so a stale or hand-edited
@@ -57,23 +73,19 @@ export function resolveProvinces(saved) {
 }
 
 /**
- * The series a chart shows, for its scope and the checked provinces.
+ * The series a chart shows: exactly the checked geographies.
  *
- *   'prov'     only the checked provinces.
- *   'prov+ca'  those plus the national line: farmland value is read against
- *              the Canada benchmark, but the provinces you did not check are
- *              noise on it like anywhere else.
- *   'all'      everything the chart has.
+ * Every chart obeys the sidebar, Canada included — it is the fifth checkbox,
+ * not a rule in the code. Only farmland value per acre publishes a national
+ * series today, so Canada shows up there and nowhere else; a chart that gains
+ * one later will follow the same box without anything here changing.
  *
  * @param {Array<{geo?:string}>} meta   the chart's series
- * @param {string} scope
- * @param {Set<string>} abbrs           checked provinces, as 'MB'/'SK'/…
+ * @param {Set<string>} geos            checked geographies, as 'MB'/'CA'/…
  * @returns {Array<object>}
  */
-export function scopedSeries(meta, scope, abbrs) {
-  if (scope === 'all') return meta;
-  const keep = (s) => abbrs.has(s.geo) || (scope === 'prov+ca' && s.geo === 'CA');
-  return (meta || []).filter(keep);
+export function scopedSeries(meta, geos) {
+  return (meta || []).filter((s) => geos.has(s.geo));
 }
 
 /**
@@ -91,67 +103,67 @@ export function provincesLabel(provs) {
   return `${names.slice(0, -1).join(', ')} & ${names[names.length - 1]}`;
 }
 
-// Curated charts, in display order. `chartId` names a catalog chart; `scope`
-// filters its series: 'prov' keeps the checked provinces, 'prov+ca' keeps them
-// and the Canada line (farmland is read against the national benchmark — it is
-// what makes a province's move mean anything — but the provinces you did not
-// check are noise), 'all' keeps every geography the chart has. `title`/`subtitle` are
-// functions of the selection — `{ name }` reads as one province ("Manitoba")
-// or as the list ("Manitoba & Saskatchewan"), so the specs below are written
-// the same way whether one province is checked or four; `desc` optionally overrides the catalog
+// Curated charts, in display order. `chartId` names a catalog chart; its series
+// are filtered to the checked geographies (see scopedSeries), so there is no
+// per-chart scope to set. `title`/`subtitle` are
+// functions of the selection: `name` reads as one province ("Manitoba") or as
+// the list ("Manitoba & Saskatchewan"), so the specs below are written the same
+// way whether one province is checked or four, and `canada` says whether the
+// national line is on — the one subtitle that mentions it has to stop when it
+// is off; `desc` optionally overrides the catalog
 // description (used for farm cash, to read as prairie rather than provincial
 // context on this tab).
 const AG_CHARTS = [
-  { chartId: 'farm_cash', scope: 'prov',
+  { chartId: 'farm_cash',
     title: (p) => `Farm cash receipts — ${p.name}`,
     subtitle: (p) => `${p.name} • annual, by receipt type`,
     desc: 'Annual farm cash receipts (StatsCan table 32-10-0045), split into total, crop, and livestock. Agriculture is a pillar of the prairie economy; crop and livestock receipts swing with commodity prices and trade access (e.g. canola tariffs).' },
-  { chartId: 'farmland_value', scope: 'prov+ca',
+  { chartId: 'farmland_value',
     title: (p) => `Farmland value per acre — ${p.name}`,
-    subtitle: (p) => `${p.name} vs Canada • annual • value per acre` },
+    subtitle: (p) => `${p.name}${p.canada ? ' vs Canada' : ''} • annual • value per acre` },
   // No national series exists for the year-over-year change (the catalog
-  // derives it per province), so this one is provinces only — nothing to
-  // benchmark against, and a subtitle promising Canada would be a lie.
-  { chartId: 'farmland_yoy', scope: 'prov',
+  // derives it per province), so the Canada box has nothing to add here and
+  // the subtitle must not promise a line the chart cannot draw.
+  { chartId: 'farmland_yoy',
     title: (p) => `Farmland value — year-over-year % change — ${p.name}`,
     subtitle: (p) => `${p.name} • annual % change • official analogue of the FCC report` },
-  { chartId: 'crop_prices', scope: 'prov',
+  { chartId: 'crop_prices',
     title: (p) => `Crop prices — ${p.name}`,
     subtitle: (p) => `${p.name} • monthly • $/tonne` },
-  { chartId: 'livestock_prices', scope: 'prov',
+  { chartId: 'livestock_prices',
     title: (p) => `Livestock prices — ${p.name}`,
     subtitle: (p) => `${p.name} • monthly • $/cwt` },
-  { chartId: 'poultry_prices', scope: 'prov',
+  { chartId: 'poultry_prices',
     title: (p) => `Poultry meat prices — ${p.name}`,
     subtitle: (p) => `${p.name} • monthly • $/kg (supply-managed)` },
-  { chartId: 'egg_price', scope: 'prov',
+  { chartId: 'egg_price',
     title: (p) => `Egg prices — ${p.name}`,
     subtitle: (p) => `${p.name} • monthly • $/dozen (supply-managed)` },
-  { chartId: 'milk_price', scope: 'prov',
+  { chartId: 'milk_price',
     title: (p) => `Milk price — ${p.name}`,
     subtitle: (p) => `${p.name} • monthly • $/kL, ÷10 = $/hL (supply-managed)` },
-  { chartId: 'farm_input_index', scope: 'prov',
+  { chartId: 'farm_input_index',
     title: (p) => `Farm Input Price Index — ${p.name}`,
     subtitle: (p) => `${p.name} • quarterly • rebased index` },
   // Farm-structure charts run on Census-of-Agriculture data (5-year steps back
   // to 1921). Range is controlled by the tab's global year selectors.
-  { chartId: 'farm_count', scope: 'prov',
+  { chartId: 'farm_count',
     title: (p) => `Number of farms — ${p.name}`,
     subtitle: (p) => `${p.name} • Census of Agriculture, every 5 years since 1921` },
-  { chartId: 'farm_size', scope: 'prov',
+  { chartId: 'farm_size',
     title: (p) => `Average farm size — ${p.name}`,
     subtitle: (p) => `${p.name} • acres per farm • Census of Agriculture since 1921` },
-  { chartId: 'operator_age', scope: 'prov',
+  { chartId: 'operator_age',
     title: (p) => `Average operator age — ${p.name}`,
     subtitle: (p) => `${p.name} • years • Census of Agriculture, 1991–2021` },
-  { chartId: 'farms_by_type', scope: 'prov',
+  { chartId: 'farms_by_type',
     title: (p) => `Farms by type — ${p.name}`,
     subtitle: (p) => `${p.name} • number of farms by NAICS type • 2001–2021` },
   // Farm Financial Survey (StatsCan 32-10-0102), average per farm, annual.
-  { chartId: 'farm_income', scope: 'prov',
+  { chartId: 'farm_income',
     title: (p) => `Farm income & expenses — ${p.name}`,
     subtitle: (p) => `${p.name} • avg per farm • annual, 2009–2023` },
-  { chartId: 'farm_balance', scope: 'prov',
+  { chartId: 'farm_balance',
     title: (p) => `Farm balance sheet — ${p.name}`,
     subtitle: (p) => `${p.name} • avg per farm • annual, 2009–2023` },
 ];
@@ -253,26 +265,42 @@ export async function initAgriculture() {
     }));
   }
 
-  // Province checkboxes. The selection is this tab's own pref; its first
-  // province is also written to the site-wide "home province" so the choice
-  // carries to the other province-scoped tabs.
+  // Geography checkboxes. The provinces are this tab's own pref; the first of
+  // them is also written to the site-wide "home province" so the choice
+  // carries to the other province-scoped tabs. Canada sits under them, set
+  // apart because it is a benchmark rather than one of the four.
   let selected = resolveProvinces(getPref(PROV_PREF));
+  let showCanada = resolveCanada(getPref(CANADA_PREF));
+  const geoBox = (value, name, onChange, checked, className) => {
+    const label = document.createElement('label');
+    label.className = `flex items-center gap-2${className ? ` ${className}` : ''}`;
+    const box = document.createElement('input');
+    box.type = 'checkbox';
+    box.value = value;
+    box.checked = checked;
+    box.addEventListener('change', onChange);
+    const text = document.createElement('span');
+    text.textContent = name;
+    label.append(box, text);
+    return label;
+  };
   if ($provToggles) {
-    $provToggles.replaceChildren(...PROVS.map((p) => {
-      const label = document.createElement('label');
-      label.className = 'flex items-center gap-2';
-      const box = document.createElement('input');
-      box.type = 'checkbox';
-      box.value = p.sgc;
-      box.checked = selected.some((sel) => sel.sgc === p.sgc);
-      box.addEventListener('change', onProvinceToggle);
-      const name = document.createElement('span');
-      name.textContent = p.name;
-      label.append(box, name);
-      return label;
-    }));
+    const $canada = geoBox('CA', 'Canada', onCanadaToggle, showCanada,
+      'mt-1 pt-2 border-t border-neutral-200');
+    $provToggles.replaceChildren(
+      ...PROVS.map((p) => geoBox(p.sgc, p.name, onProvinceToggle,
+        selected.some((sel) => sel.sgc === p.sgc))),
+      $canada,
+    );
   }
   render();
+
+  /** The national line is independent of the provinces — charts only. */
+  function onCanadaToggle(e) {
+    showCanada = !!e.target.checked;
+    setPref(CANADA_PREF, showCanada);
+    renderCharts();
+  }
 
   /**
    * Re-read the checkboxes. Unchecking the last one would leave every chart
@@ -280,7 +308,10 @@ export async function initAgriculture() {
    * guarantee resolveProvinces makes about a saved one).
    */
   function onProvinceToggle() {
-    const boxes = [...($provToggles?.querySelectorAll('input[type=checkbox]') || [])];
+    // Canada shares the group but is not one of the four, so it neither counts
+    // towards the selection nor stands in for it when everything else is off.
+    const boxes = [...($provToggles?.querySelectorAll('input[type=checkbox]') || [])]
+      .filter((b) => b.value !== 'CA');
     const checked = boxes.filter((b) => b.checked).map((b) => b.value);
     if (!checked.length) {
       const keep = selected[0]?.sgc;
@@ -309,8 +340,9 @@ export async function initAgriculture() {
   function renderCharts() {
     // Titles and subtitles are written against a single `{ name }`, which
     // reads as the province or as the list of them (see provincesLabel).
-    const prov = { name: provincesLabel(selected) };
-    const abbrs = new Set(selected.map((p) => p.abbr));
+    const prov = { name: provincesLabel(selected), canada: showCanada };
+    const geos = new Set(selected.map((p) => p.abbr));
+    if (showCanada) geos.add('CA');
     // Global year range; empty selectors ⇒ all data (no bound).
     const monthFrom = $yearFrom && $yearFrom.value ? `${$yearFrom.value}-01` : null;
     const monthTo   = $yearTo && $yearTo.value ? `${$yearTo.value}-12` : null;
@@ -345,17 +377,16 @@ export async function initAgriculture() {
         if (!spec || !cfg) continue;
 
         let meta = Object.values(seriesById).filter((s) => s.chartId === chartId);
-        meta = scopedSeries(meta, spec.scope, abbrs);
+        meta = scopedSeries(meta, geos);
         // Catalog order within a province, provinces in the order they are
         // checked: a scoped chart reads province by province ("Total — MB,
         // Crops — MB, Livestock — MB, Total — SK, …") rather than interleaved,
         // and the province the map follows comes first. A cross-province chart
         // (farmland) keeps the catalog's own order, which opens with Canada.
-        const provRank = spec.scope === 'all'
-          ? () => 0
-          // Canada leads on a 'prov+ca' chart (findIndex gives it -1), which is
-          // where the catalog has it and where the benchmark line belongs.
-          : (s) => selected.findIndex((p) => p.abbr === s.geo);
+        // Canada leads (findIndex gives it -1), which is where the catalog has
+        // it and where the benchmark line belongs; the provinces follow in the
+        // order they are checked.
+        const provRank = (s) => selected.findIndex((p) => p.abbr === s.geo);
         meta.sort((a, b) => (provRank(a) - provRank(b))
           || ((orderOf.get(a.id) ?? 1e9) - (orderOf.get(b.id) ?? 1e9)));
         if (!meta.length) continue;
