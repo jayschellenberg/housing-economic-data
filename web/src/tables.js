@@ -120,10 +120,13 @@ function renderTable(table, dwellingSuffix, container, sub) {
     const v = r.raw?.[i];
     if (v != null && Number.isFinite(v)) data.push({ area: r.area, cat, value: v });
   }));
+  // Attached before the card draws: a card measures its own width to size its
+  // plot (plotWidth), and a detached cell measures zero.
+  row.appendChild(chartCell);
+  container.appendChild(row);
   const { render: renderBar } = buildBarCard(chartCell, { title: `${table.title}${dwellingSuffix}` });
   renderBar({ data, categories: table.columns, areas: table.rows.map(r => r.area),
               seriesType: table.seriesType, sub });
-  row.appendChild(chartCell);
 
   // Table (separate object, right).
   const block = document.createElement('section');
@@ -169,7 +172,6 @@ function renderTable(table, dwellingSuffix, container, sub) {
   block.appendChild(tbl);
 
   row.appendChild(block);
-  container.appendChild(row);
 }
 
 /**
