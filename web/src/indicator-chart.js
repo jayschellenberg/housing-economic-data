@@ -452,9 +452,16 @@ export function buildIndicatorCard(container, {
     const isPercentAxis = seriesMeta.every(s => s.units === 'percent');
     const yTickFormat = isPercentAxis ? percentTickFormat(yDomain) : yFormatter;
 
+    // Percent ticks ("9%") are much narrower than the "$1,500"-width labels the
+    // shared 86px left margin is sized for, and the mirrored right axis needs
+    // no more room than the left one. Tightening both on a percent axis hands
+    // ~10% more width to the plot itself instead of to blank margin.
+    const sideMargin = isPercentAxis ? 48 : null;
+
     const spec = themed({
       height: 330,
-      marginRight: MIRROR_Y_MARGIN,
+      ...(sideMargin ? { marginLeft: sideMargin } : {}),
+      marginRight: sideMargin || MIRROR_Y_MARGIN,
       marginBottom: 52,      // room for the x-axis title under the tick labels
       x: {
         type: 'utc',
@@ -494,7 +501,7 @@ export function buildIndicatorCard(container, {
             x: 'date',
             y: 'value',
             stroke: 'label',
-            strokeWidth: 1.6,
+            strokeWidth: 2,
             ...(dash ? { strokeDasharray: dash } : {}),
             defined: (d) => d.value != null,
           })),
@@ -520,11 +527,15 @@ export function buildIndicatorCard(container, {
       item.className = 'cmhc-plot-legend-item';
       // A dashed series gets a dashed swatch, so the legend says which line
       // is which without having to trace it back to the chart.
-      const swatch = dashedLabels.has(cat)
-        ? `repeating-linear-gradient(90deg, ${colour} 0 5px, transparent 5px 8px)`
-        : colour;
+      const isDashed = dashedLabels.has(cat);
+      const swatchClass = `cmhc-plot-legend-swatch${isDashed ? ' cmhc-plot-legend-swatch-dashed' : ''}`;
+      // background-IMAGE, not the shorthand: the shorthand would reset the
+      // size/position rules that turn the gradient into a dashed line.
+      const swatchStyle = isDashed
+        ? `background-image:repeating-linear-gradient(90deg, ${colour} 0 5px, transparent 5px 9px)`
+        : `background:${colour}`;
       item.innerHTML =
-        `<span class="cmhc-plot-legend-swatch" style="background:${swatch}"></span>` +
+        `<span class="${swatchClass}" style="${swatchStyle}"></span>` +
         `<span class="cmhc-plot-legend-text"></span>`;
       item.querySelector('.cmhc-plot-legend-text').textContent = cat;
       legendEl.appendChild(item);
