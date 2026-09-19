@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "generated": "2026-09-07T13:39:43Z",
-  "dataAsOf": "2026-09-07",
+  "generated": "2026-09-19T15:08:10Z",
+  "dataAsOf": "2026-09-19",
   "intro": {
     "censusYear": 2021,
     "provincePopulation": 1342153,
@@ -51,28 +51,28 @@
       "stale": false
     },
     "manufacturing_sales": {
-      "value": 2537735000,
-      "changePct": 5.6,
-      "direction": "up",
-      "period": "June 2026",
+      "value": 2379966000,
+      "changePct": -7.7,
+      "direction": "down",
+      "period": "July 2026",
       "comparison": "month-to-month, seasonally adjusted",
       "source": "Statistics Canada",
       "stale": false
     },
     "wholesale_trade": {
-      "value": 3852827000,
-      "changePct": 3.8,
+      "value": 3995838000,
+      "changePct": 2,
       "direction": "up",
-      "period": "June 2026",
+      "period": "July 2026",
       "comparison": "month-to-month, seasonally adjusted",
       "source": "Statistics Canada",
       "stale": false
     },
     "cpi": {
-      "value": 172.2,
-      "changePct": 4.2,
+      "value": 172.1,
+      "changePct": 4.4,
       "direction": "up",
-      "period": "July 2026",
+      "period": "August 2026",
       "comparison": "year-over-year",
       "source": "Statistics Canada",
       "stale": false
@@ -139,19 +139,19 @@
   },
   "housing": {
     "starts": {
-      "value": 4782,
-      "ytdChangePct": 36.7,
+      "value": 5176,
+      "ytdChangePct": 20.9,
       "direction": "up",
-      "period": "year-to-date to July 2026",
+      "period": "year-to-date to August 2026",
       "comparison": "year-to-date change",
       "source": "CMHC / Statistics Canada",
       "stale": false
     },
     "building_permits": {
-      "value": 256321000,
-      "changePct": 17,
-      "direction": "up",
-      "period": "June 2026",
+      "value": 197615000,
+      "changePct": -17.6,
+      "direction": "down",
+      "period": "July 2026",
       "comparison": "month-to-month, seasonally adjusted",
       "source": "Statistics Canada",
       "stale": false

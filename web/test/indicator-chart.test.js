@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { periodLabel, yDomainFor, buildTipRows, renderDataTable, readOpenPanels, aggregateDashedIds, geoQualifiedLabels } from '../src/indicator-chart.js';
+import { periodLabel, yDomainFor, buildTipRows, renderDataTable, readOpenPanels, aggregateDashedIds, geoQualifiedLabels, freshnessLimitDays } from '../src/indicator-chart.js';
 
 const utc = (iso) => new Date(iso);
 
@@ -270,5 +270,50 @@ describe('geoQualifiedLabels', () => {
     expect(geoQualifiedLabels()).toEqual([]);
     const meta = [{ id: 'a', chartLabel: 'Total' }, { id: 'b', chartLabel: 'Total' }];
     expect(geoQualifiedLabels(meta).map(s => s.chartLabel)).toEqual(['Total', 'Total']);
+  });
+});
+
+describe('freshnessLimitDays', () => {
+  it('falls back to the limit for the publication frequency', () => {
+    expect(freshnessLimitDays('employment', 'monthly')).toBe(130);
+    expect(freshnessLimitDays('goc_yields', 'daily')).toBe(15);   // own override
+    expect(freshnessLimitDays('employment', 'fortnightly')).toBe(365);
+  });
+
+  // Each agricultural chart publishes far more slowly than its nominal
+  // frequency, so its limit has to clear the newest point's worst legitimate
+  // age: the observed release lag plus one full publication cycle. These are
+  // the measured lags (WDS getCubeMetadata releaseTime); a limit that stopped
+  // covering one of them would put a false "Stale data" banner back on the
+  // Agriculture tab.
+  const WORST_CASE_AGE_DAYS = {
+    farm_cash: 876, farmland_value: 876, farmland_yoy: 876,
+    farm_income: 1517, farm_balance: 1517,
+    farm_count: 2321, farm_size: 2321, operator_age: 2497, farms_by_type: 2908,
+    farm_input_index: 280,
+  };
+
+  it('covers every agricultural chart to its next release', () => {
+    for (const [chartId, worst] of Object.entries(WORST_CASE_AGE_DAYS)) {
+      expect.soft(freshnessLimitDays(chartId, 'annual'),
+        `${chartId} must stay quiet until its next release is overdue`)
+        .toBeGreaterThan(worst);
+    }
+  });
+
+  it('still warns when an agricultural series really does stop updating', () => {
+    // A limit so wide it could never fire would be no warning at all: each one
+    // has to trip within a cycle of the next release being missed.
+    const CYCLE_DAYS = {
+      farm_cash: 365, farmland_value: 365, farmland_yoy: 365,
+      farm_income: 730, farm_balance: 730,
+      farm_count: 1826, farm_size: 1826, operator_age: 1826, farms_by_type: 1826,
+      farm_input_index: 91,
+    };
+    for (const [chartId, worst] of Object.entries(WORST_CASE_AGE_DAYS)) {
+      expect.soft(freshnessLimitDays(chartId, 'annual'),
+        `${chartId} must still catch a missed release`)
+        .toBeLessThan(worst + CYCLE_DAYS[chartId]);
+    }
   });
 });

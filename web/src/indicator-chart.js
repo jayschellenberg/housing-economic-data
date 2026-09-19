@@ -325,7 +325,57 @@ const FRESHNESS_OVERRIDE_DAYS = {
   // before its successor arrives. 800 days covers that full cycle; the default
   // 540 would flag a perfectly current series as stale for half of every year.
   cpi_inflation_annual: 800,
+
+  // --- Agriculture tab ------------------------------------------------------
+  // Every one of these publishes far more slowly than its nominal frequency
+  // suggests, so the shared annual (540) / quarterly (270) limits flagged nine
+  // ag cards that were already holding the newest figure StatsCan has. Each
+  // limit below is that series' own worst case — the release lag measured from
+  // its newest reference date, plus one full publication cycle, so the banner
+  // can only fire once the NEXT release is genuinely overdue — rounded up for
+  // buffer. Lags verified against the WDS getCubeMetadata releaseTime.
+  //
+  //   chart               table        lag  cycle  worst case
+  //   farm_cash           32-10-0045   511    365         876
+  //   farmland_value      32-10-0047   511    365         876
+  //   farm_income         32-10-0102   787    730        1517   (biennial)
+  //   farm_count          32-10-0153   495   1826        2321   (5-yr census)
+  //   operator_age        32-10-0230   671   1826        2497
+  //   farms_by_type       32-10-0166  1082   1826        2908
+  //   farm_input_index    18-10-0258   189     91         280
+  //
+  // Annual: receipts and farmland values are a May release of the prior year.
+  farm_cash:        950,
+  farmland_value:   950,
+  farmland_yoy:     950,
+  // Biennial: the Farm Financial Survey runs every second year and lands more
+  // than two years after its reference date.
+  farm_income:     1650,
+  farm_balance:    1650,
+  // Census of Agriculture: every five years, with the later cross-tabulations
+  // trailing the census by up to three (farms by type, 2021 → Dec 2023). One
+  // limit covers all four so no census card warns until a census is overdue.
+  farm_count:      3000,
+  farm_size:       3000,
+  operator_age:    3000,
+  farms_by_type:   3000,
+  // Quarterly in name; in practice ~6 months behind. The 270-day default would
+  // have started false-flagging this card in late September 2026.
+  farm_input_index: 330,
 };
+
+/**
+ * Days a chart's newest observation may reach before the stale banner fires:
+ * the chart's own override when it has one, else the default for its
+ * publication frequency.
+ *
+ * @param {string} chartId
+ * @param {string} frequency
+ * @returns {number} age limit in days
+ */
+export function freshnessLimitDays(chartId, frequency) {
+  return FRESHNESS_OVERRIDE_DAYS[chartId] ?? (FRESHNESS_DAYS[frequency] || 365);
+}
 
 /**
  * Build an indicator chart panel and append it to `container`.
@@ -702,7 +752,7 @@ export function buildIndicatorCard(container, {
       $latest.appendChild(chip);
 
       const ageDays = (today - new Date(s.latestDate)) / 86400000;
-      const limit = FRESHNESS_OVERRIDE_DAYS[chartId] ?? (FRESHNESS_DAYS[s.frequency] || 365);
+      const limit = freshnessLimitDays(chartId, s.frequency);
       if (ageDays > limit) staleSeries.push(`${s.chartLabel || s.id} (${Math.round(ageDays)}d old)`);
     });
 

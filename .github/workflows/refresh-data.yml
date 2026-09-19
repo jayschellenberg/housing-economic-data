@@ -253,8 +253,8 @@ jobs:
 
             Vercel will redeploy automatically from main.
 
-      - name: Notify by email — failure
-        if: failure()
+      - name: Notify by email — failure or timeout
+        if: failure() || (cancelled() && github.event_name == 'schedule')
         env:
           MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
           MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
@@ -267,8 +267,8 @@ jobs:
             echo "send=true" >> "$GITHUB_OUTPUT"
           fi
         id: fail_email_gate
-      - name: Send failure email
-        if: failure() && steps.fail_email_gate.outputs.send == 'true'
+      - name: Send failure or timeout email
+        if: (failure() || (cancelled() && github.event_name == 'schedule')) && steps.fail_email_gate.outputs.send == 'true'
         uses: dawidd6/action-send-mail@4226df7daafa6fc901a43789c49bf7ab309066e7 # v3.11.0
         # A notification is not the job. If SMTP auth breaks (an App Password
         # revoked, say), that must not turn a healthy data refresh red and
@@ -287,7 +287,7 @@ jobs:
           password:       ${{ secrets.MAIL_PASSWORD }}
           from:           Housing & Economic Data <${{ secrets.MAIL_USERNAME }}>
           to:             ${{ vars.MAIL_TO }}
-          subject:        "[Housing & Economic Data] Refresh FAILED — ${{ steps.stamp.outputs.date }}"
+          subject:        "[Housing & Economic Data] Refresh ${{ job.status == 'cancelled' && 'TIMED OUT' || 'FAILED' }} — ${{ steps.stamp.outputs.date }}"
           body: |
             The scheduled CMHC-data refresh FAILED.
 
@@ -297,16 +297,19 @@ jobs:
 
             A diagnostic GitHub issue will also be opened with a triage checklist.
 
-      - name: Open issue on failure
-        if: failure()
+      - name: Open issue on failure or timeout
+        if: failure() || (cancelled() && github.event_name == 'schedule')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh issue create \
-            --title "Refresh failed: ${{ steps.stamp.outputs.date }}" \
+            --title "Refresh ${{ job.status == 'cancelled' && 'timed out' || 'failed' }}: ${{ steps.stamp.outputs.date }}" \
             --label "automation" \
             --body "$(cat <<'EOF'
-          The scheduled \`Refresh CMHC data\` workflow failed.
+          The scheduled \`Refresh CMHC data\` workflow did not complete
+          (job status: ${{ job.status }}). \`cancelled\` means it hit the
+          \`timeout-minutes\` ceiling; nothing was committed and a
+          re-run via workflow_dispatch is the fix.
 
           - Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           - Trigger: ${{ github.event_name }}
