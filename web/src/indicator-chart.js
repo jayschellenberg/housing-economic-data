@@ -396,6 +396,15 @@ export function buildIndicatorCard(container, {
     // Sort the colour domain by the chartLabel order in seriesMeta so the
     // legend reads in catalog order.
     const colorDomain = seriesMeta.map(s => s.chartLabel || s.id);
+    // `opts.seriesColours` maps a series id to a specific colour, for a card
+    // where the colours carry meaning of their own (Cap vs Interest mirrors the
+    // reference chart: blue office, red retail, grey industrial, green
+    // multi-family). Anything unnamed falls back to the shared palette by
+    // position, so every other card is unchanged. One array drives the scale,
+    // the legend swatches and the latest-value chips, so they cannot drift.
+    const colourOverrides = opts.seriesColours || {};
+    const seriesColours = seriesMeta.map(
+      (s, i) => colourOverrides[s.id] || PALETTE[i % PALETTE.length]);
 
     const allValues = points.map(p => p.value).filter(Number.isFinite);
     const yFormatter = pickFormatter(seriesMeta[0]?.units || 'index', allValues);
@@ -480,7 +489,7 @@ export function buildIndicatorCard(container, {
         nice: true,
         insetTop: 10,
       },
-      color: { domain: colorDomain, range: PALETTE, legend: false, label: null },
+      color: { domain: colorDomain, range: seriesColours, legend: false, label: null },
       marks: [
         ...gridMarks(),
         ...(refBand ? [Plot.rect([refBand], {
@@ -501,7 +510,7 @@ export function buildIndicatorCard(container, {
             x: 'date',
             y: 'value',
             stroke: 'label',
-            strokeWidth: 2,
+            strokeWidth: 2.4,
             ...(dash ? { strokeDasharray: dash } : {}),
             defined: (d) => d.value != null,
           })),
@@ -522,7 +531,7 @@ export function buildIndicatorCard(container, {
     const legendEl = document.createElement('div');
     legendEl.className = 'cmhc-plot-legend';
     colorDomain.forEach((cat, i) => {
-      const colour = PALETTE[i % PALETTE.length];
+      const colour = seriesColours[i];
       const item = document.createElement('div');
       item.className = 'cmhc-plot-legend-item';
       // A dashed series gets a dashed swatch, so the legend says which line
@@ -580,7 +589,7 @@ export function buildIndicatorCard(container, {
     const today = new Date();
     let staleSeries = [];
     seriesMeta.forEach((s, i) => {
-      const colour = PALETTE[i % PALETTE.length];
+      const colour = seriesColours[i];
       if (!s.latestDate) return;
       const chip = document.createElement('span');
       chip.className = 'cmhc-latest-chip';
