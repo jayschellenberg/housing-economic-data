@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { periodLabel, yDomainFor, buildTipRows, renderDataTable, readOpenPanels, aggregateDashedIds, freshnessLimitDays } from '../src/indicator-chart.js';
+import { periodLabel, yDomainFor, buildTipRows, renderDataTable, readOpenPanels, aggregateDashedIds, geoQualifiedLabels, freshnessLimitDays } from '../src/indicator-chart.js';
 
 const utc = (iso) => new Date(iso);
 
@@ -203,9 +203,17 @@ describe('aggregateDashedIds', () => {
     expect(aggregateDashedIds(balance)).toEqual([]);
   });
 
+  it('dashes each geography under its own aggregate', () => {
+    // Farm cash receipts on Market Indicators with two provinces on: each
+    // province carries its own Total, so each one's components dash under it.
+    const meta = [geo('mt', 'MB', 'Total'), geo('mc', 'MB', 'Crops'), geo('ml', 'MB', 'Livestock'),
+                  geo('at', 'AB', 'Total'), geo('ac', 'AB', 'Crops'), geo('al', 'AB', 'Livestock')];
+    expect(aggregateDashedIds(meta)).toEqual(['mc', 'ml', 'ac', 'al']);
+  });
+
   it('dashes only the geography its aggregate belongs to', () => {
-    // Farm cash receipts on Market Indicators: Manitoba is broken down, the
-    // other provinces carry their own totals and are nobody's component.
+    // A province broken down beside another province's bare total: the second
+    // province's line is nobody's component, so it stays solid.
     const meta = [geo('t', 'MB', 'Total'), geo('c', 'MB', 'Crops'),
                   geo('l', 'MB', 'Livestock'), geo('ab', 'AB', 'Alberta')];
     expect(aggregateDashedIds(meta)).toEqual(['c', 'l']);
@@ -215,6 +223,53 @@ describe('aggregateDashedIds', () => {
     const meta = [geo('ch', 'CA', 'Canada — House only'), geo('cl', 'CA', 'Canada — Land only'),
                   geo('wh', 'Winnipeg-CMA', 'Winnipeg — House only')];
     expect(aggregateDashedIds(meta)).toEqual([]);
+  });
+});
+
+describe('geoQualifiedLabels', () => {
+  const geo = (id, g, label) => ({ id, geo: g, chartLabel: label });
+
+  it('leaves labels that are already unique untouched', () => {
+    const meta = [geo('ca', 'CA', 'Canada'), geo('mb', 'MB', 'Manitoba')];
+    expect(geoQualifiedLabels(meta)).toBe(meta);
+  });
+
+  it('adds the geography when a breakdown spans provinces', () => {
+    // Farm cash receipts is "Crops" / "Livestock" / "Total" in every province;
+    // on Market Indicators several provinces can be on at once, and the label
+    // keys the colour scale, the legend and the data table's columns.
+    const meta = [geo('mt', 'MB', 'Total'), geo('mc', 'MB', 'Crops'),
+                  geo('at', 'AB', 'Total'), geo('ac', 'AB', 'Crops')];
+    expect(geoQualifiedLabels(meta).map(s => s.chartLabel))
+      .toEqual(['Total — MB', 'Crops — MB', 'Total — AB', 'Crops — AB']);
+  });
+
+  it('qualifies only the labels that actually collide', () => {
+    const meta = [geo('mt', 'MB', 'Total'), geo('at', 'AB', 'Total'), geo('n', 'CA', 'Canada')];
+    expect(geoQualifiedLabels(meta).map(s => s.chartLabel))
+      .toEqual(['Total — MB', 'Total — AB', 'Canada']);
+  });
+
+  it('does not mutate the series it was given', () => {
+    const meta = [geo('mt', 'MB', 'Total'), geo('at', 'AB', 'Total')];
+    geoQualifiedLabels(meta);
+    expect(meta.map(s => s.chartLabel)).toEqual(['Total', 'Total']);
+  });
+
+  it('keeps the dashing rule working: qualify for display, dash off the raw labels', () => {
+    const meta = [geo('mt', 'MB', 'Total'), geo('mc', 'MB', 'Crops'),
+                  geo('at', 'AB', 'Total'), geo('ac', 'AB', 'Crops')];
+    const dashed = aggregateDashedIds(meta);
+    expect(dashed).toEqual(['mc', 'ac']);
+    // The qualified labels carry an em dash, which aggregateDashedIds reads as
+    // a cross-geography comparison — hence "compute first, then qualify".
+    expect(aggregateDashedIds(geoQualifiedLabels(meta))).toEqual([]);
+  });
+
+  it('tolerates an empty list and series with no geography', () => {
+    expect(geoQualifiedLabels()).toEqual([]);
+    const meta = [{ id: 'a', chartLabel: 'Total' }, { id: 'b', chartLabel: 'Total' }];
+    expect(geoQualifiedLabels(meta).map(s => s.chartLabel)).toEqual(['Total', 'Total']);
   });
 });
 
