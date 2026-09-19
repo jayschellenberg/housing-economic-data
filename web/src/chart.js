@@ -188,7 +188,7 @@ export function buildChartCard(container, { series }) {
           x: 'year',
           y: 'value',
           stroke: 'category',
-          strokeWidth: 2,
+          strokeWidth: 2.4,
           defined: (d) => d.value != null && d._gap <= 1,
         }),
         ...mirrorYMarks(yTickFormat, { label: Y_LABEL[series] || null, labelOffset: 72 }),

@@ -58,6 +58,26 @@ const RATE_LINES = [
 ];
 const RATE_SHARD = 'mortgage_market';
 
+// Colours from the reference chart's SOURCE_STYLE, as close as the web can get
+// to the R colour names it uses. They are not decorative: an appraiser reading
+// these charts expects office blue, retail red, industrial grey and
+// multi-family green, and the two bond yields in the blue/purple pair.
+//
+// Industrial is the one deliberate departure — R's "darkgrey" (#A9A9A9) is so
+// light on white that the line is hard to follow, so it is darkened a step.
+const RATE_COLOURS = {
+  'boc.policy_target': '#36648B',   // steelblue4
+  'boc.goc_5yr':       '#7D26CD',   // purple3
+  'boc.goc_10yr':      '#5CACEE',   // steelblue2 (light blue)
+};
+const CAP_COLOURS = {
+  'Multi-Family': '#006400',        // darkgreen
+  'Office':       '#0000FF',        // blue
+  'Industrial':   '#8C8C8C',        // darkgrey, a step darker for legibility
+  'Retail':       '#8B0000',        // darkred
+  'Hotel':        '#CD8500',        // orange3 — not in the reference scheme
+};
+
 // Cap-rate property types, in the order they should appear. Anything else in
 // the CSV's MajorType column is carried through as-is after these.
 const KNOWN_TYPES = ['Multi-Family', 'Office', 'Industrial', 'Retail', 'Hotel'];
@@ -582,6 +602,12 @@ export function buildCapVsInterest(shards, rangeRef) {
       // Cap rates dashed, interest rates solid — as on the reference chart,
       // where the distinction matters more than colour alone at a glance.
       dashedIds: capMeta.map(s => s.id),
+      seriesColours: {
+        ...RATE_COLOURS,
+        ...Object.fromEntries(capTypes
+          .filter(t => CAP_COLOURS[t])
+          .map(t => [`cap.${t}`, CAP_COLOURS[t]])),
+      },
       subtitle: capTypes.length
         ? `Source: Bank of Canada & ${capPublisher(stored.meta?.sources)} Average Cap Rates (CR)`
         : 'Source: Bank of Canada',
