@@ -71,7 +71,9 @@ const RATE_COLOURS = {
   'boc.goc_10yr':      '#5CACEE',   // steelblue2 (light blue)
 };
 const CAP_COLOURS = {
-  'Multi-Family': '#006400',        // darkgreen
+  'Multi-Family': '#228B22',        // forestgreen — a step up from the
+                                    // reference's darkgreen, which reads almost
+                                    // black at this line weight
   'Office':       '#0000FF',        // blue
   'Industrial':   '#8C8C8C',        // darkgrey, a step darker for legibility
   'Retail':       '#8B0000',        // darkred
