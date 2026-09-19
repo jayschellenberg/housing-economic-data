@@ -30,22 +30,13 @@
  */
 
 import { buildIndicatorCard, readOpenPanels } from './indicator-chart.js';
-import { getPref, setPref } from './prefs.js';
+import { getFirm, setFirm } from './firm.js';
 
 export const CAP_GROUP_ID = 'cap_vs_interest';
 
 // Bumped if the stored shape changes, so an old payload is ignored rather than
 // mis-read. v1: { types: {[type]: [[iso, value], …]}, meta, selected }.
 const STORAGE_KEY = 'hed.capRates.v1';
-
-// Shared prefs key (prefs.js), not this section's own storage — the firm name
-// belongs to whoever is using the site, not to the cap-rate file.
-const FIRM_PREF = 'firmName';
-
-// Seeded on first use; overwrite it and the new value is what gets saved.
-// An explicitly blank name is honoured (no caption) rather than falling back
-// here — only an ABSENT pref takes the default.
-const DEFAULT_FIRM = 'Red River Group';
 
 // Always drawn, in this order. Series ids are what the committed BoC shard
 // (mortgage_market) uses; chartLabel overrides the catalog's terse labels,
@@ -399,18 +390,12 @@ export function buildCapVsInterest(shards, rangeRef) {
     card: null,
   };
 
-  // The firm name signs the chart (and so the exported PNG). Kept in the
-  // shared per-browser prefs rather than this section's own storage: it is a
-  // property of whoever is using the site, not of the cap-rate file.
-  const savedFirm = getPref(FIRM_PREF);
-  $firm.value = savedFirm == null ? DEFAULT_FIRM : savedFirm;
-  // Update the caption in place rather than through renderCard(). Rebuilding
-  // the card on every keystroke would be wasteful, and rebuilding it on blur
-  // swallowed the next click: tabbing from the box to "Download PNG" fired
-  // `change`, which replaced the card — and the button under the cursor —
-  // before the click landed.
-  $firm.addEventListener('input', applyFirmCaption);
-  $firm.addEventListener('change', () => setPref(FIRM_PREF, currentFirm()));
+  // The company name signs every chart on the site now (firm.js); this box
+  // and the one in the page header are two views of the same saved value, so
+  // typing here updates the header, the caption on this card, and every other
+  // card that is open.
+  $firm.value = getFirm();
+  $firm.addEventListener('input', () => setFirm($firm.value));
 
   renderControls();
   renderCard();
@@ -514,25 +499,6 @@ export function buildCapVsInterest(shards, rangeRef) {
       `From ${m.filename || 'a local file'}, held in this browser only.`;
   }
 
-  /** The firm name as typed, falling back to what was saved earlier. */
-  function currentFirm() {
-    if ($firm) return $firm.value.trim();
-    const saved = getPref(FIRM_PREF);
-    return (saved == null ? DEFAULT_FIRM : saved).trim();
-  }
-
-  /** Sign the chart (and so the exported PNG); no name, no caption row. */
-  function applyFirmCaption() {
-    const cardEl = ui.card?.card;
-    if (!cardEl) return;
-    const name = currentFirm();
-    const row = cardEl.querySelector('.chart-caption');
-    const slot = cardEl.querySelector('[data-role="source"]');
-    if (!row || !slot) return;
-    slot.textContent = name;
-    row.hidden = !name;
-  }
-
   function renderCard() {
     // The card is rebuilt rather than re-rendered because the series set
     // changes with the checkboxes; carry the open panels across so a data
@@ -568,9 +534,6 @@ export function buildCapVsInterest(shards, rangeRef) {
         value,
       })));
 
-    // The source rides in the subtitle (see the render call below), so the
-    // caption row is suppressed rather than repeating it under the chart.
-
     const card = buildIndicatorCard($cardGrid, {
       chartId: 'cap_vs_interest',
       // Not CMHC data — export without the shared cmhc_ prefix.
@@ -580,8 +543,9 @@ export function buildCapVsInterest(shards, rangeRef) {
       title: capTypes.length
         ? 'Overnight, 5-Year, 10-Year Yields & Cap Rates'
         : 'Canadian Rate Environment',
-      sourceLabel: null,
-      captionRight: currentFirm() || null,
+      sourceLabel: capTypes.length
+        ? `Bank of Canada & ${capPublisher(stored.meta?.sources)} Average Cap Rates (CR)`
+        : 'Bank of Canada',
       table: true,
       description:
         'The BoC overnight target with the 5- and 10-year Government of Canada yields — the ' +
@@ -610,9 +574,6 @@ export function buildCapVsInterest(shards, rangeRef) {
           .filter(t => CAP_COLOURS[t])
           .map(t => [`cap.${t}`, CAP_COLOURS[t]])),
       },
-      subtitle: capTypes.length
-        ? `Source: Bank of Canada & ${capPublisher(stored.meta?.sources)} Average Cap Rates (CR)`
-        : 'Source: Bank of Canada',
       monthFrom,
       monthTo,
     });

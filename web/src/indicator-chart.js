@@ -19,6 +19,7 @@ import { toPng } from 'html-to-image';
 import { themed, PALETTE, gridMarks, frameMark, mirrorYMarks, percentTickFormat, MIRROR_Y_MARGIN,
          plotWidth, plotHeight, fitPlotWidth } from './plot-theme.js';
 import { escapeHtml } from './escape.js';
+import { getFirm, onFirmChange } from './firm.js';
 import { INDICATOR_FMT as FMT, indicatorFmt as fmt } from './format.js';
 
 // --- Formatters --------------------------------------------------------------
@@ -391,14 +392,11 @@ export function buildIndicatorCard(container, {
   //   table   true                — render a collapsible data table under the
   //                                 chart, one row per period in the window
   refBand, refLine, table,
-  // `sourceLabel: null` suppresses the "Source: …" caption — for a card that
-  // already carries its source in the subtitle (Cap vs Interest), where a
-  // caption would just repeat it. Any other value renders as usual.
-  //
-  // `captionRight` puts an arbitrary string in the caption slot instead, with
-  // no "Source:" prefix — the reference appraisal chart signs its figures with
-  // the firm name there. With neither, the row is hidden outright.
-  captionRight,
+  // `sourceLabel` names the publisher — "Statistics Canada", "Bank of Canada
+  // & Colliers Average Cap Rates (CR)". It is appended to the SUBTITLE, not
+  // the caption: the caption carries the company name (firm.js), the way the
+  // reference appraisal chart signs its figures. Pass null for a card with no
+  // source line to add.
   // Download filename stem. Defaults to the `cmhc_` prefix every CMHC-sourced
   // card uses; a card whose data isn't CMHC's passes its own (Cap vs Interest
   // exports as cap_vs_interest_<date>.png).
@@ -494,15 +492,25 @@ export function buildIndicatorCard(container, {
     });
   }
 
-  if (captionRight) {
-    $source.textContent = captionRight;
-  } else if (sourceLabel === null) {
-    // Hide the whole row, not just the text: it carries a top border and
-    // padding that would otherwise leave a stray rule under the chart.
-    card.querySelector('.chart-caption').hidden = true;
-  } else {
-    $source.textContent = `Source: ${sourceLabel || 'see series'}`;
+  // The caption signs the figure with the company name; the source rides in
+  // the subtitle (see the subtitle assembly in draw). Hide the whole row when
+  // there is no name, not just the text: it carries a top border and padding
+  // that would otherwise leave a stray rule under the chart.
+  const $caption = card.querySelector('.chart-caption');
+  function applyFirm(name = getFirm()) {
+    $source.textContent = name;
+    $caption.hidden = !name;
   }
+  applyFirm();
+  // Live, without rebuilding the card: the header box updates on every
+  // keystroke, and a redraw on each one would be wasteful (and would pull the
+  // card out from under a click, which is why Cap vs Interest did it this way
+  // first).
+  onFirmChange(applyFirm);
+
+  /** Subtitle for a card with nothing plotted — no date range to add. */
+  const subtitleWithSource = (sub) =>
+    [sub || '', sourceLabel ? `Source: ${sourceLabel}` : ''].filter(Boolean).join(' • ');
   const stem = fileStem || `cmhc_${chartId}`;
   let lastFilename = `${stem}.png`;
 
@@ -526,7 +534,7 @@ export function buildIndicatorCard(container, {
     const ids = new Set(seriesMeta.map(s => s.id));
     const rows = records.filter(r => ids.has(r.id));
     if (rows.length === 0) {
-      $sub.textContent = opts.subtitle || '';
+      $sub.textContent = subtitleWithSource(opts.subtitle);
       $empty.hidden = false;
       $png.disabled = true;
       return;
@@ -576,7 +584,7 @@ export function buildIndicatorCard(container, {
       (!minDate || p.date >= minDate) && (!maxDate || p.date <= maxDate)
     );
     if (filtered.length === 0) {
-      $sub.textContent = opts.subtitle || '';
+      $sub.textContent = subtitleWithSource(opts.subtitle);
       $empty.hidden = false;
       $png.disabled = true;
       return;
@@ -731,13 +739,14 @@ export function buildIndicatorCard(container, {
     // "Aug-2021 to Aug-2026; Source: …" — instead of the default
     // "<subtitle> • 2021–2026".
     const baseSub = opts.subtitle || '';
+    const source = sourceLabel ? `Source: ${sourceLabel}` : '';
     if (opts.rangePrefix) {
       const monthYear = (d) => `${MONTH_ABBR[d.getUTCMonth()]}-${d.getUTCFullYear()}`;
       const range = `${monthYear(xMin)} to ${monthYear(xMax)}`;
-      $sub.textContent = baseSub ? `${range}; ${baseSub}` : range;
+      $sub.textContent = [range, baseSub, source].filter(Boolean).join('; ');
     } else {
       const yearRange = `${xMin.getUTCFullYear()}–${xMax.getUTCFullYear()}`;
-      $sub.textContent = baseSub ? `${baseSub} • ${yearRange}` : yearRange;
+      $sub.textContent = [baseSub, yearRange, source].filter(Boolean).join(' • ');
     }
     $capLeft.textContent = '';
 

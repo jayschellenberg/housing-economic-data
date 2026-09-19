@@ -23,6 +23,7 @@ import { initAffordability } from './affordability.js';
 import { initRtb } from './rtb.js';
 import { initAgriculture } from './agriculture.js';
 import { wireChartDocExports } from './doc-image-export.js';
+import { getFirm, setFirm, onFirmChange } from './firm.js';
 
 const SERIES_PANELS = [
   'Median Rent',
@@ -149,7 +150,23 @@ function setupTabs(initial, onActivate) {
   activate(initial);
 }
 
+/**
+ * The header's Company box: signs every indicator chart's caption (firm.js).
+ * Seeded from the saved value and saved as it is typed, so the name is on the
+ * chart by the time the PNG is downloaded. The Cap vs Interest section has a
+ * box on the same value, so each follows the other.
+ */
+function wireFirmInput() {
+  const $firm = document.getElementById('app-firm');
+  if (!$firm) return;
+  $firm.value = getFirm();
+  $firm.addEventListener('input', () => setFirm($firm.value));
+  onFirmChange((name) => { if (document.activeElement !== $firm) $firm.value = name; });
+}
+
 async function bootstrap() {
+  wireFirmInput();
+
   const [manifest, geographies, capabilities] = await Promise.all([
     loadJson('./data/manifest.json').catch(() => ({ shards: [], lastUpdated: null, cmhcMaxYear: null })),
     loadJson('./data/geographies.json').catch(() => ({ levels: {} })),
