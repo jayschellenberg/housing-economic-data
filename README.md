@@ -32,9 +32,10 @@ The first section of the Market Indicators tab puts the BoC overnight target and
 type, so the risk premium between them is visible directly. It is the web version of the
 `IntChartALL` / `IntChartO` / `IntChartMF` family from the "Interest Rate Charts" Quarto project
 (`D:\Dropbox\Appraisal\RProjects\appraisal-templates\$ Interest Rate Charts`), collapsed into one
-card whose overlays are chosen with checkboxes instead of being baked into fifteen PNGs. It
-follows the tab's existing date range, and both halves are resampled to monthly means so the
-daily rate series and the quarterly cap rates share x-values.
+card whose overlays are chosen with checkboxes instead of being baked into fifteen PNGs — the
+checkboxes and the CSV picker sit in the column beside the chart, not above it. It follows the
+tab's existing date range, and both halves are resampled to monthly means so the daily rate
+series and the quarterly cap rates share x-values.
 
 **No cap-rate data ships with the site.** The rate lines come from the committed BoC shard; the
 cap rates are read from a CSV the user picks in their own browser (`web/src/cap-vs-interest.js`,
@@ -51,10 +52,11 @@ link pick it up.
 
 Every indicator chart (Market Indicators, Agriculture, Cap vs Interest) carries its source in
 the **subtitle** and the **company name** in the caption under the figure, the way the reference
-appraisal chart does — so a chart pasted into a report is attributable on sight. The name is set
-in the page header, saved per browser (`firmName` in the shared prefs, `web/src/firm.js`), and
-picked up live by every open card and by the PNG each one exports. Leave the box blank for
-unsigned charts. The CMHC-sourced cards (Rental Charts, Tables, Starts, Housing Stock, Compare
+appraisal chart does — so a chart pasted into a report is attributable on sight. The header box
+is the only place the name is set; it is saved per browser as it is typed (`firmName` in the
+shared prefs, `web/src/firm.js`) and read back on the next visit, so it only has to be entered
+once. Every open card and the PNG each one exports pick it up live. It starts empty — an unset
+field signs nothing — and clearing it goes back to unsigned charts. The CMHC-sourced cards (Rental Charts, Tables, Starts, Housing Stock, Compare
 Areas) keep `Source: CMHC` in the caption, where the licence attribution has always been.
 
 Built as a Vite + vanilla JS static site, with an R-based data pipeline. Deployed to Vercel from this GitHub repo.

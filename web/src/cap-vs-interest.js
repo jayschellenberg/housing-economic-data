@@ -30,7 +30,6 @@
  */
 
 import { buildIndicatorCard, readOpenPanels } from './indicator-chart.js';
-import { getFirm, setFirm } from './firm.js';
 
 export const CAP_GROUP_ID = 'cap_vs_interest';
 
@@ -298,36 +297,35 @@ function clearStored() {
 function sectionMarkup() {
   return `
     <h2 class="cmhc-mi-section-title">Cap vs Interest</h2>
-    <div class="cmhc-cvi-controls border border-neutral-200 rounded bg-neutral-50 p-3 mb-3 text-sm space-y-2">
-      <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <span class="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Cap-rate overlays</span>
-        <div data-role="cvi-types" class="flex flex-wrap items-center gap-x-3 gap-y-1"></div>
-        <span data-role="cvi-bulk" class="flex items-center gap-2 text-xs" hidden>
-          <button type="button" data-role="cvi-all" class="underline">All</button>
-          <button type="button" data-role="cvi-none" class="underline">None</button>
-        </span>
-      </div>
-      <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <label class="flex items-center gap-2">
-          <span class="text-xs text-neutral-600">Firm name</span>
-          <input type="text" data-role="cvi-firm" maxlength="60"
-                 placeholder="e.g. Red River Group"
-                 title="Signs the chart and the downloaded PNG. Leave blank for no caption."
-                 class="w-52 border border-neutral-300 rounded px-2 py-1 text-xs" />
-          <span class="text-xs text-neutral-500">signs the chart &amp; the PNG</span>
-        </label>
-        <label class="flex items-center gap-2">
-          <span class="text-xs text-neutral-600">Cap-rate CSV</span>
+    <!-- Chart left, its controls in the column beside it. The card has always
+         occupied one half of a two-column grid (every other section on this
+         tab is two cards wide); the controls used to sit in a full-width strip
+         above it, pushing the chart down the page for no reason while the
+         other half of the row stood empty. -->
+    <div class="grid md:grid-cols-2 gap-4 items-start">
+      <div data-role="cvi-card-grid" class="min-w-0"></div>
+      <div class="cmhc-cvi-controls border border-neutral-200 rounded bg-neutral-50 p-3 text-sm space-y-3 min-w-0">
+        <div class="space-y-1">
+          <div class="flex items-baseline justify-between gap-2">
+            <span class="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Cap-rate overlays</span>
+            <span data-role="cvi-bulk" class="flex items-center gap-2 text-xs" hidden>
+              <button type="button" data-role="cvi-all" class="underline">All</button>
+              <button type="button" data-role="cvi-none" class="underline">None</button>
+            </span>
+          </div>
+          <div data-role="cvi-types" class="grid gap-1"></div>
+        </div>
+        <div class="space-y-1">
+          <span class="block text-xs font-semibold text-neutral-500 uppercase tracking-wider">Cap-rate CSV</span>
           <input type="file" data-role="cvi-file" accept=".csv,text/csv"
-                 class="text-xs file:mr-2 file:rounded file:border file:border-neutral-300 file:bg-white file:px-2 file:py-1 file:text-xs" />
-        </label>
-        <button type="button" data-role="cvi-clear"
-                class="text-xs underline text-neutral-600" hidden>Remove loaded data</button>
+                 class="block w-full text-xs file:mr-2 file:rounded file:border file:border-neutral-300 file:bg-white file:px-2 file:py-1 file:text-xs" />
+          <button type="button" data-role="cvi-clear"
+                  class="text-xs underline text-neutral-600" hidden>Remove loaded data</button>
+        </div>
+        <p data-role="cvi-status" class="text-xs text-neutral-600"></p>
+        <p data-role="cvi-error" class="text-xs text-red-700" hidden></p>
       </div>
-      <p data-role="cvi-status" class="text-xs text-neutral-600"></p>
-      <p data-role="cvi-error" class="text-xs text-red-700" hidden></p>
     </div>
-    <div data-role="cvi-card-grid" class="grid md:grid-cols-2 gap-4"></div>
   `;
 }
 
@@ -378,7 +376,6 @@ export function buildCapVsInterest(shards, rangeRef) {
   const $status = section.querySelector('[data-role="cvi-status"]');
   const $error  = section.querySelector('[data-role="cvi-error"]');
   const $cardGrid = section.querySelector('[data-role="cvi-card-grid"]');
-  const $firm     = section.querySelector('[data-role="cvi-firm"]');
 
   let stored = loadStored();
 
@@ -389,13 +386,6 @@ export function buildCapVsInterest(shards, rangeRef) {
     set stored(v) { stored = v; },
     card: null,
   };
-
-  // The company name signs every chart on the site now (firm.js); this box
-  // and the one in the page header are two views of the same saved value, so
-  // typing here updates the header, the caption on this card, and every other
-  // card that is open.
-  $firm.value = getFirm();
-  $firm.addEventListener('input', () => setFirm($firm.value));
 
   renderControls();
   renderCard();

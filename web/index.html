@@ -26,13 +26,13 @@
         <p class="text-sm text-primary-100">Historical trends, comparison tables and charts spanning Canadian rental, construction, housing stock, affordability, census demographics and economic indicators — Manitoba, Saskatchewan, Alberta &amp; British Columbia in full detail (incl. municipalities); major centres elsewhere.</p>
       </div>
       <!-- Signs every indicator chart's caption, and so every PNG exported from
-           one (see firm.js). Saved per browser; the Cap vs Interest section has
-           its own box on the same value. -->
-      <label class="shrink-0 text-sm">
-        <span class="block text-xs text-primary-100 mb-1">Company (signs your charts)</span>
-        <input id="app-firm" type="text" maxlength="60" placeholder="e.g. Red River Group"
-               title="Shown under every indicator chart and in the PNG you download. Leave blank for no caption."
-               class="w-56 rounded border border-primary-400 bg-white/95 px-2 py-1 text-sm text-neutral-900 placeholder:text-neutral-400" />
+           one (see firm.js). The only place it is set; saved per browser once
+           typed, so it is already on the chart the next time the site opens. -->
+      <label class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm min-w-0">
+        <span class="text-xs text-primary-100 whitespace-nowrap">Company (signs your charts)</span>
+        <input id="app-firm" type="text" maxlength="60" placeholder="Your firm name"
+               title="Shown under every indicator chart and in the PNG you download. Saved in this browser. Leave blank for no caption."
+               class="w-56 max-w-full rounded border border-primary-400 bg-white/95 px-2 py-1 text-sm text-neutral-900 placeholder:text-neutral-400" />
       </label>
     </header>
 

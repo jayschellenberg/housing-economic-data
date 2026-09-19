@@ -7,9 +7,10 @@
  * belongs to. A chart pasted into a report should be attributable on sight.
  *
  * It lives in the shared per-browser prefs (prefs.js) because it is a property
- * of whoever is using the site, not of any one tab — the header box and the
- * Cap vs Interest box are two views of the same value, and every open card
- * follows a change to it live, via a window event rather than a re-render.
+ * of whoever is using the site, not of any one tab. The header box is the only
+ * place it is set; every open card follows a change to it live, via a window
+ * event rather than a re-render, and the saved value is read back on the next
+ * visit so the name only has to be typed once.
  */
 
 import { getPref, setPref } from './prefs.js';
@@ -18,22 +19,27 @@ const FIRM_PREF = 'firmName';
 const FIRM_EVENT = 'hed:firm';
 
 /**
- * Shown until someone types their own. The Cap vs Interest section shipped
- * with this default, so keeping it means the value (and its saved pref) reads
- * the same as it did before the caption went site-wide.
+ * Nobody's name until someone types their own.
+ *
+ * This shipped seeded with the firm the Cap vs Interest section was built for,
+ * which was harmless while the box lived in that one section. Now that the
+ * field is in the header and signs every chart on the site, a stranger's name
+ * would go out under the figures of anyone who never opened the box — so the
+ * box starts empty and the charts stay unsigned until the name is set.
  */
-export const DEFAULT_FIRM = 'Red River Group';
+export const DEFAULT_FIRM = '';
 
-/** The saved company name, or the default when nothing has been saved. */
+/** The saved company name, or empty when nothing has been saved. */
 export function getFirm() {
   const saved = getPref(FIRM_PREF);
   return (saved == null ? DEFAULT_FIRM : String(saved)).trim();
 }
 
 /**
- * Save a company name and tell every listening card. An empty string is a
- * real choice — it means "don't sign my charts" — so it is stored as typed
- * rather than falling back to the default.
+ * Save a company name and tell every listening card. Saved as typed, on each
+ * keystroke, so the name is on the chart before the PNG is downloaded and is
+ * still there the next time this browser opens the site. An empty string is a
+ * real choice — "don't sign my charts" — not an absent one.
  */
 export function setFirm(name) {
   const value = String(name ?? '').trim();
