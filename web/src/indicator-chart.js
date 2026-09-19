@@ -52,6 +52,44 @@ export function periodLabel(d, frequency) {
 }
 
 /**
+ * Which series of a chart draw dashed so its aggregate reads solid — the
+ * Market Indicators counterpart of the CMHC charts' "components dashed, Total
+ * solid" rule. The aggregate of an indicator chart is, in order:
+ *
+ *   - a series whose label names the whole: "Total", "Overall" (the SLOS
+ *     balance), or "Headline (all-items)" against the core CPI measures;
+ *   - otherwise, on a chart that compares geographies, the national line
+ *     (geo "CA": "Canada", the "15-CMA composite").
+ *
+ * A chart with no aggregate keeps every line solid: the yield curve, the
+ * mortgage-rate ladder, the policy rates, employment by industry. So does a
+ * chart whose labels are compound ("Canada — House only", "Rent — Winnipeg"):
+ * those pair up measures across geographies rather than break one down, and
+ * dashing everything but the one Canada line there would mislead.
+ *
+ * The caller passes the series actually on the chart, so toggling Canada off
+ * turns the remaining lines solid: a dash only means something next to the
+ * solid aggregate it is a component of.
+ *
+ * @param {Array<{id:string, geo?:string, chartLabel?:string}>} seriesMeta
+ * @returns {string[]} ids of the series to dash
+ */
+export function aggregateDashedIds(seriesMeta = []) {
+  if (seriesMeta.length < 2) return [];
+  const label = (s) => s.chartLabel || s.id || '';
+  if (seriesMeta.some(s => /\s[—–]\s/.test(label(s)))) return [];
+  const isNamedAggregate = (s) => /^(Total|Overall|Headline)\b/i.test(label(s));
+  let aggregate = seriesMeta.filter(isNamedAggregate);
+  if (aggregate.length === 0) {
+    const geos = new Set(seriesMeta.map(s => s.geo));
+    if (geos.size > 1) aggregate = seriesMeta.filter(s => s.geo === 'CA');
+  }
+  if (aggregate.length === 0 || aggregate.length === seriesMeta.length) return [];
+  const solid = new Set(aggregate.map(s => s.id));
+  return seriesMeta.filter(s => !solid.has(s.id)).map(s => s.id);
+}
+
+/**
  * Y-axis domain for a chart panel.
  *
  * Positive-only series keep the axis anchored at (or near) zero, which is how

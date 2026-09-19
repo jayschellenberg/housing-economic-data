@@ -15,7 +15,7 @@
  * snapshotPick) is available without round-tripping through R.
  */
 
-import { buildIndicatorCard } from './indicator-chart.js';
+import { buildIndicatorCard, aggregateDashedIds } from './indicator-chart.js';
 import { buildCapVsInterest, rerenderCapVsInterest } from './cap-vs-interest.js';
 import { escapeHtml } from './escape.js';
 import { indicatorFmt } from './format.js';
@@ -675,6 +675,10 @@ function buildChartSections(catalog, shards) {
         subtitle: subtitleFor(seriesMeta),
         monthFrom: state.monthFrom,
         monthTo:   state.monthTo,
+        // Components dashed, aggregate (Canada / Total / Overall) solid.
+        // Decided on the VISIBLE series: with Canada toggled off there is no
+        // solid line for a dash to contrast with, so the rest draw solid.
+        dashedIds: aggregateDashedIds(seriesMeta),
       });
       // Stash the unfiltered set so rerenderCards() can re-apply the filter
       // without having to re-walk the shard each time.
@@ -888,6 +892,7 @@ function rerenderCards() {
       subtitle: subtitleFor(seriesMeta),
       monthFrom: state.monthFrom,
       monthTo:   state.monthTo,
+      dashedIds: aggregateDashedIds(seriesMeta),
     });
   });
   // The Cap vs Interest card isn't catalog-driven, so it isn't in
