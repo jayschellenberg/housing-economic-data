@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { resolveProvinces, provincesLabel } from '../src/agriculture.js';
+import { resolveProvinces, provincesLabel, scopedSeries } from '../src/agriculture.js';
 
 // The Agriculture tab scopes its charts to the provinces checked in the
 // sidebar. The selection is remembered per browser and is never empty — an
@@ -47,5 +47,30 @@ describe('provincesLabel', () => {
   it('is empty when there is nothing to name', () => {
     expect(provincesLabel([])).toBe('');
     expect(provincesLabel()).toBe('');
+  });
+});
+
+describe('scopedSeries', () => {
+  const S = [{ geo: 'CA' }, { geo: 'MB' }, { geo: 'SK' }, { geo: 'AB' }, { geo: 'BC' }];
+  const geos = (out) => out.map((s) => s.geo);
+
+  it('keeps only the checked provinces', () => {
+    expect(geos(scopedSeries(S, 'prov', new Set(['MB'])))).toEqual(['MB']);
+    expect(geos(scopedSeries(S, 'prov', new Set(['MB', 'AB'])))).toEqual(['MB', 'AB']);
+  });
+
+  it('keeps the Canada benchmark on a farmland chart, not the unchecked provinces', () => {
+    // Reported against the sidebar: with only Manitoba checked, farmland was
+    // still drawing all four provinces. The national line earns its place —
+    // it is what a province's move is read against — the others do not.
+    expect(geos(scopedSeries(S, 'prov+ca', new Set(['MB'])))).toEqual(['CA', 'MB']);
+  });
+
+  it('leaves an "all" chart alone', () => {
+    expect(scopedSeries(S, 'all', new Set(['MB']))).toBe(S);
+  });
+
+  it('tolerates a chart with no series', () => {
+    expect(scopedSeries(undefined, 'prov', new Set(['MB']))).toEqual([]);
   });
 });

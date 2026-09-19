@@ -57,6 +57,26 @@ export function resolveProvinces(saved) {
 }
 
 /**
+ * The series a chart shows, for its scope and the checked provinces.
+ *
+ *   'prov'     only the checked provinces.
+ *   'prov+ca'  those plus the national line: farmland value is read against
+ *              the Canada benchmark, but the provinces you did not check are
+ *              noise on it like anywhere else.
+ *   'all'      everything the chart has.
+ *
+ * @param {Array<{geo?:string}>} meta   the chart's series
+ * @param {string} scope
+ * @param {Set<string>} abbrs           checked provinces, as 'MB'/'SK'/…
+ * @returns {Array<object>}
+ */
+export function scopedSeries(meta, scope, abbrs) {
+  if (scope === 'all') return meta;
+  const keep = (s) => abbrs.has(s.geo) || (scope === 'prov+ca' && s.geo === 'CA');
+  return (meta || []).filter(keep);
+}
+
+/**
  * How a selection reads in a chart title: "Manitoba", "Manitoba &
  * Saskatchewan", "Manitoba, Saskatchewan & Alberta". Written out rather than
  * counted ("3 provinces") because these titles are read in a report, where
@@ -72,8 +92,10 @@ export function provincesLabel(provs) {
 }
 
 // Curated charts, in display order. `chartId` names a catalog chart; `scope`
-// 'prov' filters series to the checked provinces, 'all' shows every geography
-// (farmland is inherently a cross-province comparison). `title`/`subtitle` are
+// filters its series: 'prov' keeps the checked provinces, 'prov+ca' keeps them
+// and the Canada line (farmland is read against the national benchmark — it is
+// what makes a province's move mean anything — but the provinces you did not
+// check are noise), 'all' keeps every geography the chart has. `title`/`subtitle` are
 // functions of the selection — `{ name }` reads as one province ("Manitoba")
 // or as the list ("Manitoba & Saskatchewan"), so the specs below are written
 // the same way whether one province is checked or four; `desc` optionally overrides the catalog
@@ -84,12 +106,15 @@ const AG_CHARTS = [
     title: (p) => `Farm cash receipts — ${p.name}`,
     subtitle: (p) => `${p.name} • annual, by receipt type`,
     desc: 'Annual farm cash receipts (StatsCan table 32-10-0045), split into total, crop, and livestock. Agriculture is a pillar of the prairie economy; crop and livestock receipts swing with commodity prices and trade access (e.g. canola tariffs).' },
-  { chartId: 'farmland_value', scope: 'all',
-    title: () => 'Farmland value per acre',
-    subtitle: () => 'Value per acre by province • annual (comparison)' },
-  { chartId: 'farmland_yoy', scope: 'all',
-    title: () => 'Farmland value — year-over-year % change',
-    subtitle: () => 'Annual % change by province • official analogue of the FCC report' },
+  { chartId: 'farmland_value', scope: 'prov+ca',
+    title: (p) => `Farmland value per acre — ${p.name}`,
+    subtitle: (p) => `${p.name} vs Canada • annual • value per acre` },
+  // No national series exists for the year-over-year change (the catalog
+  // derives it per province), so this one is provinces only — nothing to
+  // benchmark against, and a subtitle promising Canada would be a lie.
+  { chartId: 'farmland_yoy', scope: 'prov',
+    title: (p) => `Farmland value — year-over-year % change — ${p.name}`,
+    subtitle: (p) => `${p.name} • annual % change • official analogue of the FCC report` },
   { chartId: 'crop_prices', scope: 'prov',
     title: (p) => `Crop prices — ${p.name}`,
     subtitle: (p) => `${p.name} • monthly • $/tonne` },
@@ -320,15 +345,17 @@ export async function initAgriculture() {
         if (!spec || !cfg) continue;
 
         let meta = Object.values(seriesById).filter((s) => s.chartId === chartId);
-        if (spec.scope === 'prov') meta = meta.filter((s) => abbrs.has(s.geo));
+        meta = scopedSeries(meta, spec.scope, abbrs);
         // Catalog order within a province, provinces in the order they are
         // checked: a scoped chart reads province by province ("Total — MB,
         // Crops — MB, Livestock — MB, Total — SK, …") rather than interleaved,
         // and the province the map follows comes first. A cross-province chart
         // (farmland) keeps the catalog's own order, which opens with Canada.
-        const provRank = spec.scope === 'prov'
-          ? (s) => selected.findIndex((p) => p.abbr === s.geo)
-          : () => 0;
+        const provRank = spec.scope === 'all'
+          ? () => 0
+          // Canada leads on a 'prov+ca' chart (findIndex gives it -1), which is
+          // where the catalog has it and where the benchmark line belongs.
+          : (s) => selected.findIndex((p) => p.abbr === s.geo);
         meta.sort((a, b) => (provRank(a) - provRank(b))
           || ((orderOf.get(a.id) ?? 1e9) - (orderOf.get(b.id) ?? 1e9)));
         if (!meta.length) continue;
