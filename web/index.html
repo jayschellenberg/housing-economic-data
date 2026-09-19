@@ -790,49 +790,60 @@
          crop + livestock prices, and the Farm Input Price Index.
          Rendered by agriculture.js over the shared indicator shards.
          ============================================================ -->
-    <div id="tab-panel-agriculture" class="p-4 space-y-4" role="tabpanel" aria-labelledby="tab-btn-agriculture" hidden>
-      <div class="flex flex-wrap gap-3 items-center justify-between">
-        <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <div class="flex items-center gap-2">
-            <label for="ag-prov" class="text-sm font-medium text-neutral-700">Province</label>
-            <select id="ag-prov" class="border border-neutral-300 rounded px-2 py-1 text-sm" aria-label="Province"></select>
-          </div>
-          <div class="flex items-center gap-2">
-            <label for="ag-year-from" class="text-sm font-medium text-neutral-700">Years</label>
-            <select id="ag-year-from" class="border border-neutral-300 rounded px-2 py-1 text-sm" aria-label="From year"></select>
+    <div id="tab-panel-agriculture" class="grid md:grid-cols-[320px_1fr] min-h-[calc(100vh-110px)]" role="tabpanel" aria-labelledby="tab-btn-agriculture" hidden>
+      <aside class="bg-white border-r border-neutral-200 p-4 space-y-4 overflow-y-auto" aria-label="Agriculture filters">
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Jump to section</h2>
+          <ul id="ag-jump-list" class="cmhc-mi-jump-list grid gap-1 text-sm"></ul>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Provinces</h2>
+          <!-- Checkboxes built by agriculture.js, one per covered province. -->
+          <div id="ag-prov-toggles" class="grid gap-1 text-sm"></div>
+          <p class="text-xs text-neutral-500 mt-1">Check as many as you want to compare; the prices, input costs and receipts charts show every one. Farmland value always spans all four. The map below the charts follows the first province checked.</p>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Years</h2>
+          <div class="flex items-center gap-2 text-sm">
+            <select id="ag-year-from" class="flex-1 min-w-0 border border-neutral-300 rounded px-2 py-1" aria-label="From year"></select>
             <span class="text-neutral-400">–</span>
-            <select id="ag-year-to" class="border border-neutral-300 rounded px-2 py-1 text-sm" aria-label="To year"></select>
+            <select id="ag-year-to" class="flex-1 min-w-0 border border-neutral-300 rounded px-2 py-1" aria-label="To year"></select>
           </div>
-        </div>
-        <div class="flex gap-2">
+          <p class="text-xs text-neutral-500 mt-1">Applies to every chart. Leave both on “All” for the full history — which for farm structure reaches back to 1921.</p>
+        </section>
+
+        <section class="pt-2 border-t border-neutral-200 space-y-2">
           <button id="ag-download-docx-charts" type="button"
-            class="text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+            class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
             Download Word (charts)
           </button>
           <button id="ag-download-xlsx-charts" type="button"
-            class="text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+            class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
             Download Excel (charts)
           </button>
-        </div>
-      </div>
-      <p class="text-sm text-neutral-600 max-w-3xl">
-        Agricultural indicators for farm and farmland work — pick a province above to scope the
-        prices, input costs, and farm cash receipts; farmland value is shown across provinces for
-        comparison. Sourced from Statistics Canada; each chart exports to PNG, and the whole tab to
-        Word or Excel.
-      </p>
-      <!-- Jump-to-section bar (sticky); links are built by agriculture.js. -->
-      <nav id="ag-jump" class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm sticky top-0 z-10 bg-neutral-50/95 backdrop-blur py-2 border-b border-neutral-200" aria-label="Jump to section"></nav>
-      <!-- Chart sections (built by agriculture.js: a header + grid per section). -->
-      <div id="ag-chart-grid" class="space-y-8"></div>
-      <!-- Within-province Census-of-Agriculture choropleth (mounted by ag-map.js);
-           shades the selected province's consolidated subdivisions by farm size,
-           farm count, operator age, or dominant farm type. -->
-      <section id="ag-sec-map" class="scroll-mt-16">
-        <h2 class="cmhc-mi-section-title">Within-province map</h2>
-        <div id="ag-map" class="max-w-3xl"></div>
-      </section>
-      <footer class="text-xs text-neutral-500 pt-4 mt-4 border-t border-neutral-200">
+          <p class="text-xs text-neutral-500">Every visible chart as an image — one per page / worksheet.</p>
+        </section>
+      </aside>
+
+      <main class="p-4 space-y-4 overflow-x-hidden">
+        <p class="text-sm text-neutral-600 max-w-3xl">
+          Agricultural indicators for farm and farmland work — check the provinces on the left to scope the
+          prices, input costs, and farm cash receipts; farmland value is shown across provinces for
+          comparison. Sourced from Statistics Canada; each chart exports to PNG, and the whole tab to
+          Word or Excel.
+        </p>
+        <!-- Chart sections (built by agriculture.js: a header + grid per section). -->
+        <div id="ag-chart-grid" class="space-y-8"></div>
+        <!-- Within-province Census-of-Agriculture choropleth (mounted by ag-map.js);
+             shades the first checked province's consolidated subdivisions by farm
+             size, farm count, operator age, or dominant farm type. -->
+        <section id="ag-sec-map" class="scroll-mt-16">
+          <h2 class="cmhc-mi-section-title" id="ag-map-title">Within-province map</h2>
+          <div id="ag-map" class="max-w-3xl"></div>
+        </section>
+        <footer class="text-xs text-neutral-500 pt-4 mt-4 border-t border-neutral-200">
         Source: Statistics Canada Web Data Service — farm cash receipts (32-10-0045), value per acre of
         farm land and buildings (32-10-0047), farm product prices including supply-managed poultry, eggs
         and milk (32-10-0077), and the Farm Input Price Index (18-10-0258). Contains information licensed
@@ -840,7 +851,8 @@
         as trend and relativity indicators, not a substitute for local sales evidence. Supply-managed
         quota values (milk, poultry, egg) are set and traded by provincial marketing boards and are not
         published by Statistics Canada.
-      </footer>
+        </footer>
+      </main>
     </div>
 
     <!-- ============================================================
