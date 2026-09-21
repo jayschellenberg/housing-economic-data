@@ -632,6 +632,111 @@ export async function initCensus() {
     $charts.appendChild(card);
   }
 
+  // ---- Find by address ----------------------------------------------------
+  // Winnipeg only — the Community Area / Cluster / Neighbourhood geographies
+  // exist nowhere else in the app's coverage. A match loads the CLUSTER as
+  // Area 1 (the level that always has a usable sample size) and lists all three
+  // levels so the neighbourhood and community area are one click away.
+  //
+  // The index is fetched on first use rather than at tab init: it is ~120 KB
+  // and most visits never type an address.
+  const $addr    = document.getElementById('census-address');
+  const $addrGo  = document.getElementById('census-address-go');
+  const $addrOut = document.getElementById('census-address-result');
+
+  const ADDR_LEVELS = [
+    { key: 'neighbourhood', level: 'WPG_Nbhd',    label: 'Neighbourhood' },
+    { key: 'cluster',       level: 'WPG_Cluster', label: 'Cluster' },
+    { key: 'communityArea', level: 'WPG_CA',      label: 'Community area' },
+  ];
+
+  // The region for a Winnipeg level+name, or null when the census build has no
+  // profile there — 26 of the City's 237 neighbourhoods are newer or finer than
+  // the 2021 dissemination-area vintage r/12 builds from.
+  const wpgRegion = (level, name) =>
+    data.regions.find(r => r.level === level && r.name === name) || null;
+
+  function loadAsArea1(uid) {
+    rememberProvince('46');
+    fillProv($prov[0], '46');
+    fillArea($area[0], '46', uid);
+    render();
+  }
+
+  const ADDR_MESSAGES = {
+    empty:      'Type a Winnipeg street address.',
+    'no-number': 'Include the house number — e.g. <strong>514 Corydon Ave</strong>.',
+    'no-data':  'Address lookup is unavailable — run <code>r/25_build_wpg_address_index.R</code>.',
+  };
+
+  function renderAddressResult(res, typed) {
+    if (!res.ok) {
+      const msg = ADDR_MESSAGES[res.reason];
+      if (msg) { $addrOut.innerHTML = `<p class="text-neutral-600">${msg}</p>`; return; }
+      const lead = res.reason === 'ambiguous'
+        ? 'Several streets match — which one?'
+        : `No Winnipeg street matches “${escapeHtml(typed)}”.`;
+      const chips = (res.suggestions || []).map(s =>
+        `<button type="button" data-street="${escapeHtml(s)}"
+           class="border border-neutral-300 rounded px-1.5 py-0.5 hover:bg-neutral-100">${escapeHtml(s)}</button>`
+      ).join(' ');
+      $addrOut.innerHTML = `<p class="text-neutral-600">${lead}</p>` +
+        (chips ? `<div class="flex flex-wrap gap-1 mt-1">${chips}</div>` : '');
+      $addrOut.querySelectorAll('button[data-street]').forEach(b =>
+        b.addEventListener('click', () => {
+          $addr.value = `${res.number ?? ''} ${b.dataset.street}`.trim();
+          runAddressLookup();
+        }));
+      return;
+    }
+
+    const rows = ADDR_LEVELS.map(({ key, level, label }) => {
+      const name = res[key];
+      if (!name) return '';
+      const reg = wpgRegion(level, name);
+      const action = reg
+        ? `<button type="button" data-uid="${escapeHtml(reg.uid)}"
+             class="shrink-0 text-accent-600 hover:underline">Load</button>`
+        : '<span class="shrink-0 text-neutral-400" title="Not published as a separate census area">no profile</span>';
+      return `<div class="flex items-baseline justify-between gap-2">
+          <span class="truncate"><span class="text-neutral-500">${label}:</span>
+            <strong>${escapeHtml(name)}</strong></span>${action}</div>`;
+    }).join('');
+
+    $addrOut.innerHTML =
+      `<div class="border border-neutral-200 rounded p-2 space-y-1">
+         <div class="text-neutral-500">${res.number} ${escapeHtml(res.street)}</div>
+         ${rows}
+       </div>`;
+    $addrOut.querySelectorAll('button[data-uid]').forEach(b =>
+      b.addEventListener('click', () => loadAsArea1(b.dataset.uid)));
+
+    // Load the cluster straight away — that's what the box is for.
+    const cluster = res.cluster && wpgRegion('WPG_Cluster', res.cluster);
+    if (cluster) loadAsArea1(cluster.uid);
+  }
+
+  let addrBusy = false;
+  async function runAddressLookup() {
+    if (!$addrOut || addrBusy) return;
+    const typed = $addr.value;
+    if (!typed.trim()) { $addrOut.innerHTML = ''; return; }
+    addrBusy = true;
+    $addrOut.innerHTML = '<p class="text-neutral-500">Looking up…</p>';
+    try {
+      const { loadWpgAddressIndex, lookupAddress } = await import('./wpg-address.js');
+      const idx = await loadWpgAddressIndex();
+      renderAddressResult(lookupAddress(idx, typed), typed);
+    } finally {
+      addrBusy = false;
+    }
+  }
+
+  $addrGo?.addEventListener('click', runAddressLookup);
+  $addr?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); runAddressLookup(); }
+  });
+
   // Changing a picker's province repopulates its area list (first item selected).
   // The subject picker (Area 1) also records the shared "home" province.
   $prov.forEach((psel, i) => psel.addEventListener('change', () => {

@@ -693,6 +693,20 @@
         </section>
 
         <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Find by address</h2>
+          <div class="flex gap-1">
+            <input id="census-address" type="search" autocomplete="off" spellcheck="false"
+              placeholder="514 Corydon Ave"
+              class="flex-1 min-w-0 border border-neutral-300 rounded px-2 py-1 text-sm"
+              aria-label="Winnipeg street address" />
+            <button id="census-address-go" type="button"
+              class="text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">Find</button>
+          </div>
+          <div id="census-address-result" class="mt-2 text-xs" role="status" aria-live="polite"></div>
+          <p class="text-xs text-neutral-500 mt-2 leading-snug">City of Winnipeg addresses only — the neighbourhood / cluster / community area geographies exist nowhere else. A match loads the <strong>cluster</strong> as Area 1; the neighbourhood and community area are one click away.</p>
+        </section>
+
+        <section>
           <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Areas</h2>
           <label class="block text-xs text-neutral-600 mb-1">Area 1 (subject)</label>
           <div class="flex gap-1">

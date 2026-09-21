@@ -200,6 +200,44 @@ exhausted mid-run the script still writes all standard Manitoba levels and skips
 the Winnipeg virtual geos with a warning; re-run later to add them. Standard
 Manitoba levels are cached after the first build, so those re-runs are free.
 
+#### Find by address (Winnipeg)
+
+The Census Profile sidebar has a **Find by address** box that resolves a
+Winnipeg street address to its Neighbourhood / Neighbourhood Cluster /
+Community Area, loads the **cluster** as Area 1, and offers the other two
+levels as one-click alternates. It is entirely offline — no geocoder, no API
+key, no external request — so the strict CSP is untouched.
+
+`r/25_build_wpg_address_index.R` builds the index from two City of Winnipeg
+open datasets (Open Government Licence – Winnipeg): the **Addresses** file
+(~244k active civic addresses with coordinates and the City's own neighbourhood
+label) and the **Census Boundaries** file (the 23 cluster + 12 community-area
+polygons). Each address point is placed in its cluster and community area by
+point-in-polygon; the neighbourhood is the City's per-address label. Verified
+over all 244,175 addresses: every neighbourhood falls wholly inside one cluster,
+and only 10 addresses miss every polygon.
+
+A census dissemination-area join was tried first and measured *worse* — DAs are
+coarser than neighbourhoods in newly-built areas and the lookup assigns each DA
+wholly to one neighbourhood, so it disagreed with the City's own labels for
+11.7% of addresses at neighbourhood level and 4.1% at cluster level. The script
+header records the detail.
+
+The output is collapsed to per-street, per-parity number runs — 4,556 streets,
+6,889 runs, **121 KB (~43 KB gzipped)** — and the build replays every address
+through the written file, aborting if a single one resolves wrongly. Note that
+26 of the City's 237 neighbourhoods are newer or finer than the 2021 DA vintage
+`r/12` builds from (Prairie Pointe, Crestview, Leila North, Bridgwater Lakes,
+Exchange District, …); those addresses still resolve, and the neighbourhood row
+shows "no profile" while the cluster and community area load normally.
+
+Like `r/12`, this is **manual, not part of `data:all`**. Re-run it occasionally
+to pick up new subdivisions — the City refreshes the address file monthly:
+
+```pwsh
+npm --prefix web run data:wpgaddr
+```
+
 ### Refresh schedule
 
 | Workflow | Cron (UTC) | What it pulls |
