@@ -262,7 +262,11 @@ if (length(unknown)) {
     paste0("  - ", unknown),
     "",
     "Those addresses are excluded from web/public/data/geo/wpg_address_index.json.",
-    "Fix: WPG_ADDR_REBUILD_HIERARCHY=1 Rscript r/25_build_wpg_address_index.R  (needs sf)"
+    "This self-heals: the quarterly 'Rebuild Winnipeg neighbourhood hierarchy'",
+    "workflow (5th of Jan/Apr/Jul/Oct) re-derives the hierarchy from the City's",
+    "polygons, and the next refresh picks the addresses up. To fix it sooner, run",
+    "that workflow manually, or locally:",
+    "  WPG_ADDR_REBUILD_HIERARCHY=1 Rscript r/25_build_wpg_address_index.R  (needs sf)"
   ), FLAG_PATH)
 }
 
