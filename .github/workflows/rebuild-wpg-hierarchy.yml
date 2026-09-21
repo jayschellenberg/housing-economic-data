@@ -1,0 +1,202 @@
+name: Rebuild Winnipeg neighbourhood hierarchy (quarterly)
+on:
+  schedule:
+    # Quarterly — 08:37 UTC on the 5th of Jan / Apr / Jul / Oct. Off the
+    # top-of-the-hour slot GitHub congests, and clear of the 2nd, when the
+    # monthly data refresh runs (that job rebuilds the address INDEX; this one
+    # rebuilds the HIERARCHY the index is built against).
+    - cron: "37 8 5 1,4,7,10 *"
+  workflow_dispatch:
+    inputs:
+      allow_shrink:
+        description: "Bypass the address-index shrink guard (use only when a drop is intentional)."
+        required: false
+        default: "0"
+        type: choice
+        options: ["0", "1"]
+
+# The monthly refresh commits to main too. Never let the two race on a push.
+concurrency:
+  group: wpg-hierarchy-rebuild
+  cancel-in-progress: false
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # Full history so the commit step can rebase onto main if it advanced.
+          fetch-depth: 0
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          # Pinned, kept in sync with the package snapshot date below — same
+          # versions the data refreshes use. Bump both together.
+          r-version: "4.6.1"
+          use-public-rspm: true
+
+      - name: Stamp run date
+        id: stamp
+        run: echo "date=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      # This is the ONE job in the repo that needs sf, and sf needs GDAL/GEOS/
+      # PROJ headers that the runner image doesn't carry. That cost (~2 min) is
+      # exactly why the monthly refresh does NOT rebuild the hierarchy — it runs
+      # r/25's fast path, which joins on the committed CSV and needs no geometry.
+      # Four times a year the cost is irrelevant, so this job can afford the real
+      # point-in-polygon pass over all ~244k address points.
+      - name: Install system libraries for sf
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            libgdal-dev libgeos-dev libproj-dev libudunits2-dev
+
+      - name: Install R packages
+        run: |
+          # Same PPM pinning as the data refreshes: freeze the repo PPM to a
+          # dated snapshot and keep it as the ONLY repo, so install.packages()
+          # can't reach past it to CRAN and end up compiling from source.
+          SNAPSHOT <- "2026-09-01"
+          repos <- getOption("repos")
+          i <- grepl("packagemanager\\.posit\\.co/cran", repos)
+          if (any(i)) {
+            pinned <- sub("/(latest|[0-9]{4}-[0-9]{2}-[0-9]{2})/?$", paste0("/", SNAPSHOT), repos[i][[1]])
+            options(repos = c(RSPM = pinned))
+          }
+          cat("[install] repos:\n"); print(getOption("repos"))
+          install.packages(c("jsonlite", "sf"))
+        shell: Rscript {0}
+
+      - name: Rebuild hierarchy + address index
+        env:
+          WPG_ADDR_REBUILD_HIERARCHY: "1"
+          WPG_ADDR_ALLOW_SHRINK: ${{ inputs.allow_shrink || '0' }}
+        run: Rscript r/25_build_wpg_address_index.R
+
+      # Report what moved BEFORE committing, so the issue body below can name
+      # the neighbourhoods rather than just saying "something changed".
+      - name: Summarise hierarchy changes
+        id: diff
+        run: |
+          set -euo pipefail
+          CSV=r/lib/wpg_nbhd_hierarchy.csv
+          if git diff --quiet -- "$CSV"; then
+            echo "Hierarchy unchanged."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            # Lines added/removed, minus the diff headers, as a readable list.
+            {
+              echo "added<<EOF"
+              git diff -U0 -- "$CSV" | grep '^+' | grep -v '^+++' | sed 's/^+/  + /' || true
+              echo "EOF"
+              echo "removed<<EOF"
+              git diff -U0 -- "$CSV" | grep '^-' | grep -v '^---' | sed 's/^-/  - /' || true
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+            echo "Hierarchy changed:"
+            git diff --stat -- "$CSV"
+          fi
+
+      - name: Commit if changed
+        id: commit
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add r/lib/wpg_nbhd_hierarchy.csv web/public/data/geo/wpg_address_index.json
+          if git diff --staged --quiet; then
+            echo "Nothing to commit — hierarchy and index are current."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            git commit -m "data: rebuild Winnipeg neighbourhood hierarchy (${{ steps.stamp.outputs.date }})"
+            pushed=false
+            for attempt in 1 2 3; do
+              if git push origin HEAD:main; then pushed=true; break; fi
+              echo "push rejected (attempt $attempt) — rebasing onto origin/main"
+              git fetch origin main
+              git rebase origin/main || { echo "rebase conflict — aborting"; git rebase --abort || true; exit 1; }
+            done
+            [ "$pushed" = true ] || { echo "push failed after retries"; exit 1; }
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # A changed hierarchy means the City added, renamed or retired a
+      # neighbourhood. That is worth a heads-up: it can add a level the Census
+      # Profile tab has no profile for (r/12 is 2021-vintage and only rebuilt
+      # when a census lands), so the address box will show "no profile" there.
+      - name: Note a hierarchy change
+        if: success() && steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create \
+            --title "Winnipeg neighbourhood hierarchy changed — ${{ steps.stamp.outputs.date }}" \
+            --label "automation" \
+            --body "$(cat <<'BODY'
+          The quarterly rebuild found a change in the City of Winnipeg's
+          neighbourhood → cluster → community-area hierarchy. The CSV and the
+          address index have both been rebuilt and pushed to main; the Census
+          Profile "Find by address" box picks it up on the next deploy.
+
+          **Added / changed rows**
+          ```
+          ${{ steps.diff.outputs.added }}
+          ```
+
+          **Removed rows**
+          ```
+          ${{ steps.diff.outputs.removed }}
+          ```
+
+          No action needed for the address lookup itself. Worth knowing: a brand
+          new neighbourhood has no census profile until `r/12_census_profile.R`
+          is re-run against a census that includes it, so the address box will
+          show "no profile" on that row and fall back to the cluster — which is
+          correct, not a bug.
+
+          - Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          BODY
+          )" || echo "gh issue create failed (continuing)"
+
+      - name: Open issue on failure
+        if: failure() || (cancelled() && github.event_name == 'schedule')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create \
+            --title "Winnipeg hierarchy rebuild ${{ job.status == 'cancelled' && 'timed out' || 'failed' }}: ${{ steps.stamp.outputs.date }}" \
+            --label "automation" \
+            --body "$(cat <<'BODY'
+          The quarterly `Rebuild Winnipeg neighbourhood hierarchy` workflow did
+          not complete (job status: ${{ job.status }}).
+
+          **Nothing is broken in production.** The committed hierarchy and
+          address index stay exactly as they were, and the monthly refresh keeps
+          rebuilding the index against them. The only consequence is that a
+          newly-added City neighbourhood would stay unrecognised until this runs
+          successfully — and the monthly refresh raises its own issue when it
+          sees one.
+
+          - Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          Most likely causes, in order:
+
+          1. **sf / system-library install failed** — this is the only job that
+             apt-installs GDAL/GEOS/PROJ. A transient apt or PPM hiccup; re-run.
+          2. **City of Winnipeg open data outage** — the Socrata address or
+             boundary endpoint returned a truncated file (the script checks the
+             download size and stops). Re-run later.
+          3. **Nesting check tripped** — a neighbourhood now spans two clusters,
+             which the script refuses to guess at. That means the City has
+             genuinely changed its geography and the design needs a look, not a
+             re-run. See the header of `r/25_build_wpg_address_index.R`.
+          4. **Shrink guard tripped** — the index lost more than 2% of its
+             streets. If that drop is real, re-run via workflow_dispatch with
+             allow_shrink=1.
+          BODY
+          )" || echo "gh issue create failed (continuing)"

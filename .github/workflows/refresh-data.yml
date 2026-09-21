@@ -221,12 +221,15 @@ jobs:
         run: |
           # r/25 writes data/wpg_address_new_nbhds.txt only when the City's address
           # file uses a neighbourhood name the committed hierarchy doesn't cover.
-          # Those addresses are excluded from the index until someone re-derives the
-          # hierarchy from the City's polygons (needs sf, so not doable here).
+          # Those addresses are excluded from the index until the hierarchy is
+          # re-derived from the City's polygons -- which needs sf, so it cannot happen
+          # in this job. The quarterly rebuild-wpg-hierarchy.yml workflow does it
+          # (5th of Jan/Apr/Jul/Oct), so this is a heads-up rather than a task: it says
+          # a new neighbourhood appeared and roughly when it resolves itself.
           if [ -f data/wpg_address_new_nbhds.txt ]; then
             BODY="$(cat data/wpg_address_new_nbhds.txt)"
             echo "Winnipeg address alert: $BODY"
-            gh issue create               --title "New City of Winnipeg neighbourhood name(s) — rebuild the address hierarchy"               --label "automation"               --body "$BODY"               || echo "gh issue create failed (continuing)"
+            gh issue create               --title "New City of Winnipeg neighbourhood name(s) — address hierarchy is behind"               --label "automation"               --body "$BODY"               || echo "gh issue create failed (continuing)"
           else
             echo "No new Winnipeg neighbourhood names this run."
           fi

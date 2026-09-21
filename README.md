@@ -255,10 +255,21 @@ automatically.
 ```pwsh
 npm --prefix web run data:wpgaddr                    # fast path (what CI runs)
 
-# Re-derive the hierarchy from the City's polygons — needs sf. Run this only
-# when the City adds a neighbourhood; the fast path raises an alert when it does.
+# Re-derive the hierarchy from the City's polygons — needs sf. Normally you
+# never run this by hand: rebuild-wpg-hierarchy.yml does it quarterly.
 $env:WPG_ADDR_REBUILD_HIERARCHY="1"; npm --prefix web run data:wpgaddr
 ```
+
+**The hierarchy rebuilds itself quarterly.** `rebuild-wpg-hierarchy.yml` runs on
+the 5th of Jan/Apr/Jul/Oct: it apt-installs GDAL/GEOS/PROJ (the only job in the
+repo that needs them), re-derives the hierarchy by point-in-polygon over all
+~244k address points, rebuilds the index, and commits both if anything moved —
+opening an issue that names the changed neighbourhoods. A failure there breaks
+nothing: the committed hierarchy and index stay put and the monthly refresh
+keeps using them, so the only cost is that a brand-new neighbourhood stays
+unrecognised until the next successful run. That is also why the monthly
+"new neighbourhood name" alert is a heads-up rather than a task — it resolves
+itself at the next quarterly rebuild.
 
 Both paths produce a byte-identical index. Three guards keep an automated run
 from publishing junk: a **new neighbourhood name** the hierarchy doesn't cover
@@ -275,6 +286,7 @@ leaves the committed index in place rather than failing the whole refresh.
 |---|---|---|
 | `refresh-data.yml` | 2nd of every month + 28th of Jan + 28th of Jul | Full pipeline: CMHC Rms/Srms/Scss + BoC + StatsCan + Winnipeg address index |
 | `refresh-indicators.yml` | Every Monday | BoC + StatsCan only (skips the slow CMHC scrape) |
+| `rebuild-wpg-hierarchy.yml` | 5th of Jan / Apr / Jul / Oct | Re-derives the Winnipeg neighbourhood → cluster → community-area hierarchy from the City's polygons (the only job needing `sf`) |
 
 CMHC publishes the Rental Market Survey twice a year (April + October).
 The Jan/Jul crons are timed to catch the typical release window so rental
