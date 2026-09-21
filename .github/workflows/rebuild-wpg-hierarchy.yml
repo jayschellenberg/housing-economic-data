@@ -80,16 +80,33 @@ jobs:
 
       # Report what moved BEFORE committing, so the issue body below can name
       # the neighbourhoods rather than just saying "something changed".
-      - name: Summarise hierarchy changes
+      # Both files are staged below, so both are inspected here — otherwise an
+      # index-only change commits with nothing explaining it. The two mean
+      # different things and are reported separately:
+      #   hierarchy changed -> the City moved its geography. Newsworthy; opens an issue.
+      #   index changed only -> new addresses in existing neighbourhoods. Routine;
+      #     the monthly refresh does this all year, so an issue would be noise.
+      - name: Summarise changes
         id: diff
         run: |
           set -euo pipefail
           CSV=r/lib/wpg_nbhd_hierarchy.csv
-          if git diff --quiet -- "$CSV"; then
-            echo "Hierarchy unchanged."
-            echo "changed=false" >> "$GITHUB_OUTPUT"
+          IDX=web/public/data/geo/wpg_address_index.json
+          hier=false; index=false
+          git diff --quiet -- "$CSV" || hier=true
+          git diff --quiet -- "$IDX" || index=true
+          echo "hierarchy=$hier" >> "$GITHUB_OUTPUT"
+          echo "index=$index"    >> "$GITHUB_OUTPUT"
+
+          # The commit message names what actually moved, so a commit that lands
+          # without an accompanying issue explains itself.
+          if [ "$hier" = true ]; then
+            echo "subject=data: rebuild Winnipeg neighbourhood hierarchy" >> "$GITHUB_OUTPUT"
           else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "subject=data: refresh Winnipeg address index" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [ "$hier" = true ]; then
             # Lines added/removed, minus the diff headers, as a readable list.
             {
               echo "added<<EOF"
@@ -99,9 +116,29 @@ jobs:
               git diff -U0 -- "$CSV" | grep '^-' | grep -v '^---' | sed 's/^-/  - /' || true
               echo "EOF"
             } >> "$GITHUB_OUTPUT"
-            echo "Hierarchy changed:"
-            git diff --stat -- "$CSV"
           fi
+
+          {
+            echo "### Winnipeg hierarchy rebuild"
+            echo ""
+            echo "| file | changed |"
+            echo "|---|---|"
+            echo "| \`$CSV\` | $hier |"
+            echo "| \`$IDX\` | $index |"
+            if [ "$hier" = true ]; then
+              echo ""
+              echo "Hierarchy diff:"
+              echo '```'
+              git diff -U0 -- "$CSV" | grep -E '^[+-]' | grep -vE '^(\+\+\+|---)' || true
+              echo '```'
+            elif [ "$index" = true ]; then
+              echo ""
+              echo "Index refreshed from new addresses; the hierarchy is unchanged, so no issue was opened."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          echo "hierarchy changed: $hier | index changed: $index"
+          [ "$hier" = true ] && git diff --stat -- "$CSV" || true
 
       - name: Commit if changed
         id: commit
@@ -113,7 +150,7 @@ jobs:
             echo "Nothing to commit — hierarchy and index are current."
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
-            git commit -m "data: rebuild Winnipeg neighbourhood hierarchy (${{ steps.stamp.outputs.date }})"
+            git commit -m "${{ steps.diff.outputs.subject }} (${{ steps.stamp.outputs.date }})"
             pushed=false
             for attempt in 1 2 3; do
               if git push origin HEAD:main; then pushed=true; break; fi
@@ -130,7 +167,7 @@ jobs:
       # Profile tab has no profile for (r/12 is 2021-vintage and only rebuilt
       # when a census lands), so the address box will show "no profile" there.
       - name: Note a hierarchy change
-        if: success() && steps.diff.outputs.changed == 'true'
+        if: success() && steps.diff.outputs.hierarchy == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
