@@ -231,18 +231,37 @@ through the written file, aborting if a single one resolves wrongly. Note that
 Exchange District, …); those addresses still resolve, and the neighbourhood row
 shows "no profile" while the cluster and community area load normally.
 
-Like `r/12`, this is **manual, not part of `data:all`**. Re-run it occasionally
-to pick up new subdivisions — the City refreshes the address file monthly:
+**It runs on the monthly refresh.** The City's boundaries never move; only the
+address list does. So the neighbourhood → cluster → community-area hierarchy is
+derived once from the polygons and committed as `r/lib/wpg_nbhd_hierarchy.csv`
+(237 rows), and the routine rebuild is pure text — fresh addresses joined to
+that CSV by name, needing only `jsonlite`. That matters because `sf` (and its
+GDAL/GEOS system libraries) is **not** installed on the refresh runner; the
+fast path never touches it, so the index stays current with new subdivisions
+automatically.
 
 ```pwsh
-npm --prefix web run data:wpgaddr
+npm --prefix web run data:wpgaddr                    # fast path (what CI runs)
+
+# Re-derive the hierarchy from the City's polygons — needs sf. Run this only
+# when the City adds a neighbourhood; the fast path raises an alert when it does.
+$env:WPG_ADDR_REBUILD_HIERARCHY="1"; npm --prefix web run data:wpgaddr
 ```
+
+Both paths produce a byte-identical index. Three guards keep an automated run
+from publishing junk: a **new neighbourhood name** the hierarchy doesn't cover
+is excluded and written to `data/wpg_address_new_nbhds.txt`, which the workflow
+turns into a GitHub issue; the index **may not shrink** more than 2% in street
+count against the committed one (override with `WPG_ADDR_ALLOW_SHRINK=1`); and
+every address is replayed through the written file before the build ends. The
+step is best-effort in the workflow, like `r/24` — a City open-data outage
+leaves the committed index in place rather than failing the whole refresh.
 
 ### Refresh schedule
 
 | Workflow | Cron (UTC) | What it pulls |
 |---|---|---|
-| `refresh-data.yml` | 2nd of every month + 28th of Jan + 28th of Jul | Full pipeline: CMHC Rms/Srms/Scss + BoC + StatsCan |
+| `refresh-data.yml` | 2nd of every month + 28th of Jan + 28th of Jul | Full pipeline: CMHC Rms/Srms/Scss + BoC + StatsCan + Winnipeg address index |
 | `refresh-indicators.yml` | Every Monday | BoC + StatsCan only (skips the slow CMHC scrape) |
 
 CMHC publishes the Rental Market Survey twice a year (April + October).
