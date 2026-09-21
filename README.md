@@ -263,8 +263,13 @@ $env:WPG_ADDR_REBUILD_HIERARCHY="1"; npm --prefix web run data:wpgaddr
 **The hierarchy rebuilds itself quarterly.** `rebuild-wpg-hierarchy.yml` runs on
 the 5th of Jan/Apr/Jul/Oct: it apt-installs GDAL/GEOS/PROJ (the only job in the
 repo that needs them), re-derives the hierarchy by point-in-polygon over all
-~244k address points, rebuilds the index, and commits both if anything moved —
-opening an issue that names the changed neighbourhoods. A failure there breaks
+~244k address points, rebuilds the index, and commits whatever moved. It
+distinguishes the two: a changed **hierarchy** means the City moved its
+geography, so it opens an issue naming the added and removed neighbourhoods;
+a changed **index** alone just means new addresses in existing neighbourhoods,
+which the monthly refresh does all year, so it commits with a
+`data: refresh Winnipeg address index` subject and no issue. Either way the
+commit message says which it was. A failure there breaks
 nothing: the committed hierarchy and index stay put and the monthly refresh
 keeps using them, so the only cost is that a brand-new neighbourhood stays
 unrecognised until the next successful run. That is also why the monthly
