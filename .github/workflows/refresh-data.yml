@@ -101,6 +101,16 @@ jobs:
           Rscript r/15_build_economic_update.R
           Rscript r/19_scrape_rtb.R
           Rscript r/23_scrape_population_estimates.R   # annual CSD/province population estimates (Census Profile chart)
+          # Winnipeg address -> neighbourhood/cluster/community-area index for the Census Profile
+          # "Find by address" box. The City refreshes its address file monthly, so this rides the
+          # monthly cron. It runs the FAST path: fresh addresses joined to the committed
+          # r/lib/wpg_nbhd_hierarchy.csv, needing only jsonlite -- sf (and its GDAL/GEOS system
+          # libraries) is NOT installed here and is only needed to re-derive that hierarchy from
+          # the City's polygons, which happens manually when the City adds a neighbourhood.
+          # Best-effort like r/24: a City open-data outage must not fail the whole refresh, and
+          # the script's own shrink guard aborts rather than publishing a thinned index, so the
+          # committed one simply stays.
+          Rscript r/25_build_wpg_address_index.R || echo "[refresh] r/25 Winnipeg address index skipped — keeping the committed index"
           # Agriculture-tab time-series (prices, input costs, farm cash, farm structure) refresh above via
           # r/11 + r/14 (catalog-driven). The within-province farm-structure MAP is 2021-Census-of-Agriculture
           # data — static until the next census (~2027) — so this best-effort step just re-confirms it and will
@@ -202,6 +212,23 @@ jobs:
               || echo "gh issue create failed (continuing)"
           else
             echo "No new RTB guideline this run."
+          fi
+
+      - name: Alert on new Winnipeg neighbourhood names
+        if: success() && steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # r/25 writes data/wpg_address_new_nbhds.txt only when the City's address
+          # file uses a neighbourhood name the committed hierarchy doesn't cover.
+          # Those addresses are excluded from the index until someone re-derives the
+          # hierarchy from the City's polygons (needs sf, so not doable here).
+          if [ -f data/wpg_address_new_nbhds.txt ]; then
+            BODY="$(cat data/wpg_address_new_nbhds.txt)"
+            echo "Winnipeg address alert: $BODY"
+            gh issue create               --title "New City of Winnipeg neighbourhood name(s) — rebuild the address hierarchy"               --label "automation"               --body "$BODY"               || echo "gh issue create failed (continuing)"
+          else
+            echo "No new Winnipeg neighbourhood names this run."
           fi
 
       - name: Notify by email — success with changes

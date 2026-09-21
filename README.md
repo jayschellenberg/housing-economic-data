@@ -212,11 +212,68 @@ exhausted mid-run the script still writes all standard Manitoba levels and skips
 the Winnipeg virtual geos with a warning; re-run later to add them. Standard
 Manitoba levels are cached after the first build, so those re-runs are free.
 
+#### Find by address (Winnipeg)
+
+The Census Profile sidebar has a **Find by address** box that resolves a
+Winnipeg street address to its Neighbourhood / Neighbourhood Cluster /
+Community Area, loads the **cluster** as Area 1, and offers the other two
+levels as one-click alternates. It is entirely offline — no geocoder, no API
+key, no external request — so the strict CSP is untouched.
+
+`r/25_build_wpg_address_index.R` builds the index from two City of Winnipeg
+open datasets (Open Government Licence – Winnipeg): the **Addresses** file
+(~244k active civic addresses with coordinates and the City's own neighbourhood
+label) and the **Census Boundaries** file (the 23 cluster + 12 community-area
+polygons). Each address point is placed in its cluster and community area by
+point-in-polygon; the neighbourhood is the City's per-address label. Verified
+over all 244,175 addresses: every neighbourhood falls wholly inside one cluster,
+and only 10 addresses miss every polygon.
+
+A census dissemination-area join was tried first and measured *worse* — DAs are
+coarser than neighbourhoods in newly-built areas and the lookup assigns each DA
+wholly to one neighbourhood, so it disagreed with the City's own labels for
+11.7% of addresses at neighbourhood level and 4.1% at cluster level. The script
+header records the detail.
+
+The output is collapsed to per-street, per-parity number runs — 4,556 streets,
+6,889 runs, **121 KB (~43 KB gzipped)** — and the build replays every address
+through the written file, aborting if a single one resolves wrongly. Note that
+26 of the City's 237 neighbourhoods are newer or finer than the 2021 DA vintage
+`r/12` builds from (Prairie Pointe, Crestview, Leila North, Bridgwater Lakes,
+Exchange District, …); those addresses still resolve, and the neighbourhood row
+shows "no profile" while the cluster and community area load normally.
+
+**It runs on the monthly refresh.** The City's boundaries never move; only the
+address list does. So the neighbourhood → cluster → community-area hierarchy is
+derived once from the polygons and committed as `r/lib/wpg_nbhd_hierarchy.csv`
+(237 rows), and the routine rebuild is pure text — fresh addresses joined to
+that CSV by name, needing only `jsonlite`. That matters because `sf` (and its
+GDAL/GEOS system libraries) is **not** installed on the refresh runner; the
+fast path never touches it, so the index stays current with new subdivisions
+automatically.
+
+```pwsh
+npm --prefix web run data:wpgaddr                    # fast path (what CI runs)
+
+# Re-derive the hierarchy from the City's polygons — needs sf. Run this only
+# when the City adds a neighbourhood; the fast path raises an alert when it does.
+$env:WPG_ADDR_REBUILD_HIERARCHY="1"; npm --prefix web run data:wpgaddr
+```
+
+Both paths produce a byte-identical index. Three guards keep an automated run
+from publishing junk: a **new neighbourhood name** the hierarchy doesn't cover
+is excluded and written to `data/wpg_address_new_nbhds.txt`, which the workflow
+turns into a GitHub issue; the index **may not shrink** more than 2% in street
+count against the committed one (override with `WPG_ADDR_ALLOW_SHRINK=1`); and
+every address is replayed through the written file before the build ends. The
+step is best-effort in the workflow, like `r/24` — a City open-data outage
+leaves the committed index in place rather than failing the whole refresh.
+
 ### Refresh schedule
 
 | Workflow | Cron (UTC) | What it pulls |
 |---|---|---|
-| `refresh-data.yml` | 2nd of every month + 28th of Jan + 28th of Jul | Full pipeline: CMHC Rms/Srms/Scss + BoC + StatsCan |
+| `refresh-data.yml` | 2nd of every month + 28th of Jan + 28th of Jul | Full pipeline: CMHC Rms/Srms/Scss + BoC + StatsCan + Winnipeg address index |
 | `refresh-indicators.yml` | Every Monday | BoC + StatsCan only (skips the slow CMHC scrape) |
 
 CMHC publishes the Rental Market Survey twice a year (April + October).
