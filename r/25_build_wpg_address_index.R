@@ -220,7 +220,12 @@ if (REBUILD_HIERARCHY) {
                             Cluster       = addr$cluster[keep],
                             CommunityArea = addr$cca[keep],
                             stringsAsFactors = FALSE))
-  hier <- hier[order(hier$Neighbourhood), , drop = FALSE]
+  # method = "radix" sorts by byte value, ignoring the locale. Without it the
+  # row order depends on the machine that ran the build — Windows collation puts
+  # "Portage-Ellice" before "Portage & Main", glibc does the opposite — so a
+  # local run and the quarterly workflow would flip those rows back and forth,
+  # each flip opening a spurious "hierarchy changed" issue.
+  hier <- hier[order(hier$Neighbourhood, method = "radix"), , drop = FALSE]
   utils::write.csv(hier, HIER_CSV, row.names = FALSE, na = "")
   message(sprintf("  wrote %s — %d neighbourhoods", basename(HIER_CSV), nrow(hier)))
 } else {
@@ -309,8 +314,12 @@ if (anyDuplicated(dup_key)) {
 
 # --- 4. Collapse to per-street, per-parity runs ----------------------------
 message("[index]")
-a <- addr[order(addr$street, addr$number), c("street", "number", "area")]
-by_street <- split(seq_len(nrow(a)), a$street)
+# Radix again (see the hierarchy sort above): this order becomes the JSON key
+# order, so a locale-dependent sort would make the index differ by platform too.
+a <- addr[order(addr$street, addr$number, method = "radix"), c("street", "number", "area")]
+# split() would re-sort the grouping factor in locale order and undo that, so
+# pin the levels to the order `a` is already in.
+by_street <- split(seq_len(nrow(a)), factor(a$street, levels = unique(a$street)))
 
 runs_for <- function(rows) {
   # rows are already ordered by number; emit a breakpoint only where the area
