@@ -284,8 +284,14 @@ message(sprintf("  %s addresses resolved", format(nrow(addr), big.mark = ",")))
 
 # --- 3. Intern the area combinations ---------------------------------------
 combo <- data.frame(n = addr$nbhd, c = addr$cluster, a = addr$cca, stringsAsFactors = FALSE)
-uniq  <- unique(combo)
 ckey  <- function(df) do.call(paste, c(unname(as.list(df)), sep = ""))
+# Socrata returns the address rows in no guaranteed order, so unique() would
+# number the areas by whatever happened to come first — a different permutation
+# every run, producing a byte-different (but semantically identical) index and
+# an empty "changed" commit each quarter. Sort them so the numbering is a
+# function of the data alone. Radix for the same locale reason as above.
+uniq  <- unique(combo)
+uniq  <- uniq[order(ckey(uniq), method = "radix"), , drop = FALSE]
 addr$area <- match(ckey(combo), ckey(uniq)) - 1L      # 0-based for the JSON consumer
 areas <- lapply(seq_len(nrow(uniq)), function(i) list(
   if (is.na(uniq$n[i])) NULL else unbox(uniq$n[i]),
