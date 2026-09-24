@@ -290,10 +290,21 @@
   border-radius: 0 !important;
 }
 
-/* At the export's 2.6x the 13px legend would print ~34px, larger than the
-   R charts' ~28px legend; trim it so the legend stays secondary to the axes. */
+/* Text sizes for the exported image, matched against the firm's R charts at
+   1950 x 1050 (the export rasterises at 2.6x, so 17px prints ~44px). The
+   R charts set these a notch larger relative to the title than the on-screen
+   card does. The divider above the caption is a screen-only separator; the
+   R charts have none. */
+.cmhc-exporting.chart-card .chart-sub {
+  font-size: 17px !important;
+}
 .cmhc-exporting .cmhc-plot-legend {
-  font-size: 11px !important;
+  font-size: 14px !important;
+}
+.cmhc-exporting.chart-card .chart-caption {
+  font-size: 17px !important;
+  border-top: 0 !important;
+  padding-top: 2px !important;
 }
 
 .chart-card .chart-actions {
