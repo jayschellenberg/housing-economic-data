@@ -277,6 +277,19 @@
   height: max-content !important;
 }
 
+/* The fixed-size PNG export (png-export.js) sets the plot's height itself to
+   fill a 1950 × 1050 frame; the on-screen floor would fight it. */
+.cmhc-exporting [data-role="plot"] {
+  min-height: 0 !important;
+}
+
+/* The image is the figure, not the on-screen card: no border or rounded
+   corners drawn inside the 1950 × 1050 frame. */
+.cmhc-exporting.chart-card {
+  border-color: transparent !important;
+  border-radius: 0 !important;
+}
+
 .chart-card .chart-actions {
   display: flex;
   gap: 6px;

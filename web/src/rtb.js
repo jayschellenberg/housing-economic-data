@@ -192,7 +192,7 @@ function renderChart($chart, data, cpiByYear) {
     <div class="chart-actions"><button type="button" data-role="dl-png">Download PNG</button></div>`;
   card.querySelector('[data-role="plot"]').appendChild(svg);
   card.querySelector('[data-role="dl-png"]').onclick = () =>
-    downloadCard(card, `rtb-guideline-history-${new Date().toISOString().slice(0, 10)}.png`, 'png');
+    downloadCard(card, `rtb-guideline-history-${new Date().toISOString().slice(0, 10)}.png`);
   $chart.replaceChildren(card);
 }
 

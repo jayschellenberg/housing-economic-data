@@ -15,9 +15,9 @@
  */
 
 import * as Plot from '@observablehq/plot';
-import { toPng } from 'html-to-image';
+import { downloadCardPng, setExportRedraw } from './png-export.js';
 import { themed, PALETTE, gridMarks, frameMark, mirrorYMarks, percentTickFormat, MIRROR_Y_MARGIN,
-         plotWidth, plotHeight, fitPlotWidth } from './plot-theme.js';
+         plotWidth, plotHeight, fitPlotWidth, dateAxisTicks } from './plot-theme.js';
 import { escapeHtml } from './escape.js';
 import { getFirm, onFirmChange } from './firm.js';
 import { INDICATOR_FMT as FMT, indicatorFmt as fmt } from './format.js';
@@ -632,7 +632,7 @@ export function buildIndicatorCard(container, {
 
     const spec = themed({
       width,
-      height: plotHeight(width, 330),
+      height: exportH ?? plotHeight(width, 330),
       ...(sideMargin ? { marginLeft: sideMargin } : {}),
       marginRight: sideMargin || MIRROR_Y_MARGIN,
       marginBottom: 52,      // room for the x-axis title under the tick labels
@@ -640,10 +640,7 @@ export function buildIndicatorCard(container, {
         type: 'utc',
         label: 'Date',
         labelOffset: 42,
-        tickFormat: (d) => {
-          const yr = d.getUTCFullYear();
-          return yr.toString();
-        },
+        ...dateAxisTicks(xMin, xMax),
         inset: 8,
       },
       y: {
@@ -787,7 +784,7 @@ export function buildIndicatorCard(container, {
     }
 
     lastFilename = `${stem}_${new Date().toISOString().slice(0,10)}.png`;
-    $png.onclick = () => exportCard(card, lastFilename, 'png');
+    $png.onclick = () => exportCard(card, lastFilename);
   }
 
   // Redraw at the new width when the card resizes — including the first time
@@ -800,6 +797,9 @@ export function buildIndicatorCard(container, {
     draw(records, seriesMeta, opts);
   }
   fitPlotWidth($plot, () => { if (lastRender) draw(...lastRender); });
+  // The PNG export redraws at its own fixed plot height (png-export.js).
+  let exportH = null;
+  setExportRedraw(card, (h) => { exportH = h; if (lastRender) draw(...lastRender); });
 
   // Restore a set of open panels (see readOpenPanels). Panels not named are
   // closed, which is a no-op on a freshly built card.
@@ -832,25 +832,7 @@ export const CHART_EXPORT_FILTER = (n) => !(n.classList && (
   n.classList.contains('cmhc-latest-row') ||
   n.classList.contains('cmhc-explainer')));
 
-async function exportCard(card, filename, kind) {
-  card.classList.add('cmhc-exporting');
-  try {
-    const opts = {
-      backgroundColor: '#ffffff',
-      pixelRatio: kind === 'png' ? 3 : 1,
-      cacheBust: true,
-      // Skip the cross-origin Google Fonts inline attempt (CORS SecurityError,
-      // ~3s stall, system-font fallback regardless) — matches doc-image-export.js.
-      skipFonts: true,
-      filter: CHART_EXPORT_FILTER,
-    };
-    const dataUrl = await toPng(card, opts);
-    const blob = await (await fetch(dataUrl)).blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = filename;
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  } catch (err) { console.error('[indicator-chart export]', err); }
-  finally { card.classList.remove('cmhc-exporting'); }
+async function exportCard(card, filename) {
+  try { await downloadCardPng(card, filename, { filter: CHART_EXPORT_FILTER }); }
+  catch (err) { console.error('[indicator-chart export]', err); }
 }

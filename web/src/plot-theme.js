@@ -116,7 +116,44 @@ export function percentTickFormat(domain) {
   const [lo, hi] = domain || [];
   const span = Number.isFinite(lo) && Number.isFinite(hi) ? Math.abs(hi - lo) : 0;
   const places = span >= 4 ? 0 : span >= 1 ? 1 : 2;
-  return (v) => `${Number(v).toFixed(places)}%`;
+  // Plot hands a tick format (value, index, allTicks). A taller plot — the
+  // fixed-size PNG export, a wide card — can get half-percent ticks on a
+  // whole-percent axis, which printed as "5%, 5%". Add places until every
+  // tick reads differently.
+  return (v, _i, ticks) => `${Number(v).toFixed(distinctPlaces(ticks, places))}%`;
+}
+
+function distinctPlaces(ticks, places) {
+  if (!Array.isArray(ticks) || ticks.length < 2) return places;
+  let p = places;
+  while (p < 3 && new Set(ticks.map(t => Number(t).toFixed(p))).size < ticks.length) p++;
+  return p;
+}
+
+/**
+ * Tick marks and format for a date x axis spanning [lo, hi]. Plot's default
+ * utc ticks are quarters or months once the axis is wide, and a year-only
+ * label then repeats ("2022 2022 2022"). Spans of two years or more get one
+ * tick per year (or per 2/5/10 years on long ranges), labelled with the year;
+ * shorter spans keep Plot's ticks, labelled month + year.
+ *
+ * @param {Date} lo
+ * @param {Date} hi
+ * @returns {{ ticks?: Date[], tickFormat: Function }}
+ */
+export function dateAxisTicks(lo, hi) {
+  const y0 = lo?.getUTCFullYear?.(), y1 = hi?.getUTCFullYear?.();
+  if (!Number.isFinite(y0) || !Number.isFinite(y1) || y1 - y0 < 2) {
+    return { tickFormat: (d) => d.toLocaleString('en-CA', { month: 'short', year: 'numeric', timeZone: 'UTC' }) };
+  }
+  const span = y1 - y0;
+  const step = span <= 12 ? 1 : span <= 24 ? 2 : span <= 50 ? 5 : 10;
+  const ticks = [];
+  for (let y = Math.ceil(y0 / step) * step; y <= y1; y += step) {
+    const d = new Date(Date.UTC(y, 0, 1));
+    if (d >= lo && d <= hi) ticks.push(d);
+  }
+  return { ticks, tickFormat: (d) => String(d.getUTCFullYear()) };
 }
 
 /**

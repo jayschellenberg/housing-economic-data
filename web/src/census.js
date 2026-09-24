@@ -628,7 +628,7 @@ export async function initCensus() {
     card.querySelector('[data-role="plot"]').appendChild(svgNode);
     const slug = String(title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     const fname = `census-${slug}-${new Date().toISOString().slice(0, 10)}.png`;
-    card.querySelector('[data-role="dl-png"]').onclick = () => downloadCard(card, fname, 'png');
+    card.querySelector('[data-role="dl-png"]').onclick = () => downloadCard(card, fname);
     $charts.appendChild(card);
   }
 
