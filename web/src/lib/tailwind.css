@@ -290,6 +290,12 @@
   border-radius: 0 !important;
 }
 
+/* At the export's 2.6x the 13px legend would print ~34px, larger than the
+   R charts' ~28px legend; trim it so the legend stays secondary to the axes. */
+.cmhc-exporting .cmhc-plot-legend {
+  font-size: 11px !important;
+}
+
 .chart-card .chart-actions {
   display: flex;
   gap: 6px;

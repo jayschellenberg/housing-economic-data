@@ -528,6 +528,8 @@ export function buildCapVsInterest(shards, rangeRef) {
       chartId: 'cap_vs_interest',
       // Not CMHC data — export without the shared cmhc_ prefix.
       fileStem: 'cap_vs_interest',
+      // Heavier than the other indicator cards, as on the reference chart.
+      lineWidth: 3.6,
       // Titles as the reference appraisal chart words them (the Quarto
       // project's COMBO_TITLE and its rates-only chart).
       title: capTypes.length
