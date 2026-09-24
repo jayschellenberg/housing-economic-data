@@ -5,11 +5,12 @@
  * printable width of a Letter page, matching the firm's R appraisal charts.
  *
  * How a card gets there:
- *   1. The card is laid out at 975 × 525 CSS px (half the target), so text
- *      sizes land where the R charts have them once rasterised at 2x.
+ *   1. The card is laid out at 750 × 404 CSS px and rasterised at 2.6x, so a
+ *      23px title lands at ~60px and 13px tick labels at ~34px — the text
+ *      sizes of the firm's R charts at 1950 × 1050.
  *   2. Cards that can redraw their plot (registered via `setExportRedraw`)
  *      redraw at that width, then again with the plot height that makes the
- *      whole card 525 px tall — the chart fills the frame.
+ *      whole card 404 px tall — the chart fills the frame.
  *   3. Whatever the card's final box, it is scaled to fit and centred on a
  *      white 1950 × 1050 canvas, so the output size never varies. Cards that
  *      can't redraw (census/housing bar charts, maps) land here with a margin.
@@ -23,15 +24,15 @@ export const EXPORT_W = 1950;
 export const EXPORT_H = 1050;
 export const EXPORT_DPI = 300;
 
-/** CSS layout size of a card during capture (rasterised at 2x). */
-const LAYOUT_SCALE = 2;
-const LAYOUT_W = EXPORT_W / LAYOUT_SCALE;   // 975
-const LAYOUT_H = EXPORT_H / LAYOUT_SCALE;   // 525
+/** CSS layout size of a card during capture (rasterised at 2.6x). */
+const LAYOUT_SCALE = 2.6;
+const LAYOUT_W = Math.round(EXPORT_W / LAYOUT_SCALE);   // 750
+const LAYOUT_H = Math.round(EXPORT_H / LAYOUT_SCALE);   // 404
 
-/** Never squash a plot below this while fitting the card to 525 px. */
-const MIN_PLOT_H = 160;
+/** Never squash a plot below this while fitting the card to 404 px. */
+const MIN_PLOT_H = 140;
 /** Plot height used for the measuring pass. */
-const PROBE_PLOT_H = 300;
+const PROBE_PLOT_H = 240;
 
 const redraws = new WeakMap();
 
@@ -63,6 +64,7 @@ export async function captureCard(card, { filter } = {}) {
       const chrome = card.offsetHeight - PROBE_PLOT_H;
       redraw(Math.max(MIN_PLOT_H, LAYOUT_H - chrome));
     }
+    bakeSvgTextStyles(card);
     const w = card.offsetWidth, h = card.offsetHeight;
     const scale = Math.min(EXPORT_W / w, EXPORT_H / h);
     const src = await toCanvas(card, {
@@ -89,6 +91,24 @@ export async function captureCard(card, { filter } = {}) {
     card.style.width = prev.width;
     card.style.maxWidth = prev.maxWidth;
     if (redraw) redraw(null);
+  }
+}
+
+/**
+ * Copy each SVG <text>'s computed font weight, size and fill onto its inline
+ * style. The stylesheet styles Plot's axis titles through their parent <g>
+ * ("Date" is bold, 15px, frame-coloured), and html-to-image doesn't carry that
+ * inherited style down to the <text> — the title came out in Plot's regular
+ * grey 10px. Baked inline, it survives the clone. The values are the ones the
+ * text already renders with, so they change nothing on screen; redrawable
+ * cards drop them anyway when they redraw after the export.
+ */
+function bakeSvgTextStyles(card) {
+  for (const t of card.querySelectorAll('svg text')) {
+    const cs = getComputedStyle(t);
+    t.style.fontWeight = cs.fontWeight;
+    t.style.fontSize = cs.fontSize;
+    t.style.fill = cs.fill;
   }
 }
 

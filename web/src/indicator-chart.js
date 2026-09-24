@@ -401,6 +401,9 @@ export function buildIndicatorCard(container, {
   // card uses; a card whose data isn't CMHC's passes its own (Cap vs Interest
   // exports as cap_vs_interest_<date>.png).
   fileStem,
+  // Series line width in CSS px. Cap vs Interest draws heavier lines, like
+  // the reference appraisal chart it reproduces.
+  lineWidth = 2.4,
 }) {
   const card = document.createElement('section');
   card.className = 'chart-card cmhc-indicator-card';
@@ -671,7 +674,7 @@ export function buildIndicatorCard(container, {
             x: 'date',
             y: 'value',
             stroke: 'label',
-            strokeWidth: 2.4,
+            strokeWidth: lineWidth,
             ...(dash ? { strokeDasharray: dash } : {}),
             defined: (d) => d.value != null,
           })),
