@@ -97,7 +97,8 @@ export async function exportTablesToWord(built, { filename, maxYear }) {
 /**
  * Embed captured chart images (from doc-image-export.js) into a .docx, one
  * per paragraph in capture order. Images are scaled to the printable width
- * of a Letter page (6.5in = 624px @ 96dpi); the 3x raster keeps them crisp.
+ * of a Letter page (6.5in = 624px @ 96dpi); chart captures are 1950 × 1050 at
+ * 300 DPI, i.e. exactly that width.
  * @param {Array<{dataUrl, width, height}>} captures
  * @param {Object} opts  { filename }
  */

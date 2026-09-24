@@ -336,7 +336,7 @@ export async function initAffordability() {
       <div class="chart-actions"><button type="button" data-role="dl-png">Download PNG</button></div>`;
     card.querySelector('[data-role="plot"]').appendChild(svg);
     const fname = `affordability_${label}_${provName}_${new Date().toISOString().slice(0, 10)}.png`.replace(/\s+/g, '-');
-    card.querySelector('[data-role="dl-png"]').onclick = () => downloadCard(card, fname, 'png');
+    card.querySelector('[data-role="dl-png"]').onclick = () => downloadCard(card, fname);
     $charts.appendChild(card);
   }
 

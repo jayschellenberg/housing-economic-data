@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { percentTickFormat, MIRROR_Y_MARGIN, plotWidth, plotHeight, PLOT_FALLBACK_WIDTH } from '../src/plot-theme.js';
+import { percentTickFormat, dateAxisTicks, MIRROR_Y_MARGIN, plotWidth, plotHeight, PLOT_FALLBACK_WIDTH } from '../src/plot-theme.js';
 
 describe('percentTickFormat', () => {
   it('drops to whole percents on a wide axis, like the reference chart', () => {
@@ -21,6 +21,14 @@ describe('percentTickFormat', () => {
   it('falls back to two places when the domain is unusable', () => {
     expect(percentTickFormat(undefined)(3.456)).toBe('3.46%');
     expect(percentTickFormat([NaN, NaN])(3.456)).toBe('3.46%');
+  });
+
+  it('adds places when whole percents would repeat a tick label', () => {
+    const f = percentTickFormat([0, 6]);
+    const ticks = [0, 0.5, 1, 1.5, 2];
+    expect(ticks.map((t, i) => f(t, i, ticks))).toEqual(['0.0%', '0.5%', '1.0%', '1.5%', '2.0%']);
+    const whole = [0, 1, 2, 3];
+    expect(whole.map((t, i) => f(t, i, whole))).toEqual(['0%', '1%', '2%', '3%']);
   });
 
   it('reserves enough right margin for the mirrored axis labels', () => {
@@ -59,5 +67,22 @@ describe('plotHeight', () => {
   it('never returns a nonsense height', () => {
     expect(plotHeight(NaN, 330)).toBe(330);
     expect(plotHeight(831, undefined)).toBe(undefined);
+  });
+});
+
+describe('dateAxisTicks', () => {
+  const d = (s) => new Date(s + 'T00:00:00Z');
+  it('puts one tick per year on a multi-year axis, labelled once each', () => {
+    const { ticks, tickFormat } = dateAxisTicks(d('2021-01-01'), d('2026-09-01'));
+    expect(ticks.map(tickFormat)).toEqual(['2021', '2022', '2023', '2024', '2025', '2026']);
+  });
+  it('thins the ticks on long ranges', () => {
+    const { ticks, tickFormat } = dateAxisTicks(d('1990-03-01'), d('2026-01-01'));
+    expect(ticks.map(tickFormat)).toEqual(['1995', '2000', '2005', '2010', '2015', '2020', '2025']);
+  });
+  it('labels month and year on a short axis', () => {
+    const { ticks, tickFormat } = dateAxisTicks(d('2025-06-01'), d('2026-03-01'));
+    expect(ticks).toBeUndefined();
+    expect(tickFormat(d('2025-09-01'))).toMatch(/Sep.*2025/);
   });
 });

@@ -12,14 +12,14 @@
  * dropdowns because the caller wires onSelect() to the same state it uses.
  */
 
-import { toPng } from 'html-to-image';
+import { captureCard, canvasToPngBlob } from './png-export.js';
 import { downloadCard } from './chart.js';
 import { escapeHtml } from './escape.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const NO_DATA_FILL = '#e5e7eb';   // grey — matches the "**" missing-data convention
 const SEL_STROKE    = '#111827';  // near-black outline for the selected polygon
-const EXPORT_RATIO  = 3;          // device-pixel scale for crisp PNGs (matches the chart cards)
+const EXPORT_RATIO  = 3;          // device-pixel scale for the flattened map layer
 const CHORO_RAMP    = ['#dbeafe', '#93c5fd', '#3b82f6', '#1d4ed8', '#1e3a8a'];  // light→dark blue
 
 /**
@@ -72,22 +72,25 @@ function svgToPng(svgEl, ratio = EXPORT_RATIO) {
   });
 }
 
-function triggerDownload(dataUrl, filename) {
+function triggerDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = dataUrl; a.download = filename;
+  a.href = url; a.download = filename;
   document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-// Export the whole card (title / subtitle / map / legend / caption) as a PNG.
-// The heavy <svg> is flattened to an <img> first so html-to-image only has to
-// capture the lightweight HTML chrome around it — fast, and visually identical.
+// Export the whole card (title / subtitle / map / legend / caption) as a
+// 1950 × 1050, 300 DPI PNG (png-export.js). The heavy <svg> is flattened to an
+// <img> first so html-to-image only has to capture the lightweight HTML chrome
+// around it — fast, and visually identical.
 async function exportMapCard(card, svgEl, filename) {
   let raster;
   try {
     raster = await svgToPng(svgEl);
   } catch (err) {
     console.error('[map export] rasterize failed, falling back', err);
-    return downloadCard(card, filename, 'png');   // slow but correct
+    return downloadCard(card, filename);   // slow but correct
   }
   const img = document.createElement('img');
   img.src = raster.dataUrl;
@@ -95,23 +98,20 @@ async function exportMapCard(card, svgEl, filename) {
   img.style.height = 'auto';
   img.style.maxWidth = '100%';
   svgEl.replaceWith(img);
-  card.classList.add('cmhc-exporting');
   try {
     if (img.decode) await img.decode().catch(() => {});
     // Guard the capture so a stalled html-to-image can never strand the card on
     // the static image — the finally always restores the live SVG.
-    const url = await Promise.race([
-      toPng(card, {
-        backgroundColor: '#ffffff', pixelRatio: EXPORT_RATIO, cacheBust: true, skipFonts: true,
+    const canvas = await Promise.race([
+      captureCard(card, {
         filter: (n) => !(n.classList && (n.classList.contains('chart-actions') || n.classList.contains('cmhc-map-zoom-controls'))),
       }),
       new Promise((_, reject) => setTimeout(() => reject(new Error('export timed out')), 20000)),
     ]);
-    triggerDownload(url, filename);
+    triggerDownload(await canvasToPngBlob(canvas), filename);
   } catch (err) {
     console.error('[map export]', err);
   } finally {
-    card.classList.remove('cmhc-exporting');
     img.replaceWith(svgEl);   // restore the live, interactive SVG
   }
 }

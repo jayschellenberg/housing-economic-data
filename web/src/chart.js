@@ -13,10 +13,10 @@
  */
 
 import * as Plot from '@observablehq/plot';
-import { toPng } from 'html-to-image';
 import { themed, fmt, PALETTE, gridMarks, frameMark, mirrorYMarks, percentTickFormat, MIRROR_Y_MARGIN,
          plotWidth, plotHeight, fitPlotWidth } from './plot-theme.js';
 import { escapeHtml } from './escape.js';
+import { downloadCardPng, setExportRedraw } from './png-export.js';
 
 const COUNT_FMT = (v) => Number(v).toLocaleString();
 
@@ -166,7 +166,7 @@ export function buildChartCard(container, { series }) {
 
     const spec = themed({
       width,
-      height: plotHeight(width, 340),
+      height: exportH ?? plotHeight(width, 340),
       marginRight: MIRROR_Y_MARGIN,
       marginBottom: 52,      // room for the x-axis title under the tick labels
       x: {
@@ -229,7 +229,7 @@ export function buildChartCard(container, { series }) {
     // Export the entire card (title + subtitle + chart + legend + caption),
     // not just the chart SVG. We toggle a CSS marker class on the card so
     // the actions row (Download buttons) is hidden during capture.
-    $png.onclick = () => downloadCard(card, lastFilename, 'png');
+    $png.onclick = () => downloadCard(card, lastFilename);
   }
 
   // Redraw when the card's width moves — a window resize, or the panel simply
@@ -241,6 +241,9 @@ export function buildChartCard(container, { series }) {
     draw(rows, sub, categoryOrder, meta);
   }
   fitPlotWidth($plot, () => { if (lastRender) draw(...lastRender); });
+  // The PNG export redraws at its own fixed plot height (png-export.js).
+  let exportH = null;
+  setExportRedraw(card, (h) => { exportH = h; if (lastRender) draw(...lastRender); });
 
   return { render, card };
 }
@@ -339,7 +342,7 @@ export function buildBarCard(container, { title }) {
     const width = plotWidth($plot);
     const svgEl = Plot.plot(themed({
       width,
-      height: plotHeight(width, 340), marginTop: 24, marginBottom: 22, marginLeft: 54,
+      height: exportH ?? plotHeight(width, 340), marginTop: 24, marginBottom: 22, marginLeft: 54,
       fx: { label: null, domain: categories },
       x: { axis: null, label: null, domain: areas },
       y: { label: isVac ? 'Vacancy Rate (%)' : 'Median Rent ($)', tickFormat: yFmt, domain: [0, maxV * 1.12] },
@@ -352,7 +355,7 @@ export function buildBarCard(container, { title }) {
       ],
     }));
     $plot.appendChild(plotWrapWithLegend(svgEl, areas));
-    $png.onclick = () => downloadCard(card, buildFilename(title, sub), 'png');
+    $png.onclick = () => downloadCard(card, buildFilename(title, sub));
   }
 
   let lastRender = null;
@@ -361,6 +364,8 @@ export function buildBarCard(container, { title }) {
     draw(args);
   }
   fitPlotWidth($plot, () => { if (lastRender) draw(lastRender); });
+  let exportH = null;
+  setExportRedraw(card, (h) => { exportH = h; if (lastRender) draw(lastRender); });
 
   return { render, card };
 }
@@ -382,46 +387,16 @@ function buildFilename(series, sub) {
 }
 
 /**
- * Capture the entire chart card (title, subtitle, chart, legend, caption)
- * as an SVG or PNG via html-to-image. The actions row holding the Download
- * buttons is hidden through a CSS class while the snapshot is taken so it
- * doesn't appear in the output.
- *
- * PNG is rasterised at 3x device pixel ratio for crisp print resolution
- * (suitable for pasting into Word at standard column widths).
+ * Capture the entire chart card (title, subtitle, chart, legend, caption) as
+ * a 1950 × 1050, 300 DPI PNG (png-export.js). The actions row holding the
+ * Download buttons is left out of the image.
  */
-export async function downloadCard(card, filename, kind) {
-  card.classList.add('cmhc-exporting');
+export async function downloadCard(card, filename) {
   try {
-    const opts = {
-      backgroundColor: '#ffffff',
-      pixelRatio: kind === 'png' ? 3 : 1,
-      cacheBust: true,
-      // skipFonts: the only webfont is Inter via the cross-origin Google Fonts
-      // stylesheet, whose cssRules can't be read (CORS) — html-to-image logs a
-      // SecurityError and falls back to system fonts anyway. Skipping the
-      // attempt removes the console noise and the ~3s per-capture stall, with
-      // no change to the rasterised output (matches doc-image-export.js).
-      skipFonts: true,
-      // Filter: drop the actions row entirely from the captured DOM.
+    await downloadCardPng(card, filename, {
       filter: (node) => !(node.classList && node.classList.contains('chart-actions')),
-    };
-    const dataUrl = await toPng(card, opts);
-    const blob = await (await fetch(dataUrl)).blob();
-    triggerDownload(blob, filename);
+    });
   } catch (err) {
     console.error('[chart export]', err);
-  } finally {
-    card.classList.remove('cmhc-exporting');
   }
-}
-
-function triggerDownload(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
