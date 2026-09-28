@@ -1,11 +1,15 @@
 name: Refresh Market Indicators (weekly)
 on:
   schedule:
-    # Weekly heartbeat — every Monday at 07:23 UTC. BoC + StatsCan update
-    # often enough that monthly is too stale; pulling weekly keeps the
-    # Market Indicators / Current Snapshot tabs near-current without
-    # incurring the cost of the full CMHC scrape.
-    - cron: "23 7 * * 1"
+    # Weekly heartbeat — every Monday at 04:41 UTC (23:41 Sunday, Winnipeg).
+    # BoC + StatsCan update often enough that monthly is too stale; pulling
+    # weekly keeps the Market Indicators / Current Snapshot tabs near-current
+    # without incurring the cost of the full CMHC scrape.
+    # Was 07:23 UTC: every scheduled run at that slot started 6-8 hours late
+    # (13:32, 14:10, 14:16, 15:35 UTC in 2026-09) because GitHub's scheduler
+    # queues heavily around the European morning. 04:41 is an off-hour,
+    # off-quarter minute in a quiet window.
+    - cron: "41 4 * * 1"
   workflow_dispatch:
     inputs:
       allow_shrink:
@@ -151,7 +155,10 @@ jobs:
           fi
 
       - name: Email gate — success
-        if: success() && steps.commit.outputs.changed == 'true'
+        # Runs whether or not data changed: a week with no email used to be
+        # indistinguishable from a run that never fired. The two send steps
+        # below pick the wording by steps.commit.outputs.changed.
+        if: success()
         id: ok_email_gate
         env:
           MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
@@ -195,6 +202,31 @@ jobs:
             Commit:   ${{ github.server_url }}/${{ github.repository }}/commit/${{ steps.commit.outputs.sha }}
 
             Vercel will redeploy automatically from main.
+
+      - name: Send no-change email
+        if: success() && steps.commit.outputs.changed == 'false' && steps.ok_email_gate.outputs.send == 'true'
+        uses: dawidd6/action-send-mail@4226df7daafa6fc901a43789c49bf7ab309066e7 # v3.11.0
+        continue-on-error: true
+        with:
+          server_address: ${{ vars.SMTP_HOST || 'smtp.gmail.com' }}
+          server_port:    ${{ vars.SMTP_PORT || 587 }}
+          secure:         ${{ (vars.SMTP_PORT || '587') == '465' }}
+          username:       ${{ secrets.MAIL_USERNAME }}
+          password:       ${{ secrets.MAIL_PASSWORD }}
+          from:           Housing & Economic Data <${{ secrets.MAIL_USERNAME }}>
+          to:             ${{ vars.MAIL_TO }}
+          subject:        "[Housing & Economic Data] Indicators refresh — no new data — ${{ steps.stamp.outputs.date }}"
+          body: |
+            The weekly indicators refresh ran to completion but every source
+            returned the same data as last week, so nothing was committed and
+            the site is unchanged. Normal on a quiet week; check the pipeline
+            notes below if it repeats, since a scrape that keeps falling back
+            to last-good data also looks like "no change".
+
+            ${{ steps.summary.outputs.text }}
+
+            Trigger:  ${{ github.event_name }}
+            Run log:  ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
       - name: Email gate — failure or timeout
         if: failure() || (cancelled() && github.event_name == 'schedule')

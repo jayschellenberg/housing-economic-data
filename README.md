@@ -299,8 +299,10 @@ data refreshes within hours of CMHC publishing.
 
 ### Email notifications (optional)
 
-Both workflows send an email on success (only when data actually changed)
-and on failure. To enable, add these to the GitHub repo:
+Both workflows send an email on failure. The CMHC refresh emails on success
+only when data actually changed; the indicators refresh emails every run,
+with a "no new data" subject when nothing was committed, so a missing Monday
+email means the run did not happen. To enable, add these to the GitHub repo:
 
 - **Secret** `MAIL_USERNAME` — sender SMTP username (e.g. Gmail address)
 - **Secret** `MAIL_PASSWORD` — sender SMTP app password
@@ -316,8 +318,10 @@ The indicators success email carries a summary built by
 indicator groups advanced and by how many records, the CREA HPI and WRREB
 as-of months with their stale flags, and any pipeline lines that signal a
 scrape fell back to last-good data. The `Commit` link is the data commit the
-run pushed. No email means the run either found nothing new (the log says
-"No indicator changes.") or never ran.
+run pushed. The same summary goes out under a "no new data" subject when
+nothing changed, since a scrape that keeps falling back to last-good data
+also looks like "no change". Both schedules run at 04:41 UTC; the earlier
+07:23 UTC slot was queued 2–8 hours late by GitHub every time.
 
 ## Verifying the pipeline
 

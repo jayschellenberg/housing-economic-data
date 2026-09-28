@@ -1,16 +1,17 @@
 name: Refresh CMHC data
 on:
   schedule:
-    # Monthly heartbeat — 07:23 UTC on the 2nd of every month. Deliberately
+    # Monthly heartbeat — 04:41 UTC on the 2nd of every month. Deliberately
     # off the top-of-the-hour cron slot, which GitHub heavily congests and
-    # is the most common cause of silently-skipped scheduled runs.
-    - cron: "23 7 2 * *"
+    # is the most common cause of silently-skipped scheduled runs. Moved
+    # from 07:23 UTC (2026-09): runs at that slot started 2-5 hours late.
+    - cron: "41 4 2 * *"
     # CMHC release-day catch — Rms publishes the Fall report (October
     # survey) in late January and the Spring report (April survey) in
     # late July. These two crons fire after CMHC's typical publication
     # window so the site refreshes within hours of release.
-    - cron: "23 7 28 1 *"
-    - cron: "23 7 28 7 *"
+    - cron: "41 4 28 1 *"
+    - cron: "41 4 28 7 *"
   workflow_dispatch:
     inputs:
       allow_shrink:
