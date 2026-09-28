@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "generated": "2026-09-21T14:22:37Z",
-  "dataAsOf": "2026-09-21",
+  "generated": "2026-09-28T15:41:34Z",
+  "dataAsOf": "2026-09-28",
   "intro": {
     "censusYear": 2021,
     "provincePopulation": 1342153,
@@ -37,15 +37,15 @@
       }
     ],
     "source": "Statistics Canada, 2021 Census of Population",
-    "currentPopEstimate": 1503865,
-    "currentPopAsOf": "Q2 2026"
+    "currentPopEstimate": 1517379,
+    "currentPopAsOf": "Q3 2026"
   },
   "indicators": {
     "retail_trade": {
-      "value": 2498027000,
-      "changePct": 0.7,
-      "direction": "up",
-      "period": "June 2026",
+      "value": 2482519000,
+      "changePct": -0.4,
+      "direction": "down",
+      "period": "July 2026",
       "comparison": "month-to-month, seasonally adjusted",
       "source": "Statistics Canada",
       "stale": false
@@ -87,10 +87,10 @@
       "stale": false
     },
     "weekly_earnings": {
-      "value": 1213.96,
-      "changePct": 3.3,
+      "value": 1219.59,
+      "changePct": 3.8,
       "direction": "up",
-      "period": "June 2026",
+      "period": "July 2026",
       "comparison": "year-over-year",
       "source": "Statistics Canada",
       "stale": false
