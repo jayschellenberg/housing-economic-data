@@ -52,7 +52,13 @@ scrape_benchmark <- function() {
   HPI_PAGE <- "https://www.crea.ca/housing-market-stats/mls-home-price-index/hpi-tool/"
   HPI_BASE <- "https://www.crea.ca/files/mls-hpi-data/"
   ua <- add_headers(`User-Agent` = "Mozilla/5.0")
-  month_num <- setNames(rep(1:12, 2), tolower(c(month.name, month.abb)))
+  # Resolve a month token by unambiguous PREFIX so "Sep", "Sept" and "September"
+  # all land on 9. CREA named the 2026-09 release MLS_HPI_Sept_2026.zip; the old
+  # fixed full-name/3-letter vocabulary rejected "Sept", then crashed on the
+  # empty result, then the URL guesses (which never tried "Sept") fell back to
+  # the August zip -- so the site sat on July data with no alert. Ambiguous or
+  # unknown tokens resolve to NA.
+  month_of <- function(tok) pmatch(tolower(tok), tolower(month.name), duplicates.ok = TRUE)
   link_rx <- 'href="([^"]*MLS_HPI[-_]([A-Za-z]+)[-_]([0-9]{4})(?:_EN)?\\.zip)"'
 
   page_links <- tryCatch({
@@ -64,20 +70,29 @@ scrape_benchmark <- function() {
     url <- vapply(parts, `[`, "", 2)
     mon <- tolower(vapply(parts, `[`, "", 3))
     yr  <- suppressWarnings(as.integer(vapply(parts, `[`, "", 4)))
-    ok  <- mon %in% names(month_num) & !is.na(yr)
-    url <- url[ok]; ym <- yr[ok] * 12 + month_num[mon[ok]]
-    url <- ifelse(grepl("^https?://", url), url, paste0("https://www.crea.ca", url))
-    message(sprintf("[16] HPI page lists %d zip link(s): %s", length(url), paste(basename(url), collapse = ", ")))
-    unique(url[order(-ym)])                     # newest release first
+    mi  <- month_of(mon)
+    ok  <- !is.na(mi) & !is.na(yr)
+    if (!any(ok)) {
+      # basename()/ifelse() on an empty vector used to throw here, which read
+      # as "page scrape failed" and hid the real story (link found, month
+      # token not understood). Say so, then let the guesses run.
+      message(sprintf("[16] HPI page: %d zip link(s) but none with a readable month/year (%s) -- guessing URLs",
+                      length(url), if (length(url)) paste(basename(url), collapse = ", ") else "none"))
+      character(0)
+    } else {
+      url <- url[ok]; ym <- yr[ok] * 12 + mi[ok]
+      url <- ifelse(grepl("^https?://", url), url, paste0("https://www.crea.ca", url))
+      message(sprintf("[16] HPI page lists %d zip link(s): %s", length(url), paste(basename(url), collapse = ", ")))
+      unique(url[order(-ym)])                   # newest release first
+    }
   }, error = function(e) { message("[16] HPI page scrape failed: ", conditionMessage(e), " -- guessing URLs"); character(0) })
 
   guesses <- unlist(lapply(0:5, function(k) {
     d <- seq(today, by = "-1 month", length.out = k + 1)[k + 1]
     mi <- as.integer(format(d, "%m")); y <- format(d, "%Y")
-    paste0(HPI_BASE, c(sprintf("MLS_HPI_%s_%s.zip",    month.name[mi], y),
-                       sprintf("MLS_HPI_%s_%s.zip",    month.abb[mi],  y),
-                       sprintf("MLS_HPI-%s-%s_EN.zip", month.name[mi], y),
-                       sprintf("MLS_HPI-%s-%s_EN.zip", month.abb[mi],  y)))
+    toks <- unique(c(month.name[mi], month.abb[mi], if (mi == 9L) "Sept"))
+    paste0(HPI_BASE, c(sprintf("MLS_HPI_%s_%s.zip",    toks, y),
+                       sprintf("MLS_HPI-%s-%s_EN.zip", toks, y)))
   }))
   cands <- unique(c(page_links, guesses))
 
@@ -217,22 +232,43 @@ scrape_headline <- function() {
   if (is.null(doc)) stop("article unreachable")
   txt <- rvest::html_text2(doc)
 
-  # Month label, e.g. "May 2026", from the article text.
-  mon <- regmatches(txt, regexpr("(January|February|March|April|May|June|July|August|September|October|November|December)\\s+20[0-9]{2}", txt))
-  as_of <- if (length(mon)) mon[1] else NA_character_
+  # Release month, e.g. "August 2026". The article page also carries WRREB's
+  # release archive back to 2010, so the FIRST "Month YYYY" on the page is not
+  # the release month (from 2026-08-24 it was "May 2014", written out as
+  # current with stale=FALSE). Take every match, keep those within the last 14
+  # months, use the latest; none -> not confident -> keep last-good.
+  mons <- regmatches(txt, gregexpr("(January|February|March|April|May|June|July|August|September|October|November|December)\\s+20[0-9]{2}", txt))[[1]]
+  mdates <- as.Date(paste("1", mons), format = "%d %B %Y")
+  recent <- !is.na(mdates) & mdates <= today & mdates >= seq(today, by = "-14 months", length.out = 2)[2]
+  as_of <- if (any(recent)) format(max(mdates[recent]), "%B %Y") else NA_character_
 
+  # Match figures only in sentences that are NOT year-to-date. The release
+  # leads with YTD averages in the same wording as the monthly ones
+  # ("year-to-date (YTD) residential detached average price of $468,679"), and
+  # the 2026-08/09 runs stored those YTD prices as the month's headline.
+  sentences <- strsplit(txt, "(?<=[.!?])\\s+", perl = TRUE)[[1]]
+  txt_monthly <- paste(sentences[!grepl("YTD|year[- ]to[- ]date", sentences, ignore.case = TRUE)], collapse = " ")
   num <- function(pattern) {
-    m <- regmatches(txt, regexpr(pattern, txt, perl = TRUE))
+    m <- regmatches(txt_monthly, regexpr(pattern, txt_monthly, perl = TRUE))
     if (!length(m)) return(NA_real_)
     as.numeric(gsub("[^0-9.]", "", m[1]))
   }
   # These patterns are intentionally conservative; if the release wording drifts
   # they return NA and we fall back to last-good. (\x{00ae} = the ® glyph;
   # R's PCRE2 rejects the \u escape, so use the \x{...} form.)
-  sales  <- num("[0-9,]+(?=\\s+MLS\\x{00ae} sales)")
+  # WRREB's 2026 wording is "All MLS® sales of 1,326 were down 5% ..." (the ®
+  # may carry a footnote digit: "MLS®1"); the older "1,326 MLS® sales" shape is
+  # kept as the fallback.
+  sales  <- num("(?<=All MLS\\x{00ae}[0-9]? sales of )[0-9,]+")
+  if (is.na(sales)) sales <- num("[0-9,]+(?=\\s+MLS\\x{00ae} sales)")
   sfd    <- num("(?<=residential[- ]detached average price of \\$)[0-9,]+")
   condo  <- num("(?<=condominium average price of \\$)[0-9,]+")
 
+  # "<Month> 2026 MLS® sales ..." matches the year as the count (every run from
+  # 2026-08-10 wrote sales = 2026). A Winnipeg month is a few hundred to a few
+  # thousand sales; reject anything that equals a nearby year or is out of range.
+  yrs <- as.numeric(format(today, "%Y")) + (-1:0)
+  if (!is.na(sales) && (sales %in% yrs || sales < 100 || sales > 20000)) sales <- NA_real_
   got <- sum(!is.na(c(sales, sfd, condo)))
   if (is.na(as_of) || got < 2) stop(sprintf("insufficient confident fields (as_of=%s, got=%d)", as_of, got))
 
