@@ -311,6 +311,14 @@ and on failure. To enable, add these to the GitHub repo:
 If any of those is missing the notification step is silently skipped — the
 workflow itself still runs and (on failure) opens a GitHub issue.
 
+The indicators success email carries a summary built by
+`scripts/refresh_summary.py` (also written to the run's Summary tab): which
+indicator groups advanced and by how many records, the CREA HPI and WRREB
+as-of months with their stale flags, and any pipeline lines that signal a
+scrape fell back to last-good data. The `Commit` link is the data commit the
+run pushed. No email means the run either found nothing new (the log says
+"No indicator changes.") or never ran.
+
 ## Verifying the pipeline
 
 After `data:all`, run `Rscript r/99_verify_samples.R` — it makes 5 fresh `get_cmhc()` calls and compares them to the generated JSON shards. Non-zero exit on mismatch.

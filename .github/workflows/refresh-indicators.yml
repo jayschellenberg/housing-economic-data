@@ -47,7 +47,9 @@ jobs:
 
       - name: Stamp run date
         id: stamp
-        run: echo "date=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "date=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+          echo "start=$(date +%s)" >> "$GITHUB_OUTPUT"
 
       - name: Install R packages
         run: |
@@ -80,15 +82,20 @@ jobs:
         shell: Rscript {0}
 
       - name: Run indicators pipeline
+        # Explicit bash = `-o pipefail`, so an Rscript failure still fails the
+        # step through the tee. The log feeds the "Summarize refresh" step.
+        shell: bash
         run: |
-          Rscript r/13_validate_indicators.R
-          Rscript r/10_scrape_boc.R
-          Rscript r/11_scrape_statscan.R
-          Rscript r/17_scrape_osb.R
-          Rscript r/22_scrape_cmhc_arrears.R
-          Rscript r/14_build_indicators.R
-          Rscript r/16_scrape_mls.R
-          Rscript r/15_build_economic_update.R
+          {
+            Rscript r/13_validate_indicators.R
+            Rscript r/10_scrape_boc.R
+            Rscript r/11_scrape_statscan.R
+            Rscript r/17_scrape_osb.R
+            Rscript r/22_scrape_cmhc_arrears.R
+            Rscript r/14_build_indicators.R
+            Rscript r/16_scrape_mls.R
+            Rscript r/15_build_economic_update.R
+          } 2>&1 | tee "$RUNNER_TEMP/pipeline.log"
 
       - name: Sanity check (indicators shrink guard)
         env:
@@ -97,6 +104,18 @@ jobs:
         # be unchanged (we didn't run their scrapes), and indicators get the
         # real shrink-tolerance check.
         run: Rscript r/98_sanity_check.R
+
+      - name: Summarize refresh
+        # What actually changed, for the email and the run's Summary tab:
+        # per-group latest date and record count vs the manifest on HEAD, the
+        # MLS scrape's as-of/stale state, and any pipeline lines that signal a
+        # soft failure (a scrape that kept last-good data, a series that could
+        # not be computed). Bare "pushed new data" told Jason nothing.
+        id: summary
+        shell: bash
+        run: |
+          git show HEAD:web/public/data/indicators-manifest.json > "$RUNNER_TEMP/manifest.prev.json" || echo '{}' > "$RUNNER_TEMP/manifest.prev.json"
+          python3 scripts/refresh_summary.py "$RUNNER_TEMP" "${{ steps.stamp.outputs.start }}"
 
       - name: Commit refreshed data if changed
         id: commit
@@ -124,6 +143,11 @@ jobs:
             done
             [ "$pushed" = true ] || { echo "push failed after retries"; exit 1; }
             echo "changed=true" >> "$GITHUB_OUTPUT"
+            # The data commit itself. github.sha is the commit the run was
+            # triggered FROM (the tip of main at schedule time), which the
+            # success email used to link as "Commit" -- pointing at whatever
+            # PR merge happened to be on top, never at the refreshed data.
+            echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Email gate — success
@@ -160,13 +184,15 @@ jobs:
           password:       ${{ secrets.MAIL_PASSWORD }}
           from:           Housing & Economic Data <${{ secrets.MAIL_USERNAME }}>
           to:             ${{ vars.MAIL_TO }}
-          subject:        "[Housing & Economic Data] Indicators refresh OK — ${{ steps.stamp.outputs.date }}"
+          subject:        "[Housing & Economic Data] Indicators refresh OK — ${{ steps.stamp.outputs.date }}: ${{ steps.summary.outputs.headline }}"
           body: |
             The weekly indicators refresh completed and pushed new data to main.
 
+            ${{ steps.summary.outputs.text }}
+
             Trigger:  ${{ github.event_name }}
             Run log:  ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-            Commit:   ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
+            Commit:   ${{ github.server_url }}/${{ github.repository }}/commit/${{ steps.commit.outputs.sha }}
 
             Vercel will redeploy automatically from main.
 

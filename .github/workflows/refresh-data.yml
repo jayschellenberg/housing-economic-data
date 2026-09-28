@@ -193,6 +193,9 @@ jobs:
             done
             [ "$pushed" = true ] || { echo "push failed after retries"; exit 1; }
             echo "changed=true" >> "$GITHUB_OUTPUT"
+            # The data commit itself; github.sha is the commit the run was
+            # triggered from, not the one this step just pushed.
+            echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Alert on a new MB RTB rent guideline
@@ -279,7 +282,7 @@ jobs:
 
             Trigger:  ${{ github.event_name }}
             Run log:  ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-            Commit:   ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
+            Commit:   ${{ github.server_url }}/${{ github.repository }}/commit/${{ steps.commit.outputs.sha }}
 
             Vercel will redeploy automatically from main.
 
