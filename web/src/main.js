@@ -22,6 +22,7 @@ import { initEconomicUpdate } from './economic-update.js';
 import { initAffordability } from './affordability.js';
 import { initRtb } from './rtb.js';
 import { initAgriculture } from './agriculture.js';
+import { initJohnson } from './johnson.js';
 import { wireChartDocExports } from './doc-image-export.js';
 import { getFirm, setFirm, onFirmChange } from './firm.js';
 
@@ -121,6 +122,7 @@ function setupTabs(initial, onActivate) {
     economic:   { btn: document.getElementById('tab-btn-economic'),   panel: document.getElementById('tab-panel-economic') },
     affordability: { btn: document.getElementById('tab-btn-affordability'), panel: document.getElementById('tab-panel-affordability') },
     rtb:        { btn: document.getElementById('tab-btn-rtb'),        panel: document.getElementById('tab-panel-rtb') },
+    johnson:    { btn: document.getElementById('tab-btn-johnson'),    panel: document.getElementById('tab-panel-johnson') },
   };
 
   function activate(name) {
@@ -235,7 +237,7 @@ async function bootstrap() {
   // sidebar TOC work after a hard refresh.
   const rawHash = window.location.hash.replace('#', '');
   let initialTab = 'charts';
-  if (['charts', 'tables', 'compare', 'starts', 'secondary', 'housing', 'census', 'affordability', 'rtb', 'snapshot', 'indicators', 'economic'].includes(rawHash)) {
+  if (['charts', 'tables', 'compare', 'starts', 'secondary', 'housing', 'census', 'affordability', 'rtb', 'johnson', 'snapshot', 'indicators', 'economic'].includes(rawHash)) {
     initialTab = rawHash;
   } else if (rawHash.startsWith('mi-section-')) {
     initialTab = 'indicators';
@@ -267,6 +269,7 @@ async function bootstrap() {
     affordability: once(() => initAffordability().catch(err => console.error('[affordability bootstrap]', err))),
     rtb:           once(() => initRtb().catch(err => console.error('[rtb bootstrap]', err))),
     agriculture:   once(() => initAgriculture().catch(err => console.error('[agriculture bootstrap]', err))),
+    johnson:       once(() => initJohnson().catch(err => console.error('[johnson bootstrap]', err))),
   };
   // Trigger the initial tab's init (charts → no-op); wiring runs it on click too.
   setupTabs(initialTab, (name) => tabInit[name]?.());
@@ -311,6 +314,12 @@ async function bootstrap() {
     xlsxBtnId: 'census-download-xlsx-charts',
     baseName:  'CensusProfile',
     getNodes:  () => [...document.querySelectorAll('#census-chart-grid .chart-card')].filter(hasPlot),
+  });
+  wireChartDocExports({
+    docxBtnId: 'jr-download-docx-charts',
+    xlsxBtnId: 'jr-download-xlsx-charts',
+    baseName:  'JohnsonReport',
+    getNodes:  () => [...document.querySelectorAll('#jr-chart-grid .chart-card')].filter(hasPlot),
   });
   wireChartDocExports({
     docxBtnId: 'ag-download-docx-charts',

@@ -85,6 +85,10 @@
         class="cmhc-tab" data-tab="rtb" aria-selected="false">
         RTB (MB)
       </button>
+      <button type="button" role="tab" id="tab-btn-johnson"
+        class="cmhc-tab" data-tab="johnson" aria-selected="false">
+        Johnson Report
+      </button>
       <!-- MB Economic Update — hidden again 2026-08 (previously hidden 2026-06,
            revived 2026-07). PARKED, NOT REMOVED: the tab panel below,
            economic-update.js, and the r/15 + r/16 pipeline are all intact and
@@ -929,6 +933,115 @@
       <footer class="text-xs text-neutral-500 pt-4 border-t border-neutral-200">
         Source: Manitoba Residential Tenancies Branch — Rent Increase Guideline (gov.mb.ca/cca/rtb). Consumer Price Index: Statistics Canada, Manitoba All-Items CPI (not seasonally adjusted). Guideline values are the published annual maximums; this is an unofficial reproduction for reference, not legal advice.
       </footer>
+    </div>
+
+    <!-- ============================================================
+         Johnson Report tab — Winnipeg commercial vacancy, lease rates
+         and sales summaries from The Johnson Report (semi-annual).
+         NO DATA SHIPS WITH THE SITE: the user parses their own Word
+         editions (Johnson-Report/ingest/parse_johnson.py) and points
+         the browser at the web-data folder; it is held in IndexedDB
+         for that browser only. See johnson.js / johnson-store.js.
+         ============================================================ -->
+    <div id="tab-panel-johnson" class="grid md:grid-cols-[320px_1fr] min-h-[calc(100vh-110px)]" role="tabpanel" aria-labelledby="tab-btn-johnson" hidden>
+      <aside class="bg-white border-r border-neutral-200 p-4 space-y-4 overflow-y-auto" aria-label="Johnson Report filters">
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Data folder</h2>
+          <p id="jr-folder-status" class="text-xs text-neutral-600 mb-2"></p>
+          <p id="jr-folder-error" class="text-xs text-red-700 mb-2" hidden></p>
+          <div class="space-y-2">
+            <button id="jr-pick-folder" type="button"
+              class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+              Choose web-data folder
+            </button>
+            <input id="jr-pick-fallback" type="file" webkitdirectory multiple hidden
+              class="block w-full text-xs file:mr-2 file:rounded file:border file:border-neutral-300 file:bg-white file:px-2 file:py-1 file:text-xs" />
+            <div class="flex gap-3 text-xs">
+              <button id="jr-rescan" type="button" class="underline text-neutral-600">Re-scan folder</button>
+              <button id="jr-clear" type="button" class="underline text-neutral-600" hidden>Remove loaded data</button>
+            </div>
+          </div>
+          <p class="text-xs text-neutral-500 mt-2">Pick the <code>web-data</code> folder written by <code>parse_johnson.py</code>. Read locally, never uploaded.</p>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Edition</h2>
+          <select id="jr-edition" class="w-full border border-neutral-300 rounded px-2 py-1 text-sm" disabled></select>
+          <div class="mt-2 space-y-1 text-sm">
+            <label class="flex items-start gap-2"><input type="radio" name="jr-view" value="series" checked class="mt-1" />
+              <span>Long series <span class="text-xs text-neutral-500 block">every edition up to this one, latest revision wins</span></span></label>
+            <label class="flex items-start gap-2"><input type="radio" name="jr-view" value="edition" class="mt-1" />
+              <span>As published <span class="text-xs text-neutral-500 block">only this edition's tables — the snapshot in time</span></span></label>
+          </div>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Chart style</h2>
+          <div class="flex gap-4 text-sm">
+            <label class="flex items-center gap-1"><input type="radio" name="jr-style" value="lines" checked /> Lines</label>
+            <label class="flex items-center gap-1"><input type="radio" name="jr-style" value="bars" /> Grouped bars</label>
+          </div>
+          <p class="text-xs text-neutral-500 mt-1">Bars apply to the by-district charts and show the last ten periods.</p>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Year range</h2>
+          <div class="flex items-center gap-2 text-sm">
+            <input id="jr-year-from" type="number" min="1990" max="2100" placeholder="from" class="w-24 border border-neutral-300 rounded px-2 py-1" />
+            <span>to</span>
+            <input id="jr-year-to" type="number" min="1990" max="2100" placeholder="to" class="w-24 border border-neutral-300 rounded px-2 py-1" />
+          </div>
+          <p class="text-xs text-neutral-500 mt-1">Leave blank to show everything the selected editions carry.</p>
+        </section>
+
+        <section>
+          <div class="flex items-baseline justify-between gap-2 mb-2">
+            <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Districts</h2>
+            <span class="flex items-center gap-2 text-xs">
+              <button id="jr-districts-all" type="button" class="underline">All</button>
+              <button id="jr-districts-none" type="button" class="underline">None</button>
+            </span>
+          </div>
+          <div id="jr-districts" class="grid gap-1"></div>
+          <p class="text-xs text-neutral-500 mt-1">Applies to the by-district charts; the Overall / Total line always stays.</p>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Sections</h2>
+          <div id="jr-section-toggles" class="grid gap-1 text-sm"></div>
+          <ul id="jr-jump-list" class="cmhc-mi-jump-list grid gap-1 text-sm mt-2"></ul>
+        </section>
+
+        <section class="pt-2 border-t border-neutral-200 space-y-2">
+          <button id="jr-download-xlsx" type="button"
+            class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+            Download Excel (data)
+          </button>
+          <p class="text-xs text-neutral-500">One sheet per visible chart, in the selected view.</p>
+          <button id="jr-download-docx-charts" type="button"
+            class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+            Download Word (charts)
+          </button>
+          <button id="jr-download-xlsx-charts" type="button"
+            class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+            Download Excel (charts)
+          </button>
+          <p class="text-xs text-neutral-500">Every visible chart as an image — one per page / worksheet.</p>
+        </section>
+      </aside>
+
+      <main class="p-4 space-y-4 overflow-x-hidden">
+        <p id="jr-empty" class="text-sm text-neutral-600 max-w-2xl">
+          No Johnson Report data is loaded. The Johnson Report is subscriber material, so this site publishes none of it:
+          run <code>ingest/parse_johnson.py</code> in the Johnson-Report project over your Word editions, then choose the
+          <code>web-data</code> folder it writes. The charts render from that folder in this browser only.
+        </p>
+        <section id="jr-chart-grid" class="space-y-6"></section>
+        <footer class="text-xs text-neutral-500 pt-4 border-t border-neutral-200">
+          Source: The Johnson Report (Wayne K. Johnson, CPA, CA), Winnipeg commercial real estate market report, June and December editions.
+          The report is copyrighted; figures shown here are read from the viewer's own locally held copy and are not redistributed by this site.
+        </footer>
+      </main>
     </div>
 
     <footer id="site-footer" class="bg-neutral-50 border-t border-neutral-200 text-xs text-neutral-600 px-4 py-3 space-y-2">

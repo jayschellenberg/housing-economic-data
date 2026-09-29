@@ -76,6 +76,10 @@ export const INDICATOR_FMT = {
   // scalar, so the value is raw persons — render as millions (21,034,500 → "21.0M").
   persons_thousands:  (v) => v == null ? '—' : `${(Number(v) / 1e6).toFixed(1)}M`,
   ratio:              (v) => v == null ? '—' : Number(v).toFixed(2),
+  // Johnson Report units: lease rates and sale prices per square foot keep
+  // their cents ($6.24/sf is not $6/sf), and floor areas are whole sq ft.
+  dollar_psf:         (v) => v == null ? '—' : `$${Number(v).toFixed(2)}`,
+  sf:                 (v) => v == null ? '—' : `${Math.round(Number(v)).toLocaleString()} sf`,
   balance_of_opinion: (v) => v == null ? '—' : `${Number(v).toFixed(0)}`,
 };
 
