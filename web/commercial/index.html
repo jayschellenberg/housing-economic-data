@@ -25,12 +25,14 @@
   -->
   <div class="hs-shell">
     <aside class="hs-sidebar" aria-label="Data and filters">
-      <!-- Data connection, laid out like the Data folder section on the
-           Cap Rates / Johnson Report tabs; import progress and the
-           "newer data" notice report here too. -->
-      <section id="data-panel" class="hs-section">
-        <h2 class="hs-section-title">Data folder</h2>
-        <p id="data-status" class="hs-status">Not connected</p>
+      <!-- Data connection, collapsible: the summary line carries the record
+           count and the published date; facts, Reload and Disconnect are a
+           click away. Folds once a folder is connected, opens when none is. -->
+      <details id="data-panel" class="hs-section hs-collapsible" open>
+        <summary>
+          <h2 class="hs-section-title">Data folder</h2>
+          <p id="data-status" class="hs-status">Not connected</p>
+        </summary>
 
         <div id="data-empty" class="hs-section">
           <button id="data-connect" type="button" class="hs-btn-primary">Choose folder</button>
@@ -55,9 +57,11 @@
         </div>
 
         <input id="data-folder-input" type="file" webkitdirectory directory multiple hidden />
-        <p id="status-line" class="hs-status" role="status" aria-live="polite">Connect a folder to begin.</p>
-        <p id="data-update" class="notice" hidden></p>
-      </section>
+      </details>
+      <!-- Outside the folded panel, so progress and the "newer data" notice
+           are seen without opening it. -->
+      <p id="status-line" class="hs-status" role="status" aria-live="polite">Connect a folder to begin.</p>
+      <p id="data-update" class="notice" hidden></p>
 
       <!-- Analysis settings: shown while the Analysis view is open, as a tab's
            own settings are on the site. The jump list scrolls to a section. -->
