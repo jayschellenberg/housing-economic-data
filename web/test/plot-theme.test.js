@@ -1,5 +1,18 @@
 import { describe, it, expect } from 'vitest';
-import { percentTickFormat, dateAxisTicks, MIRROR_Y_MARGIN, plotWidth, plotHeight, PLOT_FALLBACK_WIDTH } from '../src/plot-theme.js';
+import { percentTickFormat, sfTickFormat, dateAxisTicks, MIRROR_Y_MARGIN, plotWidth, plotHeight, PLOT_FALLBACK_WIDTH } from '../src/plot-theme.js';
+
+describe('sfTickFormat', () => {
+  it('reads millions compactly, dropping trailing zeros', () => {
+    const f = sfTickFormat([0, 3.6e6]);
+    const ticks = [0, 5e5, 1e6, 1.5e6, 2e6, 2.5e6, 3e6, 3.5e6];
+    expect(ticks.map((t, i) => f(t, i, ticks)))
+      .toEqual(['0 sf', '0.5M sf', '1M sf', '1.5M sf', '2M sf', '2.5M sf', '3M sf', '3.5M sf']);
+  });
+  it('uses thousands on a smaller axis and raw sf on a tiny one', () => {
+    expect(sfTickFormat([0, 8e5])(2.5e5)).toBe('250K sf');
+    expect(sfTickFormat([0, 900])(500)).toBe('500 sf');
+  });
+});
 
 describe('percentTickFormat', () => {
   it('drops to whole percents on a wide axis, like the reference chart', () => {

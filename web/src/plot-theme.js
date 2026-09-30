@@ -123,6 +123,25 @@ export function percentTickFormat(domain) {
   return (v, _i, ticks) => `${Number(v).toFixed(distinctPlaces(ticks, places))}%`;
 }
 
+/**
+ * Tick format for a floor-area axis. "3,500,000 sf" is the widest label on
+ * the site and pushes the plot into a narrow strip; the axis reads "3.5M sf"
+ * / "500K sf" instead, scaled by how much ground the axis covers, with
+ * trailing zeros dropped ("1M sf", not "1.0M sf"). The exact figure stays in
+ * the hover tip, the chips and the data table (INDICATOR_FMT.sf).
+ */
+export function sfTickFormat(domain) {
+  const [lo, hi] = domain || [];
+  const max = Math.max(Math.abs(Number(lo)) || 0, Math.abs(Number(hi)) || 0);
+  const [div, suffix] = max >= 1e6 ? [1e6, 'M'] : max >= 1e4 ? [1e3, 'K'] : [1, ''];
+  return (v, _i, ticks) => {
+    const scaled = Array.isArray(ticks) ? ticks.map(t => Number(t) / div) : null;
+    const places = distinctPlaces(scaled, 0);
+    const n = Number((Number(v) / div).toFixed(places));
+    return n === 0 ? '0 sf' : `${n.toLocaleString()}${suffix} sf`;
+  };
+}
+
 function distinctPlaces(ticks, places) {
   if (!Array.isArray(ticks) || ticks.length < 2) return places;
   let p = places;

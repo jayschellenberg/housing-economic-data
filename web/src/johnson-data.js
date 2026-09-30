@@ -71,7 +71,8 @@ export const CHARTS = [
   { id: 'ind_rate_multi',  group: 'ind_lease', kind: 'matrix-rows', series: ['ind_lease_rate_multi'],
     title: 'Industrial Net Lease Rates — Multi-Tenant', units: 'dollar_psf', district: true },
   { id: 'ind_rate_age',    group: 'ind_lease', kind: 'matrix-rows', series: ['ind_lease_rate_age'],
-    title: 'Industrial Net Lease Rates by Building Age', units: 'dollar_psf' },
+    // Oldest cohort first in the legend; the rest keep the report's row order.
+    title: 'Industrial Net Lease Rates by Building Age', units: 'dollar_psf', lineOrder: ['Pre 1970'] },
   { id: 'ind_leased_sf',   group: 'ind_lease', kind: 'matrix-rows', series: ['ind_leasing_sf_district'],
     title: 'Industrial Space Leased by District', units: 'sf', district: true },
   { id: 'ind_rate_type',   group: 'ind_lease', kind: 'records-cols', series: ['ind_leasing_by_type'],
