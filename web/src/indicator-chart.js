@@ -762,10 +762,18 @@ export function buildIndicatorCard(container, {
       legendEl.appendChild(note);
     }
 
+    // `singleSeriesInSubtitle`: a chart that draws one line needs no legend —
+    // its name goes at the front of the subtitle instead ("Dollar volume —
+    // 2000 to 2025"; Johnson Report).
+    const plottedLabels = new Set(points.map(p => p.label));
+    // A "Group · Row" label keeps only the row there ("Total Suburban").
+    const singleLabel = opts.singleSeriesInSubtitle && plottedLabels.size === 1 && !refBand && !refLine
+      ? String([...plottedLabels][0]).split(' · ').pop() : null;
+
     const wrap = document.createElement('div');
     wrap.className = 'cmhc-plot-wrap';
     wrap.appendChild(svgEl);
-    wrap.appendChild(legendEl);
+    if (!singleLabel) wrap.appendChild(legendEl);
     $plot.appendChild(wrap);
 
     // Subtitle + caption + latest-value row.
@@ -794,7 +802,8 @@ export function buildIndicatorCard(container, {
       // 'month' → "June 2000 to June 2026", 'year' → "2016 to 2025"
       // (Johnson Report; annual measures have no month to name).
       const end = opts.rangeSubtitle === 'year' ? (d) => String(d.getUTCFullYear()) : longMonthYear;
-      $sub.textContent = [`${end(xMin)} to ${end(xMax)}`, baseSub, source].filter(Boolean).join('; ');
+      const range = `${end(xMin)} to ${end(xMax)}`;
+      $sub.textContent = [singleLabel ? `${singleLabel} — ${range}` : range, baseSub, source].filter(Boolean).join('; ');
     } else if (opts.rangePrefix) {
       const monthYear = (d) => `${MONTH_ABBR[d.getUTCMonth()]}-${d.getUTCFullYear()}`;
       const range = `${monthYear(xMin)} to ${monthYear(xMax)}`;

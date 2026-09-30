@@ -32,6 +32,7 @@ import { getPref, setPref } from './prefs.js';
 import { buildJumpBar } from './jump-bar.js';
 import {
   CHARTS, GROUPS, AGGREGATE_LABELS, chartPoints, toCardInput, allDistricts, sourceLabel,
+  districtPicker, expandSelection,
   editionLabel, sortEditions, lineLabels,
 } from './johnson-data.js';
 import {
@@ -286,9 +287,12 @@ function renderEditionPicker() {
   ui.$yearTo.value = ui.prefs.yearTo || '';
 }
 
+// Selections are stored as the report's own district names; the picker shows
+// one checkbox per group of them (districtPicker). Overall / Total are not in
+// the list: those lines are always drawn.
 function selectedDistricts() {
   const saved = ui.prefs.districts;
-  if (Array.isArray(saved)) return saved.filter(d => ui.districts.includes(d));
+  if (Array.isArray(saved)) return expandSelection(saved, ui.pickerItems || districtPicker(ui.districts));
   return ui.districts.slice();
 }
 
@@ -300,6 +304,7 @@ function setDistricts(list) {
 
 function renderDistrictPicker() {
   ui.districts = allDistricts(ui.editions);
+  ui.pickerItems = districtPicker(ui.districts);
   const chosen = new Set(selectedDistricts());
   const $box = ui.$districts;
   $box.replaceChildren();
@@ -310,21 +315,21 @@ function renderDistrictPicker() {
     $box.appendChild(hint);
     return;
   }
-  for (const d of ui.districts) {
+  for (const item of ui.pickerItems) {
     const label = document.createElement('label');
     label.className = 'flex items-center gap-1 text-sm';
+    if (item.members.length > 1) label.title = `Covers: ${item.members.join(', ')}`;
     const cb = document.createElement('input');
     cb.type = 'checkbox';
-    cb.checked = chosen.has(d);
+    cb.checked = item.members.some(m => chosen.has(m));
     cb.addEventListener('change', () => {
       const next = new Set(selectedDistricts());
-      if (cb.checked) next.add(d); else next.delete(d);
+      for (const m of item.members) { if (cb.checked) next.add(m); else next.delete(m); }
       ui.prefs = savePrefs({ districts: ui.districts.filter(x => next.has(x)) });
       renderCharts();
     });
     const text = document.createElement('span');
-    text.textContent = d;
-    if (AGGREGATE_LABELS.has(d)) text.className = 'font-semibold';
+    text.textContent = item.label;
     label.append(cb, text);
     $box.appendChild(label);
   }
@@ -452,6 +457,8 @@ function renderCharts() {
       card.render(input.records, input.seriesMeta, {
         // Semi-annual measures name the month; annual ones only the year.
         rangeSubtitle: chart.family ? 'month' : 'year',
+        // One line drawn → no legend; its name leads the subtitle instead.
+        singleSeriesInSubtitle: true,
         dashedIds: input.dashedIds,
         monthFrom,
         monthTo,

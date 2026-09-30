@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   CHARTS, CHART_BY_ID, periodToDate, seasonDate, uniqueColumns, editionPoints, chartPoints,
   mergeLatestWins, toCardInput, allDistricts, sourceLabel, editionsUpTo, titleCase,
+  districtPicker, expandSelection, lineLabels,
 } from '../src/johnson-data.js';
 
 // Cut-down editions in the shape parse_johnson.py writes. Two June editions
@@ -200,5 +201,60 @@ describe('sidebar helpers', () => {
   it('title-cases column names', () => {
     expect(titleCase('POWER CENTRES')).toBe('Power Centres');
     expect(titleCase('TOTAL A,B,C')).toBe('Total A,B,C');
+  });
+});
+
+describe('district picker groups', () => {
+  const NAMES = ['Central', 'Central/Exchange', 'East Kildonan', 'Elmwood', 'Elmwood/East Kildonan', 'Exchange',
+    'Kildonan', 'North Kildonan', 'St Boniface', 'St Boniface Industrial Park', 'St James', 'Overall', 'Total'];
+
+  it('folds the report\'s variant names into one item each and drops the aggregates', () => {
+    const items = districtPicker(NAMES);
+    expect(items.map(i => i.label)).toEqual(['Central/Exchange', 'Elmwood/East Kildonan', 'North Kildonan', 'St Boniface', 'St James']);
+    expect(items.find(i => i.label === 'Central/Exchange').members).toEqual(['Central', 'Exchange', 'Central/Exchange']);
+    expect(items.find(i => i.label === 'North Kildonan').members).toEqual(['North Kildonan', 'Kildonan']);
+  });
+
+  it('lists only the members a group actually has in the data', () => {
+    expect(districtPicker(['Central', 'St James', 'Overall'])).toEqual([
+      { label: 'Central/Exchange', members: ['Central'] },
+      { label: 'St James', members: ['St James'] },
+    ]);
+  });
+
+  it('treats a group as chosen when any of its names was saved', () => {
+    const items = districtPicker(NAMES);
+    expect(expandSelection(['Exchange', 'St James'], items).sort())
+      .toEqual(['Central', 'Central/Exchange', 'Exchange', 'St James']);
+    expect(expandSelection([], items)).toEqual([]);
+  });
+});
+
+describe('office headlease row labels', () => {
+  // As the parser writes it: the first block's rows carry no group (the
+  // table's label_head names it), the grand total is tagged with the last block.
+  const ed = {
+    id: '2026-06', year: 2026, month: 6, season: 'jun',
+    tables: [{
+      series: 'office_headlease_history', season: 'jun', shape: 'matrix', label_head: 'DOWNTOWN', columns: ['2025', '2026'],
+      rows: [
+        { label: 'Class A', values: [9.7, 9.8] },
+        { label: 'Downtown Total', values: [13.2, 14.3] },
+        { label: 'Class A', values: [22.8, 24.4], group: 'Suburban' },
+        { label: 'Total Suburban', values: [7.1, 7.6], group: 'Suburban' },
+        { label: 'Total Inventory', values: [11.9, 12.4], group: 'Suburban' },
+      ],
+    }],
+  };
+
+  it('names first-block rows from label_head and leaves totals as printed', () => {
+    const lines = lineLabels(editionPoints(CHART_BY_ID.office_headlease, ed));
+    expect(lines).toEqual(['Downtown · Class A', 'Downtown Total', 'Suburban · Class A', 'Total Suburban', 'Total Inventory']);
+  });
+
+  it('matches every default row the chart asks for that the table has', () => {
+    const lines = new Set(lineLabels(editionPoints(CHART_BY_ID.office_headlease, ed)));
+    const want = CHART_BY_ID.office_headlease.defaultRows.filter(r => ['Downtown · Class A', 'Total Suburban', 'Total Inventory'].includes(r));
+    expect(want.every(r => lines.has(r))).toBe(true);
   });
 });
