@@ -126,6 +126,14 @@
         class="cmhc-tab" data-tab="johnson" aria-selected="false">
         Johnson Report
       </button>
+      <button type="button" role="tab" id="tab-btn-rental"
+        class="cmhc-tab" data-tab="rental" aria-selected="false">
+        Rental Dashboard
+      </button>
+      <button type="button" role="tab" id="tab-btn-commercial"
+        class="cmhc-tab" data-tab="commercial" aria-selected="false">
+        Commercial Dashboard
+      </button>
     </nav>
 
     <div id="tab-panel-charts" class="grid md:grid-cols-[320px_1fr] min-h-[calc(100vh-110px)]" role="tabpanel" aria-labelledby="tab-btn-charts">
@@ -1185,6 +1193,24 @@
           Rates: Bank of Canada Valet (overnight target, 5- and 10-year Government of Canada benchmark yields). Cap rates: Colliers, CBRE and Cushman &amp; Wakefield published quarterly surveys, Winnipeg, read from the viewer's own locally held copy and not redistributed by this site.
         </footer>
       </main>
+    </div>
+
+    <!-- ============================================================
+         Rental Dashboard and Commercial Dashboard tabs — the Manitoba
+         Rental Explorer and Commercial Availability Explorer, each its own
+         page in this same Vite project (web/rental/, web/commercial/) shown
+         in a same-origin frame. Same origin is what lets the folder picker
+         and IndexedDB work inside the frame. The frame's src is set on first
+         activation (main.js) so the map stack is not fetched until asked.
+         Both read the viewer's RRG Shared\Apps folders; nothing ships.
+         ============================================================ -->
+    <div id="tab-panel-rental" class="cmhc-subapp-panel" role="tabpanel" aria-labelledby="tab-btn-rental" hidden>
+      <iframe id="subapp-rental" class="cmhc-subapp-frame" title="Manitoba Rental Explorer" data-src="./rental/"
+              allow="clipboard-write"></iframe>
+    </div>
+    <div id="tab-panel-commercial" class="cmhc-subapp-panel" role="tabpanel" aria-labelledby="tab-btn-commercial" hidden>
+      <iframe id="subapp-commercial" class="cmhc-subapp-frame" title="Commercial Availability Explorer" data-src="./commercial/"
+              allow="clipboard-write"></iframe>
     </div>
 
     <footer id="site-footer" class="bg-neutral-50 border-t border-neutral-200 text-xs text-neutral-600 px-4 py-3 space-y-2">

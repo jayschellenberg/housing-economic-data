@@ -10,9 +10,9 @@ A multi-tab static website of Canadian housing & economic data, built for a comm
 
 The header carries two top-level groups, each with its own tab bar:
 **Housing & Economic Data** (the public CMHC / StatsCan tabs, Market Indicators
-included, and the landing view) and **Local Data** (Johnson Report, Cap Rates
-and Cap Rates vs Interest — tabs whose data comes from folders on the viewer's
-disk).
+included, and the landing view) and **Local Data** (Cap Rates, Cap Rates vs Interest, Johnson Report,
+Rental Dashboard and Commercial Dashboard — tabs whose data comes from folders
+on the viewer's disk).
 `TAB_GROUP` in `web/src/main.js` says which tabs belong to Local Data; every
 other tab is Housing.
 
@@ -28,6 +28,8 @@ other tab is Housing.
 | Affordability | Royal-LePage-style affordability factor + choropleth map | `r/16`, `r/18`, census, `r/20` |
 | Current Snapshot / Market Indicators | BoC / StatsCan / OSB economic indicators, incl. CPI inflation (headline, core, shelter, annual average), (Cap vs Interest moved to its own Local Data tab) | `r/10`,`r/11`,`r/13`,`r/14`,`r/17` |
 | Cap Rates vs Interest | The Cap vs Interest chart — BoC overnight target and GoC yields with Winnipeg cap-rate overlays from the Cap Rates tab's local data (Local Data group) | BoC shard + `Cap-Rates` project |
+| Rental Dashboard | The Manitoba Rental Explorer (weekly rental-listing scrape: filters, map, analysis, exports), reading `RRG Shared\Apps\RentalDashboard` — a same-origin sub-app in `web/rental/` shown in the tab (Local Data group) | `RentalDashboard` project |
+| Commercial Dashboard | The Commercial Availability Explorer (brokerage availability tracker: filters, map, summary, flyers), reading `RRG Shared\Apps\CommercialAvailability` — a same-origin sub-app in `web/commercial/` (Local Data group) | `Commercial-Availability` project |
 | Agriculture | Farm cash / farmland value / crop, livestock & supply-managed prices / input costs / farm structure (consolidation) + within-province CCS choropleth; sidebar checks any mix of MB/SK/AB/BC plus Canada (on by default; every chart follows) and sets the year range | catalog + `r/11`,`r/14`; `r/20`,`r/24` (run-once map) |
 | RTB (MB) | Manitoba rent-increase guideline history + CPI overlay | `r/19` |
 | Johnson Report | Winnipeg commercial vacancy, lease rates and sales summaries from The Johnson Report, read from a folder on the user's own disk (nothing published) | `Johnson-Report/ingest/parse_johnson.py` (separate project) |
@@ -62,6 +64,31 @@ downtown/suburban classes. The section listens for the Cap Rates tab's
 is not shard-backed it is rendered by its own module rather than the catalog loop;
 `cap_vs_interest` appears in `displayGroups` only so the sidebar toggle and jump link pick it
 up.
+
+### Rental Dashboard and Commercial Dashboard (sub-apps)
+
+The Manitoba Rental Explorer and the Commercial Availability Explorer, formerly
+their own Vercel sites, live in this project as two more pages — `web/rental/`
+and `web/commercial/` (each with its own `index.html`, `src/`, tests and
+README, copied from their source projects' `web/` folders) — built by the same
+Vite config (`build.rollupOptions.input`) and shown inside their Local Data
+tabs in an iframe. **Same origin** is the point: the folder picker and
+IndexedDB work inside the frame exactly as they did standalone, and the
+viewer connects the same `RRG Shared\Apps\RentalDashboard` /
+`CommercialAvailability` folders. The frame's `src` is set on the tab's first
+visit so the map stack (MapLibre + Protomaps + pmtiles, ~900 kB) is not
+fetched until asked.
+
+Their static assets moved under `web/public/rental/data/`,
+`web/public/commercial/data/` (the two apps' boundary GeoJSONs differ, so
+they are kept apart) and the shared `web/public/basemap-sprites/`. The CSP in
+`vercel.json` gained the basemap hosts (`pub-…r2.dev`, `demotiles.maplibre.org`),
+`worker-src blob:` for MapLibre's tile worker, `frame-src 'self' blob:` and
+`frame-ancestors 'self'` (with `X-Frame-Options: SAMEORIGIN`) for the frames.
+`npm run test:subapps` runs their `node --test` suites; `npm run lint` covers
+their sources. Their pipelines (`RentalDashboard`, `Commercial-Availability`)
+are unchanged and still publish to the shared folders. When updating a sub-app,
+edit it here; the source projects' `web/` folders are now the historical copy.
 
 ### Chart captions and the Company name
 
