@@ -145,6 +145,13 @@ export function capPublisher(firm) {
   return firm || DEFAULT_FIRM;
 }
 
+/** The cap-rate publisher as the caption names it: "Colliers Canada". */
+function captionPublisher(firm) {
+  if (firm === ALL_FIRMS) return 'Colliers Canada, CBRE & Cushman & Wakefield';
+  const f = firm || DEFAULT_FIRM;
+  return f === 'Colliers' ? 'Colliers Canada' : f;
+}
+
 // --- Monthly resampling ------------------------------------------------------
 
 /**
@@ -404,12 +411,12 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', 
       title: capTypes.length
         ? 'Overnight, 5-Year, 10-Year Yields & Cap Rates'
         : 'Canadian Rate Environment',
-      // "Source: BoC & Colliers Average CR" in the caption, bottom-right
-      // (the subtitle says what BoC and CR stand for); 10 pt in print, as on
-      // the other Local Data tabs (Jason, 2026-09-30).
+      // "Source: Bank of Canada & Colliers Canada Average Cap Rates" in the
+      // caption, bottom-right; 10 pt in print, as on the other Local Data
+      // tabs (Jason, 2026-09-30).
       sourceLabel: capTypes.length
-        ? `BoC & ${$firm.value === ALL_FIRMS ? 'Colliers, CBRE & Cushman & Wakefield' : ($firm.value || DEFAULT_FIRM)} Average CR`
-        : 'BoC',
+        ? `Bank of Canada & ${captionPublisher($firm.value)} Average Cap Rates`
+        : 'Bank of Canada',
       sourceInCaption: true,
       captionPt: 10,
       table: true,
@@ -429,13 +436,13 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', 
     const records = [...ui.rateRecords, ...capRecords];
     const { monthFrom, monthTo } = ui.rangeRef;
     card.render(records, seriesMeta, {
-      // "Aug-2021 to Aug-2026; Bank of Canada (BoC) Interest Rates and Bond
-      // Yields vs Capitalization Rates (CR)": the timeframe, then what the
-      // chart compares — spelling out the abbreviations the caption uses.
+      // "Aug-2021 to Aug-2026; Bank of Canada Interest Rates & Bond Yields vs
+      // Capitalization Rates (CR)": the timeframe, then what the chart
+      // compares (CR is the legend's abbreviation).
       rangePrefix: true,
       subtitle: capTypes.length
-        ? 'Bank of Canada (BoC) Interest Rates and Bond Yields vs Capitalization Rates (CR)'
-        : 'Bank of Canada (BoC) Interest Rates and Bond Yields',
+        ? 'Bank of Canada Interest Rates & Bond Yields vs Capitalization Rates (CR)'
+        : 'Bank of Canada Interest Rates & Bond Yields',
       // Cap rates dashed, interest rates solid — as on the reference chart,
       // where the distinction matters more than colour alone at a glance.
       dashedIds: capMeta.map(s => s.id),
