@@ -31,8 +31,9 @@ import {
 
 const PREF_KEY = 'capRates.v1';
 const SOURCE = 'Colliers, CBRE & Cushman & Wakefield Quarterly Cap Rate Market Reports';
-// One line per brokerage, in the colours of the appraiser's Excel chart.
-const FIRM_COLOURS = { Colliers: '#4472C4', CBRE: '#ED7D31', 'Cushman & Wakefield': '#A5A5A5' };
+// One line per brokerage, in each brokerage's own brand colour: Colliers
+// blue, CBRE green, Cushman & Wakefield red.
+const FIRM_COLOURS = { Colliers: '#0C2340', CBRE: '#006A4D', 'Cushman & Wakefield': '#E4002B' };
 
 let ui = null;
 
