@@ -196,6 +196,40 @@ export function quarterTable(rows, type, quarter) {
   return { subtypes, firms, cells, average };
 }
 
+/**
+ * Types whose quarter table shows one range per brokerage — the average of
+ * the classes it published — instead of a column pair per class (Jason,
+ * 2026-09-30: Downtown and Suburban office as totals, not Class A / B).
+ */
+export const TOTAL_ONLY_TYPES = new Set(['Downtown Office', 'Suburban Office']);
+export const ALL_CLASSES = 'All classes';
+
+/**
+ * Collapse a quarterTable to one column pair: each brokerage's Low and High
+ * are the means of the Lows and Highs it published across the classes (only
+ * those it published — Colliers has no Suburban Class A), and the Average
+ * row is the mean of those brokerage figures. `classes` keeps the names
+ * that went in, for the subtitle.
+ */
+export function collapseClasses(table, label = ALL_CLASSES) {
+  const r2 = (v) => Math.round(v * 100) / 100;
+  const avg = (xs) => (xs.length ? r2(mean(xs)) : null);
+  const cells = {};
+  for (const f of table.firms) {
+    const got = table.subtypes.map(s => table.cells[f]?.[s]).filter(Boolean);
+    cells[f] = { [label]: {
+      low: avg(got.map(c => c.low).filter(v => v != null)),
+      high: avg(got.map(c => c.high).filter(v => v != null)),
+    } };
+  }
+  const col = (k) => table.firms.map(f => cells[f][label][k]).filter(v => v != null);
+  return {
+    subtypes: [label], firms: table.firms, cells,
+    average: { [label]: { low: avg(col('low')), high: avg(col('high')) } },
+    classes: table.subtypes,
+  };
+}
+
 /** The quarter-end date that follows an ISO date. */
 export function nextQuarterEnd(iso) {
   const [y, m] = String(iso).split('-').map(Number);
