@@ -469,6 +469,7 @@ export function buildIndicatorCard(container, {
   }
   container.appendChild(card);
 
+  const $title    = card.querySelector('.chart-title');
   const $sub      = card.querySelector('[data-role="sub"]');
   const $stale    = card.querySelector('[data-role="stale"]');
   const $plot     = card.querySelector('[data-role="plot"]');
@@ -564,7 +565,9 @@ export function buildIndicatorCard(container, {
     const ids = new Set(seriesMeta.map(s => s.id));
     const rows = records.filter(r => ids.has(r.id));
     if (rows.length === 0) {
+      $title.textContent = title;
       $sub.textContent = subtitleWithSource(opts.subtitle);
+      $sub.hidden = !$sub.textContent;
       $empty.hidden = false;
       $png.disabled = true;
       return;
@@ -614,7 +617,9 @@ export function buildIndicatorCard(container, {
       (!minDate || p.date >= minDate) && (!maxDate || p.date <= maxDate)
     );
     if (filtered.length === 0) {
+      $title.textContent = title;
       $sub.textContent = subtitleWithSource(opts.subtitle);
+      $sub.hidden = !$sub.textContent;
       $empty.hidden = false;
       $png.disabled = true;
       return;
@@ -775,7 +780,16 @@ export function buildIndicatorCard(container, {
     // "<subtitle> • 2021–2026".
     const baseSub = opts.subtitle || '';
     const source = sourceInCaption ? '' : sourceText;
-    if (opts.rangePrefix) {
+    // `rangeInTitle` puts the range in the title instead, spelled out —
+    // "Winnipeg Industrial Cap Rates — March 2021 to June 2026" — and leaves
+    // the subtitle to whatever else the caller passes (none on Cap Rates,
+    // whose brokerages the caption already names).
+    $title.textContent = title;
+    if (opts.rangeInTitle) {
+      const longMonthYear = (d) => d.toLocaleString('en-CA', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+      $title.textContent = `${title} — ${longMonthYear(xMin)} to ${longMonthYear(xMax)}`;
+      $sub.textContent = [baseSub, source].filter(Boolean).join('; ');
+    } else if (opts.rangePrefix) {
       const monthYear = (d) => `${MONTH_ABBR[d.getUTCMonth()]}-${d.getUTCFullYear()}`;
       const range = `${monthYear(xMin)} to ${monthYear(xMax)}`;
       $sub.textContent = [range, baseSub, source].filter(Boolean).join('; ');
@@ -783,6 +797,8 @@ export function buildIndicatorCard(container, {
       const yearRange = `${xMin.getUTCFullYear()}–${xMax.getUTCFullYear()}`;
       $sub.textContent = [baseSub, yearRange, source].filter(Boolean).join(' • ');
     }
+    // An empty subtitle takes no room on the card or in the exported image.
+    $sub.hidden = !$sub.textContent;
     if (!sourceInCaption) $capLeft.textContent = '';
 
     // Latest-value row: one chip per series.
