@@ -24,9 +24,15 @@
       <aside class="hs-sidebar" aria-label="Data and filters">
         <!-- Data connection, laid out like the Data folder section on the
              Cap Rates / Johnson Report tabs. -->
-        <section class="hs-section" id="data-panel">
-          <h2 class="hs-section-title">Data folder</h2>
-          <p class="hs-status" id="data-status">Not connected</p>
+        <!-- Collapsible: the summary line carries the listing count and the
+             published date; facts, Reload and Disconnect are a click away.
+             Folds once a folder is connected, opens when none is. Status
+             messages sit outside it so they show while it is folded. -->
+        <details class="hs-section hs-collapsible" id="data-panel" open>
+          <summary>
+            <h2 class="hs-section-title">Data folder</h2>
+            <p class="hs-status" id="data-status">Not connected</p>
+          </summary>
           <div id="data-empty" class="hs-section">
             <button type="button" id="data-connect" class="hs-btn-primary">Choose folder</button>
             <input id="data-folder-input" type="file" webkitdirectory directory multiple hidden />
@@ -38,15 +44,15 @@
           </div>
           <div id="data-ready" hidden>
             <dl class="kv" id="data-facts"></dl>
-            <p class="notice" id="data-update" hidden></p>
             <div class="hs-links">
               <button type="button" id="data-reload" class="hs-link" title="Re-read the export files from disk">Reload folder</button>
               <button type="button" id="data-forget" class="hs-link" title="Forget the imported data in this browser">Disconnect</button>
             </div>
           </div>
           <p class="hs-hint" id="data-hint"></p>
-          <p class="hs-status" id="status-line" aria-live="polite">Connect the export folder to begin.</p>
-        </section>
+        </details>
+        <p class="hs-status" id="status-line" aria-live="polite">Connect the export folder to begin.</p>
+        <p class="notice" id="data-update" hidden></p>
 
         <!-- Analysis settings: shown while the Analysis view is open, as a tab's
              own settings are on the site. The jump list scrolls to a section. -->

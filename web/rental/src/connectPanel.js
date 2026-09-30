@@ -45,11 +45,18 @@ export function initConnectPanel({ onBundle, setStatus } = {}) {
     return { refresh: async () => {} };
   }
 
-  // The panel folds to its title once data is connected; only ever as a
-  // default — once the user works the disclosure by hand we stop touching it.
+  // Folds to its summary line (count · published) once data is connected
+  // and opens when nothing is, so Choose folder is in view. Only ever as a
+  // default: once the user works the disclosure by hand we stop touching it.
+  // `toggle` also fires for our own changes, so those are not counted.
   let touched = false;
-  $root.addEventListener('toggle', () => { touched = true; });
-  const setOpen = (open) => { if (!touched) $root.open = open; };
+  let ours = 0;
+  $root.addEventListener('toggle', () => { if (ours > 0) ours -= 1; else touched = true; });
+  const setOpen = (open) => {
+    if (touched || $root.open === open) return;
+    ours += 1;
+    $root.open = open;
+  };
 
   function fact(dt, dd) {
     const a = document.createElement('dt'); a.textContent = dt;

@@ -48,6 +48,19 @@ export function initConnectPanel({ onBundle, setStatus } = {}) {
   const $hint = document.getElementById('data-hint');
   const say = (m) => { if (typeof setStatus === 'function') setStatus(m); };
 
+  // Folds to its summary line (count · published) once data is connected
+  // and opens when nothing is, so Choose folder is in view. Only ever as a
+  // default: once the user works the disclosure by hand we stop touching it.
+  // `toggle` also fires for our own changes, so those are not counted.
+  let touched = false;
+  let ours = 0;
+  $root.addEventListener('toggle', () => { if (ours > 0) ours -= 1; else touched = true; });
+  const setOpen = (open) => {
+    if (touched || $root.open === open) return;
+    ours += 1;
+    $root.open = open;
+  };
+
   if (!dbAvailable()) {
     $status.textContent = 'Unavailable in this browser';
     $empty.hidden = true;
@@ -74,6 +87,7 @@ export function initConnectPanel({ onBundle, setStatus } = {}) {
       $status.textContent = 'Not connected';
       $empty.hidden = false;
       $ready.hidden = true;
+      setOpen(true);
       $hint.textContent = fsAccessSupported()
         ? ''
         : 'This browser has no folder picker — use Chrome or Edge to connect the folder and open flyers.';
@@ -103,6 +117,7 @@ export function initConnectPanel({ onBundle, setStatus } = {}) {
     fact('Flyers', flyerFact(m, info, c));
     $empty.hidden = true;
     $ready.hidden = false;
+    setOpen(false);
     $hint.textContent = info.auto_refresh
       ? 'Opening this page checks for newer data (Chrome may ask to see the folder first); click Reload to import it.'
       : 'This browser cannot remember the folder — re-import after each publish.';
