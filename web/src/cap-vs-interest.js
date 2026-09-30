@@ -9,33 +9,43 @@
  * overlays are picked with checkboxes rather than baked into 15 separate PNGs.
  *
  * NO CAP-RATE DATA SHIPS WITH THE SITE. The rates come from the committed BoC
- * shard; the cap rates come from a CSV the user loads in their own browser.
- * The parsed per-type averages are kept in localStorage for that browser only —
- * they are never uploaded, never committed, and no other visitor sees them.
- * That is deliberate: the cap-rate source (Colliers' quarterly reports) is not
- * ours to republish. A visitor with no CSV loaded sees the rate lines and an
- * invitation to load one.
+ * shard; the cap rates are the SAME local data the Cap Rates tab reads — the
+ * firm's cap_rates.json in the RRG Shared\Apps\CapRates folder, held in this
+ * browser's IndexedDB by cap-rates-store.js. Picking that folder once on the
+ * Cap Rates tab serves both tabs, so there is one cap-rate source to
+ * maintain. (An earlier version took a separate Colliers CSV here; that path
+ * is gone.) A visitor with no folder loaded sees the rate lines and a pointer
+ * to the Cap Rates tab.
+ *
+ * The overlay for a property type is the mean of one firm's class mid-points
+ * that quarter (Office = all four downtown/suburban classes together), for
+ * the firm chosen in the section — Colliers by default — or the mean across
+ * all three firms.
  *
  * Both halves are resampled to monthly before plotting. The BoC records are
  * daily (~1,300 points per line over the default 5-year window) and cap rates
- * are quarterly or annual, so without resampling every tooltip would land on a
- * daily rate observation and the cap-rate values would be unreadable. Monthly
- * means are also what the catalog already declares for these series
+ * are quarterly, so without resampling every tooltip would land on a daily
+ * rate observation and the cap-rate values would be unreadable. Monthly means
+ * are also what the catalog already declares for these series
  * (`transform: monthly_mean`).
  *
  * Wiring: the section renders itself into #mi-chart-grid (see indicators.js,
  * which calls buildCapVsInterest right after buildChartSections so the sidebar
  * picks it up), and re-renders on a date-range change through the exported
- * rerenderCapVsInterest().
+ * rerenderCapVsInterest(). It also re-reads the store when the Cap Rates tab
+ * announces a fresh import (the 'hed:cap-rates-updated' window event).
  */
 
 import { buildIndicatorCard, readOpenPanels } from './indicator-chart.js';
+import { getPref, setPref } from './prefs.js';
+import { getData as getCapRatesData, storeAvailable } from './cap-rates-store.js';
 
 export const CAP_GROUP_ID = 'cap_vs_interest';
+export const CAP_RATES_UPDATED_EVENT = 'hed:cap-rates-updated';
 
-// Bumped if the stored shape changes, so an old payload is ignored rather than
-// mis-read. v1: { types: {[type]: [[iso, value], …]}, meta, selected }.
-const STORAGE_KEY = 'hed.capRates.v1';
+// Section preferences (firm + which overlays are on), per browser. v2: the
+// v1 key held the parsed CSV itself and is simply ignored now.
+const PREF_KEY = 'capVsInterest.v2';
 
 // Always drawn, in this order. Series ids are what the committed BoC shard
 // (mortgage_market) uses; chartLabel overrides the catalog's terse labels,
@@ -68,176 +78,58 @@ const CAP_COLOURS = {
   'Industrial':   '#8C8C8C',        // darkgrey, a step darker for legibility
   'Retail':       '#8B0000',        // darkred
   'Hotel':        '#CD8500',        // orange3 — not in the reference scheme
+  'Self Storage': '#8B4789',        // orchid4 — not in the reference scheme
 };
 
 // Cap-rate property types, in the order they should appear. Anything else in
-// the CSV's MajorType column is carried through as-is after these.
-const KNOWN_TYPES = ['Multi-Family', 'Office', 'Industrial', 'Retail', 'Hotel'];
+// the data is carried through as-is after these.
+export const KNOWN_TYPES = ['Multi-Family', 'Office', 'Industrial', 'Retail', 'Hotel', 'Self Storage'];
 
-// Present in the CSV but off until asked for. The reference chart never plots
-// hotel cap rates, and the series is thin and stale next to the others (it
-// stops in 2019), so it would otherwise add a line that just trails off.
-// "All" still turns it on.
-const DEFAULT_OFF_TYPES = new Set(['Hotel']);
+// Available but off until asked for. The reference chart never plots hotel
+// cap rates, and hotel and self storage are thinner series than the four
+// core types; "All" still turns them on.
+export const DEFAULT_OFF_TYPES = new Set(['Hotel', 'Self Storage']);
 
-// The CSV writes both spellings across its history.
-const TYPE_ALIASES = { Multifamily: 'Multi-Family', 'Multi Family': 'Multi-Family' };
-
-const REQUIRED_COLUMNS = ['Date', 'MajorType', 'Low', 'High'];
+export const FIRMS = ['Colliers', 'CBRE', 'Cushman & Wakefield'];
+export const ALL_FIRMS = 'average';
+export const DEFAULT_FIRM = 'Colliers';
 
 // Module state — one section per page, built once by initIndicators.
 let ui = null;
 
-// --- CSV parsing -------------------------------------------------------------
+// --- Cap-rate series from the shared store -----------------------------------
 
 /**
- * Split CSV text into rows of fields, honouring quoted fields (which may
- * contain commas, escaped quotes and newlines) and both CRLF and LF endings.
- * A leading UTF-8 BOM is stripped — Excel writes one, and it would otherwise
- * become part of the first header name.
- */
-export function parseCsvRows(text) {
-  const src = text.replace(/^\uFEFF/, '');
-  const rows = [];
-  let row = [];
-  let field = '';
-  let quoted = false;
-  for (let i = 0; i < src.length; i++) {
-    const ch = src[i];
-    if (quoted) {
-      if (ch === '"') {
-        if (src[i + 1] === '"') { field += '"'; i++; }
-        else quoted = false;
-      } else field += ch;
-      continue;
-    }
-    if (ch === '"') { quoted = true; continue; }
-    if (ch === ',') { row.push(field); field = ''; continue; }
-    if (ch === '\r') continue;
-    if (ch === '\n') { row.push(field); rows.push(row); row = []; field = ''; continue; }
-    field += ch;
-  }
-  if (field !== '' || row.length) { row.push(field); rows.push(row); }
-  // Drop trailing blank lines.
-  return rows.filter(r => r.some(f => f.trim() !== ''));
-}
-
-/**
- * Parse the CSV's Date column. The Colliers extract writes MM-DD-YYYY; ISO
- * (YYYY-MM-DD) and MM/DD/YYYY are accepted too so a re-export from Excel with
- * different regional settings still loads. Returns an ISO date string, or null.
- */
-export function parseCapDate(raw) {
-  const s = String(raw || '').trim();
-  let m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
-  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
-  m = /^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/.exec(s);
-  if (m) {
-    const mo = Number(m[1]), d = Number(m[2]);
-    if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
-    return `${m[3]}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-  }
-  return null;
-}
-
-/**
- * Turn CSV text into per-type average cap rates by observation date.
+ * Per-type average cap rates by quarter from the Cap Rates tab's rows
+ * ({ date, firm, type, subtype, mid } with mid as a fraction).
  *
- * Mirrors the CCR_avg step in the Quarto project: normalise the MajorType
- * spelling, take the mid-point of each row's Low–High range, then average the
- * mid-points within a (type, date). Values stay in percent (7.25 → 7.25), which
- * is how every other percent series on this tab is stored.
+ * For one firm: the mean of that firm's class mid-points within a (type,
+ * quarter) — Office is all four downtown/suburban classes together, which is
+ * how the earlier CSV path averaged "MajorType". For ALL_FIRMS: the mean of
+ * every firm's class mid-points. Values come out in percent (0.0725 → 7.25),
+ * which is how every other percent series on this tab is stored.
  *
- * Returns { types, meta } or throws an Error whose message is shown verbatim to
- * the user.
+ * Returns { types: {[type]: [[iso, value], …]}, firstDate, lastDate }.
  */
-export function parseCapRateCsv(text) {
-  const rows = parseCsvRows(text);
-  if (rows.length < 2) throw new Error('That file has no data rows.');
-
-  const header = rows[0].map(h => h.trim());
-  const col = {};
-  header.forEach((h, i) => { col[h.toLowerCase()] = i; });
-  const missing = REQUIRED_COLUMNS.filter(c => col[c.toLowerCase()] === undefined);
-  if (missing.length) {
-    throw new Error(`Missing column${missing.length > 1 ? 's' : ''}: ${missing.join(', ')}. ` +
-      `Expected the Colliers extract's headers (Source, Market, Date, Quarter, MajorType, PropType, Subtype, Low, High).`);
-  }
-
+export function capSeriesFromRows(rows, firm = DEFAULT_FIRM) {
   const sums = new Map();      // `${type}\u0000${iso}` → { total, n }
-  const markets = new Set();
-  const sources = new Set();
-  let skipped = 0;
-
-  for (let i = 1; i < rows.length; i++) {
-    const r = rows[i];
-    const iso  = parseCapDate(r[col.date]);
-    const type = normaliseType(r[col.majortype]);
-    const low  = rateNumber(r[col.low]);
-    const high = rateNumber(r[col.high]);
-    // A row needs a date, a type, and at least one of Low/High. Rows with one
-    // side blank use the side that is present rather than being dropped.
-    const sides = [low, high].filter(Number.isFinite);
-    if (!iso || !type || sides.length === 0) { skipped++; continue; }
-    const mid = sides.reduce((a, b) => a + b, 0) / sides.length;
-
-    const key = `${type}\u0000${iso}`;
+  for (const r of rows || []) {
+    if (!r || typeof r.mid !== 'number' || !Number.isFinite(r.mid)) continue;
+    if (firm !== ALL_FIRMS && r.firm !== firm) continue;
+    if (!r.type || !r.date) continue;
+    const key = `${r.type}\u0000${r.date}`;
     const cur = sums.get(key) || { total: 0, n: 0 };
-    cur.total += mid; cur.n += 1;
+    cur.total += r.mid * 100; cur.n += 1;
     sums.set(key, cur);
-    if (col.market !== undefined && r[col.market]?.trim()) markets.add(r[col.market].trim());
-    if (col.source !== undefined && r[col.source]?.trim()) sources.add(r[col.source].trim());
   }
-
-  if (sums.size === 0) {
-    throw new Error('No rows had a readable Date, MajorType and Low/High. Check the date format (MM-DD-YYYY) and that the rates are numbers.');
-  }
-
   const types = {};
   for (const [key, { total, n }] of sums) {
     const [type, iso] = key.split('\u0000');
     (types[type] ||= []).push([iso, total / n]);
   }
   Object.values(types).forEach(points => points.sort((a, b) => (a[0] < b[0] ? -1 : 1)));
-
   const allDates = Object.values(types).flat().map(([iso]) => iso).sort();
-  return {
-    types,
-    meta: {
-      markets: [...markets],
-      sources: [...sources],
-      rows: rows.length - 1,
-      skipped,
-      firstDate: allDates[0],
-      lastDate: allDates[allDates.length - 1],
-    },
-  };
-}
-
-/**
- * A Low/High cell as a number, or NaN when the cell is blank. Number('') is 0,
- * which would quietly drag a one-sided range down to half its true mid-point —
- * a blank High must read as "not reported", not as a 0% cap rate.
- */
-function rateNumber(raw) {
-  const s = String(raw ?? '').replace(/[%\s,]/g, '');
-  return s === '' ? NaN : Number(s);
-}
-
-/**
- * Who published the cap rates, for the subtitle's source line. Taken from the
- * CSV's Source column so a file from someone other than Colliers is credited
- * correctly rather than mislabelled.
- */
-export function capPublisher(sources) {
-  const names = (sources || []).map(n => String(n).trim()).filter(Boolean);
-  return names.length ? names.join(' & ') : 'a locally loaded file';
-}
-
-function normaliseType(raw) {
-  const s = String(raw || '').trim();
-  if (!s) return null;
-  return TYPE_ALIASES[s] || s;
+  return { types, firstDate: allDates[0] || null, lastDate: allDates[allDates.length - 1] || null };
 }
 
 /** Known types first (in KNOWN_TYPES order), anything else after, alphabetical. */
@@ -245,6 +137,12 @@ export function orderTypes(names) {
   const known = KNOWN_TYPES.filter(t => names.includes(t));
   const extra = names.filter(t => !KNOWN_TYPES.includes(t)).sort();
   return [...known, ...extra];
+}
+
+/** How the subtitle credits the cap rates for a firm choice. */
+export function capPublisher(firm) {
+  if (firm === ALL_FIRMS) return 'Colliers, CBRE & Cushman & Wakefield (average)';
+  return firm || DEFAULT_FIRM;
 }
 
 // --- Monthly resampling ------------------------------------------------------
@@ -270,26 +168,16 @@ export function monthlyMean(records) {
     .map(([month, { total, n }]) => ({ date: `${month}-01`, value: total / n }));
 }
 
-// --- localStorage ------------------------------------------------------------
-// Every access is guarded: storage throws in a private window and can come back
-// empty after the user clears site data. The section must render either way.
+// --- Preferences -------------------------------------------------------------
 
-function loadStored() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (!parsed?.types || typeof parsed.types !== 'object') return null;
-    return parsed;
-  } catch { return null; }
+function loadPrefs() {
+  const p = getPref(PREF_KEY);
+  return p && typeof p === 'object' ? p : {};
 }
-
-function saveStored(payload) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)); } catch { /* not fatal */ }
-}
-
-function clearStored() {
-  try { localStorage.removeItem(STORAGE_KEY); } catch { /* not fatal */ }
+function savePrefs(patch) {
+  const next = { ...loadPrefs(), ...patch };
+  setPref(PREF_KEY, next);
+  return next;
 }
 
 // --- Section -----------------------------------------------------------------
@@ -306,6 +194,12 @@ function sectionMarkup() {
       <div data-role="cvi-card-grid" class="min-w-0"></div>
       <div class="cmhc-cvi-controls border border-neutral-200 rounded bg-neutral-50 p-3 text-sm space-y-3 min-w-0">
         <div class="space-y-1">
+          <span class="block text-xs font-semibold text-neutral-500 uppercase tracking-wider">Cap-rate source</span>
+          <label class="flex items-center gap-2 text-sm">Firm
+            <select data-role="cvi-firm" class="border border-neutral-300 rounded px-2 py-1 text-sm"></select>
+          </label>
+        </div>
+        <div class="space-y-1">
           <div class="flex items-baseline justify-between gap-2">
             <span class="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Cap-rate overlays</span>
             <span data-role="cvi-bulk" class="flex items-center gap-2 text-xs" hidden>
@@ -315,15 +209,7 @@ function sectionMarkup() {
           </div>
           <div data-role="cvi-types" class="grid gap-1"></div>
         </div>
-        <div class="space-y-1">
-          <span class="block text-xs font-semibold text-neutral-500 uppercase tracking-wider">Cap-rate CSV</span>
-          <input type="file" data-role="cvi-file" accept=".csv,text/csv"
-                 class="block w-full text-xs file:mr-2 file:rounded file:border file:border-neutral-300 file:bg-white file:px-2 file:py-1 file:text-xs" />
-          <button type="button" data-role="cvi-clear"
-                  class="text-xs underline text-neutral-600" hidden>Remove loaded data</button>
-        </div>
         <p data-role="cvi-status" class="text-xs text-neutral-600"></p>
-        <p data-role="cvi-error" class="text-xs text-red-700" hidden></p>
       </div>
     </div>
   `;
@@ -341,8 +227,8 @@ export function buildCapVsInterest(shards, rangeRef) {
   if (!$grid) return;
 
   const shard = shards?.[RATE_SHARD];
-  // Without the BoC shard there is no chart to draw and nothing a CSV could
-  // rescue — skip the section entirely rather than render an empty frame.
+  // Without the BoC shard there is no chart to draw and nothing the cap rates
+  // could rescue — skip the section entirely rather than render an empty frame.
   if (!shard?.records?.length) return;
 
   const rateMeta = RATE_LINES
@@ -353,7 +239,6 @@ export function buildCapVsInterest(shards, rangeRef) {
     .filter(Boolean);
   if (rateMeta.length === 0) return;
 
-  const rateIds = new Set(rateMeta.map(s => s.id));
   // Resample once: the shard's daily records don't change, only the window does.
   const rateRecords = [];
   for (const s of rateMeta) {
@@ -369,57 +254,27 @@ export function buildCapVsInterest(shards, rangeRef) {
   // Top of the page, above the catalog-driven sections.
   $grid.prepend(section);
 
+  const $firm   = section.querySelector('[data-role="cvi-firm"]');
   const $types  = section.querySelector('[data-role="cvi-types"]');
   const $bulk   = section.querySelector('[data-role="cvi-bulk"]');
-  const $file   = section.querySelector('[data-role="cvi-file"]');
-  const $clear  = section.querySelector('[data-role="cvi-clear"]');
   const $status = section.querySelector('[data-role="cvi-status"]');
-  const $error  = section.querySelector('[data-role="cvi-error"]');
   const $cardGrid = section.querySelector('[data-role="cvi-card-grid"]');
 
-  let stored = loadStored();
+  let prefs = loadPrefs();
+  let rows = null;          // the Cap Rates tab's rows, or null when not loaded
+  let series = { types: {}, firstDate: null, lastDate: null };
 
-  ui = {
-    section, $types, $bulk, $file, $clear, $status, $error, $cardGrid,
-    rateMeta, rateRecords, rateIds, rangeRef,
-    get stored() { return stored; },
-    set stored(v) { stored = v; },
-    card: null,
-  };
+  ui = { section, rateMeta, rateRecords, rangeRef, card: null };
 
-  renderControls();
-  renderCard();
-
-  $file.addEventListener('change', async () => {
-    const file = $file.files?.[0];
-    if (!file) return;
-    showError('');
-    try {
-      const text = await file.text();
-      const { types, meta } = parseCapRateCsv(text);
-      const names = orderTypes(Object.keys(types));
-      stored = {
-        types,
-        meta: { ...meta, filename: file.name, loadedAt: new Date().toISOString() },
-        // A fresh file shows every type except the ones defaulted off.
-        selected: names.filter(t => !DEFAULT_OFF_TYPES.has(t)),
-      };
-      saveStored(stored);
-      renderControls();
-      renderCard();
-    } catch (err) {
-      showError(err?.message || 'That file could not be read as a cap-rate CSV.');
-    } finally {
-      // Let the same file be picked again after a fix — `change` doesn't fire
-      // twice for an unchanged value.
-      $file.value = '';
-    }
-  });
-
-  $clear.addEventListener('click', () => {
-    clearStored();
-    stored = null;
-    showError('');
+  for (const [value, label] of [...FIRMS.map(f => [f, f]), [ALL_FIRMS, 'Average of all firms']]) {
+    const opt = document.createElement('option');
+    opt.value = value; opt.textContent = label;
+    $firm.appendChild(opt);
+  }
+  $firm.value = FIRMS.includes(prefs.firm) || prefs.firm === ALL_FIRMS ? prefs.firm : DEFAULT_FIRM;
+  $firm.addEventListener('change', () => {
+    prefs = savePrefs({ firm: $firm.value });
+    recompute();
     renderControls();
     renderCard();
   });
@@ -427,38 +282,43 @@ export function buildCapVsInterest(shards, rangeRef) {
   section.querySelector('[data-role="cvi-all"]').addEventListener('click', () => setAll(true));
   section.querySelector('[data-role="cvi-none"]').addEventListener('click', () => setAll(false));
 
+  function selectedTypes() {
+    const names = orderTypes(Object.keys(series.types));
+    if (Array.isArray(prefs.selected)) return names.filter(t => prefs.selected.includes(t));
+    return names.filter(t => !DEFAULT_OFF_TYPES.has(t));
+  }
+
   function setAll(on) {
-    if (!stored) return;
-    stored.selected = on ? orderTypes(Object.keys(stored.types)) : [];
-    saveStored(stored);
+    prefs = savePrefs({ selected: on ? orderTypes(Object.keys(series.types)) : [] });
     renderControls();
     renderCard();
   }
 
-  function showError(msg) {
-    $error.textContent = msg;
-    $error.hidden = !msg;
+  function recompute() {
+    series = rows ? capSeriesFromRows(rows, $firm.value) : { types: {}, firstDate: null, lastDate: null };
   }
 
   function renderControls() {
     $types.replaceChildren();
-    const has = stored && Object.keys(stored.types).length > 0;
+    const has = Object.keys(series.types).length > 0;
     $bulk.hidden = !has;
-    $clear.hidden = !has;
 
     if (!has) {
       const hint = document.createElement('span');
       hint.className = 'text-xs text-neutral-500';
-      hint.textContent = 'Load a cap-rate CSV to overlay cap rates on the rate lines.';
+      hint.textContent = rows
+        ? 'No cap-rate rows for this firm.'
+        : 'Load the CapRates folder on the Cap Rates tab to overlay cap rates on the rate lines.';
       $types.appendChild(hint);
-      $status.textContent =
-        'No cap-rate data is published with this site. Load a CSV below and it stays in this browser only — ' +
-        'it is not uploaded, and nobody else sees it.';
+      $status.textContent = rows
+        ? 'The loaded cap-rate data has no rows for the chosen firm.'
+        : 'No cap-rate data is published with this site. It is read from the same local folder the ' +
+          'Cap Rates tab uses (Local Data › Cap Rates › Choose folder) and stays in this browser only.';
       return;
     }
 
-    const names = orderTypes(Object.keys(stored.types));
-    const selected = new Set(stored.selected || names);
+    const names = orderTypes(Object.keys(series.types));
+    const selected = new Set(selectedTypes());
     names.forEach(type => {
       const label = document.createElement('label');
       label.className = 'flex items-center gap-1 text-sm';
@@ -467,10 +327,9 @@ export function buildCapVsInterest(shards, rangeRef) {
       cb.checked = selected.has(type);
       cb.dataset.type = type;
       cb.addEventListener('change', () => {
-        const next = new Set(stored.selected || names);
+        const next = new Set(selectedTypes());
         if (cb.checked) next.add(type); else next.delete(type);
-        stored.selected = orderTypes([...next]);
-        saveStored(stored);
+        prefs = savePrefs({ selected: orderTypes([...next]) });
         renderCard();
       });
       const text = document.createElement('span');
@@ -479,14 +338,10 @@ export function buildCapVsInterest(shards, rangeRef) {
       $types.appendChild(label);
     });
 
-    const m = stored.meta || {};
-    const where = m.markets?.length ? m.markets.join(', ') : 'unknown market';
-    const who = m.sources?.length ? m.sources.join(', ') : 'unknown source';
-    const span = m.firstDate && m.lastDate ? `${m.firstDate} to ${m.lastDate}` : 'unknown period';
+    const span = series.firstDate && series.lastDate ? `${series.firstDate} to ${series.lastDate}` : 'unknown period';
     $status.textContent =
-      `${who} — ${where}. ${m.rows ?? 0} rows, ${span}` +
-      `${m.skipped ? `, ${m.skipped} unreadable row${m.skipped > 1 ? 's' : ''} skipped` : ''}. ` +
-      `From ${m.filename || 'a local file'}, held in this browser only.`;
+      `${capPublisher($firm.value)} — Winnipeg, ${span}. ` +
+      'Mean of the published class mid-points per quarter, from the Cap Rates tab’s local data; not published with this site.';
   }
 
   function renderCard() {
@@ -497,9 +352,9 @@ export function buildCapVsInterest(shards, rangeRef) {
     const open = readOpenPanels(ui.card?.card);
     $cardGrid.replaceChildren();
 
-    const capTypes = stored ? orderTypes(stored.selected || []).filter(t => stored.types[t]?.length) : [];
+    const capTypes = selectedTypes().filter(t => series.types[t]?.length);
     const capMeta = capTypes.map(type => {
-      const points = stored.types[type];
+      const points = series.types[type];
       const last = points[points.length - 1];
       return {
         id: `cap.${type}`,
@@ -510,13 +365,13 @@ export function buildCapVsInterest(shards, rangeRef) {
         chartLabel: `${type} CR`,
         units: 'percent',
         frequency: 'quarterly',
-        geo: (stored.meta?.markets || [])[0] || 'local',
+        geo: 'Winnipeg',
         latestDate: last[0],
         latestValue: last[1],
       };
     });
     const capRecords = capTypes.flatMap(type =>
-      stored.types[type].map(([iso, value]) => ({
+      series.types[type].map(([iso, value]) => ({
         id: `cap.${type}`,
         // Snap onto the month start so the point shares an x with that month's
         // rate observations and the tooltip reads out both together.
@@ -536,18 +391,18 @@ export function buildCapVsInterest(shards, rangeRef) {
         ? 'Overnight, 5-Year, 10-Year Yields & Cap Rates'
         : 'Canadian Rate Environment',
       sourceLabel: capTypes.length
-        ? `Bank of Canada & ${capPublisher(stored.meta?.sources)} Average Cap Rates (CR)`
+        ? `Bank of Canada & ${capPublisher($firm.value)} Average Cap Rates (CR)`
         : 'Bank of Canada',
       table: true,
       description:
         'The BoC overnight target with the 5- and 10-year Government of Canada yields — the ' +
-        'benchmarks a cap rate is built off — and, when a cap-rate CSV is loaded, the average ' +
+        'benchmarks a cap rate is built off — and, when the Cap Rates folder is loaded, the average ' +
         'cap rate by property type on the same axis. The gap between a cap rate and the 5-year ' +
         'GoC is the risk premium the market is pricing; watching it widen or compress is the ' +
         'point of putting the two on one chart. Rate lines are monthly means of the daily BoC ' +
-        'series; cap rates are the mid-point of each reported Low–High range, averaged across ' +
-        'the reported classes and subtypes for that property type and period. Cap-rate data is ' +
-        'read from a file in your browser and is not published with this site.',
+        'series; cap rates are the chosen firm’s published Low–High mid-points averaged ' +
+        'across that property type’s classes for the quarter (or across all firms). The ' +
+        'cap-rate data is the same local file the Cap Rates tab reads and is not published with this site.',
     });
 
     const seriesMeta = [...ui.rateMeta, ...capMeta];
@@ -573,7 +428,30 @@ export function buildCapVsInterest(shards, rangeRef) {
     ui.card = card;
   }
 
+  async function loadRows() {
+    if (!storeAvailable()) { rows = null; return; }
+    try {
+      const data = await getCapRatesData();
+      rows = Array.isArray(data?.rows) ? data.rows : null;
+    } catch { rows = null; }
+  }
+
+  async function refresh() {
+    await loadRows();
+    recompute();
+    renderControls();
+    renderCard();
+  }
+
   ui.renderCard = renderCard;
+  ui.refresh = refresh;
+
+  // First paint without waiting on IndexedDB, then fill in the overlays.
+  renderControls();
+  renderCard();
+  refresh();
+  // The Cap Rates tab announces a fresh import; pick it up without a reload.
+  window.addEventListener(CAP_RATES_UPDATED_EVENT, () => { refresh(); });
 }
 
 /** Re-render on a date-range change (called from indicators.js rerenderCards). */

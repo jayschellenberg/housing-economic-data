@@ -47,76 +47,20 @@ checkboxes and the CSV picker sit in the column beside the chart, not above it. 
 tab's existing date range, and both halves are resampled to monthly means so the daily rate
 series and the quarterly cap rates share x-values.
 
-**No cap-rate data ships with the site.** The rate lines come from the committed BoC shard; the
-cap rates are read from a CSV the user picks in their own browser (`web/src/cap-vs-interest.js`,
-read with `File.text()` — nothing is uploaded), and the parsed per-type averages are held in that
-browser's `localStorage` only. No other visitor sees them, and they are never committed. The
-CSV is the Colliers extract's shape: `Source, Market, Date, Quarter, MajorType, PropType,
-Subtype, Low, High`, with `Date` as `MM-DD-YYYY` (ISO and `M/D/YYYY` are accepted too). Each
-row contributes the mid-point of its Low-High range, averaged within a property type and date.
-Because the section is not shard-backed it is rendered by its own module rather than the
-catalog loop; `cap_vs_interest` appears in `displayGroups` only so the sidebar toggle and jump
-link pick it up.
-
-### Johnson Report (local data only)
-
-The **Johnson Report** tab charts Winnipeg industrial / office / retail vacancy
-and lease rates by district, and the annual sales and land-sales summaries,
-from *The Johnson Report* (Wayne K. Johnson, CPA), a semi-annual subscriber
-publication. **No Johnson data ships with the site** — it is copyrighted — and
-this is the same privacy model as Cap vs Interest above, taken one step
-further: the browser reads a *folder* rather than one file.
-
-The Word editions are parsed by `ingest/parse_johnson.py` in the separate
-`Johnson-Report` project (see its README), which writes `web-data/manifest.json`
-and one `web-data/editions/YYYY-MM.json` per edition. In the tab, **Choose
-web-data folder** nominates that folder once; `web/src/johnson-store.js` keeps
-a File System Access handle and the JSON in IndexedDB (`hed-johnson`), and on
-each visit re-reads any edition file whose modification time changed, so a new
-edition appears after one run of the parser. Browsers without the directory
-picker (Firefox, Safari) fall back to a folder `<input>` with no auto-refresh.
-
-Two views, chosen in the sidebar:
-
-- **As published** — one edition's tables exactly as printed, including that
-  edition's own ten-year look-back. This is the "snapshot in time" for
-  retrospective work, and the edition picker goes back to the earliest
-  edition parsed (December 2009 as of writing; each edition carries history
-  back to ~2000).
-- **Long series** — every edition up to the selected one merged, June and
-  December readings interleaved into one semi-annual line, and where editions
-  overlap the **latest edition's figure wins**, so a revised number replaces
-  the earlier print. Selecting an older edition here gives the series as it
-  was known at that time.
-
-Charts use the Market Indicators card (subtitle carries
-`Source: The Johnson Report, June 2026` or the edition span; the caption is
-the company name; PNG, data table, Word/Excel chart exports as on the other
-tabs) plus a **grouped-bars** style for the by-district charts, the form the
-appraiser's existing Excel charts take. `web/src/johnson-data.js` is the chart
-catalog — which parsed table (`series` id from the Python catalog) feeds which
-chart, and how its rows / columns become lines and dates — and is the place to
-add a chart. **Download Excel (data)** writes one sheet per visible chart with
-the plotted values.
-
-### Cap Rates (local data only)
-
-The **Cap Rates** tab charts Winnipeg capitalization-rate ranges by property
-type (industrial, retail, office, multi-family, hotel, self storage) and class
-as published quarterly by Colliers, CBRE and Cushman & Wakefield. The firm's
-`Cap Rate Tables.xlsx` is parsed by `ingest/parse_cap_rates.py` in the
-separate `Cap-Rates` project into one tidy `cap_rates.json` (a row per
-quarter, firm, type and class with Low, High and mid-point) and published to
-`RRG Shared\Apps\CapRates`. The tab reads that folder through
-`web/src/cap-rates-store.js`, built on `local-folder-store.js` — the shared
-IndexedDB + File System Access plumbing for any tab that reads the viewer's
-own files.
-
-Per property type: average by class (mean of the firms' mid-points), one
-class by firm, that class's Low–High band, and the selected quarter's table in
-the workbook's own layout. The quarter picker sets the table's quarter and the
-end of the charts, so any past quarter is reproducible. `cap-rates-data.js`
-holds the pure series functions.
+**No cap-rate data ships with the site.** The rate lines come from the committed BoC shard;
+the cap rates are the same local data the **Cap Rates** tab reads — `cap_rates.json` from the
+firm's `RRG Shared\Apps\CapRates` folder, held in this browser's IndexedDB by
+`cap-rates-store.js` — so picking that folder once on the Cap Rates tab serves both tabs and
+there is one cap-rate source to maintain. (The earlier separate Colliers CSV upload here is
+gone.) The section has a firm picker — Colliers by default, or CBRE, Cushman & Wakefield, or
+the average of all three — and one overlay per property type (Multi-Family, Office,
+Industrial, Retail on by default; Hotel and Self Storage available), each the mean of that
+firm's published class mid-points for the quarter, with Office covering all four
+downtown/suburban classes. The section listens for the Cap Rates tab's
+`hed:cap-rates-updated` event so a fresh import shows without a reload. Because the section
+is not shard-backed it is rendered by its own module rather than the catalog loop;
+`cap_vs_interest` appears in `displayGroups` only so the sidebar toggle and jump link pick it
+up.
 
 ### Chart captions and the Company name
 

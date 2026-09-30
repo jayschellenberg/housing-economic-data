@@ -153,6 +153,9 @@ async function loadFromStore() {
   ui.$clear.hidden = !ui.data;
   setStatus(ui.data ? summaryText(await getManifest()) : noDataText());
   renderAll();
+  // Cap vs Interest on the Market Indicators tab draws from the same store;
+  // tell it the data changed so it re-reads without a page reload.
+  window.dispatchEvent(new CustomEvent('hed:cap-rates-updated'));
 }
 
 async function maybeAutoRefresh() {
