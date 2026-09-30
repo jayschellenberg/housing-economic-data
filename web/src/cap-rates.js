@@ -14,18 +14,15 @@
  * the charts, so any past quarter can be reproduced.
  */
 
-import * as Plot from '@observablehq/plot';
 import { buildIndicatorCard, readOpenPanels } from './indicator-chart.js';
-import { themed, PALETTE, gridMarks, frameMark, mirrorYMarks, percentTickFormat, MIRROR_Y_MARGIN,
-         plotWidth, plotHeight, fitPlotWidth, dateAxisTicks } from './plot-theme.js';
-import { downloadCardPng, setExportRedraw } from './png-export.js';
+import { downloadCardPng } from './png-export.js';
 import { escapeHtml } from './escape.js';
 import { getFirm, onFirmChange } from './firm.js';
 import { getPref, setPref } from './prefs.js';
 import { buildJumpBar } from './jump-bar.js';
 import {
-  TYPE_ORDER, FIRM_ORDER, SUBTYPE_ORDER, quarterList, typesPresent, subtypesFor, rowsUpTo,
-  averageByClass, byFirm, rangeSeries, quarterTable, toCardInput, fmtRate, orderBy, breakGaps,
+  TYPE_ORDER, FIRM_ORDER, quarterList, typesPresent, rowsUpTo,
+  averageByFirm, quarterTable, toCardInput, fmtRate, orderBy, defaultYearFrom,
 } from './cap-rates-data.js';
 import {
   storeAvailable, fsAccessSupported, pickDirectory, getSavedDirectory, directoryPermission,
@@ -33,7 +30,10 @@ import {
 } from './cap-rates-store.js';
 
 const PREF_KEY = 'capRates.v1';
-const SOURCE = 'Colliers, CBRE & Cushman & Wakefield quarterly cap-rate surveys';
+const SOURCE = 'Colliers, CBRE & Cushman & Wakefield Quarterly Cap Rate Market Reports';
+// One line per brokerage, in each brokerage's own brand colour: Colliers
+// blue, CBRE green, Cushman & Wakefield red.
+const FIRM_COLOURS = { Colliers: '#0C2340', CBRE: '#006A4D', 'Cushman & Wakefield': '#E4002B' };
 
 let ui = null;
 
@@ -202,7 +202,10 @@ function renderQuarterPicker() {
   if (ui.prefs.quarter && qs.includes(ui.prefs.quarter)) $sel.value = ui.prefs.quarter;
   else if (qs.length) $sel.value = qs[0];
   $sel.disabled = qs.length === 0;
+  // The rolling default shows as the placeholder, so a blank box still says what it means.
   ui.$yearFrom.value = ui.prefs.yearFrom || '';
+  const dflt = ui.data ? defaultYearFrom(quarterList(ui.data)) : null;
+  ui.$yearFrom.placeholder = dflt ? String(dflt) : 'year';
 }
 
 function enabledTypes() {
@@ -241,10 +244,17 @@ const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
 // --- Charts ------------------------------------------------------------------
 
+/** The chart start: the user's year if set, else Q1 five years before the latest quarter. */
+function yearFrom() {
+  if (ui.prefs.yearFrom) return Number(ui.prefs.yearFrom);
+  return ui.data ? defaultYearFrom(quarterList(ui.data)) : null;
+}
+
 function selection() {
   const quarter = ui.$quarter.value || null;
   const rows = rowsUpTo(ui.data?.rows || [], quarter);
-  const monthFrom = ui.prefs.yearFrom ? `${ui.prefs.yearFrom}-01` : null;
+  const yf = yearFrom();
+  const monthFrom = yf ? `${yf}-01` : null;
   return { quarter, rows, monthFrom };
 }
 
@@ -259,70 +269,36 @@ function renderCharts() {
 
   const { quarter, rows, monthFrom } = selection();
   const on = enabledTypes();
-  const subtypePrefs = ui.prefs.subtypes || {};
-  const subtitle = `Winnipeg, quarterly to ${quarter}`;
+  const subtitle = 'Colliers, CBRE, Cushman & Wakefield';
   const drawnSections = [];
 
   for (const type of typesPresent(rows)) {
     if (!on.has(type)) continue;
-    const subtypes = subtypesFor(rows, type);
-    const chosen = subtypes.includes(subtypePrefs[type]) ? subtypePrefs[type] : subtypes[0];
 
     const section = document.createElement('section');
     section.className = 'cmhc-mi-section';
     section.id = `cr-section-${slug(type)}`;
-    section.innerHTML = `
-      <div class="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 class="cmhc-mi-section-title"></h2>
-        <label class="text-sm flex items-center gap-2">Class for the by-firm and range charts
-          <select data-role="subtype" class="border border-neutral-300 rounded px-2 py-1 text-sm"></select>
-        </label>
-      </div>
-      <div class="grid md:grid-cols-2 gap-4 items-start" data-role="cards"></div>`;
+    section.innerHTML = `<h2 class="cmhc-mi-section-title"></h2><div class="grid md:grid-cols-2 gap-4 items-start" data-role="cards"></div>`;
     section.querySelector('h2').textContent = type;
-    const $sub = section.querySelector('[data-role="subtype"]');
-    for (const s of subtypes) {
-      const o = document.createElement('option'); o.value = s; o.textContent = s; $sub.appendChild(o);
-    }
-    $sub.value = chosen;
-    $sub.addEventListener('change', () => {
-      ui.prefs = savePrefs({ subtypes: { ...(ui.prefs.subtypes || {}), [type]: $sub.value } });
-      renderCharts();
-    });
     const $cards = section.querySelector('[data-role="cards"]');
 
-    // 1. Average by class
+    // 1. Overall average by firm: the Excel chart, one line per brokerage,
+    //    each the mean of its published class mid-points that quarter.
     {
-      const id = `caprate_${slug(type)}_avg`;
-      const input = toCardInput(id, averageByClass(rows, type), { lineOrder: SUBTYPE_ORDER[type] });
+      const id = `caprate_${slug(type)}_firms`;
+      const input = toCardInput(id, averageByFirm(rows, type), { lineOrder: FIRM_ORDER });
       const card = buildIndicatorCard($cards, {
-        chartId: id, fileStem: id, title: `${type} Cap Rates — Average by Class`, sourceLabel: SOURCE, table: true,
-        description: `Mean of the three brokerages' published mid-points for each ${type.toLowerCase()} class, each quarter. ` + note(),
+        chartId: id, fileStem: id, title: `Winnipeg ${type} Cap Rates`, sourceLabel: SOURCE, table: true,
+        description: `Each brokerage's overall ${type.toLowerCase()} cap rate: the mean of the mid-points of every class it publishes for the type that quarter. ` + note(),
       });
-      card.render(input.records, input.seriesMeta, { subtitle, monthFrom });
+      card.render(input.records, input.seriesMeta, {
+        subtitle, rangePrefix: true, monthFrom,
+        seriesColours: Object.fromEntries(input.seriesMeta.map(m => [m.id, FIRM_COLOURS[m.chartLabel]]).filter(([, c]) => c)),
+      });
       card.setOpenPanels(open.get(id) || []);
       ui.cards.set(id, { card: card.card });
     }
-    // 2. One class by firm
-    {
-      const id = `caprate_${slug(type)}_${slug(chosen)}_firms`;
-      const input = toCardInput(id, byFirm(rows, type, chosen), { lineOrder: FIRM_ORDER });
-      const card = buildIndicatorCard($cards, {
-        chartId: id, fileStem: id, title: `${type} — ${chosen} by Firm`, sourceLabel: SOURCE, table: true,
-        description: `Each brokerage's mid-point of its published ${chosen} range, with their average drawn solid. ` + note(),
-      });
-      card.render(input.records, input.seriesMeta, { subtitle, dashedIds: input.dashedIds, monthFrom });
-      card.setOpenPanels(open.get(id) || []);
-      ui.cards.set(id, { card: card.card });
-    }
-    // 3. Range band
-    {
-      const id = `caprate_${slug(type)}_${slug(chosen)}_range`;
-      const card = buildRangeCard($cards, { id, title: `${type} — ${chosen} Range`, subtitle });
-      card.render(rangeSeries(rows, type, chosen), { monthFrom });
-      ui.cards.set(id, { card: card.card });
-    }
-    // 4. The quarter's table
+    // 2. The quarter's table
     {
       const id = `caprate_${slug(type)}_table`;
       const card = buildTableCard($cards, { id, title: `${type} Cap Rates — ${quarter}`, table: quarterTable(rows, type, quarter) });
@@ -345,90 +321,6 @@ function note() {
     'Quarters before the workbook’s first quarterly sheet come from its Summary sheet, whose retail and multi-family classes are grouped differently, so those class names change at the join.';
 }
 
-// --- Range (band) card -------------------------------------------------------
-
-function buildRangeCard(container, { id, title, subtitle }) {
-  const card = document.createElement('section');
-  card.className = 'chart-card cmhc-indicator-card';
-  card.dataset.chartId = id;
-  card.innerHTML = `
-    <header class="chart-title">${escapeHtml(title)}</header>
-    <p class="chart-sub" data-role="sub"></p>
-    <div data-role="plot" style="min-height:240px"></div>
-    <div data-role="empty" class="text-xs text-neutral-500 mt-2" hidden>No data for this selection.</div>
-    <div class="chart-caption"><span class="chart-caption-left"></span><span class="chart-source" data-role="source"></span></div>
-    <div class="chart-actions"><button type="button" data-role="dl-png">Download PNG</button></div>
-    <details class="cmhc-explainer"><summary>What does this mean?</summary>
-      <p>The shaded band runs from the lowest Low to the highest High any of the three brokerages published for this class that quarter; the line is the average of their mid-points. A wide band means the surveys disagree. ${escapeHtml(note())}</p>
-    </details>`;
-  container.appendChild(card);
-  const $sub = card.querySelector('[data-role="sub"]');
-  const $plot = card.querySelector('[data-role="plot"]');
-  const $empty = card.querySelector('[data-role="empty"]');
-  const $png = card.querySelector('[data-role="dl-png"]');
-  const $source = card.querySelector('[data-role="source"]');
-  const $caption = card.querySelector('.chart-caption');
-  const applyFirm = (name = getFirm()) => { $source.textContent = name; $caption.hidden = !name; };
-  applyFirm(); onFirmChange(applyFirm);
-
-  function draw(series, opts) {
-    $plot.replaceChildren();
-    // Gap breakers (null rows) stay in so the band and line stop at a hole.
-    let pts = breakGaps(series.filter(p => p.avg != null));
-    if (opts.monthFrom) pts = pts.filter(p => p.date >= `${opts.monthFrom}-01`);
-    if (!pts.some(p => p.avg != null)) { $sub.textContent = subtitle; $empty.hidden = false; $png.disabled = true; return; }
-    $empty.hidden = true; $png.disabled = false;
-    const data = pts.map(p => ({ date: new Date(p.date), low: p.low, high: p.high, avg: p.avg }));
-    const vals = data.flatMap(d => [d.low, d.high, d.avg]).filter(Number.isFinite);
-    const lo = Math.floor(Math.min(...vals) - 0.5), hi = Math.ceil(Math.max(...vals) + 0.5);
-    const real = data.filter(d => d.avg != null);
-    const xMin = real[0].date, xMax = real[real.length - 1].date;
-    const width = plotWidth($plot);
-    const tick = percentTickFormat([lo, hi]);
-    const svg = Plot.plot(themed({
-      width, height: exportH ?? plotHeight(width, 330),
-      marginLeft: 48, marginRight: MIRROR_Y_MARGIN, marginBottom: 52,
-      x: { type: 'utc', label: 'Quarter', labelOffset: 42, ...dateAxisTicks(xMin, xMax), inset: 8 },
-      y: { label: null, tickFormat: tick, domain: [lo, hi], nice: true },
-      marks: [
-        ...gridMarks(),
-        Plot.areaY(data, { x: 'date', y1: 'low', y2: 'high', fill: PALETTE[0], fillOpacity: 0.15 }),
-        Plot.lineY(data, { x: 'date', y: 'low', stroke: PALETTE[0], strokeWidth: 1, strokeDasharray: '4 3' }),
-        Plot.lineY(data, { x: 'date', y: 'high', stroke: PALETTE[0], strokeWidth: 1, strokeDasharray: '4 3' }),
-        Plot.lineY(data, { x: 'date', y: 'avg', stroke: PALETTE[1], strokeWidth: 2.6 }),
-        ...mirrorYMarks(tick),
-        Plot.tip(real, Plot.pointerX({ x: 'date', y: 'avg', title: (d) => `${d.date.getUTCFullYear()} Q${Math.floor(d.date.getUTCMonth() / 3) + 1}\nLow ${fmtRate(d.low)}  High ${fmtRate(d.high)}\nAverage ${fmtRate(d.avg)}`, fontSize: 11, lineHeight: 1.3 })),
-        frameMark(),
-      ],
-    }));
-    const legend = document.createElement('div');
-    legend.className = 'cmhc-plot-legend';
-    for (const [label, colour, dashed] of [['Low–High range', PALETTE[0], true], ['Average mid-point', PALETTE[1], false]]) {
-      const item = document.createElement('div');
-      item.className = 'cmhc-plot-legend-item';
-      const sw = dashed
-        ? `background-image:repeating-linear-gradient(90deg, ${colour} 0 5px, transparent 5px 9px)`
-        : `background:${colour}`;
-      item.innerHTML = `<span class="cmhc-plot-legend-swatch${dashed ? ' cmhc-plot-legend-swatch-dashed' : ''}" style="${sw}"></span><span class="cmhc-plot-legend-text"></span>`;
-      item.querySelector('.cmhc-plot-legend-text').textContent = label;
-      legend.appendChild(item);
-    }
-    const wrap = document.createElement('div');
-    wrap.className = 'cmhc-plot-wrap';
-    wrap.append(svg, legend);
-    $plot.appendChild(wrap);
-    $sub.textContent = `${subtitle} • ${xMin.getUTCFullYear()}–${xMax.getUTCFullYear()} • Source: ${SOURCE}`;
-    $png.onclick = () => downloadCardPng(card, `${id}_${new Date().toISOString().slice(0, 10)}.png`, {
-      filter: (n) => !(n.classList && (n.classList.contains('chart-actions') || n.classList.contains('cmhc-explainer'))),
-    }).catch(err => console.error('[cap-rates png]', err));
-  }
-  let last = null, exportH = null;
-  function render(series, opts = {}) { last = [series, opts]; draw(series, opts); }
-  fitPlotWidth($plot, () => { if (last) draw(...last); });
-  setExportRedraw(card, (h) => { exportH = h; if (last) draw(...last); });
-  return { card, render };
-}
-
 // --- Quarter table card ------------------------------------------------------
 
 function buildTableCard(container, { id, title, table }) {
@@ -447,7 +339,7 @@ function buildTableCard(container, { id, title, table }) {
     <header class="chart-title">${escapeHtml(title)}</header>
     <p class="chart-sub">Published Low–High range by brokerage • Source: ${escapeHtml(SOURCE)}</p>
     <div class="cmhc-chart-table-scroll" data-role="plot">
-      <table class="cmhc-table"><thead><tr><th rowspan="2">Source</th>${head1}</tr><tr>${head2}</tr></thead>
+      <table class="cmhc-table cmhc-table-compact"><thead><tr><th rowspan="2">Source</th>${head1}</tr><tr>${head2}</tr></thead>
       <tbody>${body || '<tr><td colspan="99">No figures for this quarter.</td></tr>'}${body ? avg : ''}</tbody></table>
     </div>
     <div class="chart-caption"><span class="chart-caption-left"></span><span class="chart-source" data-role="source"></span></div>

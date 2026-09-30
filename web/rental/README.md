@@ -151,6 +151,6 @@ Phases: 1 export ✔ · 2 scaffold + connect ✔ · 3 filters + table + CSV ✔ 
 4 map + subject radius ✔ · 5 analysis tab ✔ · 6 exports ✔ ·
 7 archived pages ✔ · 8 Quarto viewer retired ✔ (all 2026-09-14).
 
-Live: https://mb-rental-explorer.vercel.app (Vercel project
+Live: https://housing-economic-data.vercel.app/#rental (Vercel project
 `mb-rental-explorer`, team jks-consulting-inc, Root Directory `web`,
 deploys on push to `main`; the build runs `npm test` first).

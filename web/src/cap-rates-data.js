@@ -94,6 +94,33 @@ export function averageByClass(rows, type) {
   }).sort((a, b) => a.line.localeCompare(b.line) || a.date.localeCompare(b.date));
 }
 
+/**
+ * { line: firm, date, value } — each firm's overall cap rate for a property
+ * type: the mean of ITS published class mid-points that quarter (Industrial
+ * = Class A and B together; Office = all four classes), in percent. The
+ * chart the appraiser keeps in Excel: one line per brokerage.
+ */
+export function averageByFirm(rows, type) {
+  const groups = new Map();
+  for (const r of rows) {
+    if (r.type !== type || r.mid == null) continue;
+    const key = `${r.firm}\u0000${r.date}`;
+    (groups.get(key) || groups.set(key, []).get(key)).push(r.mid);
+  }
+  return [...groups.entries()].map(([key, mids]) => {
+    const [line, date] = key.split('\u0000');
+    return { line, date, value: pct(mean(mids)) };
+  }).sort((a, b) => a.line.localeCompare(b.line) || a.date.localeCompare(b.date));
+}
+
+/** Five years before the latest quarter's year: the default chart start (its Q1). */
+export function defaultYearFrom(quarters) {
+  if (!quarters?.length) return null;
+  const last = quarters[quarters.length - 1];
+  const y = Number(String(last).slice(0, 4));
+  return Number.isFinite(y) ? y - 5 : null;
+}
+
 /** { line: firm | 'Average', date, value } for one class, in percent. */
 export function byFirm(rows, type, subtype) {
   const out = [];
