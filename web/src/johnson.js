@@ -441,6 +441,8 @@ function renderCharts() {
         sourceLabel: source,
         table: true,
         zeroBased: true,
+        mirrorY: false,
+        sourceInCaption: true,
         description: chartDescription(chart, sel),
       });
       card.render(input.records, input.seriesMeta, {
@@ -505,12 +507,15 @@ function buildBarCard(container, { chart, source }) {
   const $empty = card.querySelector('[data-role="empty"]');
   const $png = card.querySelector('[data-role="dl-png"]');
   const $source = card.querySelector('[data-role="source"]');
+  const $capLeft = card.querySelector('[data-role="caption-left"]');
   const $caption = card.querySelector('.chart-caption');
   const fmtV = indicatorFmt(chart.units);
 
+  // Source bottom-right, company name bottom-left — same as the line cards.
   function applyFirm(name = getFirm()) {
-    $source.textContent = name;
-    $caption.hidden = !name;
+    $capLeft.textContent = name || '';
+    $source.textContent = `Source: ${source}`;
+    $caption.hidden = false;
   }
   applyFirm();
   onFirmChange(applyFirm);
@@ -527,7 +532,7 @@ function buildBarCard(container, { chart, source }) {
     const dateSet = new Set(dates);
     rows = rows.filter(p => dateSet.has(p.date));
     if (!rows.length) {
-      $sub.textContent = [opts.subtitle, `Source: ${source}`].filter(Boolean).join(' • ');
+      $sub.textContent = opts.subtitle || '';
       $empty.hidden = false; $png.disabled = true;
       return;
     }
@@ -581,7 +586,7 @@ function buildBarCard(container, { chart, source }) {
     $plot.appendChild(wrap);
 
     const range = periods.length > 1 ? `${periods[0]} to ${periods[periods.length - 1]}` : periods[0];
-    $sub.textContent = [range, opts.subtitle, `Source: ${source}`].filter(Boolean).join('; ');
+    $sub.textContent = [range, opts.subtitle].filter(Boolean).join('; ');
     $png.onclick = () => downloadCardPng(card, `johnson_${chart.id}_bars_${new Date().toISOString().slice(0, 10)}.png`, {
       filter: (n) => !(n.classList && n.classList.contains('chart-actions')),
     }).catch(err => console.error('[johnson png]', err));
