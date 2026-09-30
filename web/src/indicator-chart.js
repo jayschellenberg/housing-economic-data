@@ -397,7 +397,9 @@ export function buildIndicatorCard(container, {
   //   table   true                — render a collapsible data table under the
   //                                 chart, one row per period in the window
   //   zeroBased true              — Y axis starts at exactly 0 (see yDomainFor)
-  refBand, refLine, table, zeroBased = false,
+  //   mirrorY   false             — left-hand y axis only; no mirrored ticks
+  //                                 on the right edge (Johnson Report cards)
+  refBand, refLine, table, zeroBased = false, mirrorY = true,
   // `sourceLabel` names the publisher — "Statistics Canada", "Bank of Canada
   // & Colliers Average Cap Rates (CR)". It is appended to the SUBTITLE, not
   // the caption: the caption carries the company name (firm.js), the way the
@@ -648,7 +650,8 @@ export function buildIndicatorCard(container, {
       width,
       height: exportH ?? plotHeight(width, 330),
       ...(sideMargin ? { marginLeft: sideMargin } : {}),
-      marginRight: sideMargin || MIRROR_Y_MARGIN,
+      // No right-hand axis → only the theme's default gutter on the right.
+      ...(mirrorY ? { marginRight: sideMargin || MIRROR_Y_MARGIN } : {}),
       marginBottom: 52,      // room for the x-axis title under the tick labels
       x: {
         type: 'utc',
@@ -689,7 +692,9 @@ export function buildIndicatorCard(container, {
             ...(dash ? { strokeDasharray: dash } : {}),
             defined: (d) => d.value != null,
           })),
-        ...mirrorYMarks(yTickFormat),
+        ...(mirrorY
+          ? mirrorYMarks(yTickFormat)
+          : [Plot.axisY({ anchor: 'left', tickFormat: yTickFormat, tickSize: 3, label: null })]),
         Plot.tip(periods, Plot.pointerX({
           x: 'date',
           y: 'anchor',

@@ -441,6 +441,7 @@ function renderCharts() {
         sourceLabel: source,
         table: true,
         zeroBased: true,
+        mirrorY: false,
         description: chartDescription(chart, sel),
       });
       card.render(input.records, input.seriesMeta, {
