@@ -9,10 +9,10 @@ A multi-tab static website of Canadian housing & economic data, built for a comm
 ## Tabs
 
 The header carries two top-level groups, each with its own tab bar:
-**Housing & Economic Data** (the public CMHC / StatsCan tabs, and the landing
-view) and **Local Data** (Market Indicators, with its bring-your-own cap-rate
-CSV, and the Johnson Report and Cap Rates tabs, which read folders on the
-viewer's disk).
+**Housing & Economic Data** (the public CMHC / StatsCan tabs, Market Indicators
+included, and the landing view) and **Local Data** (Johnson Report, Cap Rates
+and Cap Rates vs Interest — tabs whose data comes from folders on the viewer's
+disk).
 `TAB_GROUP` in `web/src/main.js` says which tabs belong to Local Data; every
 other tab is Housing.
 
@@ -26,7 +26,8 @@ other tab is Housing.
 | Housing Stock | Census dwelling type / age / condition + choropleth map | `r/07`–`r/10`, `r/12b`, `r/20` |
 | Census Profile | Population & dwelling trends + annual estimates + demographics + choropleth map | `r/12`, `r/12b`, `r/20` (run-once); `r/23` (monthly) |
 | Affordability | Royal-LePage-style affordability factor + choropleth map | `r/16`, `r/18`, census, `r/20` |
-| Current Snapshot / Market Indicators | BoC / StatsCan / OSB economic indicators, incl. CPI inflation (headline, core, shelter, annual average), plus the Cap vs Interest section (bring your own cap-rate CSV) | `r/10`,`r/11`,`r/13`,`r/14`,`r/17` |
+| Current Snapshot / Market Indicators | BoC / StatsCan / OSB economic indicators, incl. CPI inflation (headline, core, shelter, annual average), (Cap vs Interest moved to its own Local Data tab) | `r/10`,`r/11`,`r/13`,`r/14`,`r/17` |
+| Cap Rates vs Interest | The Cap vs Interest chart — BoC overnight target and GoC yields with Winnipeg cap-rate overlays from the Cap Rates tab's local data (Local Data group) | BoC shard + `Cap-Rates` project |
 | Agriculture | Farm cash / farmland value / crop, livestock & supply-managed prices / input costs / farm structure (consolidation) + within-province CCS choropleth; sidebar checks any mix of MB/SK/AB/BC plus Canada (on by default; every chart follows) and sets the year range | catalog + `r/11`,`r/14`; `r/20`,`r/24` (run-once map) |
 | RTB (MB) | Manitoba rent-increase guideline history + CPI overlay | `r/19` |
 | Johnson Report | Winnipeg commercial vacancy, lease rates and sales summaries from The Johnson Report, read from a folder on the user's own disk (nothing published) | `Johnson-Report/ingest/parse_johnson.py` (separate project) |
@@ -35,9 +36,9 @@ other tab is Housing.
 
 The Tables tab generates appraisal-ready comparison tables (vacancy / median rent by bedroom type, rent range, year built) with copy-to-clipboard (rich HTML for pasting into Word), Word (.docx), and Excel (.xlsx) export — this replaces the retired CMHC-VacancyMedianRents Shiny tool. It is **province-scoped** (pick a province — always the first row, default Manitoba — then the second–fourth areas are centres within it; no cross-province comparison), and each table has a grouped-bar chart card beside it (same chrome as the Rental Charts cards — title, subtitle, right-side legend, Download PNG). The **Compare Areas** tab is the multi-area counterpart to Rental Charts: it overlays several areas *within one province* as time-series lines for a fixed breakdown category (e.g. pre-1960 stock across MB centres), with a matching areas × years table beside each chart — one chart+table pair per metric (median rent, average rent, vacancy, avg rent change). The pipeline also pulls the Secondary Rental Market Survey (Srms — condo rental data) into `web/public/data/secondary.json`, replacing the retired "CMHC Rental Data Scrape" project. Both retired projects are archived under `$Projects in Progress\old projects maybe`.
 
-### Cap vs Interest (Market Indicators)
+### Cap Rates vs Interest (Local Data)
 
-The first section of the Market Indicators tab puts the BoC overnight target and the 5- and
+The **Cap Rates vs Interest** tab (formerly the first section of Market Indicators) puts the BoC overnight target and the 5- and
 10-year Government of Canada yields on one axis with average commercial cap rates by property
 type, so the risk premium between them is visible directly. It is the web version of the
 `IntChartALL` / `IntChartO` / `IntChartMF` family from the "Interest Rate Charts" Quarto project

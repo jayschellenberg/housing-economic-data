@@ -16,7 +16,6 @@
  */
 
 import { buildIndicatorCard, aggregateDashedIds, geoQualifiedLabels } from './indicator-chart.js';
-import { buildCapVsInterest, rerenderCapVsInterest } from './cap-vs-interest.js';
 import { escapeHtml } from './escape.js';
 import { indicatorFmt } from './format.js';
 
@@ -90,10 +89,10 @@ export async function initIndicators() {
 
   buildSnapshot(catalogResolved, shards);
   buildChartSections(catalogResolved, shards);
-  // Prepends its own section to #mi-chart-grid, so it must run after
-  // buildChartSections (which wipes the grid) and before wireSidebar (which
-  // reads the rendered sections to build the toggles and jump list).
-  buildCapVsInterest(shards, state);
+  // Cap vs Interest used to be prepended here; it now has its own Local Data
+  // tab (cap-vs-interest-tab.js) because its cap-rate half is the viewer's
+  // local data. The catalog's cap_vs_interest displayGroup entry is harmless:
+  // the sidebar only lists groups that rendered a section.
   buildTimeAdjustmentTool(catalogResolved, shards);
   buildInflationLookupTool(catalogResolved, shards);
   wireSidebar(catalogResolved, manifest);
@@ -737,7 +736,7 @@ function wireSidebar(catalog, manifest) {
     // but the pipeline hasn't populated (no shard / no records) renders no
     // section and is skipped here.
     const renderedGroups = new Set(
-      [...document.querySelectorAll('.cmhc-mi-section')].map(s => s.dataset.group)
+      [...document.querySelectorAll('#mi-chart-grid .cmhc-mi-section')].map(s => s.dataset.group)
     );
     Object.entries(catalog.displayGroups || {})
       .filter(([id]) => renderedGroups.has(id))
@@ -763,7 +762,7 @@ function wireSidebar(catalog, manifest) {
   if ($jumpList) {
     $jumpList.innerHTML = '';
     const renderedGroups = new Set(
-      [...document.querySelectorAll('.cmhc-mi-section')].map(s => s.dataset.group)
+      [...document.querySelectorAll('#mi-chart-grid .cmhc-mi-section')].map(s => s.dataset.group)
     );
     // Synthetic "Top" entry first so the user can hop back up.
     const topLi = document.createElement('li');
@@ -876,7 +875,7 @@ function wireSidebar(catalog, manifest) {
 }
 
 function applySectionVisibility() {
-  document.querySelectorAll('.cmhc-mi-section').forEach(sec => {
+  document.querySelectorAll('#mi-chart-grid .cmhc-mi-section').forEach(sec => {
     const hidden = state.sectionsHidden.has(sec.dataset.group);
     sec.hidden = hidden;
     sec.classList.toggle('hidden', hidden);
@@ -904,7 +903,6 @@ function rerenderCards() {
   });
   // The Cap vs Interest card isn't catalog-driven, so it isn't in
   // lastRender.cards — re-render it explicitly for the date range.
-  rerenderCapVsInterest();
   // Re-render the KPI bar too — geo filter affects which tiles are visible.
   if (lastRender.catalog && lastRender.shards) {
     buildSnapshot(lastRender.catalog, lastRender.shards);

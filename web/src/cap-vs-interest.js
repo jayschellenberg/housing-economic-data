@@ -29,9 +29,9 @@
  * are also what the catalog already declares for these series
  * (`transform: monthly_mean`).
  *
- * Wiring: the section renders itself into #mi-chart-grid (see indicators.js,
- * which calls buildCapVsInterest right after buildChartSections so the sidebar
- * picks it up), and re-renders on a date-range change through the exported
+ * Wiring: the section renders itself into the container it is given — the
+ * Cap Rates vs Interest tab's #cvi-grid (cap-vs-interest-tab.js) — and
+ * re-renders on a date-range change through the exported
  * rerenderCapVsInterest(). It also re-reads the store when the Cap Rates tab
  * announces a fresh import (the 'hed:cap-rates-updated' window event).
  */
@@ -221,9 +221,11 @@ function sectionMarkup() {
  * @param {Object} shards    the loaded indicator shards, keyed by group
  * @param {Object} rangeRef  live view of the tab's date range —
  *                           { monthFrom, monthTo } read at each render
+ * @param {Object} [opts]
+ * @param {string} [opts.container]  selector of the element to render into
  */
-export function buildCapVsInterest(shards, rangeRef) {
-  const $grid = document.getElementById('mi-chart-grid');
+export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid' } = {}) {
+  const $grid = document.querySelector(container);
   if (!$grid) return;
 
   const shard = shards?.[RATE_SHARD];
@@ -251,8 +253,7 @@ export function buildCapVsInterest(shards, rangeRef) {
   section.dataset.group = CAP_GROUP_ID;
   section.id = `mi-section-${CAP_GROUP_ID}`;
   section.innerHTML = sectionMarkup();
-  // Top of the page, above the catalog-driven sections.
-  $grid.prepend(section);
+  $grid.appendChild(section);
 
   const $firm   = section.querySelector('[data-role="cvi-firm"]');
   const $types  = section.querySelector('[data-role="cvi-types"]');
