@@ -20,7 +20,7 @@ import { escapeHtml } from './escape.js';
 import { getPref, setPref } from './prefs.js';
 import { buildJumpBar } from './jump-bar.js';
 import {
-  TYPE_ORDER, FIRM_ORDER, quarterList, typesPresent, rowsUpTo,
+  TYPE_ORDER, FIRM_ORDER, quarterList, typesPresent, rowsUpTo, splitOfficeByLocation,
   averageByFirm, quarterTable, toCardInput, fmtRate, orderBy, defaultYearFrom,
 } from './cap-rates-data.js';
 import {
@@ -150,7 +150,10 @@ function noDataText() {
 }
 
 async function loadFromStore() {
-  ui.data = (await getData()) || null;
+  const data = (await getData()) || null;
+  // Downtown and Suburban Office as two types, each with its own chart and
+  // table (splitOfficeByLocation); the stored rows are left as they are.
+  ui.data = data ? { ...data, rows: splitOfficeByLocation(data.rows || []) } : null;
   ui.$clear.hidden = !ui.data;
   setStatus(ui.data ? summaryText(await getManifest()) : noDataText());
   renderAll();
@@ -211,7 +214,10 @@ function renderQuarterPicker() {
 
 function enabledTypes() {
   const saved = ui.prefs.types;
-  return new Set(Array.isArray(saved) ? saved : TYPE_ORDER);
+  const on = new Set(Array.isArray(saved) ? saved : TYPE_ORDER);
+  // A choice saved before Office was split: "Office" means both halves.
+  if (on.has('Office')) { on.add('Downtown Office'); on.add('Suburban Office'); }
+  return on;
 }
 
 function renderTypeToggles() {

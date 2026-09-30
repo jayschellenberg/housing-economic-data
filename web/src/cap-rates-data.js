@@ -15,7 +15,9 @@
  *   - the selected quarter's table, in the workbook's own layout.
  */
 
-export const TYPE_ORDER = ['Industrial', 'Retail', 'Office', 'Multi-Family', 'Hotel', 'Self Storage'];
+// Office is shown as two types on the Cap Rates tab (splitOfficeByLocation);
+// a plain "Office" row (no Downtown / Suburban in its class) still sorts here.
+export const TYPE_ORDER = ['Industrial', 'Retail', 'Downtown Office', 'Suburban Office', 'Office', 'Multi-Family', 'Hotel', 'Self Storage'];
 
 // Display order of classes within a type; anything unlisted follows, alphabetical.
 export const SUBTYPE_ORDER = {
@@ -26,12 +28,31 @@ export const SUBTYPE_ORDER = {
   Retail: ['Regional Mall', 'Power Centre', 'Community Centre', 'Strip (Anchored)', 'Strip (Non-Anchored)',
            'Regional/Power Centre', 'Grocery/Community Centre', 'Neighbourhood Strip'],
   Office: ['Downtown Class A', 'Downtown Class B', 'Suburban Class A', 'Suburban Class B'],
+  'Downtown Office': ['Class A', 'Class B'],
+  'Suburban Office': ['Class A', 'Class B'],
   'Multi-Family': ['High Rise', 'Low Rise (A)', 'Low Rise (B)', 'Low Rise'],
   Hotel: ['Downtown Full Service', 'Focused Service', 'Suburban Limited Service'],
   'Self Storage': ['All'],
 };
 
 export const FIRM_ORDER = ['Colliers', 'CBRE', 'Cushman & Wakefield'];
+
+/**
+ * The Cap Rates tab's view of the rows: Office becomes two property types,
+ * "Downtown Office" and "Suburban Office", each with Class A / Class B —
+ * so each gets its own chart and quarter table (Jason, 2026-09-30). The
+ * brokerages publish the two markets separately; averaging them into one
+ * "Office" figure mixed two different markets. Other types pass through.
+ * Cap vs Interest reads the stored rows itself and keeps its single Office
+ * overlay.
+ */
+export function splitOfficeByLocation(rows) {
+  return rows.map(r => {
+    if (r.type !== 'Office') return r;
+    const m = /^(Downtown|Suburban)\s+(.+)$/.exec(String(r.subtype || ''));
+    return m ? { ...r, type: `${m[1]} Office`, subtype: m[2] } : r;
+  });
+}
 export const AVERAGE = 'Average';
 
 const pct = (v) => (v == null ? null : Math.round(v * 10000) / 100);
