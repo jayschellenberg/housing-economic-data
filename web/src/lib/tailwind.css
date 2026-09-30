@@ -113,6 +113,22 @@
   border-color: var(--cmhc-brand-red);
 }
 
+/* Sub-app frames (Rental / Commercial dashboards): the frame takes the
+   viewport below the header and tab bar so the embedded app's own layout
+   (sidebar + map + table) sizes itself as it does standalone. */
+.cmhc-subapp-panel {
+  padding: 0;
+}
+
+.cmhc-subapp-frame {
+  display: block;
+  width: 100%;
+  height: calc(100vh - 140px);
+  min-height: 600px;
+  border: 0;
+  background: white;
+}
+
 .cmhc-tab:hover {
   color: var(--color-neutral-900);
   background: white;

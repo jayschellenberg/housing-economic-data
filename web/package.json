@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint src test",
+    "lint": "eslint src test rental/src rental/test commercial/src commercial/test",
     "data:audit": "Rscript ../r/00_audit_geographies.R",
     "data:capabilities": "Rscript ../r/00_build_capabilities.R",
     "data:historical": "Rscript ../r/01_scrape_historical.R",
@@ -33,14 +33,20 @@
     "data:wpgaddr": "Rscript ../r/25_build_wpg_address_index.R",
     "data:farmmap": "Rscript ../r/24_build_farm_structure_map.R",
     "data:population": "Rscript ../r/23_scrape_population_estimates.R",
-    "data:all": "Rscript ../r/00_audit_geographies.R && Rscript ../r/00_build_capabilities.R && Rscript ../r/01_scrape_historical.R && Rscript ../r/02_scrape_zone_snapshots.R && Rscript ../r/05_scrape_starts.R && Rscript ../r/06_scrape_secondary.R && Rscript ../r/03_build_data_files.R && Rscript ../r/04_build_manifest.R && Rscript ../r/13_validate_indicators.R && Rscript ../r/10_scrape_boc.R && Rscript ../r/11_scrape_statscan.R && Rscript ../r/17_scrape_osb.R && Rscript ../r/14_build_indicators.R && Rscript ../r/16_scrape_mls.R && Rscript ../r/15_build_economic_update.R && Rscript ../r/19_scrape_rtb.R && Rscript ../r/23_scrape_population_estimates.R && Rscript ../r/24_build_farm_structure_map.R"
+    "data:all": "Rscript ../r/00_audit_geographies.R && Rscript ../r/00_build_capabilities.R && Rscript ../r/01_scrape_historical.R && Rscript ../r/02_scrape_zone_snapshots.R && Rscript ../r/05_scrape_starts.R && Rscript ../r/06_scrape_secondary.R && Rscript ../r/03_build_data_files.R && Rscript ../r/04_build_manifest.R && Rscript ../r/13_validate_indicators.R && Rscript ../r/10_scrape_boc.R && Rscript ../r/11_scrape_statscan.R && Rscript ../r/17_scrape_osb.R && Rscript ../r/14_build_indicators.R && Rscript ../r/16_scrape_mls.R && Rscript ../r/15_build_economic_update.R && Rscript ../r/19_scrape_rtb.R && Rscript ../r/23_scrape_population_estimates.R && Rscript ../r/24_build_farm_structure_map.R",
+    "test:rental": "node rental/test/run.js",
+    "test:commercial": "node commercial/test/run.js",
+    "test:subapps": "npm run test:rental && npm run test:commercial"
   },
   "dependencies": {
     "@observablehq/plot": "^0.6.16",
+    "@protomaps/basemaps": "^5.7.2",
     "d3": "^7.9.0",
     "docx": "^9.7.1",
     "exceljs": "^4.4.0",
-    "html-to-image": "^1.11.13"
+    "html-to-image": "^1.11.13",
+    "maplibre-gl": "^6.9.1",
+    "pmtiles": "^4.5.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
@@ -54,6 +60,7 @@
     "vitest": "^2.1.9"
   },
   "overrides": {
-    "tmp": "^0.2.6"
+    "tmp": "^0.2.6",
+    "uuid": "^11.1.1"
   }
 }

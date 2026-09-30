@@ -109,6 +109,12 @@ function once(fn) {
   return () => { if (!ran) { ran = true; value = fn(); } return value; };
 }
 
+/** Point a sub-app frame at its page the first time its tab is shown. */
+function loadSubapp(frameId) {
+  const f = document.getElementById(frameId);
+  if (f && !f.src && f.dataset.src) f.src = f.dataset.src;
+}
+
 function setupTabs(initial, onActivate) {
   const tabs = {
     charts:     { btn: document.getElementById('tab-btn-charts'),     panel: document.getElementById('tab-panel-charts') },
@@ -127,12 +133,14 @@ function setupTabs(initial, onActivate) {
     johnson:    { btn: document.getElementById('tab-btn-johnson'),    panel: document.getElementById('tab-panel-johnson') },
     caprates:   { btn: document.getElementById('tab-btn-caprates'),   panel: document.getElementById('tab-panel-caprates') },
     capvsint:   { btn: document.getElementById('tab-btn-capvsint'),   panel: document.getElementById('tab-panel-capvsint') },
+    rental:     { btn: document.getElementById('tab-btn-rental'),     panel: document.getElementById('tab-panel-rental') },
+    commercial: { btn: document.getElementById('tab-btn-commercial'), panel: document.getElementById('tab-panel-commercial') },
   };
 
   // Which top-level group each tab belongs to. The header shows one group
   // link as active and one tab bar (#nav-housing / #nav-local) at a time;
   // everything not listed here is Housing & Economic Data.
-  const TAB_GROUP = { johnson: 'local', caprates: 'local', capvsint: 'local' };
+  const TAB_GROUP = { johnson: 'local', caprates: 'local', capvsint: 'local', rental: 'local', commercial: 'local' };
   const groupOf = (name) => TAB_GROUP[name] || 'housing';
 
   function showGroup(group) {
@@ -265,7 +273,7 @@ async function bootstrap() {
   // sidebar TOC work after a hard refresh.
   const rawHash = window.location.hash.replace('#', '');
   let initialTab = 'charts';
-  if (['charts', 'tables', 'compare', 'starts', 'secondary', 'housing', 'census', 'affordability', 'rtb', 'johnson', 'caprates', 'capvsint', 'snapshot', 'indicators', 'economic'].includes(rawHash)) {
+  if (['charts', 'tables', 'compare', 'starts', 'secondary', 'housing', 'census', 'affordability', 'rtb', 'johnson', 'caprates', 'capvsint', 'rental', 'commercial', 'snapshot', 'indicators', 'economic'].includes(rawHash)) {
     initialTab = rawHash;
   } else if (rawHash.startsWith('mi-section-')) {
     initialTab = 'indicators';
@@ -300,6 +308,10 @@ async function bootstrap() {
     johnson:       once(() => initJohnson().catch(err => console.error('[johnson bootstrap]', err))),
     caprates:      once(() => initCapRates().catch(err => console.error('[cap-rates bootstrap]', err))),
     capvsint:      once(() => initCapVsInterestTab().catch(err => console.error('[cap-vs-interest bootstrap]', err))),
+    // The two sub-app tabs are same-origin pages in a frame; loading the
+    // frame is the whole init, deferred to the first visit.
+    rental:        once(() => loadSubapp('subapp-rental')),
+    commercial:    once(() => loadSubapp('subapp-commercial')),
   };
   // Trigger the initial tab's init (charts → no-op); wiring runs it on click too.
   setupTabs(initialTab, (name) => tabInit[name]?.());
