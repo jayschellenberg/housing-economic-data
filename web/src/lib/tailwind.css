@@ -58,6 +58,29 @@
   cursor: pointer;
 }
 
+/* Header group links: the two top-level sections (Housing & Economic Data,
+   Local Data). The active one reads as the site title; the other as a link. */
+.cmhc-group-link {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-primary-100);
+  text-decoration: none;
+  padding-bottom: 2px;
+  border-bottom: 2px solid transparent;
+}
+
+.cmhc-group-link:hover,
+.cmhc-group-link:focus-visible {
+  color: white;
+  text-decoration: none;
+  border-bottom-color: var(--color-primary-300);
+}
+
+.cmhc-group-link-active {
+  color: white;
+  border-bottom-color: white;
+}
+
 .cmhc-tab:hover {
   color: var(--color-neutral-900);
   background: white;

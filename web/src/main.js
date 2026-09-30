@@ -125,7 +125,25 @@ function setupTabs(initial, onActivate) {
     johnson:    { btn: document.getElementById('tab-btn-johnson'),    panel: document.getElementById('tab-panel-johnson') },
   };
 
+  // Which top-level group each tab belongs to. The header shows one group
+  // link as active and one tab bar (#nav-housing / #nav-local) at a time;
+  // everything not listed here is Housing & Economic Data.
+  const TAB_GROUP = { indicators: 'local', johnson: 'local' };
+  const groupOf = (name) => TAB_GROUP[name] || 'housing';
+
+  function showGroup(group) {
+    for (const g of ['housing', 'local']) {
+      const on = g === group;
+      document.getElementById(`nav-${g}`)?.toggleAttribute('hidden', !on);
+      document.getElementById(`group-link-${g}`)?.classList.toggle('cmhc-group-link-active', on);
+      document.getElementById(`group-link-${g}`)?.setAttribute('aria-current', on ? 'page' : 'false');
+      const tag = document.getElementById(`group-tagline-${g}`);
+      if (tag) tag.hidden = !on;
+    }
+  }
+
   function activate(name) {
+    showGroup(groupOf(name));
     for (const [key, t] of Object.entries(tabs)) {
       const isActive = key === name;
       t.btn?.classList.toggle('cmhc-tab-active', isActive);
@@ -149,6 +167,12 @@ function setupTabs(initial, onActivate) {
   for (const [key, t] of Object.entries(tabs)) {
     t.btn?.addEventListener('click', () => activate(key));
   }
+  // The "Local Data" header link opens that group on its first tab. The
+  // housing link keeps its plain href="./" so it still resets the filters.
+  document.getElementById('group-link-local')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    activate('indicators');
+  });
   activate(initial);
 }
 

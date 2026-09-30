@@ -8,6 +8,13 @@ A multi-tab static website of Canadian housing & economic data, built for a comm
 
 ## Tabs
 
+The header carries two top-level groups, each with its own tab bar:
+**Housing & Economic Data** (the public CMHC / StatsCan tabs, and the landing
+view) and **Local Data** (Market Indicators, with its bring-your-own cap-rate
+CSV, and the Johnson Report, which reads a folder on the viewer's disk).
+`TAB_GROUP` in `web/src/main.js` says which tabs belong to Local Data; every
+other tab is Housing.
+
 | Tab | What it shows | Pipeline |
 |---|---|---|
 | Rental Charts | CMHC Rms line charts (5 metrics) + survey-zone picker map | `r/01`–`r/04`, `r/21` |

@@ -19,11 +19,21 @@
              bare root, so it drops both the #tab fragment and the ?gl/?gu/... filter
              query and lands on Rental Charts with the defaults — which is what
              "home" means here. -->
-        <h1 class="text-lg font-semibold">
-          <a href="./" class="text-inherit no-underline hover:underline focus-visible:underline"
-             title="Back to the home view">Housing &amp; Economic Data</a>
-        </h1>
-        <p class="text-sm text-primary-100">Historical trends, comparison tables and charts spanning Canadian rental, construction, housing stock, affordability, census demographics and economic indicators — Manitoba, Saskatchewan, Alberta &amp; British Columbia in full detail (incl. municipalities); major centres elsewhere.</p>
+        <!-- Two top-level groups, each with its own tab bar below the header
+             (see setupTabs in main.js). "Housing & Economic Data" is the public
+             CMHC / StatsCan site and the way back to the landing view;
+             "Local Data" holds the tabs that read files off the viewer's own
+             disk (Market Indicators' cap-rate CSV, the Johnson Report folder). -->
+        <nav class="flex flex-wrap items-baseline gap-x-5 gap-y-1" aria-label="Site sections">
+          <a id="group-link-housing" href="./" data-group="housing"
+             class="cmhc-group-link cmhc-group-link-active"
+             title="Rental, housing, census and economic data">Housing &amp; Economic Data</a>
+          <a id="group-link-local" href="#indicators" data-group="local"
+             class="cmhc-group-link"
+             title="Market Indicators and the Johnson Report">Local Data</a>
+        </nav>
+        <p id="group-tagline-housing" class="text-sm text-primary-100">Historical trends, comparison tables and charts spanning Canadian rental, construction, housing stock, affordability, census demographics and economic indicators — Manitoba, Saskatchewan, Alberta &amp; British Columbia in full detail (incl. municipalities); major centres elsewhere.</p>
+        <p id="group-tagline-local" class="text-sm text-primary-100" hidden>Market indicators with your own cap-rate overlay, and The Johnson Report's Winnipeg commercial vacancy, lease rates and sales — read from folders on your computer, never uploaded.</p>
       </div>
       <!-- Signs every indicator chart's caption, and so every PNG exported from
            one (see firm.js). The only place it is set; saved per browser once
@@ -36,7 +46,7 @@
       </label>
     </header>
 
-    <nav class="bg-neutral-100 border-b border-neutral-200 px-4 flex gap-1" role="tablist" aria-label="Views">
+    <nav id="nav-housing" class="bg-neutral-100 border-b border-neutral-200 px-4 flex gap-1" role="tablist" aria-label="Housing & Economic Data views">
       <button type="button" role="tab" id="tab-btn-charts"
         class="cmhc-tab cmhc-tab-active" data-tab="charts" aria-selected="true">
         Rental Charts
@@ -73,10 +83,6 @@
         class="cmhc-tab" data-tab="snapshot" aria-selected="false">
         Current Snapshot
       </button>
-      <button type="button" role="tab" id="tab-btn-indicators"
-        class="cmhc-tab" data-tab="indicators" aria-selected="false">
-        Market Indicators
-      </button>
       <button type="button" role="tab" id="tab-btn-agriculture"
         class="cmhc-tab" data-tab="agriculture" aria-selected="false">
         Agriculture
@@ -84,10 +90,6 @@
       <button type="button" role="tab" id="tab-btn-rtb"
         class="cmhc-tab" data-tab="rtb" aria-selected="false">
         RTB (MB)
-      </button>
-      <button type="button" role="tab" id="tab-btn-johnson"
-        class="cmhc-tab" data-tab="johnson" aria-selected="false">
-        Johnson Report
       </button>
       <!-- MB Economic Update — hidden again 2026-08 (previously hidden 2026-06,
            revived 2026-07). PARKED, NOT REMOVED: the tab panel below,
@@ -99,6 +101,19 @@
       <button type="button" role="tab" id="tab-btn-economic"
         class="cmhc-tab" data-tab="economic" aria-selected="false" hidden>
         MB Economic Update
+      </button>
+    </nav>
+
+    <!-- Local Data group: tabs that read the viewer's own files. Shown in
+         place of the housing bar while one of its tabs is active. -->
+    <nav id="nav-local" class="bg-neutral-100 border-b border-neutral-200 px-4 flex gap-1" role="tablist" aria-label="Local Data views" hidden>
+      <button type="button" role="tab" id="tab-btn-indicators"
+        class="cmhc-tab" data-tab="indicators" aria-selected="false">
+        Market Indicators
+      </button>
+      <button type="button" role="tab" id="tab-btn-johnson"
+        class="cmhc-tab" data-tab="johnson" aria-selected="false">
+        Johnson Report
       </button>
     </nav>
 
@@ -961,7 +976,7 @@
               <button id="jr-clear" type="button" class="underline text-neutral-600" hidden>Remove loaded data</button>
             </div>
           </div>
-          <p class="text-xs text-neutral-500 mt-2">Pick the <code>web-data</code> folder written by <code>parse_johnson.py</code>. Read locally, never uploaded.</p>
+          <p class="text-xs text-neutral-500 mt-2">Pick the firm's <code>RRG Shared\Apps\JohnsonReport</code> folder (or a <code>web-data</code> folder written by <code>parse_johnson.py</code>). Read locally, never uploaded.</p>
         </section>
 
         <section>
@@ -1033,8 +1048,8 @@
       <main class="p-4 space-y-4 overflow-x-hidden">
         <p id="jr-empty" class="text-sm text-neutral-600 max-w-2xl">
           No Johnson Report data is loaded. The Johnson Report is subscriber material, so this site publishes none of it:
-          run <code>ingest/parse_johnson.py</code> in the Johnson-Report project over your Word editions, then choose the
-          <code>web-data</code> folder it writes. The charts render from that folder in this browser only.
+          choose the firm's <code>RRG Shared\Apps\JohnsonReport</code> folder (published by <code>ingest/run.bat</code> in the
+          Johnson-Report project). The charts render from that folder in this browser only.
         </p>
         <section id="jr-chart-grid" class="space-y-6"></section>
         <footer class="text-xs text-neutral-500 pt-4 border-t border-neutral-200">
