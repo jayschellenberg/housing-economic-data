@@ -442,7 +442,9 @@ function renderCharts() {
         table: true,
         zeroBased: true,
         mirrorY: false,
-        sourceInCaption: true,
+        // "Source: Johnson Report, <edition>" alone, bottom-right, 10 pt in
+        // print; no company name on subscriber figures (as on Cap Rates).
+        sourceInCaption: true, signed: false, captionPt: 10,
         description: chartDescription(chart, sel),
       });
       card.render(input.records, input.seriesMeta, {

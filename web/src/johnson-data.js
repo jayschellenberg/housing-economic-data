@@ -188,17 +188,10 @@ export function periodToDate(label) {
   return null;
 }
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
 /** "2026-06" → "Jun 2026" for subtitles and edition names. */
 export function editionLabel(ed) {
   if (!ed) return '';
   return `${ed.season === 'jun' ? 'June' : 'December'} ${ed.year}`;
-}
-
-export function shortEditionLabel(ed) {
-  if (!ed) return '';
-  return `${MONTHS[ed.month - 1]}-${ed.year}`;
 }
 
 // --- Editions ----------------------------------------------------------------
@@ -450,10 +443,16 @@ export function toCardInput(chart, points, { keep = null, lineOrder = null } = {
 }
 
 /** "Source: The Johnson Report (June 2026)" / "(Dec-2009 to Jun-2026 editions)". */
-export function sourceLabel(editions, { view, editionId }) {
+/**
+ * The caption's source line: the report and the edition chosen in the
+ * sidebar — "Johnson Report, June 2026" — in either view. A long series
+ * reads back through older editions, but the figures are that edition's
+ * latest revision of each, and the subtitle already says so (Jason,
+ * 2026-09-30: cite the report by its year and month).
+ */
+export function sourceLabel(editions, { editionId }) {
   const sorted = editionsUpTo(editions, editionId);
-  if (!sorted.length) return 'The Johnson Report';
-  const last = sorted.find(e => e.id === editionId) || sorted[sorted.length - 1];
-  if (view === 'edition' || sorted.length === 1) return `The Johnson Report, ${editionLabel(last)}`;
-  return `The Johnson Report, ${shortEditionLabel(sorted[0])} to ${shortEditionLabel(last)} editions`;
+  if (!sorted.length) return 'Johnson Report';
+  const edition = sorted.find(e => e.id === editionId) || sorted[sorted.length - 1];
+  return `Johnson Report, ${editionLabel(edition)}`;
 }

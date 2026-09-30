@@ -353,6 +353,20 @@
   text-align: left;
 }
 
+/* Company left, "Source: …" right (sourceInCaption cards: Johnson Report,
+   Cap Rates). A long source wraps under itself, right-aligned; the company
+   name never breaks — without this a three-publisher source squeezed the
+   name to a word per line and ran off the side of the exported image. */
+.chart-card .chart-caption.chart-caption-sourced .chart-caption-left {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.chart-card .chart-caption.chart-caption-sourced .chart-source {
+  white-space: normal;
+  min-width: 0;
+  margin-left: auto;   /* flush right even with no company name beside it */
+}
+
 /* While a card is being rasterised (see exportCard / captureNodes, which add
    .cmhc-exporting for the duration), collapse everything the export filter
    drops. The filter alone leaves those nodes out of the CLONE but html-to-image

@@ -15,7 +15,7 @@
  */
 
 import * as Plot from '@observablehq/plot';
-import { downloadCardPng, setExportRedraw } from './png-export.js';
+import { downloadCardPng, setExportRedraw, EXPORT_W, EXPORT_H, EXPORT_DPI } from './png-export.js';
 import { themed, PALETTE, gridMarks, frameMark, mirrorYMarks, percentTickFormat, sfTickFormat, MIRROR_Y_MARGIN,
          plotWidth, plotHeight, fitPlotWidth, dateAxisTicks } from './plot-theme.js';
 import { escapeHtml } from './escape.js';
@@ -403,7 +403,12 @@ export function buildIndicatorCard(container, {
   //                                 caption row instead of in the subtitle;
   //                                 the company name moves to the caption's
   //                                 left (Johnson Report cards)
+  //   signed    false             — no company name in the caption: the
+  //                                 source alone signs the card (Cap Rates)
+  //   captionPt 10                — caption size in the exported PNG, in
+  //                                 points at 300 DPI (else the export CSS's)
   refBand, refLine, table, zeroBased = false, mirrorY = true, sourceInCaption = false,
+  signed = true, captionPt = null,
   // `sourceLabel` names the publisher — "Statistics Canada", "Bank of Canada
   // & Colliers Average Cap Rates (CR)". It is appended to the SUBTITLE, not
   // the caption: the caption carries the company name (firm.js), the way the
@@ -512,8 +517,11 @@ export function buildIndicatorCard(container, {
   // there is no name, not just the text: it carries a top border and padding
   // that would otherwise leave a stray rule under the chart.
   const $caption = card.querySelector('.chart-caption');
+  // A source line can be long (Cap Rates names three publishers and their
+  // reports): let it wrap, and keep the company name on one line beside it.
+  if (sourceInCaption) $caption.classList.add('chart-caption-sourced');
   const sourceText = sourceLabel ? `Source: ${sourceLabel}` : '';
-  function applyFirm(name = getFirm()) {
+  function applyFirm(name = signed ? getFirm() : '') {
     if (sourceInCaption) {
       $capLeft.textContent = name || '';
       $source.textContent = sourceText;
@@ -528,7 +536,7 @@ export function buildIndicatorCard(container, {
   // keystroke, and a redraw on each one would be wasteful (and would pull the
   // card out from under a click, which is why Cap vs Interest did it this way
   // first).
-  onFirmChange(applyFirm);
+  if (signed) onFirmChange(applyFirm);
 
   /** Subtitle for a card with nothing plotted — no date range to add. */
   const subtitleWithSource = (sub) =>
@@ -829,7 +837,22 @@ export function buildIndicatorCard(container, {
   fitPlotWidth($plot, () => { if (lastRender) draw(...lastRender); });
   // The PNG export redraws at its own fixed plot height (png-export.js).
   let exportH = null;
-  setExportRedraw(card, (h) => { exportH = h; if (lastRender) draw(...lastRender); });
+  // A fixed caption size for the image: the card is scaled to fit the
+  // 1950 × 1050 frame, so the CSS size is the target image px over that scale.
+  const fitCaptionForExport = (h) => {
+    if (!captionPt) return;
+    if (h == null) { $caption.style.removeProperty('font-size'); return; }
+    const px = (captionPt / 72) * EXPORT_DPI;
+    for (let i = 0; i < 2; i++) {
+      const scale = Math.min(EXPORT_W / card.offsetWidth, EXPORT_H / card.offsetHeight);
+      $caption.style.setProperty('font-size', `${(px / scale).toFixed(2)}px`, 'important');
+    }
+  };
+  setExportRedraw(card, (h) => {
+    exportH = h;
+    if (lastRender) draw(...lastRender);
+    fitCaptionForExport(h);
+  });
 
   // Restore a set of open panels (see readOpenPanels). Panels not named are
   // closed, which is a no-op on a freshly built card.

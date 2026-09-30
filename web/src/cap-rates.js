@@ -15,9 +15,8 @@
  */
 
 import { buildIndicatorCard, readOpenPanels } from './indicator-chart.js';
-import { downloadCardPng } from './png-export.js';
+import { downloadCardPng, setExportRedraw, EXPORT_W, EXPORT_H, EXPORT_DPI } from './png-export.js';
 import { escapeHtml } from './escape.js';
-import { getFirm, onFirmChange } from './firm.js';
 import { getPref, setPref } from './prefs.js';
 import { buildJumpBar } from './jump-bar.js';
 import {
@@ -291,6 +290,10 @@ function renderCharts() {
       const input = toCardInput(id, averageByFirm(rows, type), { lineOrder: FIRM_ORDER });
       const card = buildIndicatorCard($cards, {
         chartId: id, fileStem: id, title: `Winnipeg ${type} Cap Rates`, sourceLabel: SOURCE, table: true, zeroBased: true,
+        // "Source: …" alone, bottom-right of the caption and out of the
+        // subtitle; no company name on any Cap Rates figure — they reproduce
+        // the brokerages' published figures (Jason, 2026-09-30). 10 pt in print.
+        sourceInCaption: true, signed: false, captionPt: 10,
         description: `Each brokerage's overall ${type.toLowerCase()} cap rate: the mean of the mid-points of every class it publishes for the type that quarter. ` + note(),
       });
       card.render(input.records, input.seriesMeta, {
@@ -303,7 +306,7 @@ function renderCharts() {
     // 2. The quarter's table
     {
       const id = `caprate_${slug(type)}_table`;
-      const card = buildTableCard($cards, { id, title: `${type} Cap Rates — ${quarter}`, table: quarterTable(rows, type, quarter) });
+      const card = buildTableCard($cards, { id, title: `Winnipeg ${type} Cap Rates — ${quarter}`, table: quarterTable(rows, type, quarter) });
       ui.cards.set(id, { card: card.card });
     }
     $grid.appendChild(section);
@@ -339,21 +342,36 @@ function buildTableCard(container, { id, title, table }) {
   const avg = `<tr class="font-semibold"><td>Average</td>${subtypes.map(s => `<td>${fmtRate(average[s]?.low)}</td><td>${fmtRate(average[s]?.high)}</td>`).join('')}</tr>`;
   card.innerHTML = `
     <header class="chart-title">${escapeHtml(title)}</header>
-    <p class="chart-sub">Published Low–High range by brokerage • Source: ${escapeHtml(SOURCE)}</p>
+    <p class="chart-sub">Published Low–High range by brokerage</p>
     <div class="cmhc-chart-table-scroll" data-role="plot">
       <table class="cmhc-table cmhc-table-compact"><thead><tr><th rowspan="2">Source</th>${head1}</tr><tr>${head2}</tr></thead>
       <tbody>${body || '<tr><td colspan="99">No figures for this quarter.</td></tr>'}${body ? avg : ''}</tbody></table>
     </div>
-    <div class="chart-caption"><span class="chart-caption-left"></span><span class="chart-source" data-role="source"></span></div>
+    <div class="chart-caption chart-caption-sourced"><span class="chart-source" data-role="source"></span></div>
     <div class="chart-actions">
       <button type="button" data-role="copy">Copy table</button>
       <button type="button" data-role="dl-png">Download PNG</button>
     </div>`;
   container.appendChild(card);
+  // "Source: …" bottom-right. No company name: the tables reproduce the
+  // brokerages' published figures, so only the source signs them (Jason,
+  // 2026-09-30) — as on this tab's trend charts (signed: false).
   const $source = card.querySelector('[data-role="source"]');
-  const $caption = card.querySelector('.chart-caption');
-  const applyFirm = (name = getFirm()) => { $source.textContent = name; $caption.hidden = !name; };
-  applyFirm(); onFirmChange(applyFirm);
+  $source.textContent = `Source: ${SOURCE}`;
+  // In the exported image the caption prints at exactly 10 pt. The PNG is
+  // 1950 px across 6.5 in (300 DPI), so 10 pt is 10/72 × 300 ≈ 41.7 image px;
+  // the card is laid out at the standard 750 px export width (png-export's
+  // redraw hook) and scaled to fit, so the CSS size is that over the scale,
+  // measured twice because the caption's own size moves the card's height.
+  const CAPTION_IMAGE_PX = (10 / 72) * EXPORT_DPI;
+  const fitCaption = () => {
+    const scale = Math.min(EXPORT_W / card.offsetWidth, EXPORT_H / card.offsetHeight);
+    $source.style.setProperty('font-size', `${(CAPTION_IMAGE_PX / scale).toFixed(2)}px`, 'important');
+  };
+  setExportRedraw(card, (h) => {
+    if (h == null) { $source.style.removeProperty('font-size'); return; }
+    fitCaption(); fitCaption();
+  });
   const tsv = [
     ['Source', ...subtypes.flatMap(s => [`${s} Low`, `${s} High`])].join('\t'),
     ...firms.map(f => [f, ...subtypes.flatMap(s => [fmtRate(cells[f]?.[s]?.low), fmtRate(cells[f]?.[s]?.high)])].join('\t')),
@@ -383,7 +401,7 @@ async function exportData() {
     if (!on.has(type)) continue;
     const t = quarterTable(rows, type, quarter);
     const ws = wb.addWorksheet(`${type} ${quarter}`.slice(0, 31));
-    ws.addRow([`${type} Cap Rates — ${quarter}`]).font = { bold: true };
+    ws.addRow([`Winnipeg ${type} Cap Rates — ${quarter}`]).font = { bold: true };
     ws.addRow([`Source: ${SOURCE}`]);
     ws.addRow([]);
     ws.addRow(['Source', ...t.subtypes.flatMap(s => [s, ''])]).font = { bold: true };
