@@ -1,0 +1,227 @@
+/*
+ * House style for the framed sub-apps (web/rental/, web/commercial/).
+ *
+ * The Rental and Commercial dashboards run in same-origin frames inside the
+ * Local Data tabs and don't load tailwind.css (its preflight would restyle
+ * their maps, pickers and dialogs). This file carries the parts of the
+ * parent site's look they need so a dashboard reads as one more tab:
+ *
+ *   - the tokens (primary / accent / neutral / brand red, Inter)
+ *   - the left sidebar: flat white, 320px, grey UPPERCASE section headings,
+ *     full-width blue primary buttons, underlined secondary links
+ *   - the in-page view tabs, drawn like the site's tab strip (.cmhc-tab)
+ *   - the chart card (maroon title, subtitle, caption row, Download PNG)
+ *     and the Observable Plot text styles, for subapp-chart-card.js
+ *
+ * The values are copied from tailwind.css (@theme, .cmhc-tab, .chart-card,
+ * .cmhc-plot, .cmhc-plot-legend). If one changes there, change it here.
+ */
+
+:root {
+  --hs-primary-100: #e2e8f0;
+  --hs-primary-700: #0f172a;
+  --hs-accent-500: #2563eb;
+  --hs-accent-600: #1d4ed8;
+  --hs-neutral-50: #fafafa;
+  --hs-neutral-100: #f4f4f5;
+  --hs-neutral-200: #e4e4e7;
+  --hs-neutral-300: #d4d4d8;
+  --hs-neutral-500: #71717a;
+  --hs-neutral-600: #52525b;
+  --hs-neutral-700: #3f3f46;
+  --hs-neutral-800: #27272a;
+  --hs-neutral-900: #18181b;
+  --hs-brand-red: #7C1014;
+  --hs-font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* ---- page shell: sidebar + main, as on every site tab ------------------ */
+.hs-shell {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  min-height: 100vh;
+}
+@media (max-width: 767px) { .hs-shell { grid-template-columns: minmax(0, 1fr); } }
+
+.hs-sidebar {
+  background: #fff;
+  border-right: 1px solid var(--hs-neutral-200);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+@media (max-width: 767px) { .hs-sidebar { border-right: 0; border-bottom: 1px solid var(--hs-neutral-200); } }
+
+.hs-main { padding: 16px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+.hs-section { display: flex; flex-direction: column; gap: 8px; }
+.hs-section-rule { padding-top: 8px; border-top: 1px solid var(--hs-neutral-200); }
+.hs-section-title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--hs-neutral-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+/* Heading with a link or two on its right (Reset, All / None). */
+.hs-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.hs-hint { margin: 0; font-size: 12px; line-height: 1.4; color: var(--hs-neutral-500); }
+.hs-status { margin: 0; font-size: 12px; color: var(--hs-neutral-600); }
+
+/* Full-width blue action, as "Choose folder" / "Download Excel" on the site. */
+.hs-btn-primary {
+  display: block;
+  width: 100%;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--hs-accent-500);
+  color: #fff;
+  cursor: pointer;
+  text-align: center;
+}
+.hs-btn-primary:hover { background: var(--hs-accent-600); }
+.hs-btn-primary:disabled { opacity: 0.6; cursor: default; }
+
+/* Secondary actions: small underlined text buttons in a row. */
+.hs-links { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; }
+.hs-link {
+  font: inherit;
+  font-size: 12px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--hs-neutral-600);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.hs-link:hover { color: var(--hs-neutral-900); }
+.hs-link:disabled { opacity: 0.5; cursor: default; }
+a.hs-link { display: inline-flex; align-items: center; gap: 4px; }
+
+/* ---- view tabs inside the main area, drawn like the site's tab strip ---- */
+.hs-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 4px;
+  border-bottom: 1px solid var(--hs-neutral-200);
+}
+.hs-tabs [role="tab"] {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  color: var(--hs-neutral-600);
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom: 0;
+  margin-bottom: -1px;
+  border-radius: 0;
+  cursor: pointer;
+}
+.hs-tabs [role="tab"]:hover { color: var(--hs-neutral-900); background: #fff; }
+.hs-tabs [role="tab"][aria-selected="true"] {
+  color: var(--hs-brand-red);
+  background: #fff;
+  border-color: var(--hs-neutral-200);
+  border-bottom-color: #fff;
+}
+.hs-tabs [role="tab"]:focus-visible { outline: 2px solid var(--hs-accent-500); outline-offset: -2px; }
+.hs-tabs-aside { margin-left: auto; padding: 0 4px 8px; font-size: 12px; color: var(--hs-neutral-500); }
+
+/* ---- chart cards (subapp-chart-card.js) -------------------------------- */
+.hs-chart-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+@media (min-width: 1100px) { .hs-chart-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.chart-card {
+  background: #fff;
+  border: 1px solid var(--hs-neutral-200);
+  border-radius: 6px;
+  padding: 16px 18px 14px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-family: var(--hs-font-sans);
+}
+.chart-card .chart-title {
+  font-size: 23px;
+  font-weight: 700;
+  color: var(--hs-brand-red);
+  letter-spacing: -0.005em;
+  line-height: 1.15;
+  margin: 0 0 2px;
+}
+.chart-card .chart-sub {
+  font-size: 14px;
+  color: var(--hs-neutral-800);
+  line-height: 1.3;
+  margin: 0 0 2px;
+}
+.chart-card [data-role="plot"] { min-height: 280px; }
+.chart-card .chart-empty { font-size: 12px; color: var(--hs-neutral-500); margin: 8px 0 0; }
+.chart-card .chart-note { font-size: 12px; color: var(--hs-neutral-600); margin: 6px 0 0; line-height: 1.4; }
+.chart-card .chart-caption {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--hs-brand-red);
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--hs-neutral-200);
+}
+.chart-card .chart-caption .chart-source { text-align: right; }
+.chart-card .chart-actions { display: flex; gap: 6px; margin-top: 8px; justify-content: flex-end; }
+.chart-card .chart-actions button {
+  font: inherit;
+  font-size: 11px;
+  padding: 3px 10px;
+  border: 1px solid var(--hs-neutral-300);
+  border-radius: 4px;
+  background: var(--hs-neutral-50);
+  color: var(--hs-neutral-800);
+  cursor: pointer;
+}
+.chart-card .chart-actions button:hover { background: var(--hs-neutral-100); }
+
+/* During a PNG capture (png-export.js adds .cmhc-exporting) — the same
+   rules the site's cards get, so the image matches theirs. */
+.cmhc-exporting .chart-actions,
+.cmhc-exporting .chart-note { display: none !important; }
+.cmhc-exporting { align-self: start !important; height: max-content !important; }
+.cmhc-exporting [data-role="plot"] { min-height: 0 !important; }
+.cmhc-exporting.chart-card { border-color: transparent !important; border-radius: 0 !important; }
+.cmhc-exporting.chart-card .chart-sub { font-size: 17px !important; }
+.cmhc-exporting .cmhc-plot-legend { font-size: 14px !important; }
+.cmhc-exporting.chart-card .chart-caption { font-size: 17px !important; border-top: 0 !important; padding-top: 2px !important; }
+
+.cmhc-plot, .cmhc-plot svg { font-family: var(--hs-font-sans); overflow: visible; }
+.cmhc-plot [aria-label="x-axis tick label"] text,
+.cmhc-plot [aria-label="y-axis tick label"] text,
+.cmhc-plot g[aria-label="x-axis"] text,
+.cmhc-plot g[aria-label="y-axis"] text { font-size: 13px; fill: var(--hs-neutral-600); }
+.cmhc-plot [aria-label="x-axis label"],
+.cmhc-plot [aria-label="y-axis label"] { font-weight: 700 !important; font-size: 15px !important; fill: var(--hs-neutral-900) !important; }
+
+.cmhc-plot-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  column-gap: 14px;
+  row-gap: 4px;
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--hs-neutral-800);
+}
+.cmhc-plot-legend-item { display: flex; align-items: center; gap: 6px; line-height: 1.2; }
+.cmhc-plot-legend-swatch { width: 12px; height: 12px; border-radius: 2px; flex-shrink: 0; }

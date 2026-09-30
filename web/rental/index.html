@@ -11,102 +11,52 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
     />
+    <link rel="stylesheet" href="../src/lib/subapp-house.css" />
     <link rel="stylesheet" href="./src/style.css" />
   </head>
   <body>
-    <header class="topbar" role="banner">
-      <h1 class="topbar-title">Manitoba Rental Explorer</h1>
-      <nav class="topbar-nav" aria-label="App navigation">
-        <button type="button" id="map-toggle-btn" class="topbar-link" aria-pressed="false"
-                title="Hide the map so the table gets the whole workspace"><span class="map-toggle-label">Hide Map</span></button>
-        <button type="button" id="map-expand-btn" class="topbar-link" aria-pressed="false"
-                title="Expand the map to most of the screen. Click again to restore.">Expand Map</button>
-        <!-- Area-selection draw tools (Matrix-MLS conventions, as on the
-             Parcel Search). Shapes flow into the filter state. -->
-        <span class="shape-tools" role="group" aria-label="Area selection tools">
-          <button type="button" id="shape-tool-circle" class="shape-tool-btn" aria-pressed="false" title="Draw radius — click the centre on the map, then click again to set the radius. Click a finished shape to flip Include/Exclude; Esc cancels.">◯</button>
-          <button type="button" id="shape-tool-rectangle" class="shape-tool-btn" aria-pressed="false" title="Draw rectangle — click one corner on the map, then the opposite corner. Click a finished shape to flip Include/Exclude; Esc cancels.">▭</button>
-          <button type="button" id="shape-tool-polygon" class="shape-tool-btn" aria-pressed="false" title="Draw polygon — click vertices on the map; double-click or click the first vertex to close. Click a finished shape to flip Include/Exclude; Esc cancels.">⬠</button>
-          <button type="button" id="shape-tool-clear" class="shape-tool-btn" title="Clear all drawn shapes" disabled>⌫</button>
-        </span>
-        <div class="pill-row topbar-pill" title="Choose what a map click selects: a municipality (ticks / unticks it in the Municipality filter) or an MLS area (same, in the MLS area filter).">
-          <span class="pill-prefix">Click map to select:</span>
-          <div class="pill" id="muni-click-pill" role="radiogroup" aria-label="What a map click selects">
-            <button type="button" data-mode="off" class="active" aria-pressed="true">Off</button>
-            <button type="button" data-mode="munis" aria-pressed="false">Munis</button>
-            <button type="button" data-mode="mls" aria-pressed="false">MLS areas</button>
-          </div>
-        </div>
-        <a class="topbar-link" href="https://manitoba-opendata-parcelsearch.vercel.app/" target="_blank" rel="noreferrer"
-           title="Manitoba Parcel Search (outside Winnipeg)"><span aria-hidden="true">🗺️</span> MB Parcel Search</a>
-        <a class="topbar-link" href="https://winnipeg-opendata-parcelsearch.vercel.app/" target="_blank" rel="noreferrer"
-           title="Winnipeg Parcel Search"><span aria-hidden="true">🏙️</span> Wpg Parcel Search</a>
-        <details class="topbar-details" id="about-details">
-          <summary class="topbar-summary">About</summary>
-          <div class="topbar-panel">
-            <section class="topbar-panel-section">
-              <h2>What this is</h2>
-              <p>
-                Filter, map and chart the firm's weekly scrape of Manitoba rental
-                listings. The site itself holds no data: you connect the shared
-                <code>RentalDashboard\export</code> folder once, it is read into
-                this browser, and after each weekly publish a Reload picks up the
-                new files. Nothing is uploaded anywhere.
-              </p>
-              <p>
-                Medians follow the dashboard's policy: rents inside the display
-                band only, suppressed below the minimum count. "Canonical"
-                de-duplicates a unit listed on several sites.
-              </p>
-              <p class="muted" id="about-build"></p>
-            </section>
-          </div>
-        </details>
-      </nav>
-    </header>
-
-    <div class="shell">
-      <aside class="sidebar" aria-label="Data and filters">
-        <!-- Data connection. Folds to its title once connected; the status
-             in the summary says what is loaded and how fresh it is. -->
-        <details class="panel" id="data-panel" open>
-          <summary class="panel-head">
-            <strong>Rental data</strong>
-            <span class="panel-status" id="data-status">Not connected</span>
-          </summary>
-          <div id="data-empty">
-            <p>
-              Connect the shared <strong>RentalDashboard</strong> folder
-              (Dropbox → SharedInfo → Apps). Its <code>export</code> subfolder is
-              read into this browser and refreshed after each weekly publish;
-              its <code>evidence</code> subfolder lets you open archived
-              listing pages. Nothing is uploaded.
-            </p>
-            <button type="button" id="data-connect" class="btn primary">Choose export folder…</button>
+    <!-- Shown inside the site's Local Data › Rental Dashboard tab, so it has
+         no title bar of its own: the site header and tab strip above the
+         frame already say where you are. The layout is the site's — settings
+         in the left sidebar, views as tabs across the top of the main area,
+         charts as the site's chart cards (lib/subapp-house.css). -->
+    <div class="hs-shell">
+      <aside class="hs-sidebar" aria-label="Data and filters">
+        <!-- Data connection, laid out like the Data folder section on the
+             Cap Rates / Johnson Report tabs. -->
+        <section class="hs-section" id="data-panel">
+          <h2 class="hs-section-title">Data folder</h2>
+          <p class="hs-status" id="data-status">Not connected</p>
+          <div id="data-empty" class="hs-section">
+            <button type="button" id="data-connect" class="hs-btn-primary">Choose folder</button>
             <input id="data-folder-input" type="file" webkitdirectory directory multiple hidden />
+            <p class="hs-hint">
+              Pick the firm's <code>SharedInfo\Apps\RentalDashboard</code> folder. Its <code>export</code>
+              subfolder is read into this browser (Reload after each weekly publish); its <code>evidence</code>
+              subfolder opens archived listing pages. Read locally, never uploaded.
+            </p>
           </div>
           <div id="data-ready" hidden>
             <dl class="kv" id="data-facts"></dl>
             <p class="notice" id="data-update" hidden></p>
-            <div class="btn-row">
-              <button type="button" id="data-reload" class="btn" title="Re-read the export files from disk">🔄 Reload</button>
-              <button type="button" id="data-forget" class="btn danger" title="Forget the imported data in this browser">🔌 Disconnect</button>
+            <div class="hs-links">
+              <button type="button" id="data-reload" class="hs-link" title="Re-read the export files from disk">Reload folder</button>
+              <button type="button" id="data-forget" class="hs-link" title="Forget the imported data in this browser">Disconnect</button>
             </div>
           </div>
-          <p class="hint" id="data-hint"></p>
-        </details>
+          <p class="hs-hint" id="data-hint"></p>
+        </section>
 
         <!-- Filters. Ordered by how often each is touched: window, type,
              bedrooms, geography, rent and source stay in the open; the
              rest live one click away under Additional filters, whose
              summary carries a badge naming every control that is set so a
              collapsed disclosure never narrows results silently. -->
-        <details class="panel" id="filters-panel" open>
-          <summary class="panel-head">
-            <strong>Filters</strong>
-            <button type="button" id="filters-clear" class="btn small" title="Reset every filter to its default, including the subject, drawn shapes and municipality picks">↺ Reset</button>
-          </summary>
-
+        <section class="hs-section" id="filters-panel">
+          <div class="hs-section-head">
+            <h2 class="hs-section-title">Filters</h2>
+            <button type="button" id="filters-clear" class="hs-link" title="Reset every filter to its default, including the subject, drawn shapes and municipality picks">Reset</button>
+          </div>
           <div class="field">
             <span class="field-label" id="f-window-label">Observed</span>
             <div class="segmented" id="f-window" role="radiogroup" aria-labelledby="f-window-label"></div>
@@ -234,16 +184,35 @@
             </div>
             <label class="check block"><input id="f-coords" type="checkbox" /> Mapped listings only</label>
           </details>
-        </details>
+        </section>
+
+        <section class="hs-section hs-section-rule">
+          <button type="button" id="an-download-docx" class="hs-btn-primary">Download Word (charts)</button>
+          <button type="button" id="an-download-xlsx" class="hs-btn-primary">Download Excel (charts)</button>
+          <p class="hs-hint">The Analysis tab's charts as images — one per page / worksheet. Listings and tables export from the buttons beside them.</p>
+        </section>
+
+        <section class="hs-section hs-section-rule">
+          <h2 class="hs-section-title">About</h2>
+          <p class="hs-hint">
+            The firm's weekly scrape of Manitoba rental listings. Medians follow the dashboard's policy: rents
+            inside the display band only, suppressed below the minimum count. "Dedupe across sources" keeps
+            one row for a unit listed on several sites.
+          </p>
+          <div class="hs-links">
+            <a class="hs-link" href="https://manitoba-opendata-parcelsearch.vercel.app/" target="_blank" rel="noreferrer"
+               title="Manitoba Parcel Search (outside Winnipeg)">MB Parcel Search ↗</a>
+            <a class="hs-link" href="https://winnipeg-opendata-parcelsearch.vercel.app/" target="_blank" rel="noreferrer"
+               title="Winnipeg Parcel Search">Wpg Parcel Search ↗</a>
+          </div>
+          <p class="hs-hint" id="about-build"></p>
+        </section>
       </aside>
 
-      <main class="workspace">
-        <div class="status-row">
-          <p class="status-line" id="status-line" aria-live="polite">Connect the export folder to begin.</p>
-          <button type="button" id="reset-search" class="btn small" title="Clear every filter, the subject point, drawn shapes and municipality picks">↺ Reset search</button>
-        </div>
+      <main class="hs-main workspace">
+        <p class="status-line" id="status-line" aria-live="polite">Connect the export folder to begin.</p>
 
-        <div class="tabs" role="tablist" aria-label="Workspace">
+        <div class="hs-tabs tabs" role="tablist" aria-label="Views">
           <button type="button" role="tab" data-tab="listings" aria-selected="true" aria-controls="tab-listings">Map &amp; listings</button>
           <button type="button" role="tab" data-tab="analysis" aria-selected="false" aria-controls="tab-analysis">Analysis</button>
         </div>
@@ -253,7 +222,14 @@
              Overlays are the polygons the geo_* columns were assigned from.
              The subject point + radius narrows the results (it flows into the
              filter state, so it shows in the Additional-filters badge and is
-             cleared by Clear). -->
+             cleared by Reset). Hide / Expand sit outside the card so Show map
+             is still there once the card is hidden. -->
+        <div class="view-bar">
+          <button type="button" id="map-toggle-btn" class="btn small" aria-pressed="false"
+                  title="Hide the map so the table gets the whole workspace"><span class="map-toggle-label">Hide Map</span></button>
+          <button type="button" id="map-expand-btn" class="btn small" aria-pressed="false"
+                  title="Expand the map to most of the screen. Click again to restore.">Expand Map</button>
+        </div>
         <section class="card map-card" id="map-card">
           <div class="map-toolbar">
             <div class="map-overlays" role="group" aria-label="Boundary overlays">
@@ -261,18 +237,38 @@
               <label class="check" title="Municipal boundaries, plus the tint on selected / adjacent municipalities"><input type="checkbox" id="ov-munis" checked /> Municipalities</label>
               <label class="check"><input type="checkbox" id="ov-mls" /> MLS areas</label>
               <label class="check"><input type="checkbox" id="ov-nbhds" /> Wpg neighbourhoods</label>
-              <label class="check" title="Merge nearby listings into count bubbles when zoomed out; click a bubble to zoom in"><input type="checkbox" id="map-cluster" checked /> Cluster</label>
+              <label class="check" title="Merge nearby listings into count bubbles when zoomed out; click a bubble to zoom in"><input type="checkbox" id="map-cluster" checked /> Group points</label>
               <label class="check" title="Narrow the listings grid, count line and Analysis to what the map currently shows, as you pan and zoom. The map itself keeps plotting the whole filtered set. Auto-zoom to results is paused while this is on."><input type="checkbox" id="map-follow" /> Grid follows map view</label>
             </div>
-            <div class="map-subject" role="group" aria-label="Subject property">
-              <button type="button" id="subject-set" class="btn small" aria-pressed="false"
-                      title="Click, then click the map to place the subject. Drag the marker to move it. Esc cancels.">📍 Set subject</button>
-              <label class="inline">Radius <input id="subject-radius" type="number" min="0" step="0.5" value="2" aria-label="Radius in kilometres" /> km</label>
-              <span class="muted" id="subject-label"></span>
-              <button type="button" id="subject-clear" class="btn small" hidden title="Remove the subject point">✕ Clear subject</button>
+          </div>
+          <div class="map-toolbar">
+            <div class="pill-row" title="Choose what a map click selects: a municipality (ticks / unticks it in the Municipality filter) or an MLS area (same, in the MLS area filter).">
+              <span class="field-label">Click to select</span>
+              <div class="pill" id="muni-click-pill" role="radiogroup" aria-label="What a map click selects">
+                <button type="button" data-mode="off" class="active" aria-pressed="true">Off</button>
+                <button type="button" data-mode="munis" aria-pressed="false">Municipality</button>
+                <button type="button" data-mode="mls" aria-pressed="false">MLS area</button>
+              </div>
             </div>
-            <button type="button" id="map-fit" class="btn small" title="Zoom to the filtered listings">⤢ Zoom to results</button>
-            <button type="button" id="map-png" class="btn small" title="Download the map as shown, with legend and attribution, as a PNG for a report exhibit">⬇ Map PNG</button>
+            <!-- Area-selection draw tools (Matrix-MLS conventions, as on the
+                 Parcel Search). Shapes flow into the filter state. -->
+            <span class="shape-tools" role="group" aria-label="Area selection tools">
+              <span class="field-label">Draw</span>
+              <button type="button" id="shape-tool-circle" class="btn small" aria-pressed="false" title="Draw radius — click the centre on the map, then click again to set the radius. Click a finished shape to flip Include/Exclude; Esc cancels.">Radius</button>
+              <button type="button" id="shape-tool-rectangle" class="btn small" aria-pressed="false" title="Draw rectangle — click one corner on the map, then the opposite corner. Click a finished shape to flip Include/Exclude; Esc cancels.">Rectangle</button>
+              <button type="button" id="shape-tool-polygon" class="btn small" aria-pressed="false" title="Draw polygon — click vertices on the map; double-click or click the first vertex to close. Click a finished shape to flip Include/Exclude; Esc cancels.">Polygon</button>
+              <button type="button" id="shape-tool-clear" class="btn small" title="Clear all drawn shapes" disabled>Clear</button>
+            </span>
+            <div class="map-subject" role="group" aria-label="Subject property">
+              <span class="field-label">Subject</span>
+              <button type="button" id="subject-set" class="btn small" aria-pressed="false"
+                      title="Click, then click the map to place the subject. Drag the marker to move it. Esc cancels.">Place</button>
+              <label class="inline">radius <input id="subject-radius" type="number" min="0" step="0.5" value="2" aria-label="Radius in kilometres" /> km</label>
+              <span class="muted" id="subject-label"></span>
+              <button type="button" id="subject-clear" class="btn small" hidden title="Remove the subject point">Clear subject</button>
+            </div>
+            <button type="button" id="map-fit" class="btn small" title="Zoom to the filtered listings">Zoom to results</button>
+            <button type="button" id="map-png" class="btn small" title="Download the map as shown, with legend and attribution, as a PNG for a report exhibit">Map PNG</button>
           </div>
           <div class="map-wrap">
             <div id="map" class="map" role="region" aria-label="Map of filtered listings"></div>
@@ -297,11 +293,11 @@
                   <option value="selected">Selected</option>
                 </select>
               </label>
-              <button type="button" id="export-csv" class="btn small" disabled title="Download as CSV (every field)">⬇ CSV</button>
-              <button type="button" id="export-xlsx" class="btn small" disabled title="Download an Excel workbook: Listings sheet + Criteria sheet">⬇ Excel</button>
-              <button type="button" id="export-word" class="btn small" disabled title="Copy a formatted comp table to the clipboard for pasting into Word">📋 Copy for Word</button>
+              <button type="button" id="export-csv" class="btn small" disabled title="Download as CSV (every field)">CSV</button>
+              <button type="button" id="export-xlsx" class="btn small" disabled title="Download an Excel workbook: Listings sheet + Criteria sheet">Excel</button>
+              <button type="button" id="export-word" class="btn small" disabled title="Copy a formatted comp table to the clipboard for pasting into Word">Copy for Word</button>
               <label class="check"><input type="checkbox" id="selected-only" disabled /> Selected only</label>
-              <button type="button" id="selection-clear" class="btn small" hidden>✕ Clear selected</button>
+              <button type="button" id="selection-clear" class="btn small" hidden>Clear selected</button>
             </div>
           </div>
           <div class="table-scroll">
@@ -331,19 +327,21 @@
         </div>
 
         <!-- Analysis tab: the filtered selection (or all Manitoba) summarised
-             by bedroom count and by market, with trends from the rent runs. -->
+             by bedroom count and by market, with trends from the rent runs.
+             The charts are the site's chart cards, built by analysis.js into
+             #an-charts. -->
         <div id="tab-analysis" role="tabpanel" class="tabpanel" hidden>
           <section class="card">
             <div class="analysis-head">
               <div class="pill-row">
-                <span class="pill-prefix">Scope:</span>
+                <span class="field-label">Scope</span>
                 <div class="pill" id="an-scope" role="radiogroup" aria-label="Analysis scope">
                   <button type="button" data-mode="selection" class="active" aria-pressed="true">Selection</button>
                   <button type="button" data-mode="all" aria-pressed="false">All Manitoba</button>
                 </div>
               </div>
               <div class="pill-row">
-                <span class="pill-prefix">Trend by:</span>
+                <span class="field-label">Trend by</span>
                 <div class="pill" id="an-gran" role="radiogroup" aria-label="Trend granularity">
                   <button type="button" data-mode="month" class="active" aria-pressed="true">Month</button>
                   <button type="button" data-mode="week" aria-pressed="false">Week</button>
@@ -355,12 +353,15 @@
             <p class="hint">Median rent per bedroom count for the scope; beneath it the mean, the median rent per square foot, and the same figure for the other scope. Rents inside the display band only; suppressed below the minimum count.</p>
           </section>
 
+          <p class="hint" id="an-trend-note"></p>
+          <div class="hs-chart-grid" id="an-charts"></div>
+
           <section class="card">
             <div class="results-head">
               <h2>Rent by bedroom count</h2>
               <div class="btn-row">
-                <button type="button" id="an-band-csv" class="btn small" title="Download this table as CSV">⬇ CSV</button>
-                <button type="button" id="an-band-copy" class="btn small" title="Copy this table, formatted, for Word">📋 Copy for Word</button>
+                <button type="button" id="an-band-csv" class="btn small" title="Download this table as CSV">CSV</button>
+                <button type="button" id="an-band-copy" class="btn small" title="Copy this table, formatted, for Word">Copy for Word</button>
               </div>
             </div>
             <div class="table-scroll"><table id="an-band-table" class="stats"></table></div>
@@ -371,8 +372,8 @@
               <h2>By market</h2>
               <div class="btn-row">
                 <label class="inline">Group by <select id="an-market-by"></select></label>
-                <button type="button" id="an-market-csv" class="btn small" title="Download this table as CSV">⬇ CSV</button>
-                <button type="button" id="an-market-copy" class="btn small" title="Copy this table, formatted, for Word">📋 Copy for Word</button>
+                <button type="button" id="an-market-csv" class="btn small" title="Download this table as CSV">CSV</button>
+                <button type="button" id="an-market-copy" class="btn small" title="Copy this table, formatted, for Word">Copy for Word</button>
               </div>
             </div>
             <div class="table-scroll"><table id="an-market-table" class="stats"></table></div>
@@ -380,27 +381,9 @@
           </section>
 
           <section class="card">
-            <h2>Trends</h2>
-            <p class="hint" id="an-trend-note"></p>
-            <div class="chart-grid">
-              <div class="chart"><h3>Median rent by bedroom count</h3><div id="an-trend-rent"></div></div>
-              <div class="chart"><h3>Median rent per square foot by bedroom count</h3><div id="an-trend-psf"></div></div>
-              <div class="chart"><h3>Listings observed per period</h3><div id="an-trend-inv"></div></div>
-            </div>
-          </section>
-
-          <section class="card">
-            <h2>Distribution</h2>
-            <div class="chart-grid">
-              <div class="chart"><h3>Rent distribution</h3><div id="an-hist"></div></div>
-              <div class="chart"><h3>Rent by size</h3><div id="an-scatter"></div><p class="hint">Lines are least-squares fits per bedroom count where at least 10 listings state a size. Sizes are only stated for about half of listings.</p></div>
-            </div>
-          </section>
-
-          <section class="card">
             <h2>Other statistics</h2>
             <div class="table-scroll"><table id="an-other" class="stats"></table></div>
-            <p class="hint">Days observed = first to last scrape the listing appeared in (a lower bound on time on market). Rent changed = listings whose asking rent moved between scrapes; median change is first rent to last. Amenity shares are of listings that state the field.</p>
+            <p class="hint">Days observed = first to last scrape the listing appeared in (a lower bound on time on market). Rent changed = listings whose asking rent moved between scrapes; median change is first rent to last. Amenity shares are of listings that state the field. ** = no value.</p>
             <h3>Source mix</h3>
             <div class="table-scroll"><table id="an-sources" class="stats narrow"></table></div>
           </section>
@@ -418,9 +401,9 @@
           <div class="muted evidence-meta" id="evidence-meta"></div>
         </div>
         <div class="btn-row">
-          <button type="button" id="evidence-open" class="btn small" title="Open the archived page in a new tab">↗ Open in tab</button>
-          <button type="button" id="evidence-save" class="btn small" title="Save the archived HTML file">⬇ Download</button>
-          <button type="button" id="evidence-close" class="btn small">✕ Close</button>
+          <button type="button" id="evidence-open" class="btn small" title="Open the archived page in a new tab">Open in tab</button>
+          <button type="button" id="evidence-save" class="btn small" title="Save the archived HTML file">Download</button>
+          <button type="button" id="evidence-close" class="btn small">Close</button>
         </div>
       </div>
       <iframe id="evidence-frame" class="evidence-frame" sandbox="" title="Archived listing page" referrerpolicy="no-referrer"></iframe>

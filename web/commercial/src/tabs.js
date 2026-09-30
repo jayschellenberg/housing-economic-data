@@ -1,13 +1,14 @@
 /*
- * tabs.js — Explore · Summary · Analysis.
+ * tabs.js — Map & listings (Explore) · Summary · Analysis.
  *
  * The page used to stack the connect card, the overview, the filters,
  * the map and the grid in one column, so the first thing on screen after
  * connecting was a row of summary tiles and the map was a scroll away.
  * Explore — filters, map, grid — is now what a connected folder lands on.
  *
- * Before a folder is connected there are no tabs at all: the Summary
- * panel holds the connect card, and that card IS the page.
+ * Before a folder is connected there are no tabs at all: the connect
+ * controls are in the sidebar (as on every Local Data tab) and the main
+ * area shows only the #empty-state line.
  *
  * The last tab is remembered per browser as a convenience only. Storage
  * can be missing or refuse (a private window, blocked site data), and the
@@ -50,10 +51,10 @@ export function initTabs({ onChange } = {}) {
     }
     for (const [tab, id] of Object.entries(PANELS)) {
       const el = $(id);
-      if (!el) continue;
-      // Not connected: only the connect card, which lives in Summary.
-      el.hidden = connected ? tab !== current : tab !== 'summary';
+      if (el) el.hidden = !connected || tab !== current;
     }
+    const $empty = $('empty-state');
+    if ($empty) $empty.hidden = connected;
   }
 
   function show(tab, { focus = false } = {}) {

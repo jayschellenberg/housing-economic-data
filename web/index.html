@@ -31,7 +31,7 @@
              title="Rental, housing, census and economic data">Housing &amp; Economic Data</a>
           <a id="group-link-local" href="#caprates" data-group="local"
              class="cmhc-group-link"
-             title="Cap Rates, Cap Rates vs Interest, Johnson Report">Local Data</a>
+             title="Cap Rates, Cap Rates vs Interest, Johnson Report, Rental Dashboard, Commercial Dashboard">Local Data</a>
         </nav>
         <!-- Signs every indicator chart's caption, and so every PNG exported from
              one (see firm.js). The only place it is set; saved per browser once
@@ -986,13 +986,13 @@
           <div class="space-y-2">
             <button id="jr-pick-folder" type="button"
               class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
-              Choose web-data folder
+              Choose folder
             </button>
             <input id="jr-pick-fallback" type="file" webkitdirectory multiple hidden
               class="block w-full text-xs file:mr-2 file:rounded file:border file:border-neutral-300 file:bg-white file:px-2 file:py-1 file:text-xs" />
             <div class="flex gap-3 text-xs">
-              <button id="jr-rescan" type="button" class="underline text-neutral-600">Re-scan folder</button>
-              <button id="jr-clear" type="button" class="underline text-neutral-600" hidden>Remove loaded data</button>
+              <button id="jr-rescan" type="button" class="underline text-neutral-600">Reload folder</button>
+              <button id="jr-clear" type="button" class="underline text-neutral-600" hidden>Disconnect</button>
             </div>
           </div>
           <p class="text-xs text-neutral-500 mt-2">Pick the firm's <code>SharedInfo\Apps\JohnsonReport</code> folder (or a <code>web-data</code> folder written by <code>parse_johnson.py</code>). Read locally, never uploaded.</p>
@@ -1098,8 +1098,8 @@
             <input id="cr-pick-fallback" type="file" webkitdirectory multiple hidden
               class="block w-full text-xs file:mr-2 file:rounded file:border file:border-neutral-300 file:bg-white file:px-2 file:py-1 file:text-xs" />
             <div class="flex gap-3 text-xs">
-              <button id="cr-rescan" type="button" class="underline text-neutral-600">Re-read folder</button>
-              <button id="cr-clear" type="button" class="underline text-neutral-600" hidden>Remove loaded data</button>
+              <button id="cr-rescan" type="button" class="underline text-neutral-600">Reload folder</button>
+              <button id="cr-clear" type="button" class="underline text-neutral-600" hidden>Disconnect</button>
             </div>
           </div>
           <p class="text-xs text-neutral-500 mt-2">Pick the firm's <code>SharedInfo\Apps\CapRates</code> folder. Read locally, never uploaded.</p>
@@ -1171,10 +1171,9 @@
           </div>
           <p class="text-xs text-neutral-500 mt-1">Month &amp; year. "From" follows five years before "to" until you set it; leave "to" blank for the latest.</p>
         </section>
-        <section>
-          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Cap-rate data</h2>
-          <p class="text-xs text-neutral-600">Overlays come from the same local folder the <strong>Cap Rates</strong> tab reads. Load it there once (Choose folder); the firm and overlay pickers are beside the chart.</p>
-        </section>
+        <!-- Firm + overlay pickers, filled by cap-vs-interest.js. The overlays
+             come from the same local folder the Cap Rates tab reads. -->
+        <div id="cvi-controls"></div>
         <section class="pt-2 border-t border-neutral-200 space-y-2">
           <button id="cvi-download-docx-charts" type="button"
             class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">

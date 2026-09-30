@@ -115,6 +115,21 @@ function loadSubapp(frameId) {
   if (f && !f.src && f.dataset.src) f.src = f.dataset.src;
 }
 
+/**
+ * Fit the visible sub-app frame to the viewport below the header and tab bar.
+ * A fixed calc(100vh - 140px) was wrong whenever the header tagline wrapped
+ * (narrower windows), leaving a second scrollbar and the site footer peeking
+ * under the frame. Measured instead, on every activation and resize.
+ */
+function sizeSubappFrames() {
+  for (const f of document.querySelectorAll('.cmhc-subapp-frame')) {
+    if (f.offsetParent === null) continue;
+    const top = f.getBoundingClientRect().top + window.scrollY;
+    f.style.height = `${Math.max(600, window.innerHeight - top)}px`;
+  }
+}
+window.addEventListener('resize', sizeSubappFrames);
+
 function setupTabs(initial, onActivate) {
   const tabs = {
     charts:     { btn: document.getElementById('tab-btn-charts'),     panel: document.getElementById('tab-panel-charts') },
@@ -174,6 +189,7 @@ function setupTabs(initial, onActivate) {
     // synchronous inits (tables/compare/starts) — one failing tab must not wedge
     // tab switching.
     try { onActivate?.(name); } catch (e) { console.error('[tab init]', name, e); }
+    sizeSubappFrames();
   }
 
   for (const [key, t] of Object.entries(tabs)) {

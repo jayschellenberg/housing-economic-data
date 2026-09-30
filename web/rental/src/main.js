@@ -175,8 +175,20 @@ const filters = initFiltersPanel({
 });
 state.filters = filters.getFilters();
 mapView.setSubject(subjectOf(state.filters), state.filters.radiusKm);
-// "Reset search" in the workspace is the same reset as the Filters panel's.
-$('reset-search')?.addEventListener('click', () => { filters.setFilters(defaultFilters()); setStatus('Search reset — every filter is back to its default.'); });
+
+// Sidebar "Download Word / Excel (charts)": the Analysis charts, one per page
+// / worksheet, as on every site tab. The charts only exist once Analysis has
+// drawn them, so the click opens it first.
+for (const [id, kind] of [['an-download-docx', 'docx'], ['an-download-xlsx', 'xlsx']]) {
+  $(id)?.addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    if (!state.bundle) { setStatus('Connect the export folder first.'); return; }
+    setTab('analysis');
+    await analysis.ready();
+    const { exportCards } = await import('../../src/subapp-chart-card.js');
+    await exportCards(btn, kind, [...document.querySelectorAll('#an-charts .chart-card')], 'RentalDashboard');
+  });
+}
 
 initConnectPanel({
   setStatus,

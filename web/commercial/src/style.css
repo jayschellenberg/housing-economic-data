@@ -1,17 +1,18 @@
-/* Commercial Availability Explorer — one stylesheet, no framework.
-   Light only for now; the tables and tiles are the whole UI in phase 2. */
+/* Commercial Availability Explorer — one stylesheet, no framework, on top
+   of the site's house style for framed dashboards (../src/lib/subapp-house.css:
+   sidebar, view tabs, chart cards). Tokens below are the site's palette. */
 
 :root {
-  --ink: #1d2126;
-  --ink-soft: #5b6672;
-  --line: #d9dee4;
-  --bg: #f6f7f9;
+  --ink: #18181b;
+  --ink-soft: #52525b;
+  --line: #e4e4e7;
+  --bg: #fafafa;
   --card: #ffffff;
-  --accent: #1f5f8b;
+  --accent: #2563eb;
   --accent-ink: #ffffff;
   --notice: #fff8e1;
   --notice-line: #e6cf87;
-  --radius: 8px;
+  --radius: 6px;
 }
 
 * { box-sizing: border-box; }
@@ -21,68 +22,50 @@
 
 body {
   margin: 0;
-  padding: 0 0 3rem;
   background: var(--bg);
   color: var(--ink);
-  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font: 14px/1.45 "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
-main { max-width: 1100px; margin: 0 auto; padding: 0 1rem; }
-
-.topbar {
-  background: var(--card);
-  border-bottom: 1px solid var(--line);
-  padding: 1rem;
-  margin-bottom: 1.25rem;
-}
-.topbar h1 { margin: 0 auto; max-width: 1100px; font-size: 1.15rem; }
-.status {
-  max-width: 1100px;
-  margin: 0.25rem auto 0;
-  color: var(--ink-soft);
-  font-size: 0.9rem;
-}
+.status { margin: 0; color: var(--ink-soft); font-size: 13px; }
+.empty-state { margin: 0; max-width: 42rem; font-size: 14px; color: var(--hs-neutral-600, #52525b); }
+.tabpanel { display: flex; flex-direction: column; gap: 16px; }
 
 .card {
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 1rem;
-  margin-bottom: 1.25rem;
+  padding: 12px 14px;
 }
-.card h2 { margin: 0 0 0.75rem; font-size: 1rem; }
-
-details.card > summary {
-  cursor: pointer;
-  display: flex;
-  gap: 0.75rem;
-  align-items: baseline;
-  list-style-position: inside;
-}
-details.card[open] > summary { margin-bottom: 0.75rem; }
-.card-title { font-weight: 600; }
+/* Card headings in the site's brand red, like its table titles. */
+.card h2 { margin: 0 0 8px; font-size: 16px; font-weight: 700; color: #7C1014; }
 
 .muted { color: var(--ink-soft); }
 .small { font-size: 0.85rem; }
 code { background: var(--bg); padding: 0 0.25em; border-radius: 3px; }
 
+/* Plain buttons are the site's small secondary actions (as Download PNG). */
 button {
   font: inherit;
-  padding: 0.45rem 0.9rem;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--card);
+  font-size: 13px;
+  padding: 4px 10px;
+  border: 1px solid #d4d4d8;
+  border-radius: 4px;
+  background: #fafafa;
+  color: #27272a;
   cursor: pointer;
 }
-button:hover { border-color: var(--ink-soft); }
+button:hover { background: #f4f4f5; }
+button:disabled { opacity: 0.5; cursor: default; }
 button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 button.quiet { color: var(--ink-soft); }
 
 .facts {
   display: grid;
   grid-template-columns: max-content 1fr;
-  gap: 0.25rem 1rem;
-  margin: 0 0 0.75rem;
+  gap: 3px 10px;
+  margin: 0 0 8px;
+  font-size: 13px;
 }
 .facts dt { color: var(--ink-soft); }
 .facts dd { margin: 0; }
@@ -90,9 +73,10 @@ button.quiet { color: var(--ink-soft); }
 .notice {
   background: var(--notice);
   border: 1px solid var(--notice-line);
-  border-radius: 6px;
-  padding: 0.5rem 0.75rem;
-  margin: 0 0 0.75rem;
+  border-radius: 4px;
+  padding: 6px 8px;
+  margin: 0;
+  font-size: 13px;
 }
 .notice.restricted { font-size: 0.85rem; }
 
@@ -130,45 +114,20 @@ th { color: var(--ink-soft); font-weight: 600; white-space: nowrap; }
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 tbody tr:last-child td { border-bottom: 0; }
 
-/* ---- filters ----------------------------------------------------------- */
-.filters-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
-.filters-head h2 { margin: 0 0 0.75rem; }
-
-.filter-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: 0.75rem 1rem;
-}
-.filter-field { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
-.filter-field > span, .filter-field > legend {
-  color: var(--ink-soft); font-size: 0.8rem; padding: 0;
-}
-fieldset.filter-field { border: 0; margin: 0; padding: 0; }
-.filter-field input[type="number"],
-.filter-field input[type="search"],
-.filter-field input[type="month"] {
-  font: inherit; font-size: 0.9rem; padding: 0.3rem 0.4rem;
+/* ---- sidebar filters (same field layout as the Rental Dashboard) ------- */
+.field { margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field-label { font-size: 12px; font-weight: 500; color: var(--ink-soft); padding: 0; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.checks { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.field input[type="number"], .field input[type="search"], .field input[type="month"] {
+  font: inherit; font-size: 13px; padding: 4px 6px;
   border: 1px solid var(--line); border-radius: 4px; background: var(--card);
   min-width: 0; width: 100%;
 }
-.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem; }
-/* The search box's Address / Notes / Everything switch, under the field.
-   The field spans two grid columns so the three labels sit on one line —
-   at one column "Everything" wrapped onto a row of its own and read as a
-   separate control.
-   The media query is not decoration: the grid is auto-fit, and a span-2
-   item FORCES a second column even when only one fits, which squeezed
-   every other filter to 108px at phone width. */
-@media (min-width: 700px) {
-  .filter-field.search-field { grid-column: span 2; }
-}
-.scope-pill { display: flex; flex-wrap: wrap; gap: 0.15rem 0.9rem; margin-top: 0.2rem; }
-.scope-pill .inline { font-size: 0.8rem; color: var(--ink-soft); }
-.inline { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.9rem; }
-.filter-toggles {
-  display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem;
-  margin-top: 0.85rem; padding-top: 0.75rem; border-top: 1px solid var(--line);
-}
+.inline { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 13px; }
+.inline.block { display: flex; }
+.more-filters { border-top: 1px solid var(--line); padding-top: 6px; display: flex; flex-direction: column; gap: 8px; }
+.more-filters > summary { cursor: pointer; font-size: 13px; font-weight: 600; }
 
 /* ---- multiselect (copied with the module) ------------------------------ */
 .multiselect { position: relative; }
@@ -247,7 +206,6 @@ table.results td.col-links .link-btn + .link-btn { margin-left: 0.55rem; }
   margin-top: 0.75rem;
 }
 
-.footer { max-width: 1100px; margin: 2rem auto 0; padding: 0 1rem; }
 
 /* ---- map --------------------------------------------------------------- */
 .map-card { padding: 0.6rem 0.7rem 0.7rem; }
@@ -262,6 +220,7 @@ table.results td.col-links .link-btn + .link-btn { margin-left: 0.55rem; }
 .map-toolbar button {
   font-size: 0.8rem; padding: 0.2rem 0.55rem; border-radius: 5px;
 }
+.map-toolbar .field-label { color: var(--ink-soft); }
 .map-toolbar button.active,
 .map-toolbar button[aria-pressed="true"] {
   background: var(--accent); border-color: var(--accent); color: var(--accent-ink);
@@ -289,13 +248,7 @@ table.results td.col-links .link-btn + .link-btn { margin-left: 0.55rem; }
   font: inherit; font-size: 0.85rem; padding: 0.2rem 0.3rem;
   border: 1px solid var(--line); border-radius: 4px; background: var(--card);
 }
-.chart-grid {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-  gap: 1rem; margin: 1rem 0;
-}
-.chart { margin: 0; }
-.chart figcaption { font-size: 0.85rem; font-weight: 600; margin-bottom: 0.35rem; }
-.chart > div { overflow-x: auto; }
+.analysis-controls { margin-bottom: 10px; }
 td.suppressed { color: var(--ink-soft); font-style: italic; }
 
 /* ---- flyer viewer ------------------------------------------------------ */
@@ -317,28 +270,7 @@ td.suppressed { color: var(--ink-soft); font-style: italic; }
 .flyer-image-wrap img { display: block; width: 100%; height: auto; }
 #flyer-frame[hidden], .flyer-image-wrap[hidden] { display: none; }
 
-/* ---- tabs: Explore · Summary · Analysis ------------------------------ */
-.tabs {
-  display: flex; align-items: flex-end; gap: 0.25rem; flex-wrap: wrap;
-  border-bottom: 1px solid var(--line); margin: 0 0 0.9rem;
-}
-.tabs [role="tab"] {
-  font: inherit; font-size: 0.95rem; color: var(--ink-soft);
-  background: none; border: 1px solid transparent; border-bottom: 0;
-  border-radius: 6px 6px 0 0; padding: 0.45rem 0.95rem; cursor: pointer;
-  margin-bottom: -1px;
-}
-.tabs [role="tab"]:hover { color: var(--ink); }
-.tabs [role="tab"].active {
-  color: var(--ink); font-weight: 600; background: var(--card);
-  border-color: var(--line);
-}
-.tabs [role="tab"]:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-/* The published date sits at the far end of the bar, where it is always
-   in view — which tab you are on should not decide whether you can see
-   how old the data is. */
-.tabs-published { margin-left: auto; padding: 0 0.25rem 0.45rem; }
-#data-update { margin: 0 0 0.75rem; }
+#data-update { margin: 0; }
 #data-update button { margin-left: 0.5rem; }
 
 /* ---- subject by address ---------------------------------------------- */
