@@ -15,9 +15,8 @@
  */
 
 import { buildIndicatorCard, readOpenPanels } from './indicator-chart.js';
-import { downloadCardPng } from './png-export.js';
+import { downloadCardPng, setExportRedraw, EXPORT_W, EXPORT_H, EXPORT_DPI } from './png-export.js';
 import { escapeHtml } from './escape.js';
-import { getFirm, onFirmChange } from './firm.js';
 import { getPref, setPref } from './prefs.js';
 import { buildJumpBar } from './jump-bar.js';
 import {
@@ -347,18 +346,31 @@ function buildTableCard(container, { id, title, table }) {
       <table class="cmhc-table cmhc-table-compact"><thead><tr><th rowspan="2">Source</th>${head1}</tr><tr>${head2}</tr></thead>
       <tbody>${body || '<tr><td colspan="99">No figures for this quarter.</td></tr>'}${body ? avg : ''}</tbody></table>
     </div>
-    <div class="chart-caption chart-caption-sourced"><span class="chart-caption-left"></span><span class="chart-source" data-role="source"></span></div>
+    <div class="chart-caption chart-caption-sourced"><span class="chart-source" data-role="source"></span></div>
     <div class="chart-actions">
       <button type="button" data-role="copy">Copy table</button>
       <button type="button" data-role="dl-png">Download PNG</button>
     </div>`;
   container.appendChild(card);
-  // Company name bottom-left, "Source: …" bottom-right — the chart cards'
-  // caption layout (sourceInCaption), so the table image reads the same.
-  const $firm = card.querySelector('.chart-caption-left');
-  card.querySelector('[data-role="source"]').textContent = `Source: ${SOURCE}`;
-  const applyFirm = (name = getFirm()) => { $firm.textContent = name; };
-  applyFirm(); onFirmChange(applyFirm);
+  // "Source: …" bottom-right. No company name: the tables reproduce the
+  // brokerages' published figures, so only the source signs them (Jason,
+  // 2026-09-30); the trend charts keep the name.
+  const $source = card.querySelector('[data-role="source"]');
+  $source.textContent = `Source: ${SOURCE}`;
+  // In the exported image the caption prints at exactly 10 pt. The PNG is
+  // 1950 px across 6.5 in (300 DPI), so 10 pt is 10/72 × 300 ≈ 41.7 image px;
+  // the card is laid out at the standard 750 px export width (png-export's
+  // redraw hook) and scaled to fit, so the CSS size is that over the scale,
+  // measured twice because the caption's own size moves the card's height.
+  const CAPTION_IMAGE_PX = (10 / 72) * EXPORT_DPI;
+  const fitCaption = () => {
+    const scale = Math.min(EXPORT_W / card.offsetWidth, EXPORT_H / card.offsetHeight);
+    $source.style.setProperty('font-size', `${(CAPTION_IMAGE_PX / scale).toFixed(2)}px`, 'important');
+  };
+  setExportRedraw(card, (h) => {
+    if (h == null) { $source.style.removeProperty('font-size'); return; }
+    fitCaption(); fitCaption();
+  });
   const tsv = [
     ['Source', ...subtypes.flatMap(s => [`${s} Low`, `${s} High`])].join('\t'),
     ...firms.map(f => [f, ...subtypes.flatMap(s => [fmtRate(cells[f]?.[s]?.low), fmtRate(cells[f]?.[s]?.high)])].join('\t')),

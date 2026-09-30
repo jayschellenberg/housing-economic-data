@@ -364,6 +364,7 @@
 .chart-card .chart-caption.chart-caption-sourced .chart-source {
   white-space: normal;
   min-width: 0;
+  margin-left: auto;   /* flush right even with no company name beside it */
 }
 
 /* While a card is being rasterised (see exportCard / captureNodes, which add
