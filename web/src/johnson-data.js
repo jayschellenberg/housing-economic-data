@@ -445,14 +445,14 @@ export function toCardInput(chart, points, { keep = null, lineOrder = null } = {
 /** "Source: The Johnson Report (June 2026)" / "(Dec-2009 to Jun-2026 editions)". */
 /**
  * The caption's source line: the report and the edition chosen in the
- * sidebar — "Johnson Report, June 2026" — in either view. A long series
+ * sidebar — "The Johnson Report — June 2026" — in either view. A long series
  * reads back through older editions, but the figures are that edition's
  * latest revision of each, and the subtitle already says so (Jason,
  * 2026-09-30: cite the report by its year and month).
  */
 export function sourceLabel(editions, { editionId }) {
   const sorted = editionsUpTo(editions, editionId);
-  if (!sorted.length) return 'Johnson Report';
+  if (!sorted.length) return 'The Johnson Report';
   const edition = sorted.find(e => e.id === editionId) || sorted[sorted.length - 1];
-  return `Johnson Report, ${editionLabel(edition)}`;
+  return `The Johnson Report — ${editionLabel(edition)}`;
 }

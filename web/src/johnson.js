@@ -17,7 +17,7 @@
  *     semi-annual line back to the earliest edition's own look-back.
  *
  * Charts use the Market Indicators card (title / subtitle with source /
- * plot / firm caption / PNG / data table), so exports match the rest of the
+ * plot / source caption / PNG / data table), so exports match the rest of the
  * site. District charts can also be drawn as grouped bars, the form the
  * appraiser's existing Excel charts take.
  */
@@ -25,9 +25,8 @@
 import * as Plot from '@observablehq/plot';
 import { buildIndicatorCard, readOpenPanels } from './indicator-chart.js';
 import { themed, PALETTE, gridMarks, frameMark, plotWidth, plotHeight, fitPlotWidth, sfTickFormat } from './plot-theme.js';
-import { downloadCardPng, setExportRedraw } from './png-export.js';
+import { downloadCardPng, setExportRedraw, EXPORT_W, EXPORT_H, EXPORT_DPI } from './png-export.js';
 import { escapeHtml } from './escape.js';
-import { getFirm, onFirmChange } from './firm.js';
 import { indicatorFmt } from './format.js';
 import { getPref, setPref } from './prefs.js';
 import { buildJumpBar } from './jump-bar.js';
@@ -402,10 +401,9 @@ function renderCharts() {
   const groupsOn = enabledGroups();
   const style = ui.prefs.style || 'lines';
   const { monthFrom, monthTo } = monthRange();
-  const edition = ui.editions.find(e => e.id === sel.editionId);
-  const subtitle = sel.view === 'edition'
-    ? `As published in the ${editionLabel(edition)} edition`
-    : `All editions to ${editionLabel(edition)}, latest revision of each figure`;
+  // The subtitle is only the plotted range ("June 2000 to June 2026"); the
+  // edition is in the caption's source line, and which view is on is the
+  // sidebar's business (Jason, 2026-09-30).
   const drawnSections = [];
 
   for (const g of GROUPS) {
@@ -429,7 +427,7 @@ function renderCharts() {
 
       if (style === 'bars' && chart.district) {
         const card = buildBarCard($cards, { chart, source });
-        card.render(points, { keep: districts, subtitle, monthFrom, monthTo, lineOrder: ui.districts });
+        card.render(points, { keep: districts, monthFrom, monthTo, lineOrder: ui.districts });
         ui.cards.set(chart.id, { card: card.card, setOpenPanels: () => {} });
         continue;
       }
@@ -448,7 +446,8 @@ function renderCharts() {
         description: chartDescription(chart, sel),
       });
       card.render(input.records, input.seriesMeta, {
-        subtitle,
+        // Semi-annual measures name the month; annual ones only the year.
+        rangeSubtitle: chart.family ? 'month' : 'year',
         dashedIds: input.dashedIds,
         monthFrom,
         monthTo,
@@ -495,8 +494,7 @@ function buildBarCard(container, { chart, source }) {
     <p class="chart-sub" data-role="sub"></p>
     <div data-role="plot" style="min-height:240px"></div>
     <div data-role="empty" class="text-xs text-neutral-500 mt-2" hidden>No data for this selection.</div>
-    <div class="chart-caption">
-      <span class="chart-caption-left" data-role="caption-left"></span>
+    <div class="chart-caption chart-caption-sourced">
       <span class="chart-source" data-role="source"></span>
     </div>
     <div class="chart-actions">
@@ -509,18 +507,20 @@ function buildBarCard(container, { chart, source }) {
   const $empty = card.querySelector('[data-role="empty"]');
   const $png = card.querySelector('[data-role="dl-png"]');
   const $source = card.querySelector('[data-role="source"]');
-  const $capLeft = card.querySelector('[data-role="caption-left"]');
   const $caption = card.querySelector('.chart-caption');
   const fmtV = indicatorFmt(chart.units);
 
-  // Source bottom-right, company name bottom-left — same as the line cards.
-  function applyFirm(name = getFirm()) {
-    $capLeft.textContent = name || '';
-    $source.textContent = `Source: ${source}`;
-    $caption.hidden = false;
-  }
-  applyFirm();
-  onFirmChange(applyFirm);
+  // Source alone, bottom-right, no company name — same as the line cards
+  // (signed: false). 10 pt in the exported image: the card is scaled to fit
+  // the 1950 × 1050 frame, so the CSS size is 10 pt at 300 DPI over that scale.
+  $source.textContent = `Source: ${source}`;
+  const fitCaptionForExport = (h) => {
+    if (h == null) { $caption.style.removeProperty('font-size'); return; }
+    for (let i = 0; i < 2; i++) {
+      const scale = Math.min(EXPORT_W / card.offsetWidth, EXPORT_H / card.offsetHeight);
+      $caption.style.setProperty('font-size', `${((10 / 72) * EXPORT_DPI / scale).toFixed(2)}px`, 'important');
+    }
+  };
 
   const MAX_PERIODS = 10;
 
@@ -587,8 +587,15 @@ function buildBarCard(container, { chart, source }) {
     wrap.append(svg, legend);
     $plot.appendChild(wrap);
 
-    const range = periods.length > 1 ? `${periods[0]} to ${periods[periods.length - 1]}` : periods[0];
-    $sub.textContent = [range, opts.subtitle].filter(Boolean).join('; ');
+    // Spelled out like the line cards' subtitle: "June 2016 to December 2025",
+    // or "2016 to 2025" for annual measures.
+    const longLabel = (d) => {
+      const [y, m] = d.split('-');
+      if (!chart.family) return y;
+      return `${m === '06' ? 'June' : 'December'} ${y}`;
+    };
+    const first = longLabel(dates[0]), last = longLabel(dates[dates.length - 1]);
+    $sub.textContent = [first === last ? first : `${first} to ${last}`, opts.subtitle].filter(Boolean).join('; ');
     $png.onclick = () => downloadCardPng(card, `johnson_${chart.id}_bars_${new Date().toISOString().slice(0, 10)}.png`, {
       filter: (n) => !(n.classList && n.classList.contains('chart-actions')),
     }).catch(err => console.error('[johnson png]', err));
@@ -598,7 +605,7 @@ function buildBarCard(container, { chart, source }) {
   let exportH = null;
   function render(points, opts) { last = [points, opts]; draw(points, opts); }
   fitPlotWidth($plot, () => { if (last) draw(...last); });
-  setExportRedraw(card, (h) => { exportH = h; if (last) draw(...last); });
+  setExportRedraw(card, (h) => { exportH = h; if (last) draw(...last); fitCaptionForExport(h); });
   return { card, render };
 }
 

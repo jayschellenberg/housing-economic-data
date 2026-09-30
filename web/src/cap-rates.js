@@ -270,7 +270,6 @@ function renderCharts() {
 
   const { quarter, rows, monthFrom } = selection();
   const on = enabledTypes();
-  const subtitle = 'Colliers, CBRE, Cushman & Wakefield';
   const drawnSections = [];
 
   for (const type of typesPresent(rows)) {
@@ -296,8 +295,10 @@ function renderCharts() {
         sourceInCaption: true, signed: false, captionPt: 10,
         description: `Each brokerage's overall ${type.toLowerCase()} cap rate: the mean of the mid-points of every class it publishes for the type that quarter. ` + note(),
       });
+      // No subtitle: the range goes in the title ("… — March 2021 to June
+      // 2026") and the caption already names the brokerages (Jason, 2026-09-30).
       card.render(input.records, input.seriesMeta, {
-        subtitle, rangePrefix: true, monthFrom,
+        rangeInTitle: true, monthFrom,
         seriesColours: Object.fromEntries(input.seriesMeta.map(m => [m.id, FIRM_COLOURS[m.chartLabel]]).filter(([, c]) => c)),
       });
       card.setOpenPanels(open.get(id) || []);
