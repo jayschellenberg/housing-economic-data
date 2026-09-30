@@ -8,6 +8,7 @@ import {
 } from './lib/summary.js';
 import { restrictedColumns } from './lib/bundle.js';
 import { cycleLabel } from './connectPanel.js';
+import { kpiTile } from './kpiTile.js';
 
 const $ = (id) => document.getElementById(id);
 const MISSING = '**';   // the site's table convention for no value
@@ -16,16 +17,9 @@ const money = (n) => (n == null ? MISSING : `$${Number(n).toLocaleString('en-CA'
 const rate = (n) => (n == null ? MISSING : `$${Number(n).toFixed(2)}`);
 const sf = (n) => (n == null ? MISSING : `${Number(n).toLocaleString('en-CA', { maximumFractionDigits: 0 })} sf`);
 
+/** A headline number in Current Snapshot's KPI card style. */
 function tile(label, value, note) {
-  const li = document.createElement('li');
-  const v = document.createElement('span'); v.className = 'tile-value'; v.textContent = value;
-  const l = document.createElement('span'); l.className = 'tile-label'; l.textContent = label;
-  li.append(v, l);
-  if (note) {
-    const n = document.createElement('span'); n.className = 'tile-note'; n.textContent = note;
-    li.append(n);
-  }
-  return li;
+  return kpiTile({ tag: 'li', label, value, meta: [note] });
 }
 
 function row(cells) {
