@@ -28,12 +28,12 @@
           <a id="group-link-housing" href="./" data-group="housing"
              class="cmhc-group-link cmhc-group-link-active"
              title="Rental, housing, census and economic data">Housing &amp; Economic Data</a>
-          <a id="group-link-local" href="#indicators" data-group="local"
+          <a id="group-link-local" href="#johnson" data-group="local"
              class="cmhc-group-link"
-             title="Market Indicators and the Johnson Report">Local Data</a>
+             title="Johnson Report, Cap Rates, Cap Rates vs Interest">Local Data</a>
         </nav>
         <p id="group-tagline-housing" class="text-sm text-primary-100">Historical trends, comparison tables and charts spanning Canadian rental, construction, housing stock, affordability, census demographics and economic indicators — Manitoba, Saskatchewan, Alberta &amp; British Columbia in full detail (incl. municipalities); major centres elsewhere.</p>
-        <p id="group-tagline-local" class="text-sm text-primary-100" hidden>Market indicators with your own cap-rate overlay, and The Johnson Report's Winnipeg commercial vacancy, lease rates and sales — read from folders on your computer, never uploaded.</p>
+        <p id="group-tagline-local" class="text-sm text-primary-100" hidden>The Johnson Report's Winnipeg commercial vacancy, lease rates and sales, the firm's quarterly cap-rate compilation, and cap rates against Bank of Canada rates — read from folders on your computer, never uploaded.</p>
       </div>
       <!-- Signs every indicator chart's caption, and so every PNG exported from
            one (see firm.js). The only place it is set; saved per browser once
@@ -83,6 +83,10 @@
         class="cmhc-tab" data-tab="snapshot" aria-selected="false">
         Current Snapshot
       </button>
+      <button type="button" role="tab" id="tab-btn-indicators"
+        class="cmhc-tab" data-tab="indicators" aria-selected="false">
+        Market Indicators
+      </button>
       <button type="button" role="tab" id="tab-btn-agriculture"
         class="cmhc-tab" data-tab="agriculture" aria-selected="false">
         Agriculture
@@ -107,10 +111,6 @@
     <!-- Local Data group: tabs that read the viewer's own files. Shown in
          place of the housing bar while one of its tabs is active. -->
     <nav id="nav-local" class="bg-neutral-100 border-b border-neutral-200 px-4 flex gap-1" role="tablist" aria-label="Local Data views" hidden>
-      <button type="button" role="tab" id="tab-btn-indicators"
-        class="cmhc-tab" data-tab="indicators" aria-selected="false">
-        Market Indicators
-      </button>
       <button type="button" role="tab" id="tab-btn-johnson"
         class="cmhc-tab" data-tab="johnson" aria-selected="false">
         Johnson Report
@@ -118,6 +118,10 @@
       <button type="button" role="tab" id="tab-btn-caprates"
         class="cmhc-tab" data-tab="caprates" aria-selected="false">
         Cap Rates
+      </button>
+      <button type="button" role="tab" id="tab-btn-capvsint"
+        class="cmhc-tab" data-tab="capvsint" aria-selected="false">
+        Cap Rates vs Interest
       </button>
     </nav>
 
@@ -1135,6 +1139,47 @@
         <footer class="text-xs text-neutral-500 pt-4 border-t border-neutral-200">
           Source: Colliers, CBRE and Cushman &amp; Wakefield published quarterly cap-rate surveys, Winnipeg, as compiled in the firm's Cap Rate Tables workbook.
           Figures shown here are read from the viewer's own locally held copy and are not redistributed by this site.
+        </footer>
+      </main>
+    </div>
+
+    <!-- ============================================================
+         Cap Rates vs Interest tab — the Cap vs Interest chart (BoC rates
+         with cap-rate overlays), moved out of Market Indicators because
+         its cap-rate half is the viewer's local Cap Rates data. See
+         cap-vs-interest-tab.js / cap-vs-interest.js.
+         ============================================================ -->
+    <div id="tab-panel-capvsint" class="grid md:grid-cols-[320px_1fr] min-h-[calc(100vh-110px)]" role="tabpanel" aria-labelledby="tab-btn-capvsint" hidden>
+      <aside class="bg-white border-r border-neutral-200 p-4 space-y-4 overflow-y-auto" aria-label="Cap Rates vs Interest filters">
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Date range</h2>
+          <div class="flex items-center gap-2 text-sm">
+            <input id="cvi-month-from" type="month" class="w-32 border border-neutral-300 rounded px-2 py-1" min="1980-01" max="2100-12" />
+            <span>to</span>
+            <input id="cvi-month-to"   type="month" class="w-32 border border-neutral-300 rounded px-2 py-1" min="1980-01" max="2100-12" />
+          </div>
+          <p class="text-xs text-neutral-500 mt-1">Month &amp; year. "From" follows five years before "to" until you set it; leave "to" blank for the latest.</p>
+        </section>
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Cap-rate data</h2>
+          <p class="text-xs text-neutral-600">Overlays come from the same local folder the <strong>Cap Rates</strong> tab reads. Load it there once (Choose folder); the firm and overlay pickers are beside the chart.</p>
+        </section>
+        <section class="pt-2 border-t border-neutral-200 space-y-2">
+          <button id="cvi-download-docx-charts" type="button"
+            class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+            Download Word (chart)
+          </button>
+          <button id="cvi-download-xlsx-charts" type="button"
+            class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+            Download Excel (chart)
+          </button>
+          <p class="text-xs text-neutral-500">The chart as an image; Download PNG is on the card itself.</p>
+        </section>
+      </aside>
+      <main class="p-4 space-y-4 overflow-x-hidden">
+        <section id="cvi-grid" class="space-y-6"></section>
+        <footer class="text-xs text-neutral-500 pt-4 border-t border-neutral-200">
+          Rates: Bank of Canada Valet (overnight target, 5- and 10-year Government of Canada benchmark yields). Cap rates: Colliers, CBRE and Cushman &amp; Wakefield published quarterly surveys, Winnipeg, read from the viewer's own locally held copy and not redistributed by this site.
         </footer>
       </main>
     </div>

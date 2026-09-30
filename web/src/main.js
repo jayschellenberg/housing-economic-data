@@ -24,6 +24,7 @@ import { initRtb } from './rtb.js';
 import { initAgriculture } from './agriculture.js';
 import { initJohnson } from './johnson.js';
 import { initCapRates } from './cap-rates.js';
+import { initCapVsInterestTab } from './cap-vs-interest-tab.js';
 import { wireChartDocExports } from './doc-image-export.js';
 import { getFirm, setFirm, onFirmChange } from './firm.js';
 
@@ -125,12 +126,13 @@ function setupTabs(initial, onActivate) {
     rtb:        { btn: document.getElementById('tab-btn-rtb'),        panel: document.getElementById('tab-panel-rtb') },
     johnson:    { btn: document.getElementById('tab-btn-johnson'),    panel: document.getElementById('tab-panel-johnson') },
     caprates:   { btn: document.getElementById('tab-btn-caprates'),   panel: document.getElementById('tab-panel-caprates') },
+    capvsint:   { btn: document.getElementById('tab-btn-capvsint'),   panel: document.getElementById('tab-panel-capvsint') },
   };
 
   // Which top-level group each tab belongs to. The header shows one group
   // link as active and one tab bar (#nav-housing / #nav-local) at a time;
   // everything not listed here is Housing & Economic Data.
-  const TAB_GROUP = { indicators: 'local', johnson: 'local', caprates: 'local' };
+  const TAB_GROUP = { johnson: 'local', caprates: 'local', capvsint: 'local' };
   const groupOf = (name) => TAB_GROUP[name] || 'housing';
 
   function showGroup(group) {
@@ -173,7 +175,7 @@ function setupTabs(initial, onActivate) {
   // housing link keeps its plain href="./" so it still resets the filters.
   document.getElementById('group-link-local')?.addEventListener('click', (e) => {
     e.preventDefault();
-    activate('indicators');
+    activate('johnson');
   });
   activate(initial);
 }
@@ -263,7 +265,7 @@ async function bootstrap() {
   // sidebar TOC work after a hard refresh.
   const rawHash = window.location.hash.replace('#', '');
   let initialTab = 'charts';
-  if (['charts', 'tables', 'compare', 'starts', 'secondary', 'housing', 'census', 'affordability', 'rtb', 'johnson', 'caprates', 'snapshot', 'indicators', 'economic'].includes(rawHash)) {
+  if (['charts', 'tables', 'compare', 'starts', 'secondary', 'housing', 'census', 'affordability', 'rtb', 'johnson', 'caprates', 'capvsint', 'snapshot', 'indicators', 'economic'].includes(rawHash)) {
     initialTab = rawHash;
   } else if (rawHash.startsWith('mi-section-')) {
     initialTab = 'indicators';
@@ -297,6 +299,7 @@ async function bootstrap() {
     agriculture:   once(() => initAgriculture().catch(err => console.error('[agriculture bootstrap]', err))),
     johnson:       once(() => initJohnson().catch(err => console.error('[johnson bootstrap]', err))),
     caprates:      once(() => initCapRates().catch(err => console.error('[cap-rates bootstrap]', err))),
+    capvsint:      once(() => initCapVsInterestTab().catch(err => console.error('[cap-vs-interest bootstrap]', err))),
   };
   // Trigger the initial tab's init (charts → no-op); wiring runs it on click too.
   setupTabs(initialTab, (name) => tabInit[name]?.());
@@ -341,6 +344,12 @@ async function bootstrap() {
     xlsxBtnId: 'census-download-xlsx-charts',
     baseName:  'CensusProfile',
     getNodes:  () => [...document.querySelectorAll('#census-chart-grid .chart-card')].filter(hasPlot),
+  });
+  wireChartDocExports({
+    docxBtnId: 'cvi-download-docx-charts',
+    xlsxBtnId: 'cvi-download-xlsx-charts',
+    baseName:  'CapRatesVsInterest',
+    getNodes:  () => [...document.querySelectorAll('#cvi-grid .chart-card')].filter(hasPlot),
   });
   wireChartDocExports({
     docxBtnId: 'cr-download-docx-charts',

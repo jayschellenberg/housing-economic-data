@@ -1,108 +1,70 @@
 import { describe, it, expect } from 'vitest';
 import {
-  parseCsvRows, parseCapDate, parseCapRateCsv, orderTypes, monthlyMean, capPublisher,
+  capSeriesFromRows, orderTypes, monthlyMean, capPublisher, ALL_FIRMS, DEFAULT_FIRM, KNOWN_TYPES, DEFAULT_OFF_TYPES,
 } from '../src/cap-vs-interest.js';
 
-// A cut-down slice of the Colliers extract, in the shape the real file uses:
-// MM-DD-YYYY dates, both "Multifamily" and "Multi-Family" spellings, several
-// rows per (type, date) that have to be averaged down to one point.
-const CSV = [
-  'Source,Market,Date,Quarter,MajorType,PropType,Subtype,Low,High',
-  'Colliers,Winnipeg,03-31-2010,1,Office,Downtown,Class A,7.25,7.75',
-  'Colliers,Winnipeg,03-31-2010,1,Office,Downtown,Class B,8.00,8.75',
-  'Colliers,Winnipeg,03-31-2010,1,Industrial,Multi-Tenant,Class B,7.75,8.25',
-  'Colliers,Winnipeg,12-31-2023,4,Multifamily,Apartment,High Rise,4.50,5.00',
-  'Colliers,Winnipeg,12-31-2023,4,Multi-Family,Apartment,Low Rise,5.00,5.50',
-].join('\n');
+// Rows in the shape cap_rates.json carries (mid as a fraction), for two
+// quarters, two firms and three types — Office with several classes so the
+// per-type mean is exercised.
+const row = (date, firm, type, subtype, mid) => ({ date, quarter: date.slice(0, 4), firm, type, subtype, low: mid - 0.005, high: mid + 0.005, mid });
+const ROWS = [
+  row('2026-03-31', 'Colliers', 'Office', 'Downtown Class A', 0.0725),
+  row('2026-03-31', 'Colliers', 'Office', 'Downtown Class B', 0.0775),
+  row('2026-03-31', 'Colliers', 'Office', 'Suburban Class B', 0.0775),
+  row('2026-03-31', 'CBRE',     'Office', 'Downtown Class A', 0.075),
+  row('2026-03-31', 'Colliers', 'Industrial', 'Class A', 0.065),
+  row('2026-06-30', 'Colliers', 'Industrial', 'Class A', 0.06),
+  row('2026-06-30', 'CBRE',     'Industrial', 'Class A', 0.0625),
+  row('2026-06-30', 'Colliers', 'Hotel', 'Focused Service', 0.08625),
+  { date: '2026-06-30', firm: 'Colliers', type: 'Retail', subtype: 'Regional Mall', mid: null },
+];
 
-describe('parseCsvRows', () => {
-  it('strips a UTF-8 BOM so the first header name is clean', () => {
-    const rows = parseCsvRows('﻿Source,Market\nColliers,Winnipeg\n');
-    expect(rows[0]).toEqual(['Source', 'Market']);
+describe('capSeriesFromRows', () => {
+  it('defaults to Colliers and averages that firm\'s classes per type and quarter, in percent', () => {
+    const { types } = capSeriesFromRows(ROWS);
+    // Office 2026-03-31: (7.25 + 7.75 + 7.75) / 3 = 7.5833…
+    expect(types.Office[0][0]).toBe('2026-03-31');
+    expect(types.Office[0][1]).toBeCloseTo(7.5833, 3);
+    expect(types.Industrial).toEqual([['2026-03-31', 6.5], ['2026-06-30', 6.0]]);
+    expect(Object.keys(types)).not.toContain('Retail');   // null mid dropped
   });
 
-  it('keeps commas and escaped quotes inside a quoted field', () => {
-    const rows = parseCsvRows('a,b\n"Colliers, Inc.","he said ""hi"""\n');
-    expect(rows[1]).toEqual(['Colliers, Inc.', 'he said "hi"']);
+  it('ignores other firms when one firm is chosen', () => {
+    const { types } = capSeriesFromRows(ROWS, 'CBRE');
+    expect(types.Office).toEqual([['2026-03-31', 7.5]]);
+    expect(types.Industrial).toEqual([['2026-06-30', 6.25]]);
+    expect(types.Hotel).toBeUndefined();
   });
 
-  it('handles CRLF endings and drops trailing blank lines', () => {
-    const rows = parseCsvRows('a,b\r\n1,2\r\n\r\n');
-    expect(rows).toEqual([['a', 'b'], ['1', '2']]);
-  });
-});
-
-describe('parseCapDate', () => {
-  it('reads the extract\'s MM-DD-YYYY', () => {
-    expect(parseCapDate('03-31-2010')).toBe('2010-03-31');
-    expect(parseCapDate('12-31-2023')).toBe('2023-12-31');
+  it('averages across every firm\'s classes for the all-firms option', () => {
+    const { types } = capSeriesFromRows(ROWS, ALL_FIRMS);
+    // Office: (7.25 + 7.75 + 7.75 + 7.5) / 4 = 7.5625
+    expect(types.Office[0][1]).toBeCloseTo(7.5625, 4);
+    // Industrial 2026-06-30: (6.0 + 6.25) / 2
+    expect(types.Industrial[1]).toEqual(['2026-06-30', 6.125]);
   });
 
-  it('also accepts ISO and slashes, so an Excel re-export still loads', () => {
-    expect(parseCapDate('2023-12-31')).toBe('2023-12-31');
-    expect(parseCapDate('3/31/2010')).toBe('2010-03-31');
-  });
-
-  it('rejects anything it cannot read rather than guessing', () => {
-    expect(parseCapDate('31-12-2023')).toBeNull();   // month 31 doesn't exist
-    expect(parseCapDate('Q1 2010')).toBeNull();
-    expect(parseCapDate('')).toBeNull();
-  });
-});
-
-describe('parseCapRateCsv', () => {
-  it('averages the Low-High mid-points within a type and date', () => {
-    const { types } = parseCapRateCsv(CSV);
-    // Office 2010-03-31: mid 7.50 and 8.375 → 7.9375
-    expect(types.Office[0]).toEqual(['2010-03-31', 7.9375]);
-    // Single row passes through: Industrial mid of 7.75/8.25
-    expect(types.Industrial[0]).toEqual(['2010-03-31', 8.0]);
-  });
-
-  it('folds "Multifamily" into "Multi-Family" before averaging', () => {
-    const { types } = parseCapRateCsv(CSV);
-    expect(Object.keys(types)).not.toContain('Multifamily');
-    // mids 4.75 and 5.25 → 5.00
-    expect(types['Multi-Family']).toEqual([['2023-12-31', 5.0]]);
-  });
-
-  it('reports the market, source and period it read', () => {
-    const { meta } = parseCapRateCsv(CSV);
-    expect(meta.markets).toEqual(['Winnipeg']);
-    expect(meta.sources).toEqual(['Colliers']);
-    expect(meta.firstDate).toBe('2010-03-31');
-    expect(meta.lastDate).toBe('2023-12-31');
-    expect(meta.rows).toBe(5);
-    expect(meta.skipped).toBe(0);
-  });
-
-  it('uses whichever of Low/High is present and counts unreadable rows', () => {
-    const csv = [
-      'Source,Market,Date,MajorType,Low,High',
-      'Colliers,Winnipeg,03-31-2010,Retail,6.00,',       // High blank → 6.00
-      'Colliers,Winnipeg,not-a-date,Retail,6.00,7.00',   // skipped
-      'Colliers,Winnipeg,03-31-2010,,6.00,7.00',         // no type → skipped
-    ].join('\n');
-    const { types, meta } = parseCapRateCsv(csv);
-    expect(types.Retail).toEqual([['2010-03-31', 6.0]]);
-    expect(meta.skipped).toBe(2);
-  });
-
-  it('names the columns it could not find', () => {
-    expect(() => parseCapRateCsv('Source,Market\nColliers,Winnipeg'))
-      .toThrow(/Date, MajorType, Low, High/);
-  });
-
-  it('refuses a file where nothing parsed', () => {
-    expect(() => parseCapRateCsv('Date,MajorType,Low,High\nxx,Office,aa,bb'))
-      .toThrow(/No rows had a readable/);
+  it('reports the span it covers and copes with no rows', () => {
+    expect(capSeriesFromRows(ROWS).firstDate).toBe('2026-03-31');
+    expect(capSeriesFromRows(ROWS).lastDate).toBe('2026-06-30');
+    expect(capSeriesFromRows([])).toEqual({ types: {}, firstDate: null, lastDate: null });
+    expect(capSeriesFromRows(null).types).toEqual({});
   });
 });
 
-describe('orderTypes', () => {
+describe('types and firms', () => {
   it('puts the known types in appraisal order and appends the rest', () => {
-    expect(orderTypes(['Retail', 'Land', 'Office', 'Multi-Family']))
-      .toEqual(['Multi-Family', 'Office', 'Retail', 'Land']);
+    expect(orderTypes(['Retail', 'Land', 'Self Storage', 'Office', 'Multi-Family']))
+      .toEqual(['Multi-Family', 'Office', 'Retail', 'Self Storage', 'Land']);
+  });
+  it('keeps hotel and self storage off by default and Colliers as the firm', () => {
+    expect([...DEFAULT_OFF_TYPES]).toEqual(['Hotel', 'Self Storage']);
+    expect(KNOWN_TYPES).toContain('Self Storage');
+    expect(DEFAULT_FIRM).toBe('Colliers');
+  });
+  it('credits the chosen firm, or all three for the average', () => {
+    expect(capPublisher('CBRE')).toBe('CBRE');
+    expect(capPublisher(ALL_FIRMS)).toMatch(/Colliers, CBRE & Cushman & Wakefield/);
   });
 });
 
@@ -129,22 +91,5 @@ describe('monthlyMean', () => {
       { date: '2026-01-02', value: null },
       { date: '2026-01-03', value: 2.0 },
     ])).toEqual([{ date: '2026-01-01', value: 2.0 }]);
-  });
-});
-
-describe('capPublisher', () => {
-  it('credits whoever the CSV says published the cap rates', () => {
-    expect(capPublisher(['Colliers'])).toBe('Colliers');
-    expect(capPublisher([' Colliers '])).toBe('Colliers');
-  });
-
-  it('joins several publishers rather than picking one', () => {
-    expect(capPublisher(['Colliers', 'CBRE'])).toBe('Colliers & CBRE');
-  });
-
-  it('falls back when the CSV carried no Source column', () => {
-    expect(capPublisher([])).toBe('a locally loaded file');
-    expect(capPublisher(undefined)).toBe('a locally loaded file');
-    expect(capPublisher(['', '  '])).toBe('a locally loaded file');
   });
 });
