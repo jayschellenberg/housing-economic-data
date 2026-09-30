@@ -334,7 +334,8 @@ function renderCharts() {
 }
 
 function note() {
-  return 'Rates are the brokerages\' published survey ranges, read from a file on your computer and not published with this site.';
+  return 'Rates are the brokerages’ published survey ranges, read from a file on your computer and not published with this site. ' +
+    'Quarters before the workbook’s first quarterly sheet come from its Summary sheet, whose retail and multi-family classes are grouped differently, so those class names change at the join.';
 }
 
 // --- Range (band) card -------------------------------------------------------

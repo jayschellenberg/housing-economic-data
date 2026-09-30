@@ -20,9 +20,13 @@ export const TYPE_ORDER = ['Industrial', 'Retail', 'Office', 'Multi-Family', 'Ho
 // Display order of classes within a type; anything unlisted follows, alphabetical.
 export const SUBTYPE_ORDER = {
   Industrial: ['Class A', 'Class B'],
-  Retail: ['Regional Mall', 'Power Centre', 'Community Centre', 'Strip (Anchored)', 'Strip (Non-Anchored)'],
+  // The workbook's Summary sheet (the 2010–2020 backfill) groups retail and
+  // multi-family differently from the quarterly sheets; those older class
+  // names follow the current ones.
+  Retail: ['Regional Mall', 'Power Centre', 'Community Centre', 'Strip (Anchored)', 'Strip (Non-Anchored)',
+           'Regional/Power Centre', 'Grocery/Community Centre', 'Neighbourhood Strip'],
   Office: ['Downtown Class A', 'Downtown Class B', 'Suburban Class A', 'Suburban Class B'],
-  'Multi-Family': ['High Rise', 'Low Rise (A)', 'Low Rise (B)'],
+  'Multi-Family': ['High Rise', 'Low Rise (A)', 'Low Rise (B)', 'Low Rise'],
   Hotel: ['Downtown Full Service', 'Focused Service', 'Suburban Limited Service'],
   'Self Storage': ['All'],
 };
