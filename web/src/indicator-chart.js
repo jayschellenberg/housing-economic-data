@@ -399,7 +399,11 @@ export function buildIndicatorCard(container, {
   //   zeroBased true              — Y axis starts at exactly 0 (see yDomainFor)
   //   mirrorY   false             — left-hand y axis only; no mirrored ticks
   //                                 on the right edge (Johnson Report cards)
-  refBand, refLine, table, zeroBased = false, mirrorY = true,
+  //   sourceInCaption true        — "Source: …" sits bottom-right in the
+  //                                 caption row instead of in the subtitle;
+  //                                 the company name moves to the caption's
+  //                                 left (Johnson Report cards)
+  refBand, refLine, table, zeroBased = false, mirrorY = true, sourceInCaption = false,
   // `sourceLabel` names the publisher — "Statistics Canada", "Bank of Canada
   // & Colliers Average Cap Rates (CR)". It is appended to the SUBTITLE, not
   // the caption: the caption carries the company name (firm.js), the way the
@@ -508,9 +512,16 @@ export function buildIndicatorCard(container, {
   // there is no name, not just the text: it carries a top border and padding
   // that would otherwise leave a stray rule under the chart.
   const $caption = card.querySelector('.chart-caption');
+  const sourceText = sourceLabel ? `Source: ${sourceLabel}` : '';
   function applyFirm(name = getFirm()) {
-    $source.textContent = name;
-    $caption.hidden = !name;
+    if (sourceInCaption) {
+      $capLeft.textContent = name || '';
+      $source.textContent = sourceText;
+      $caption.hidden = !name && !sourceText;
+    } else {
+      $source.textContent = name;
+      $caption.hidden = !name;
+    }
   }
   applyFirm();
   // Live, without rebuilding the card: the header box updates on every
@@ -521,7 +532,7 @@ export function buildIndicatorCard(container, {
 
   /** Subtitle for a card with nothing plotted — no date range to add. */
   const subtitleWithSource = (sub) =>
-    [sub || '', sourceLabel ? `Source: ${sourceLabel}` : ''].filter(Boolean).join(' • ');
+    [sub || '', sourceInCaption ? '' : sourceText].filter(Boolean).join(' • ');
   const stem = fileStem || `cmhc_${chartId}`;
   let lastFilename = `${stem}.png`;
 
@@ -533,7 +544,7 @@ export function buildIndicatorCard(container, {
     $stale.hidden = true;
     $stale.textContent = '';
     $latest.replaceChildren();
-    $capLeft.textContent = '';
+    if (!sourceInCaption) $capLeft.textContent = '';
     if ($table) {
       $table.replaceChildren();
       $tableNote.textContent = '';
@@ -755,7 +766,7 @@ export function buildIndicatorCard(container, {
     // "Aug-2021 to Aug-2026; Source: …" — instead of the default
     // "<subtitle> • 2021–2026".
     const baseSub = opts.subtitle || '';
-    const source = sourceLabel ? `Source: ${sourceLabel}` : '';
+    const source = sourceInCaption ? '' : sourceText;
     if (opts.rangePrefix) {
       const monthYear = (d) => `${MONTH_ABBR[d.getUTCMonth()]}-${d.getUTCFullYear()}`;
       const range = `${monthYear(xMin)} to ${monthYear(xMax)}`;
@@ -764,7 +775,7 @@ export function buildIndicatorCard(container, {
       const yearRange = `${xMin.getUTCFullYear()}–${xMax.getUTCFullYear()}`;
       $sub.textContent = [baseSub, yearRange, source].filter(Boolean).join(' • ');
     }
-    $capLeft.textContent = '';
+    if (!sourceInCaption) $capLeft.textContent = '';
 
     // Latest-value row: one chip per series.
     const today = new Date();
