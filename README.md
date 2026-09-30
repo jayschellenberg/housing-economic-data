@@ -11,7 +11,8 @@ A multi-tab static website of Canadian housing & economic data, built for a comm
 The header carries two top-level groups, each with its own tab bar:
 **Housing & Economic Data** (the public CMHC / StatsCan tabs, and the landing
 view) and **Local Data** (Market Indicators, with its bring-your-own cap-rate
-CSV, and the Johnson Report, which reads a folder on the viewer's disk).
+CSV, and the Johnson Report and Cap Rates tabs, which read folders on the
+viewer's disk).
 `TAB_GROUP` in `web/src/main.js` says which tabs belong to Local Data; every
 other tab is Housing.
 
@@ -29,6 +30,7 @@ other tab is Housing.
 | Agriculture | Farm cash / farmland value / crop, livestock & supply-managed prices / input costs / farm structure (consolidation) + within-province CCS choropleth; sidebar checks any mix of MB/SK/AB/BC plus Canada (on by default; every chart follows) and sets the year range | catalog + `r/11`,`r/14`; `r/20`,`r/24` (run-once map) |
 | RTB (MB) | Manitoba rent-increase guideline history + CPI overlay | `r/19` |
 | Johnson Report | Winnipeg commercial vacancy, lease rates and sales summaries from The Johnson Report, read from a folder on the user's own disk (nothing published) | `Johnson-Report/ingest/parse_johnson.py` (separate project) |
+| Cap Rates | Winnipeg cap-rate ranges by property type and class (Colliers, CBRE, Cushman & Wakefield), quarterly, read from a folder on the user's own disk | `Cap-Rates/ingest/parse_cap_rates.py` (separate project) |
 | MB Economic Update | Auto narrative report (economy + HPI + outlook) — **parked, hidden from the nav** (see Parked features) | `r/15`, `r/16` |
 
 The Tables tab generates appraisal-ready comparison tables (vacancy / median rent by bedroom type, rent range, year built) with copy-to-clipboard (rich HTML for pasting into Word), Word (.docx), and Excel (.xlsx) export — this replaces the retired CMHC-VacancyMedianRents Shiny tool. It is **province-scoped** (pick a province — always the first row, default Manitoba — then the second–fourth areas are centres within it; no cross-province comparison), and each table has a grouped-bar chart card beside it (same chrome as the Rental Charts cards — title, subtitle, right-side legend, Download PNG). The **Compare Areas** tab is the multi-area counterpart to Rental Charts: it overlays several areas *within one province* as time-series lines for a fixed breakdown category (e.g. pre-1960 stock across MB centres), with a matching areas × years table beside each chart — one chart+table pair per metric (median rent, average rent, vacancy, avg rent change). The pipeline also pulls the Secondary Rental Market Survey (Srms — condo rental data) into `web/public/data/secondary.json`, replacing the retired "CMHC Rental Data Scrape" project. Both retired projects are archived under `$Projects in Progress\old projects maybe`.
@@ -96,6 +98,25 @@ catalog — which parsed table (`series` id from the Python catalog) feeds which
 chart, and how its rows / columns become lines and dates — and is the place to
 add a chart. **Download Excel (data)** writes one sheet per visible chart with
 the plotted values.
+
+### Cap Rates (local data only)
+
+The **Cap Rates** tab charts Winnipeg capitalization-rate ranges by property
+type (industrial, retail, office, multi-family, hotel, self storage) and class
+as published quarterly by Colliers, CBRE and Cushman & Wakefield. The firm's
+`Cap Rate Tables.xlsx` is parsed by `ingest/parse_cap_rates.py` in the
+separate `Cap-Rates` project into one tidy `cap_rates.json` (a row per
+quarter, firm, type and class with Low, High and mid-point) and published to
+`RRG Shared\Apps\CapRates`. The tab reads that folder through
+`web/src/cap-rates-store.js`, built on `local-folder-store.js` — the shared
+IndexedDB + File System Access plumbing for any tab that reads the viewer's
+own files.
+
+Per property type: average by class (mean of the firms' mid-points), one
+class by firm, that class's Low–High band, and the selected quarter's table in
+the workbook's own layout. The quarter picker sets the table's quarter and the
+end of the charts, so any past quarter is reproducible. `cap-rates-data.js`
+holds the pure series functions.
 
 ### Chart captions and the Company name
 
