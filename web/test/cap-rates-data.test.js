@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   quarterKey, quarterList, typesPresent, subtypesFor, firmsFor, rowsUpTo, averageByClass, byFirm,
   rangeSeries, quarterTable, toCardInput, AVERAGE, breakGaps, nextQuarterEnd, averageByFirm, defaultYearFrom,
-  splitOfficeByLocation, collapseClasses,
+  splitOfficeByLocation, collapseClasses, officeTotalsTable,
 } from '../src/cap-rates-data.js';
 
 const row = (quarter, firm, type, subtype, low, high) => ({
@@ -167,5 +167,27 @@ describe('collapseClasses', () => {
     expect(t.cells.CBRE['All classes']).toEqual({ low: 7, high: 8 });
     expect(t.cells.Colliers['All classes']).toEqual({ low: 7, high: 8.25 });   // Class B only
     expect(t.average['All classes']).toEqual({ low: 7, high: 8.13 });
+  });
+});
+
+describe('officeTotalsTable', () => {
+  const rows = splitOfficeByLocation([
+    row('2026 Q2', 'Colliers', 'Office', 'Downtown Class A', 0.06, 0.07),
+    row('2026 Q2', 'Colliers', 'Office', 'Downtown Class B', 0.07, 0.08),
+    row('2026 Q2', 'Colliers', 'Office', 'Suburban Class B', 0.07, 0.0825),
+    row('2026 Q2', 'CBRE', 'Office', 'Suburban Class A', 0.0675, 0.0775),
+  ]);
+
+  it('puts the Downtown and Suburban all-class ranges side by side', () => {
+    const t = officeTotalsTable(rows, '2026 Q2');
+    expect(t.subtypes).toEqual(['Downtown', 'Suburban']);
+    expect(t.firms).toEqual(['Colliers', 'CBRE']);
+    expect(t.cells.Colliers).toEqual({ Downtown: { low: 6.5, high: 7.5 }, Suburban: { low: 7, high: 8.25 } });
+    expect(t.cells.CBRE).toEqual({ Suburban: { low: 6.75, high: 7.75 } });
+    expect(t.average.Downtown).toEqual({ low: 6.5, high: 7.5 });
+  });
+
+  it('is null for a quarter with no office figures', () => {
+    expect(officeTotalsTable(rows, '2025 Q1')).toBeNull();
   });
 });

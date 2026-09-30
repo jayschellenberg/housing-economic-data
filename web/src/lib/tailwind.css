@@ -392,6 +392,17 @@
   height: max-content !important;
 }
 
+/* While a card is captured, lay it out in the font the image is drawn in.
+   The export can't embed Inter (its stylesheet is cross-origin Google Fonts,
+   so png-export skips fonts) and draws with the system face instead — which
+   is narrower. Measured in Inter, a long title wrapped to two lines that the
+   image then drew on one, leaving a blank line's height between the title and
+   the chart. Same stack as --font-sans, minus Inter. */
+.cmhc-exporting,
+.cmhc-exporting * {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+}
+
 /* The fixed-size PNG export (png-export.js) sets the plot's height itself to
    fill a 1950 × 1050 frame; the on-screen floor would fight it. */
 .cmhc-exporting [data-role="plot"] {
