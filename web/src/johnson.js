@@ -30,6 +30,7 @@ import { escapeHtml } from './escape.js';
 import { getFirm, onFirmChange } from './firm.js';
 import { indicatorFmt } from './format.js';
 import { getPref, setPref } from './prefs.js';
+import { buildJumpBar } from './jump-bar.js';
 import {
   CHARTS, GROUPS, AGGREGATE_LABELS, chartPoints, toCardInput, allDistricts, sourceLabel,
   editionLabel, sortEditions, lineLabels,
@@ -405,6 +406,7 @@ function renderCharts() {
   const subtitle = sel.view === 'edition'
     ? `As published in the ${editionLabel(edition)} edition`
     : `All editions to ${editionLabel(edition)}, latest revision of each figure`;
+  const drawnSections = [];
 
   for (const g of GROUPS) {
     if (!groupsOn.has(g.id)) continue;
@@ -450,8 +452,9 @@ function renderCharts() {
       ui.cards.set(chart.id, { card: card.card, setOpenPanels: card.setOpenPanels });
     }
 
-    if (drawn) $grid.appendChild(section);
+    if (drawn) { $grid.appendChild(section); drawnSections.push({ id: section.id, label: g.label }); }
   }
+  if (drawnSections.length > 1) $grid.prepend(buildJumpBar(drawnSections));
 
   if (!$grid.childElementCount) {
     const p = document.createElement('p');
