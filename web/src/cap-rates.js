@@ -290,7 +290,7 @@ function renderCharts() {
       const id = `caprate_${slug(type)}_firms`;
       const input = toCardInput(id, averageByFirm(rows, type), { lineOrder: FIRM_ORDER });
       const card = buildIndicatorCard($cards, {
-        chartId: id, fileStem: id, title: `Winnipeg ${type} Cap Rates`, sourceLabel: SOURCE, table: true,
+        chartId: id, fileStem: id, title: `Winnipeg ${type} Cap Rates`, sourceLabel: SOURCE, table: true, zeroBased: true,
         description: `Each brokerage's overall ${type.toLowerCase()} cap rate: the mean of the mid-points of every class it publishes for the type that quarter. ` + note(),
       });
       card.render(input.records, input.seriesMeta, {

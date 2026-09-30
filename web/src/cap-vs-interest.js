@@ -395,6 +395,7 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid' }
         ? `Bank of Canada & ${capPublisher($firm.value)} Average Cap Rates (CR)`
         : 'Bank of Canada',
       table: true,
+      zeroBased: true,
       description:
         'The BoC overnight target with the 5- and 10-year Government of Canada yields — the ' +
         'benchmarks a cap rate is built off — and, when the Cap Rates folder is loaded, the average ' +
