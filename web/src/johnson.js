@@ -83,6 +83,9 @@ export async function initJohnson() {
     $jump: document.getElementById('jr-jump-list'),
     $xlsx: document.getElementById('jr-download-xlsx'),
     $empty: document.getElementById('jr-empty'),
+    // One "About these charts" note at the foot of the page, in place of a
+    // "What does this mean?" on every card (Jason, 2026-09-30).
+    $about: document.getElementById('jr-about'),
     editions: [],
     districts: [],
     cards: new Map(),      // chart id → { card, render, setOpenPanels, kind }
@@ -391,9 +394,11 @@ function renderCharts() {
 
   if (!ui.editions.length) {
     ui.$empty.hidden = false;
+    ui.$about.hidden = true;
     return;
   }
   ui.$empty.hidden = true;
+  ui.$about.hidden = false;
 
   const sel = currentSelection();
   const source = sourceLabel(ui.editions, sel);
@@ -443,7 +448,6 @@ function renderCharts() {
         // "Source: Johnson Report, <edition>" alone, bottom-right, 10 pt in
         // print; no company name on subscriber figures (as on Cap Rates).
         sourceInCaption: true, signed: false, captionPt: 10,
-        description: chartDescription(chart, sel),
       });
       card.render(input.records, input.seriesMeta, {
         // Semi-annual measures name the month; annual ones only the year.
@@ -466,17 +470,6 @@ function renderCharts() {
     p.textContent = 'Nothing to draw for this edition, view and section selection.';
     $grid.appendChild(p);
   }
-}
-
-function chartDescription(chart, sel) {
-  const base = 'Winnipeg, from the summary tables of The Johnson Report (Wayne K. Johnson, CPA). ';
-  const view = sel.view === 'edition'
-    ? 'This is the table exactly as that edition printed it, including its own look-back, so it is a snapshot in time. '
-    : 'Every edition up to the selected one is merged; where editions overlap, the later edition\'s figure is used, so revisions replace the earlier print. June and December readings interleave into one line. ';
-  const fam = chart.family
-    ? 'Vacancy is surveyed each June and December. '
-    : 'Reported once a year, in the December edition. ';
-  return base + view + fam + 'The data is read from a folder on your computer and is not published with this site.';
 }
 
 // --- Grouped-bar card ----------------------------------------------------------
