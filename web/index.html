@@ -995,7 +995,7 @@
               <button id="jr-clear" type="button" class="underline text-neutral-600" hidden>Remove loaded data</button>
             </div>
           </div>
-          <p class="text-xs text-neutral-500 mt-2">Pick the firm's <code>RRG Shared\Apps\JohnsonReport</code> folder (or a <code>web-data</code> folder written by <code>parse_johnson.py</code>). Read locally, never uploaded.</p>
+          <p class="text-xs text-neutral-500 mt-2">Pick the firm's <code>SharedInfo\Apps\JohnsonReport</code> folder (or a <code>web-data</code> folder written by <code>parse_johnson.py</code>). Read locally, never uploaded.</p>
         </section>
 
         <section>
@@ -1067,7 +1067,7 @@
       <main class="p-4 space-y-4 overflow-x-hidden">
         <p id="jr-empty" class="text-sm text-neutral-600 max-w-2xl">
           No Johnson Report data is loaded. The Johnson Report is subscriber material, so this site publishes none of it:
-          choose the firm's <code>RRG Shared\Apps\JohnsonReport</code> folder (published by <code>ingest/run.bat</code> in the
+          choose the firm's <code>SharedInfo\Apps\JohnsonReport</code> folder (published by <code>ingest/run.bat</code> in the
           Johnson-Report project). The charts render from that folder in this browser only.
         </p>
         <section id="jr-chart-grid" class="space-y-6"></section>
@@ -1082,7 +1082,7 @@
          Cap Rates tab — Winnipeg cap-rate ranges by property type from
          the firm's Cap Rate Tables workbook (Colliers, CBRE, Cushman &
          Wakefield). NO DATA SHIPS WITH THE SITE: the user picks the
-         RRG Shared\Apps\CapRates folder; see cap-rates.js.
+         SharedInfo\Apps\CapRates folder; see cap-rates.js.
          ============================================================ -->
     <div id="tab-panel-caprates" class="grid md:grid-cols-[320px_1fr] min-h-[calc(100vh-110px)]" role="tabpanel" aria-labelledby="tab-btn-caprates" hidden>
       <aside class="bg-white border-r border-neutral-200 p-4 space-y-4 overflow-y-auto" aria-label="Cap Rates filters">
@@ -1102,7 +1102,7 @@
               <button id="cr-clear" type="button" class="underline text-neutral-600" hidden>Remove loaded data</button>
             </div>
           </div>
-          <p class="text-xs text-neutral-500 mt-2">Pick the firm's <code>RRG Shared\Apps\CapRates</code> folder. Read locally, never uploaded.</p>
+          <p class="text-xs text-neutral-500 mt-2">Pick the firm's <code>SharedInfo\Apps\CapRates</code> folder. Read locally, never uploaded.</p>
         </section>
 
         <section>
@@ -1143,7 +1143,7 @@
 
       <main class="p-4 space-y-4 overflow-x-hidden">
         <p id="cr-empty" class="text-sm text-neutral-600 max-w-2xl">
-          No cap-rate data is loaded. This site publishes none of it: choose the firm's <code>RRG Shared\Apps\CapRates</code>
+          No cap-rate data is loaded. This site publishes none of it: choose the firm's <code>SharedInfo\Apps\CapRates</code>
           folder (published by <code>ingest\run.bat</code> in the Cap-Rates project). The charts render from that folder in this browser only.
         </p>
         <section id="cr-chart-grid" class="space-y-6"></section>
@@ -1202,7 +1202,7 @@
          in a same-origin frame. Same origin is what lets the folder picker
          and IndexedDB work inside the frame. The frame's src is set on first
          activation (main.js) so the map stack is not fetched until asked.
-         Both read the viewer's RRG Shared\Apps folders; nothing ships.
+         Both read the viewer's SharedInfo\Apps folders; nothing ships.
          ============================================================ -->
     <div id="tab-panel-rental" class="cmhc-subapp-panel" role="tabpanel" aria-labelledby="tab-btn-rental" hidden>
       <iframe id="subapp-rental" class="cmhc-subapp-frame" title="Manitoba Rental Explorer" data-src="./rental/"

@@ -10,7 +10,7 @@ import path from 'node:path';
 import { FILES, parseBundle } from '../src/lib/bundle.js';
 
 const DIR = process.env.RENTAL_EXPORT_DIR
-  || 'D:\\Dropbox\\RRG Shared\\Apps\\RentalDashboard\\export';
+  || 'D:\\Dropbox\\SharedInfo\\Apps\\RentalDashboard\\export';
 
 const present = existsSync(path.join(DIR, FILES.manifest));
 

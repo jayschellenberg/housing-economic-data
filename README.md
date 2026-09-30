@@ -28,8 +28,8 @@ other tab is Housing.
 | Affordability | Royal-LePage-style affordability factor + choropleth map | `r/16`, `r/18`, census, `r/20` |
 | Current Snapshot / Market Indicators | BoC / StatsCan / OSB economic indicators, incl. CPI inflation (headline, core, shelter, annual average), (Cap vs Interest moved to its own Local Data tab) | `r/10`,`r/11`,`r/13`,`r/14`,`r/17` |
 | Cap Rates vs Interest | The Cap vs Interest chart — BoC overnight target and GoC yields with Winnipeg cap-rate overlays from the Cap Rates tab's local data (Local Data group) | BoC shard + `Cap-Rates` project |
-| Rental Dashboard | The Manitoba Rental Explorer (weekly rental-listing scrape: filters, map, analysis, exports), reading `RRG Shared\Apps\RentalDashboard` — a same-origin sub-app in `web/rental/` shown in the tab (Local Data group) | `RentalDashboard` project |
-| Commercial Dashboard | The Commercial Availability Explorer (brokerage availability tracker: filters, map, summary, flyers), reading `RRG Shared\Apps\CommercialAvailability` — a same-origin sub-app in `web/commercial/` (Local Data group) | `Commercial-Availability` project |
+| Rental Dashboard | The Manitoba Rental Explorer (weekly rental-listing scrape: filters, map, analysis, exports), reading `SharedInfo\Apps\RentalDashboard` — a same-origin sub-app in `web/rental/` shown in the tab (Local Data group) | `RentalDashboard` project |
+| Commercial Dashboard | The Commercial Availability Explorer (brokerage availability tracker: filters, map, summary, flyers), reading `SharedInfo\Apps\CommercialAvailability` — a same-origin sub-app in `web/commercial/` (Local Data group) | `Commercial-Availability` project |
 | Agriculture | Farm cash / farmland value / crop, livestock & supply-managed prices / input costs / farm structure (consolidation) + within-province CCS choropleth; sidebar checks any mix of MB/SK/AB/BC plus Canada (on by default; every chart follows) and sets the year range | catalog + `r/11`,`r/14`; `r/20`,`r/24` (run-once map) |
 | RTB (MB) | Manitoba rent-increase guideline history + CPI overlay | `r/19` |
 | Johnson Report | Winnipeg commercial vacancy, lease rates and sales summaries from The Johnson Report, read from a folder on the user's own disk (nothing published) | `Johnson-Report/ingest/parse_johnson.py` (separate project) |
@@ -52,7 +52,7 @@ series and the quarterly cap rates share x-values.
 
 **No cap-rate data ships with the site.** The rate lines come from the committed BoC shard;
 the cap rates are the same local data the **Cap Rates** tab reads — `cap_rates.json` from the
-firm's `RRG Shared\Apps\CapRates` folder, held in this browser's IndexedDB by
+firm's `SharedInfo\Apps\CapRates` folder, held in this browser's IndexedDB by
 `cap-rates-store.js` — so picking that folder once on the Cap Rates tab serves both tabs and
 there is one cap-rate source to maintain. (The earlier separate Colliers CSV upload here is
 gone.) The section has a firm picker — Colliers by default, or CBRE, Cushman & Wakefield, or
@@ -74,7 +74,7 @@ README, copied from their source projects' `web/` folders) — built by the same
 Vite config (`build.rollupOptions.input`) and shown inside their Local Data
 tabs in an iframe. **Same origin** is the point: the folder picker and
 IndexedDB work inside the frame exactly as they did standalone, and the
-viewer connects the same `RRG Shared\Apps\RentalDashboard` /
+viewer connects the same `SharedInfo\Apps\RentalDashboard` /
 `CommercialAvailability` folders. The frame's `src` is set on the tab's first
 visit so the map stack (MapLibre + Protomaps + pmtiles, ~900 kB) is not
 fetched until asked.

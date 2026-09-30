@@ -187,7 +187,7 @@ export async function importFromFileList(fileList, { onProgress } = {}) {
   }
   const missing = REQUIRED.filter((n) => !byName.has(n));
   if (missing.length) {
-    throw new Error(`Not the RentalDashboard folder: ${missing.join(', ')} not found. Pick Dropbox → RRG Shared → Apps → RentalDashboard.`);
+    throw new Error(`Not the RentalDashboard folder: ${missing.join(', ')} not found. Pick Dropbox → SharedInfo → Apps → RentalDashboard.`);
   }
   return importFiles(REQUIRED.map((n) => [n, byName.get(n)]), { onProgress, force: true, hasHandle: false, layout: null, evidence: false });
 }
