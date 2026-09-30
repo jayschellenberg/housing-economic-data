@@ -17,6 +17,7 @@ import {
 import { policy } from './lib/summary.js';
 import { BAND_COLORS, BAND_ORDER } from './lib/bands.js';
 import { rateOf } from './lib/filters.js';
+import { kpiTile } from './kpiTile.js';
 
 const $ = (id) => document.getElementById(id);
 const MISSING = '**';   // the site's table convention for no value
@@ -90,12 +91,7 @@ export function initAnalysis({ getContext } = {}) {
         [changes.medianChangePct == null ? MISSING : `${changes.medianChangePct > 0 ? '+' : ''}${changes.medianChangePct.toFixed(1)}%`,
           'median change', `${fmtInt(changes.cuts)} down · ${fmtInt(changes.raises)} up`],
       ]) {
-        const li = document.createElement('li');
-        const v = document.createElement('span'); v.className = 'tile-value'; v.textContent = value;
-        const l = document.createElement('span'); l.className = 'tile-label'; l.textContent = label;
-        const n = document.createElement('span'); n.className = 'tile-note'; n.textContent = note || '';
-        li.append(v, l, n);
-        tiles.appendChild(li);
+        tiles.appendChild(kpiTile({ tag: 'li', label, value, meta: [note] }));
       }
     }
 

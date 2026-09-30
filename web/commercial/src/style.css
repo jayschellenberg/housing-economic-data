@@ -79,26 +79,6 @@ button.quiet { color: var(--ink-soft); }
 }
 .notice.restricted { font-size: 0.85rem; }
 
-.tiles {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 0.75rem;
-  list-style: none;
-  margin: 0 0 1.25rem;
-  padding: 0;
-}
-.tiles li {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 0.85rem 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-}
-.tile-value { font-size: 1.6rem; font-weight: 600; line-height: 1.1; }
-.tile-label { color: var(--ink-soft); font-size: 0.85rem; }
-.tile-note { color: var(--ink-soft); font-size: 0.78rem; }
 
 .two-up {
   display: grid;
@@ -296,3 +276,7 @@ td.suppressed { color: var(--ink-soft); font-style: italic; }
 }
 .snapshot-picks button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .flyer-dialog:has(.snapshot-picks:not([hidden])) .flyer-image-wrap { height: calc(100% - 6.2rem); }
+
+/* Spacing under the headline tiles (Current Snapshot's KPI cards). */
+#tiles { margin-bottom: 16px; }
+#an-tiles { margin-bottom: 10px; }

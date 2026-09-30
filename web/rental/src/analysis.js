@@ -15,6 +15,7 @@ import { bandStats, marketTable, trendSeries, histogram, sizePoints, otherStats,
 import { BAND_ORDER, BAND_COLORS, BAND_LABELS } from './lib/bands.js';
 import { tableWordHtml, tableWordText, tableCsv } from './lib/exports.js';
 import { copyRich, downloadBlob, stamp } from './exports.js';
+import { kpiTile } from './kpiTile.js';
 
 const MISSING = '**';   // the site's table convention for no value
 const fmtInt = (n) => (n == null ? MISSING : Math.round(n).toLocaleString('en-CA'));
@@ -83,27 +84,25 @@ export function initAnalysis({ getPolicy, getContext, setStatus } = {}) {
     const sel = bandStats(rows(), policy);
     const ref = bandStats(scope === 'all' ? data.filtered : data.all, policy);
     $kpis.textContent = '';
+    // Current Snapshot's KPI card: the band's median, its detail beneath, and
+    // the other scope as a neutral chip (a higher rent is neither good nor bad).
+    const other = scope === 'all' ? 'Selection' : 'Manitoba';
     for (const k of ['all', ...BAND_ORDER]) {
       const s = k === 'all' ? sel.all : sel.bands[k];
       const r = k === 'all' ? ref.all : ref.bands[k];
-      const tile = document.createElement('div');
-      tile.className = 'stat kpi';
-      tile.style.borderTopColor = SERIES_COLORS[k];
-      const label = document.createElement('div'); label.className = 'label';
-      label.textContent = `${BAND_LABELS[k]} · n=${fmtInt(s.n)}`;
-      const value = document.createElement('div'); value.className = 'value';
-      value.textContent = s.rent.median != null ? fmtMoney(s.rent.median) : 'suppressed';
-      const sub = document.createElement('div'); sub.className = 'sub';
-      sub.textContent = s.rent.median != null
-        ? `mean ${fmtMoney(s.rent.mean)} · ${fmtPsf(s.psf.median)}/sf (n=${fmtInt(s.psf.n)})`
-        : `fewer than ${policy.min_n_for_median ?? 5} in the display band`;
-      const cmp = document.createElement('div'); cmp.className = 'sub muted';
-      if (s.rent.median != null && r.rent.median != null) {
-        const d = ((s.rent.median - r.rent.median) / r.rent.median) * 100;
-        cmp.textContent = `${scope === 'all' ? 'selection' : 'Manitoba'} ${fmtMoney(r.rent.median)} (${fmtSignedPct(d)})`;
-      }
-      tile.append(label, value, sub, cmp);
-      $kpis.appendChild(tile);
+      const shown = s.rent.median != null;
+      const chips = shown && r.rent.median != null
+        ? [{ window: `vs ${other}`, text: `${fmtMoney(r.rent.median)} (${fmtSignedPct(((s.rent.median - r.rent.median) / r.rent.median) * 100)})` }]
+        : [];
+      $kpis.appendChild(kpiTile({
+        label: BAND_LABELS[k],
+        color: SERIES_COLORS[k],
+        value: shown ? fmtMoney(s.rent.median) : MISSING,
+        meta: shown
+          ? [`median rent · n=${fmtInt(s.n)}`, `mean ${fmtMoney(s.rent.mean)} · ${fmtPsf(s.psf.median)}/sf (n=${fmtInt(s.psf.n)})`]
+          : [`n=${fmtInt(s.n)} · fewer than ${policy.min_n_for_median ?? 5} in the display band`],
+        chips,
+      }));
     }
     $summary.textContent = `${scopeLabel()} — ${fmtInt(sel.nRows)} listings, ${fmtInt(sel.all.n)} with rent in the display band`;
   }
