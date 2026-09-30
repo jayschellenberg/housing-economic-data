@@ -785,10 +785,16 @@ export function buildIndicatorCard(container, {
     // the subtitle to whatever else the caller passes (none on Cap Rates,
     // whose brokerages the caption already names).
     $title.textContent = title;
+    const longMonthYear = (d) => d.toLocaleString('en-CA', { month: 'long', year: 'numeric', timeZone: 'UTC' });
     if (opts.rangeInTitle) {
-      const longMonthYear = (d) => d.toLocaleString('en-CA', { month: 'long', year: 'numeric', timeZone: 'UTC' });
       $title.textContent = `${title} — ${longMonthYear(xMin)} to ${longMonthYear(xMax)}`;
       $sub.textContent = [baseSub, source].filter(Boolean).join('; ');
+    } else if (opts.rangeSubtitle) {
+      // `rangeSubtitle` makes the range the whole subtitle, spelled out:
+      // 'month' → "June 2000 to June 2026", 'year' → "2016 to 2025"
+      // (Johnson Report; annual measures have no month to name).
+      const end = opts.rangeSubtitle === 'year' ? (d) => String(d.getUTCFullYear()) : longMonthYear;
+      $sub.textContent = [`${end(xMin)} to ${end(xMax)}`, baseSub, source].filter(Boolean).join('; ');
     } else if (opts.rangePrefix) {
       const monthYear = (d) => `${MONTH_ABBR[d.getUTCMonth()]}-${d.getUTCFullYear()}`;
       const range = `${monthYear(xMin)} to ${monthYear(xMax)}`;

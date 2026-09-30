@@ -193,9 +193,9 @@ describe('sidebar helpers', () => {
     expect(allDistricts(EDITIONS)).toEqual(['Central', 'St James', 'St Vital', 'Overall']);
   });
   it('labels the source by view', () => {
-    expect(sourceLabel(EDITIONS, { view: 'edition', editionId: '2025-12' })).toBe('Johnson Report, December 2025');
-    expect(sourceLabel(EDITIONS, { view: 'series', editionId: '2026-06' })).toBe('Johnson Report, June 2026');
-    expect(sourceLabel([], { view: 'series', editionId: null })).toBe('Johnson Report');
+    expect(sourceLabel(EDITIONS, { view: 'edition', editionId: '2025-12' })).toBe('The Johnson Report — December 2025');
+    expect(sourceLabel(EDITIONS, { view: 'series', editionId: '2026-06' })).toBe('The Johnson Report — June 2026');
+    expect(sourceLabel([], { view: 'series', editionId: null })).toBe('The Johnson Report');
   });
   it('title-cases column names', () => {
     expect(titleCase('POWER CENTRES')).toBe('Power Centres');
