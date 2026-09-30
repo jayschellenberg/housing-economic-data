@@ -15,7 +15,9 @@
  *   - the selected quarter's table, in the workbook's own layout.
  */
 
-export const TYPE_ORDER = ['Industrial', 'Retail', 'Office', 'Multi-Family', 'Hotel', 'Self Storage'];
+// Office is shown as two types on the Cap Rates tab (splitOfficeByLocation);
+// a plain "Office" row (no Downtown / Suburban in its class) still sorts here.
+export const TYPE_ORDER = ['Industrial', 'Retail', 'Downtown Office', 'Suburban Office', 'Office', 'Multi-Family', 'Hotel', 'Self Storage'];
 
 // Display order of classes within a type; anything unlisted follows, alphabetical.
 export const SUBTYPE_ORDER = {
@@ -26,12 +28,31 @@ export const SUBTYPE_ORDER = {
   Retail: ['Regional Mall', 'Power Centre', 'Community Centre', 'Strip (Anchored)', 'Strip (Non-Anchored)',
            'Regional/Power Centre', 'Grocery/Community Centre', 'Neighbourhood Strip'],
   Office: ['Downtown Class A', 'Downtown Class B', 'Suburban Class A', 'Suburban Class B'],
+  'Downtown Office': ['Class A', 'Class B'],
+  'Suburban Office': ['Class A', 'Class B'],
   'Multi-Family': ['High Rise', 'Low Rise (A)', 'Low Rise (B)', 'Low Rise'],
   Hotel: ['Downtown Full Service', 'Focused Service', 'Suburban Limited Service'],
   'Self Storage': ['All'],
 };
 
 export const FIRM_ORDER = ['Colliers', 'CBRE', 'Cushman & Wakefield'];
+
+/**
+ * The Cap Rates tab's view of the rows: Office becomes two property types,
+ * "Downtown Office" and "Suburban Office", each with Class A / Class B —
+ * so each gets its own chart and quarter table (Jason, 2026-09-30). The
+ * brokerages publish the two markets separately; averaging them into one
+ * "Office" figure mixed two different markets. Other types pass through.
+ * Cap vs Interest reads the stored rows itself and keeps its single Office
+ * overlay.
+ */
+export function splitOfficeByLocation(rows) {
+  return rows.map(r => {
+    if (r.type !== 'Office') return r;
+    const m = /^(Downtown|Suburban)\s+(.+)$/.exec(String(r.subtype || ''));
+    return m ? { ...r, type: `${m[1]} Office`, subtype: m[2] } : r;
+  });
+}
 export const AVERAGE = 'Average';
 
 const pct = (v) => (v == null ? null : Math.round(v * 10000) / 100);
@@ -173,6 +194,40 @@ export function quarterTable(rows, type, quarter) {
     average[s] = { low: lows.length ? Math.round(mean(lows) * 100) / 100 : null, high: highs.length ? Math.round(mean(highs) * 100) / 100 : null };
   }
   return { subtypes, firms, cells, average };
+}
+
+/**
+ * Types whose quarter table shows one range per brokerage — the average of
+ * the classes it published — instead of a column pair per class (Jason,
+ * 2026-09-30: Downtown and Suburban office as totals, not Class A / B).
+ */
+export const TOTAL_ONLY_TYPES = new Set(['Downtown Office', 'Suburban Office']);
+export const ALL_CLASSES = 'All classes';
+
+/**
+ * Collapse a quarterTable to one column pair: each brokerage's Low and High
+ * are the means of the Lows and Highs it published across the classes (only
+ * those it published — Colliers has no Suburban Class A), and the Average
+ * row is the mean of those brokerage figures. `classes` keeps the names
+ * that went in, for the subtitle.
+ */
+export function collapseClasses(table, label = ALL_CLASSES) {
+  const r2 = (v) => Math.round(v * 100) / 100;
+  const avg = (xs) => (xs.length ? r2(mean(xs)) : null);
+  const cells = {};
+  for (const f of table.firms) {
+    const got = table.subtypes.map(s => table.cells[f]?.[s]).filter(Boolean);
+    cells[f] = { [label]: {
+      low: avg(got.map(c => c.low).filter(v => v != null)),
+      high: avg(got.map(c => c.high).filter(v => v != null)),
+    } };
+  }
+  const col = (k) => table.firms.map(f => cells[f][label][k]).filter(v => v != null);
+  return {
+    subtypes: [label], firms: table.firms, cells,
+    average: { [label]: { low: avg(col('low')), high: avg(col('high')) } },
+    classes: table.subtypes,
+  };
 }
 
 /** The quarter-end date that follows an ISO date. */

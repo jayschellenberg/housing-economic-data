@@ -20,7 +20,8 @@ import { escapeHtml } from './escape.js';
 import { getPref, setPref } from './prefs.js';
 import { buildJumpBar } from './jump-bar.js';
 import {
-  TYPE_ORDER, FIRM_ORDER, quarterList, typesPresent, rowsUpTo,
+  TYPE_ORDER, FIRM_ORDER, quarterList, typesPresent, rowsUpTo, splitOfficeByLocation,
+  TOTAL_ONLY_TYPES, collapseClasses,
   averageByFirm, quarterTable, toCardInput, fmtRate, orderBy, defaultYearFrom,
 } from './cap-rates-data.js';
 import {
@@ -150,7 +151,10 @@ function noDataText() {
 }
 
 async function loadFromStore() {
-  ui.data = (await getData()) || null;
+  const data = (await getData()) || null;
+  // Downtown and Suburban Office as two types, each with its own chart and
+  // table (splitOfficeByLocation); the stored rows are left as they are.
+  ui.data = data ? { ...data, rows: splitOfficeByLocation(data.rows || []) } : null;
   ui.$clear.hidden = !ui.data;
   setStatus(ui.data ? summaryText(await getManifest()) : noDataText());
   renderAll();
@@ -211,7 +215,10 @@ function renderQuarterPicker() {
 
 function enabledTypes() {
   const saved = ui.prefs.types;
-  return new Set(Array.isArray(saved) ? saved : TYPE_ORDER);
+  const on = new Set(Array.isArray(saved) ? saved : TYPE_ORDER);
+  // A choice saved before Office was split: "Office" means both halves.
+  if (on.has('Office')) { on.add('Downtown Office'); on.add('Suburban Office'); }
+  return on;
 }
 
 function renderTypeToggles() {
@@ -307,7 +314,11 @@ function renderCharts() {
     // 2. The quarter's table
     {
       const id = `caprate_${slug(type)}_table`;
-      const card = buildTableCard($cards, { id, title: `Winnipeg ${type} Cap Rates — ${quarter}`, table: quarterTable(rows, type, quarter) });
+      const table = typeTable(rows, type, quarter);
+      const subtitle = table.classes
+        ? `Average of each brokerage's published ${table.classes.join(' / ')} range`
+        : 'Published Low–High range by brokerage';
+      const card = buildTableCard($cards, { id, title: `Winnipeg ${type} Cap Rates — ${quarter}`, subtitle, table });
       ui.cards.set(id, { card: card.card });
     }
     $grid.appendChild(section);
@@ -329,7 +340,14 @@ function note() {
 
 // --- Quarter table card ------------------------------------------------------
 
-function buildTableCard(container, { id, title, table }) {
+/** The quarter's table for a type: one range per brokerage for the
+ *  total-only types (Downtown / Suburban Office), else a pair per class. */
+function typeTable(rows, type, quarter) {
+  const t = quarterTable(rows, type, quarter);
+  return TOTAL_ONLY_TYPES.has(type) && t.subtypes.length ? collapseClasses(t) : t;
+}
+
+function buildTableCard(container, { id, title, subtitle, table }) {
   const card = document.createElement('section');
   card.className = 'chart-card cmhc-indicator-card';
   card.dataset.chartId = id;
@@ -343,7 +361,7 @@ function buildTableCard(container, { id, title, table }) {
   const avg = `<tr class="font-semibold"><td>Average</td>${subtypes.map(s => `<td>${fmtRate(average[s]?.low)}</td><td>${fmtRate(average[s]?.high)}</td>`).join('')}</tr>`;
   card.innerHTML = `
     <header class="chart-title">${escapeHtml(title)}</header>
-    <p class="chart-sub">Published Low–High range by brokerage</p>
+    <p class="chart-sub">${escapeHtml(subtitle)}</p>
     <div class="cmhc-chart-table-scroll" data-role="plot">
       <table class="cmhc-table cmhc-table-compact"><thead><tr><th rowspan="2">Source</th>${head1}</tr><tr>${head2}</tr></thead>
       <tbody>${body || '<tr><td colspan="99">No figures for this quarter.</td></tr>'}${body ? avg : ''}</tbody></table>
@@ -400,7 +418,7 @@ async function exportData() {
 
   for (const type of typesPresent(rows)) {
     if (!on.has(type)) continue;
-    const t = quarterTable(rows, type, quarter);
+    const t = typeTable(rows, type, quarter);
     const ws = wb.addWorksheet(`${type} ${quarter}`.slice(0, 31));
     ws.addRow([`Winnipeg ${type} Cap Rates — ${quarter}`]).font = { bold: true };
     ws.addRow([`Source: ${SOURCE}`]);

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   quarterKey, quarterList, typesPresent, subtypesFor, firmsFor, rowsUpTo, averageByClass, byFirm,
   rangeSeries, quarterTable, toCardInput, AVERAGE, breakGaps, nextQuarterEnd, averageByFirm, defaultYearFrom,
+  splitOfficeByLocation, collapseClasses,
 } from '../src/cap-rates-data.js';
 
 const row = (quarter, firm, type, subtype, low, high) => ({
@@ -121,5 +122,50 @@ describe('averageByFirm', () => {
   it('defaults the chart start to five years before the latest quarter', () => {
     expect(defaultYearFrom(['2021 Q4', '2026 Q2'])).toBe(2021);
     expect(defaultYearFrom([])).toBeNull();
+  });
+});
+
+describe('splitOfficeByLocation', () => {
+  const rows = [
+    row('2026 Q2', 'Colliers', 'Office', 'Downtown Class A', 0.07, 0.08),
+    row('2026 Q2', 'Colliers', 'Office', 'Suburban Class B', 0.075, 0.085),
+    row('2026 Q2', 'Colliers', 'Office', 'All', 0.07, 0.08),
+    row('2026 Q2', 'Colliers', 'Industrial', 'Class A', 0.06, 0.065),
+  ];
+
+  it('makes Downtown and Suburban Office their own types with Class A / B', () => {
+    const out = splitOfficeByLocation(rows);
+    expect(out.map(r => [r.type, r.subtype])).toEqual([
+      ['Downtown Office', 'Class A'], ['Suburban Office', 'Class B'], ['Office', 'All'], ['Industrial', 'Class A'],
+    ]);
+    expect(typesPresent(out)).toEqual(['Industrial', 'Downtown Office', 'Suburban Office', 'Office']);
+  });
+
+  it('gives each half its own quarter table', () => {
+    const t = quarterTable(splitOfficeByLocation(rows), 'Downtown Office', '2026 Q2');
+    expect(t.subtypes).toEqual(['Class A']);
+    expect(t.cells.Colliers['Class A']).toEqual({ low: 7, high: 8 });   // percent
+  });
+
+  it('leaves the stored rows untouched', () => {
+    splitOfficeByLocation(rows);
+    expect(rows[0].type).toBe('Office');
+  });
+});
+
+describe('collapseClasses', () => {
+  const rows = splitOfficeByLocation([
+    row('2026 Q2', 'Colliers', 'Office', 'Suburban Class B', 0.07, 0.0825),
+    row('2026 Q2', 'CBRE', 'Office', 'Suburban Class A', 0.0675, 0.0775),
+    row('2026 Q2', 'CBRE', 'Office', 'Suburban Class B', 0.0725, 0.0825),
+  ]);
+
+  it('gives each brokerage one range: the mean of the classes it published', () => {
+    const t = collapseClasses(quarterTable(rows, 'Suburban Office', '2026 Q2'));
+    expect(t.subtypes).toEqual(['All classes']);
+    expect(t.classes).toEqual(['Class A', 'Class B']);
+    expect(t.cells.CBRE['All classes']).toEqual({ low: 7, high: 8 });
+    expect(t.cells.Colliers['All classes']).toEqual({ low: 7, high: 8.25 });   // Class B only
+    expect(t.average['All classes']).toEqual({ low: 7, high: 8.13 });
   });
 });
