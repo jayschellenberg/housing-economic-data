@@ -26,7 +26,8 @@
   <div class="hs-shell">
     <aside class="hs-sidebar" aria-label="Data and filters">
       <!-- Data connection, laid out like the Data folder section on the
-           Cap Rates / Johnson Report tabs. -->
+           Cap Rates / Johnson Report tabs; import progress and the
+           "newer data" notice report here too. -->
       <section id="data-panel" class="hs-section">
         <h2 class="hs-section-title">Data folder</h2>
         <p id="data-status" class="hs-status">Not connected</p>
@@ -54,150 +55,189 @@
         </div>
 
         <input id="data-folder-input" type="file" webkitdirectory directory multiple hidden />
+        <p id="status-line" class="hs-status" role="status" aria-live="polite">Connect a folder to begin.</p>
+        <p id="data-update" class="notice" hidden></p>
       </section>
 
-      <!-- Filters: the controls used most stay in the open; the date window
-           and the toggles sit one click away under Additional filters. The
-           chips above the results grid name every filter that is set, so a
-           collapsed disclosure never narrows results silently. -->
-      <section id="filters" class="hs-section">
-        <div class="hs-section-head">
-          <h2 class="hs-section-title">Filters</h2>
-          <button id="f-clear" type="button" class="hs-link" disabled>Reset</button>
+      <!-- Analysis settings: shown while the Analysis view is open, as a tab's
+           own settings are on the site. The jump list scrolls to a section. -->
+      <section id="an-settings" class="hs-section" hidden>
+        <h2 class="hs-section-title">Analysis</h2>
+        <div class="field">
+          <label class="field-label" for="an-granularity">Period</label>
+          <select id="an-granularity">
+            <option value="month">Monthly</option>
+            <option value="quarter" selected>Quarterly</option>
+            <option value="year">Yearly</option>
+          </select>
         </div>
+        <div class="field">
+          <label class="field-label" for="an-geo">Group markets by</label>
+          <select id="an-geo">
+            <option value="municipality" selected>Municipality</option>
+            <option value="cluster">Cluster</option>
+            <option value="neighbourhood">Neighbourhood</option>
+            <option value="space_type">Space type</option>
+            <option value="brokerage">Brokerage</option>
+          </select>
+        </div>
+        <h2 class="hs-section-title hs-subhead">Sections</h2>
+        <ul class="hs-jump-list" aria-label="Jump to a section">
+          <li><button type="button" data-jump="an-summary-card">Summary</button></li>
+          <li><button type="button" data-jump="an-card-rate">Median asking rate</button></li>
+          <li><button type="button" data-jump="an-card-count">Listings on the market</button></li>
+          <li><button type="button" data-jump="an-card-dist">Distribution of asking rates</button></li>
+          <li><button type="button" data-jump="an-card-scatter">Rate against size</button></li>
+          <li><button type="button" data-jump="an-market-card">By market (table)</button></li>
+        </ul>
+      </section>
 
-        <fieldset class="field">
-          <legend class="field-label">Showing</legend>
-          <div class="checks">
-            <label class="inline"><input type="radio" name="f-market" value="current" checked /> On the market</label>
-            <label class="inline"><input type="radio" name="f-market" value="any" /> All records</label>
+      <!-- Filters, grouped into sections the way the site's tabs group their
+           settings. The chips above the results grid name every filter that
+           is set, so a collapsed disclosure never narrows results silently.
+           #filters wraps every section: the panel listens for changes on it. -->
+      <div id="filters" class="hs-stack">
+        <section class="hs-section">
+          <div class="hs-section-head">
+            <h2 class="hs-section-title">Listings</h2>
+            <button id="f-clear" type="button" class="hs-link" disabled>Reset all filters</button>
           </div>
-        </fieldset>
 
-        <div class="field">
-          <span class="field-label">Type</span>
-          <details class="multiselect" id="f-space">
-            <summary><span class="multiselect-label"></span></summary>
-            <div class="multiselect-menu"></div>
-          </details>
-        </div>
+          <fieldset class="field">
+            <legend class="field-label">Showing</legend>
+            <div class="checks">
+              <label class="inline"><input type="radio" name="f-market" value="current" checked /> On the market</label>
+              <label class="inline"><input type="radio" name="f-market" value="any" /> All records</label>
+            </div>
+          </fieldset>
 
-        <div class="field">
-          <span class="field-label">Sale / lease</span>
-          <details class="multiselect" id="f-listing">
-            <summary><span class="multiselect-label"></span></summary>
-            <div class="multiselect-menu"></div>
-          </details>
-        </div>
-
-        <div class="field">
-          <span class="field-label">Status</span>
-          <details class="multiselect" id="f-status">
-            <summary><span class="multiselect-label"></span></summary>
-            <div class="multiselect-menu"></div>
-          </details>
-        </div>
-
-        <div class="field">
-          <span class="field-label">Brokerage</span>
-          <details class="multiselect" id="f-brokerage">
-            <summary><span class="multiselect-label"></span></summary>
-            <div class="multiselect-menu"></div>
-          </details>
-        </div>
-
-        <div class="field">
-          <span class="field-label">Municipality</span>
-          <details class="multiselect" id="f-muni">
-            <summary><span class="multiselect-label"></span></summary>
-            <div class="multiselect-menu"></div>
-          </details>
-        </div>
-
-        <div class="field">
-          <span class="field-label">Cluster</span>
-          <details class="multiselect" id="f-cluster">
-            <summary><span class="multiselect-label"></span></summary>
-            <div class="multiselect-menu"></div>
-          </details>
-        </div>
-
-        <div class="field">
-          <span class="field-label">Neighbourhood</span>
-          <details class="multiselect" id="f-nbhd">
-            <summary><span class="multiselect-label"></span></summary>
-            <div class="multiselect-menu"></div>
-          </details>
-        </div>
-
-        <div class="field">
-          <span class="field-label">Size (sf)</span>
-          <div class="row2">
-            <input id="f-sf-lo" type="number" min="0" step="100" placeholder="Min sf" aria-label="Minimum size" />
-            <input id="f-sf-hi" type="number" min="0" step="100" placeholder="Max sf" aria-label="Maximum size" />
+          <div class="field">
+            <span class="field-label">Type</span>
+            <details class="multiselect" id="f-space">
+              <summary><span class="multiselect-label"></span></summary>
+              <div class="multiselect-menu"></div>
+            </details>
           </div>
-        </div>
 
-        <div class="field">
-          <span class="field-label">Rate ($/sf/yr)</span>
-          <div class="row2">
-            <input id="f-rate-lo" type="number" min="0" step="0.5" placeholder="Min $/sf" aria-label="Minimum rate" />
-            <input id="f-rate-hi" type="number" min="0" step="0.5" placeholder="Max $/sf" aria-label="Maximum rate" />
+          <div class="field">
+            <span class="field-label">Sale / lease</span>
+            <details class="multiselect" id="f-listing">
+              <summary><span class="multiselect-label"></span></summary>
+              <div class="multiselect-menu"></div>
+            </details>
           </div>
-        </div>
 
-        <div class="field">
-          <span class="field-label">Sale price</span>
-          <div class="row2">
-            <input id="f-price-lo" type="number" min="0" step="10000" placeholder="Min $" aria-label="Minimum price" />
-            <input id="f-price-hi" type="number" min="0" step="10000" placeholder="Max $" aria-label="Maximum price" />
+          <div class="field">
+            <span class="field-label">Status</span>
+            <details class="multiselect" id="f-status">
+              <summary><span class="multiselect-label"></span></summary>
+              <div class="multiselect-menu"></div>
+            </details>
           </div>
-        </div>
 
-        <div class="field">
-          <label class="field-label" for="f-text">Search</label>
-          <input id="f-text" type="search" placeholder="address, name, unit, roll" />
+          <div class="field">
+            <span class="field-label">Brokerage</span>
+            <details class="multiselect" id="f-brokerage">
+              <summary><span class="multiselect-label"></span></summary>
+              <div class="multiselect-menu"></div>
+            </details>
+          </div>
+
+          <label class="inline block"><input id="f-collapse" type="checkbox" /> One row per space</label>
+        </section>
+
+        <section class="hs-section">
+          <h2 class="hs-section-title">Location</h2>
+          <div class="field">
+            <span class="field-label">Municipality</span>
+            <details class="multiselect" id="f-muni">
+              <summary><span class="multiselect-label"></span></summary>
+              <div class="multiselect-menu"></div>
+            </details>
+          </div>
+
+          <div class="field">
+            <span class="field-label">Cluster</span>
+            <details class="multiselect" id="f-cluster">
+              <summary><span class="multiselect-label"></span></summary>
+              <div class="multiselect-menu"></div>
+            </details>
+          </div>
+
+          <div class="field">
+            <span class="field-label">Neighbourhood</span>
+            <details class="multiselect" id="f-nbhd">
+              <summary><span class="multiselect-label"></span></summary>
+              <div class="multiselect-menu"></div>
+            </details>
+          </div>
+        </section>
+
+        <section class="hs-section">
+          <h2 class="hs-section-title">Size &amp; price</h2>
+          <div class="field">
+            <span class="field-label">Size (sf)</span>
+            <div class="row2">
+              <input id="f-sf-lo" type="number" min="0" step="100" placeholder="Min sf" aria-label="Minimum size" />
+              <input id="f-sf-hi" type="number" min="0" step="100" placeholder="Max sf" aria-label="Maximum size" />
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="field-label">Rate ($/sf/yr)</span>
+            <div class="row2">
+              <input id="f-rate-lo" type="number" min="0" step="0.5" placeholder="Min $/sf" aria-label="Minimum rate" />
+              <input id="f-rate-hi" type="number" min="0" step="0.5" placeholder="Max $/sf" aria-label="Maximum rate" />
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="field-label">Sale price</span>
+            <div class="row2">
+              <input id="f-price-lo" type="number" min="0" step="10000" placeholder="Min $" aria-label="Minimum price" />
+              <input id="f-price-hi" type="number" min="0" step="10000" placeholder="Max $" aria-label="Maximum price" />
+            </div>
+          </div>
+        </section>
+
+        <section class="hs-section">
+          <h2 class="hs-section-title"><label for="f-text">Search</label></h2>
+          <input id="f-text" class="field-input" type="search" placeholder="address, name, unit, roll" />
           <div class="checks" role="radiogroup" aria-label="Search in">
             <label class="inline"><input type="radio" name="f-text-scope" value="address" checked /> Address</label>
             <label class="inline"><input type="radio" name="f-text-scope" value="notes" /> Notes</label>
             <label class="inline"><input type="radio" name="f-text-scope" value="all" /> Everything</label>
           </div>
-        </div>
+        </section>
 
-        <label class="inline block"><input id="f-collapse" type="checkbox" /> One row per space</label>
-
-        <details class="more-filters">
-          <summary>Additional filters</summary>
-          <div class="field">
-            <span class="field-label">Seen between</span>
-            <div class="row2">
-              <input id="f-from" type="month" aria-label="From cycle" />
-              <input id="f-to" type="month" aria-label="To cycle" />
+        <section class="hs-section">
+          <details class="more-filters">
+            <summary>Additional filters</summary>
+            <div class="field">
+              <span class="field-label">Seen between</span>
+              <div class="row2">
+                <input id="f-from" type="month" aria-label="From cycle" />
+                <input id="f-to" type="month" aria-label="To cycle" />
+              </div>
             </div>
-          </div>
-          <label class="inline block"><input id="f-flyer" type="checkbox" /> Has a flyer</label>
-          <label class="inline block"><input id="f-mapped" type="checkbox" /> Mapped only</label>
-          <label class="inline block"><input id="f-plausible" type="checkbox" /> Plausible values only</label>
-          <!-- Shown only once a connected folder carries record_source: the
-               deployed page must not imply the licensed data exists. -->
-          <label class="inline block" id="f-brokerage-only-wrap" hidden><input id="f-brokerage-only" type="checkbox" /> Brokerage sources only</label>
-        </details>
-      </section>
+            <label class="inline block"><input id="f-flyer" type="checkbox" /> Has a flyer</label>
+            <label class="inline block"><input id="f-mapped" type="checkbox" /> Mapped only</label>
+            <label class="inline block"><input id="f-plausible" type="checkbox" /> Plausible values only</label>
+            <!-- Shown only once a connected folder carries record_source: the
+                 deployed page must not imply the licensed data exists. -->
+            <label class="inline block" id="f-brokerage-only-wrap" hidden><input id="f-brokerage-only" type="checkbox" /> Brokerage sources only</label>
+          </details>
+        </section>
+      </div>
 
       <section class="hs-section hs-section-rule">
         <button type="button" id="an-download-docx" class="hs-btn-primary">Download Word (charts)</button>
         <button type="button" id="an-download-xlsx" class="hs-btn-primary">Download Excel (charts)</button>
         <p class="hs-hint">The Analysis tab's charts as images — one per page / worksheet. The listings export from the buttons above the grid.</p>
-        <p id="build-id" class="hs-hint"></p>
       </section>
     </aside>
 
     <main class="hs-main">
-      <p id="status-line" class="status" role="status" aria-live="polite">Connect a folder to begin.</p>
-      <!-- Outside every tab: "newer data has been published" has to reach
-           whoever is looking, whichever view that is. -->
-      <p id="data-update" class="notice" hidden></p>
-
       <p id="empty-state" class="empty-state">
         No commercial availability data is loaded. This site publishes none of it: choose the shared folder in
         the sidebar (Choose folder). It is read in this browser only.
@@ -359,32 +399,14 @@
       <!-- The charts are the site's chart cards, built by analysis.js into
            #an-charts. -->
       <section id="analysis" class="tabpanel" role="tabpanel" aria-labelledby="tab-analysis" hidden>
-        <div class="card">
-          <div class="analysis-controls">
-            <label class="inline">Period
-              <select id="an-granularity">
-                <option value="month">Monthly</option>
-                <option value="quarter" selected>Quarterly</option>
-                <option value="year">Yearly</option>
-              </select>
-            </label>
-            <label class="inline">Group by
-              <select id="an-geo">
-                <option value="municipality" selected>Municipality</option>
-                <option value="cluster">Cluster</option>
-                <option value="neighbourhood">Neighbourhood</option>
-                <option value="space_type">Space type</option>
-                <option value="brokerage">Brokerage</option>
-              </select>
-            </label>
-          </div>
+        <div class="card" id="an-summary-card">
           <ul id="an-tiles" class="tiles"></ul>
           <p id="an-note" class="muted small"></p>
         </div>
 
         <div class="hs-chart-grid" id="an-charts"></div>
 
-        <div class="card">
+        <div class="card" id="an-market-card">
           <h2>By market</h2>
           <div class="table-scroll">
             <table id="an-market-table">
@@ -405,6 +427,14 @@
           <p class="muted small">Largest 25 markets. ** = no value.</p>
         </div>
       </section>
+      <footer class="hs-footer">
+        <p>
+          Source: the firm's commercial availability compilation, read from the viewer's own locally held copy
+          and not redistributed by this site. Any licensing terms for the connected data are shown on the Summary
+          view once a folder is connected.
+        </p>
+        <p id="build-id"></p>
+      </footer>
     </main>
   </div>
 

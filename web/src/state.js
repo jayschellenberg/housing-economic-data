@@ -76,6 +76,9 @@ export function decodeState(search) {
 
 export function syncURL(state) {
   const qs = encodeState(state);
-  const next = qs ? `?${qs}` : window.location.pathname;
+  // Keep the #tab fragment: this runs on load and on every Rental Charts
+  // change, and dropping the hash sent a #agriculture (or any tab) link back
+  // to Rental Charts' URL.
+  const next = (qs ? `?${qs}` : window.location.pathname) + window.location.hash;
   window.history.replaceState(null, '', next);
 }

@@ -42,6 +42,7 @@ window.addEventListener('storage', (e) => {
  * @param {Object} opts
  * @param {string} opts.title
  * @param {string} opts.fileStem   PNG filename stem
+ * @param {string} [opts.id]       element id (a jump-list target)
  * @param {number} [opts.height]   on-screen plot height
  * @returns {{ card: Element, render: Function }}
  *   render({ subtitle, source, legend, note, empty, spec }):
@@ -50,9 +51,10 @@ window.addEventListener('storage', (e) => {
  *     instead of `spec` when there is nothing to plot. `legend` is
  *     [{ label, color }], drawn under the plot as on the site's cards.
  */
-export function buildPlotCard(host, { title, fileStem, height = 280 }) {
+export function buildPlotCard(host, { title, fileStem, id, height = 280 }) {
   const card = document.createElement('section');
   card.className = 'chart-card';
+  if (id) card.id = id;
   card.innerHTML = `
     <header class="chart-title"></header>
     <p class="chart-sub" data-role="sub"></p>

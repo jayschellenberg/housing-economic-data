@@ -115,15 +115,55 @@ const analysis = initAnalysis({
     published: state.bundle ? dateLabel(state.bundle.manifest.generated_at) : null,
   }),
 });
+const VIEWS = ['listings', 'analysis'];
+let currentTab = 'listings';
+// Until a folder is connected there are no views: the main area shows only
+// the #empty-state line, as the Cap Rates / Johnson Report tabs do.
+let connected = false;
+
+/**
+ * The view is part of the link (#listings / #analysis). Inside the site's
+ * Local Data tab the parent page is told as well, so its address bar reads
+ * #rental/analysis and a copied link reopens this view.
+ */
+function reportView(name) {
+  try { history.replaceState(null, '', `#${name}`); } catch { /* ignore */ }
+  if (window.parent !== window) {
+    window.parent.postMessage({ type: 'hed:subview', app: 'rental', view: name }, window.location.origin);
+  }
+}
+
 function setTab(name) {
+  currentTab = name;
   for (const b of $tabs.querySelectorAll('[role="tab"]')) b.setAttribute('aria-selected', String(b.dataset.tab === name));
-  for (const p of document.querySelectorAll('.tabpanel')) p.hidden = p.id !== `tab-${name}`;
-  analysis.setVisible(name === 'analysis');
-  if (name === 'listings') setTimeout(() => mapView.resize(), 0);
+  for (const p of document.querySelectorAll('.tabpanel')) p.hidden = !connected || p.id !== `tab-${name}`;
+  $tabs.hidden = !connected;
+  $('empty-state').hidden = connected;
+  // The Analysis settings belong to that view, so they show only with it.
+  $('an-settings').hidden = !connected || name !== 'analysis';
+  analysis.setVisible(connected && name === 'analysis');
+  if (connected && name === 'listings') setTimeout(() => mapView.resize(), 0);
   try { localStorage.setItem(TAB_KEY, name); } catch { /* ignore */ }
+  reportView(name);
+}
+function setConnected(on) {
+  connected = Boolean(on);
+  setTab(currentTab);
 }
 $tabs.addEventListener('click', (e) => { const b = e.target.closest('[role="tab"]'); if (b) setTab(b.dataset.tab); });
-try { const t = localStorage.getItem(TAB_KEY); if (t === 'analysis') setTab(t); } catch { /* ignore */ }
+{
+  // A link's view wins over the one remembered in this browser.
+  const fromHash = window.location.hash.replace('#', '');
+  let remembered = null;
+  try { remembered = localStorage.getItem(TAB_KEY); } catch { /* ignore */ }
+  setTab(VIEWS.includes(fromHash) ? fromHash : VIEWS.includes(remembered) ? remembered : 'listings');
+}
+
+// Sidebar jump list (Analysis › Sections), as on the Cap Rates / Johnson tabs.
+document.querySelector('.hs-jump-list')?.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-jump]');
+  if (b) document.getElementById(b.dataset.jump)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
 
 function recompute({ fit = true } = {}) {
   if (!state.bundle || !state.filters) return;
@@ -194,6 +234,7 @@ initConnectPanel({
   setStatus,
   onBundle(bundle) {
     state.bundle = bundle;
+    setConnected(Boolean(bundle));
     if (!bundle) {
       $sourcesCard.hidden = true;
       table.clear();

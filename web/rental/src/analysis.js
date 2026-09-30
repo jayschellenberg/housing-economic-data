@@ -174,13 +174,14 @@ export function initAnalysis({ getPolicy, getContext, setStatus } = {}) {
   function ensureCards() {
     if (cards) return cards;
     const host = $('an-charts');
-    const make = (title, fileStem) => kit.buildPlotCard(host, { title, fileStem });
+    // `id` is what the sidebar jump list scrolls to.
+    const make = (key, title, fileStem) => kit.buildPlotCard(host, { id: `an-card-${key}`, title, fileStem });
     cards = {
-      rent: make('Median rent by bedroom count', 'rental_median_rent'),
-      psf: make('Median rent per square foot', 'rental_median_rent_psf'),
-      inv: make('Listings observed', 'rental_listings_observed'),
-      hist: make('Rent distribution', 'rental_rent_distribution'),
-      scatter: make('Rent by size', 'rental_rent_by_size'),
+      rent: make('rent', 'Median rent by bedroom count', 'rental_median_rent'),
+      psf: make('psf', 'Median rent per square foot', 'rental_median_rent_psf'),
+      inv: make('inv', 'Listings observed', 'rental_listings_observed'),
+      hist: make('hist', 'Rent distribution', 'rental_rent_distribution'),
+      scatter: make('scatter', 'Rent by size', 'rental_rent_by_size'),
     };
     return cards;
   }

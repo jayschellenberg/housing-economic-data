@@ -33,7 +33,7 @@ code { font-size: 0.92em; }
 
 /* ---- sidebar pieces (the shell itself is .hs-shell / .hs-sidebar) ---- */
 .hs-sidebar p { line-height: 1.45; }
-.hint { font-size: 12px; color: var(--ink-2); min-height: 1em; }
+.hint { font-size: 12px; color: var(--ink-2); margin: 0; }
 .notice { background: var(--warn-bg); color: var(--warn-ink); border-radius: 4px; padding: 6px 8px; font-size: 13px; }
 
 .kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; margin: 8px 0; font-size: 13px; }
@@ -70,7 +70,8 @@ th { color: var(--muted); font-weight: 500; }
 .status-partial, .status-error, .status-interrupted { color: var(--danger); font-weight: 600; }
 
 /* ---- filters --------------------------------------------------------- */
-.field { margin: 10px 0; display: flex; flex-direction: column; gap: 4px; }
+/* Spacing between fields comes from the sidebar section's gap. */
+.field { margin: 0; display: flex; flex-direction: column; gap: 4px; }
 .field-label { font-size: 12px; font-weight: 500; color: var(--ink-2); }
 .field > label, .field .row2 > label, .field .row3 > label { font-size: 12px; color: var(--ink-2); display: flex; flex-direction: column; gap: 2px; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
@@ -81,7 +82,7 @@ th { color: var(--muted); font-weight: 500; }
 }
 .checks { display: flex; flex-wrap: wrap; gap: 4px 12px; }
 .check { font-size: 13px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
-.check.block { display: flex; margin: 8px 0; }
+.check.block { display: flex; margin: 0; }
 .segmented { display: flex; flex-wrap: wrap; gap: 4px; }
 .seg-btn {
   font: inherit; font-size: 12px; padding: 4px 8px; border: 1px solid var(--line); background: #fff; color: var(--ink);
@@ -121,7 +122,6 @@ th { color: var(--muted); font-weight: 500; }
 .multiselect-empty { margin: 4px; color: var(--muted); font-size: 12px; }
 
 /* ---- results ---------------------------------------------------------- */
-.status-line { margin: 0; font-size: 13px; color: var(--ink-2); }
 .results-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
 .count-line { margin: 0; font-size: 14px; font-weight: 600; }
 .median-line { margin: 2px 0 0; font-size: 12px; color: var(--ink-2); white-space: pre-wrap; }
@@ -197,7 +197,8 @@ table.results tbody tr.is-selected:hover { background: #dfeaff; }
 
 /* ---- workspace tabs + analysis ------------------------------------------- */
 .tabpanel { display: flex; flex-direction: column; gap: 12px; }
-.analysis-head { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; margin-bottom: 10px; }
+#an-summary { margin: 0 0 10px; }
+.field > .pill { align-self: flex-start; }
 .stat.kpi { border-top: 3px solid var(--line); }
 .stat .sub { font-size: 12px; color: var(--ink-2); margin-top: 2px; }
 .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 14px; }
