@@ -84,7 +84,7 @@ export const CHARTS = [
     title: 'Office Headlease Vacancy by Class', units: 'percent', family: 'office_headlease',
     // Rows carry a group (Downtown / Suburban); the line label is "Downtown · Class A".
     groupLabel: true,
-    defaultRows: ['Downtown · Class A', 'Downtown · Class B', 'Downtown · Class C', 'Downtown · Total A,B,C', 'Suburban · Total Suburban', 'Total Inventory'] },
+    defaultRows: ['Downtown · Class A', 'Downtown · Class B', 'Downtown · Class C', 'Downtown · Total A,B,C', 'Total Suburban', 'Total Inventory'] },
   { id: 'office_sublease',  group: 'office', kind: 'period-rows', series: ['office_sublease_history'],
     title: 'Downtown Office Vacancy Including Subleases — Investment Class A–C', units: 'percent' },
   { id: 'office_dt_rate',   group: 'office', kind: 'records-cols', series: ['office_dt_vac_rate'],
@@ -220,9 +220,21 @@ function tableSeason(table, edition) {
 // A point is { line, date, value, edition } — chart-agnostic. `line` is the
 // legend label.
 
-function rowLabel(row, chart) {
-  if (chart.groupLabel && row.group) return `${row.group} · ${row.label}`;
-  return row.label;
+// The parser tags only the second block's rows with a group ("Suburban");
+// the first block's rows carry none — their group is the table's own row
+// heading (label_head "DOWNTOWN"). The grand total at the foot ("Total
+// Inventory", tagged with the last block) and a block's own total ("Downtown
+// Total", "Total Suburban") read as they are. Before this, Downtown rows came out as bare
+// "Class A" and the chart's default rows matched only Suburban's total, so
+// the headlease chart drew one line of the six it is meant to.
+function rowLabel(row, chart, table) {
+  if (!chart.groupLabel) return row.label;
+  if (AGGREGATE_LABELS.has(row.label)) return row.label;
+  const group = row.group || (table?.label_head ? titleCase(table.label_head) : '');
+  // A row that already names its group ("Downtown Total", "Total Suburban")
+  // needs no prefix (Jason, 2026-09-30: "Total Suburban").
+  if (!group || row.label.toLowerCase().includes(group.toLowerCase())) return row.label;
+  return `${group} · ${row.label}`;
 }
 
 function matrixRowsPoints(chart, table, edition) {
@@ -235,7 +247,7 @@ function matrixRowsPoints(chart, table, edition) {
     for (const row of table.rows) {
       const v = row.values[j];
       if (typeof v !== 'number') continue;
-      out.push({ line: rowLabel(row, chart), date, value: v, edition: edition.id });
+      out.push({ line: rowLabel(row, chart, table), date, value: v, edition: edition.id });
     }
   });
   return out;

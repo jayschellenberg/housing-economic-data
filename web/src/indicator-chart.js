@@ -766,8 +766,9 @@ export function buildIndicatorCard(container, {
     // its name goes at the front of the subtitle instead ("Dollar volume —
     // 2000 to 2025"; Johnson Report).
     const plottedLabels = new Set(points.map(p => p.label));
+    // A "Group · Row" label keeps only the row there ("Total Suburban").
     const singleLabel = opts.singleSeriesInSubtitle && plottedLabels.size === 1 && !refBand && !refLine
-      ? [...plottedLabels][0] : null;
+      ? String([...plottedLabels][0]).split(' · ').pop() : null;
 
     const wrap = document.createElement('div');
     wrap.className = 'cmhc-plot-wrap';
