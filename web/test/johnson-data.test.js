@@ -170,6 +170,17 @@ describe('toCardInput', () => {
     const { seriesMeta } = toCardInput(chart, agePts, { lineOrder: chart.lineOrder });
     expect(seriesMeta.map(s => s.chartLabel)).toEqual(['Pre 1970', '1970–1979', '1980–1989']);
   });
+  it('leads the apartment-sales legends with Pre 1946 and ends with All apartments', () => {
+    const want = ['Pre 1946', '1946–1959', '1960–1969', '1970+', 'All apartments'];
+    for (const id of ['apt_psf', 'apt_suite']) {
+      const chart = CHART_BY_ID[id];
+      expect(chart.lineOrder).toEqual(want);
+      const pts = ['1946–1959', '1960–1969', '1970+', 'All apartments', 'Pre 1946']
+        .map(line => ({ line, date: '2025-01-01', value: 1 }));
+      const { seriesMeta } = toCardInput(chart, pts, { lineOrder: chart.lineOrder });
+      expect(seriesMeta.map(s => s.chartLabel)).toEqual(want);
+    }
+  });
   it('marks semi-annual families monthly and annual charts annual', () => {
     expect(toCardInput(CHART_BY_ID.ind_vac_total, pts).seriesMeta[0].frequency).toBe('monthly');
     const rate = chartPoints(CHART_BY_ID.ind_rate, EDITIONS, { view: 'series', editionId: '2026-06' });

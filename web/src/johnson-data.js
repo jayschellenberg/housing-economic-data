@@ -139,10 +139,13 @@ export const CHARTS = [
   { id: 'apt_psf', group: 'apt', kind: 'records-col',
     series: ['apt_sales', 'apt_sales_pre1946', 'apt_sales_1946_1959', 'apt_sales_1960_1969', 'apt_sales_1970plus'],
     seriesLabels: { apt_sales: 'All apartments', apt_sales_pre1946: 'Pre 1946', apt_sales_1946_1959: '1946–1959', apt_sales_1960_1969: '1960–1969', apt_sales_1970plus: '1970+' },
+    // Oldest cohort first, the market-wide line last.
+    lineOrder: ['Pre 1946', '1946–1959', '1960–1969', '1970+', 'All apartments'],
     column: 'SF PRICE', title: 'Apartment Sales — Price per Sq Ft by Age Group', units: 'dollar_psf' },
   { id: 'apt_suite', group: 'apt', kind: 'records-col',
     series: ['apt_sales', 'apt_sales_pre1946', 'apt_sales_1946_1959', 'apt_sales_1960_1969', 'apt_sales_1970plus'],
     seriesLabels: { apt_sales: 'All apartments', apt_sales_pre1946: 'Pre 1946', apt_sales_1946_1959: '1946–1959', apt_sales_1960_1969: '1960–1969', apt_sales_1970plus: '1970+' },
+    lineOrder: ['Pre 1946', '1946–1959', '1960–1969', '1970+', 'All apartments'],
     column: 'PRICE/SUITE', title: 'Apartment Sales — Price per Suite by Age Group', units: 'dollar' },
   { id: 'apt_volume', group: 'apt', kind: 'records-col', series: ['apt_sales'],
     seriesLabels: { apt_sales: 'Dollar volume' },
