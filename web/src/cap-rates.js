@@ -21,7 +21,7 @@ import { getPref, setPref } from './prefs.js';
 import { buildJumpBar } from './jump-bar.js';
 import {
   TYPE_ORDER, FIRM_ORDER, quarterList, typesPresent, rowsUpTo, splitOfficeByLocation,
-  TOTAL_ONLY_TYPES, collapseClasses,
+  TOTAL_ONLY_TYPES, collapseClasses, officeTotalsTable,
   averageByFirm, quarterTable, toCardInput, fmtRate, orderBy, defaultYearFrom,
 } from './cap-rates-data.js';
 import {
@@ -279,6 +279,10 @@ function renderCharts() {
   const on = enabledTypes();
   const drawnSections = [];
 
+  // The combined office table goes after the last office section drawn.
+  const officeTypes = typesPresent(rows).filter(t => (t === 'Downtown Office' || t === 'Suburban Office') && on.has(t));
+  const lastOffice = officeTypes[officeTypes.length - 1];
+
   for (const type of typesPresent(rows)) {
     if (!on.has(type)) continue;
 
@@ -302,10 +306,11 @@ function renderCharts() {
         sourceInCaption: true, signed: false, captionPt: 10,
         description: `Each brokerage's overall ${type.toLowerCase()} cap rate: the mean of the mid-points of every class it publishes for the type that quarter. ` + note(),
       });
-      // No subtitle: the range goes in the title ("… — March 2021 to June
-      // 2026") and the caption already names the brokerages (Jason, 2026-09-30).
+      // The subtitle is just the range, "March 2021 to June 2026" (in the
+      // title it ran too long for a December end); the caption names the
+      // brokerages (Jason, 2026-09-30).
       card.render(input.records, input.seriesMeta, {
-        rangeInTitle: true, monthFrom,
+        rangeSubtitle: 'month', monthFrom,
         seriesColours: Object.fromEntries(input.seriesMeta.map(m => [m.id, FIRM_COLOURS[m.chartLabel]]).filter(([, c]) => c)),
       });
       card.setOpenPanels(open.get(id) || []);
@@ -319,6 +324,18 @@ function renderCharts() {
         ? `Average of each brokerage's published ${table.classes.join(' / ')} range`
         : 'Published Low–High range by brokerage';
       const card = buildTableCard($cards, { id, title: `Winnipeg ${type} Cap Rates — ${quarter}`, subtitle, table });
+      ui.cards.set(id, { card: card.card });
+    }
+    // 3. After the office sections: every office cap rate in one table, a
+    //    Downtown and a Suburban column pair (Jason, 2026-09-30).
+    const office = type === lastOffice ? officeTotalsTable(rows, quarter) : null;
+    if (office) {
+      const id = 'caprate_office_table';
+      const card = buildTableCard($cards, {
+        id, title: `Winnipeg Office Cap Rates — ${quarter}`,
+        subtitle: 'Downtown and Suburban: average of each brokerage\'s published class ranges',
+        table: office,
+      });
       ui.cards.set(id, { card: card.card });
     }
     $grid.appendChild(section);
@@ -416,9 +433,16 @@ async function exportData() {
   const { quarter, rows } = selection();
   const on = enabledTypes();
 
+  const sheets = [];
   for (const type of typesPresent(rows)) {
     if (!on.has(type)) continue;
-    const t = typeTable(rows, type, quarter);
+    sheets.push([type, typeTable(rows, type, quarter)]);
+    if (type === 'Suburban Office' || (type === 'Downtown Office' && !on.has('Suburban Office'))) {
+      const office = officeTotalsTable(rows, quarter);
+      if (office) sheets.push(['Office', office]);
+    }
+  }
+  for (const [type, t] of sheets) {
     const ws = wb.addWorksheet(`${type} ${quarter}`.slice(0, 31));
     ws.addRow([`Winnipeg ${type} Cap Rates — ${quarter}`]).font = { bold: true };
     ws.addRow([`Source: ${SOURCE}`]);

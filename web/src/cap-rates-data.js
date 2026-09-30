@@ -230,6 +230,29 @@ export function collapseClasses(table, label = ALL_CLASSES) {
   };
 }
 
+/**
+ * All office cap rates in one quarter table: a Downtown and a Suburban column
+ * pair, each the brokerage's all-class range for that market (collapseClasses)
+ * and the Average row across brokerages. Null when neither market has figures
+ * that quarter. Reads split rows (splitOfficeByLocation).
+ */
+export function officeTotalsTable(rows, quarter) {
+  const parts = [['Downtown', 'Downtown Office'], ['Suburban', 'Suburban Office']]
+    .map(([label, type]) => [label, quarterTable(rows, type, quarter)])
+    .filter(([, t]) => t.subtypes.length)
+    .map(([label, t]) => collapseClasses(t, label));
+  if (!parts.length) return null;
+  const firms = orderBy([...new Set(parts.flatMap(p => p.firms))], FIRM_ORDER);
+  const cells = {};
+  for (const f of firms) cells[f] = Object.assign({}, ...parts.map(p => p.cells[f] || {}));
+  return {
+    subtypes: parts.flatMap(p => p.subtypes),
+    firms,
+    cells,
+    average: Object.assign({}, ...parts.map(p => p.average)),
+  };
+}
+
 /** The quarter-end date that follows an ISO date. */
 export function nextQuarterEnd(iso) {
   const [y, m] = String(iso).split('-').map(Number);
