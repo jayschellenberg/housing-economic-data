@@ -290,9 +290,10 @@ function renderCharts() {
       const input = toCardInput(id, averageByFirm(rows, type), { lineOrder: FIRM_ORDER });
       const card = buildIndicatorCard($cards, {
         chartId: id, fileStem: id, title: `Winnipeg ${type} Cap Rates`, sourceLabel: SOURCE, table: true, zeroBased: true,
-        // "Source: …" bottom-right of the caption, the company name bottom-left
-        // — out of the subtitle, as on the Johnson Report cards.
-        sourceInCaption: true,
+        // "Source: …" alone, bottom-right of the caption and out of the
+        // subtitle; no company name on any Cap Rates figure — they reproduce
+        // the brokerages' published figures (Jason, 2026-09-30). 10 pt in print.
+        sourceInCaption: true, signed: false, captionPt: 10,
         description: `Each brokerage's overall ${type.toLowerCase()} cap rate: the mean of the mid-points of every class it publishes for the type that quarter. ` + note(),
       });
       card.render(input.records, input.seriesMeta, {
@@ -305,7 +306,7 @@ function renderCharts() {
     // 2. The quarter's table
     {
       const id = `caprate_${slug(type)}_table`;
-      const card = buildTableCard($cards, { id, title: `${type} Cap Rates — ${quarter}`, table: quarterTable(rows, type, quarter) });
+      const card = buildTableCard($cards, { id, title: `Winnipeg ${type} Cap Rates — ${quarter}`, table: quarterTable(rows, type, quarter) });
       ui.cards.set(id, { card: card.card });
     }
     $grid.appendChild(section);
@@ -354,7 +355,7 @@ function buildTableCard(container, { id, title, table }) {
   container.appendChild(card);
   // "Source: …" bottom-right. No company name: the tables reproduce the
   // brokerages' published figures, so only the source signs them (Jason,
-  // 2026-09-30); the trend charts keep the name.
+  // 2026-09-30) — as on this tab's trend charts (signed: false).
   const $source = card.querySelector('[data-role="source"]');
   $source.textContent = `Source: ${SOURCE}`;
   // In the exported image the caption prints at exactly 10 pt. The PNG is
@@ -400,7 +401,7 @@ async function exportData() {
     if (!on.has(type)) continue;
     const t = quarterTable(rows, type, quarter);
     const ws = wb.addWorksheet(`${type} ${quarter}`.slice(0, 31));
-    ws.addRow([`${type} Cap Rates — ${quarter}`]).font = { bold: true };
+    ws.addRow([`Winnipeg ${type} Cap Rates — ${quarter}`]).font = { bold: true };
     ws.addRow([`Source: ${SOURCE}`]);
     ws.addRow([]);
     ws.addRow(['Source', ...t.subtypes.flatMap(s => [s, ''])]).font = { bold: true };
