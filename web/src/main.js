@@ -328,7 +328,7 @@ async function bootstrap() {
   const rawHash = hashTab in SUBAPP_TABS && SUBVIEW_RE.test(hashView || '') ? hashTab : fullHash;
   if (rawHash === hashTab && hashView) subappView[hashTab] = hashView;
   let initialTab = 'charts';
-  if (['charts', 'tables', 'compare', 'starts', 'secondary', 'housing', 'census', 'affordability', 'rtb', 'johnson', 'caprates', 'capvsint', 'rental', 'commercial', 'snapshot', 'indicators', 'economic'].includes(rawHash)) {
+  if (['charts', 'tables', 'compare', 'starts', 'secondary', 'housing', 'census', 'affordability', 'rtb', 'johnson', 'caprates', 'capvsint', 'rental', 'commercial', 'snapshot', 'indicators', 'agriculture', 'economic'].includes(rawHash)) {
     initialTab = rawHash;
   } else if (rawHash.startsWith('mi-section-')) {
     initialTab = 'indicators';

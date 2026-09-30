@@ -53,6 +53,19 @@
   min-width: 0;
 }
 @media (max-width: 767px) { .hs-sidebar { border-right: 0; border-bottom: 1px solid var(--hs-neutral-200); } }
+/* Stays in view while the page scrolls, as the site's tab sidebars do
+   (tailwind.css, [role="tabpanel"] > aside): one viewport (the frame) tall,
+   scrolling on its own when its controls run longer. */
+@media (min-width: 768px) {
+  .hs-sidebar {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
 
 .hs-main { padding: 16px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 

@@ -81,6 +81,23 @@
   border-bottom-color: white;
 }
 
+/* Tab sidebars stay in view while the page scrolls, so a setting or a
+   jump-list link is never a scroll back up away. Each sidebar is one
+   viewport tall and scrolls on its own when its controls run longer; the
+   white column therefore always fills the screen beside the charts. The
+   framed dashboards do the same (lib/subapp-house.css, .hs-sidebar). Below
+   md the sidebar stacks above the content and scrolls with the page. */
+@media (min-width: 768px) {
+  [role="tabpanel"] > aside {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
 /* Quick-jump bar at the top of a long chart page (Johnson Report, Cap
    Rates): one chip per section, sticky under the tab bar so it stays in
    reach while scrolling. */
