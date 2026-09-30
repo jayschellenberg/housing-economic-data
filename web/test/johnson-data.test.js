@@ -159,6 +159,17 @@ describe('toCardInput', () => {
     const { seriesMeta } = toCardInput(CHART_BY_ID.ind_vac_total, pts, { lineOrder: ['St James', 'Central', 'Overall'] });
     expect(seriesMeta.map(s => s.chartLabel)).toEqual(['St James', 'Central', 'Overall']);
   });
+  it('puts the oldest building-age cohort first, the rest in row order', () => {
+    const chart = CHART_BY_ID.ind_rate_age;
+    expect(chart.lineOrder).toEqual(['Pre 1970']);
+    const agePts = [
+      { line: '1970–1979', date: '2025-01-01', value: 8 },
+      { line: '1980–1989', date: '2025-01-01', value: 9 },
+      { line: 'Pre 1970',  date: '2025-01-01', value: 7 },
+    ];
+    const { seriesMeta } = toCardInput(chart, agePts, { lineOrder: chart.lineOrder });
+    expect(seriesMeta.map(s => s.chartLabel)).toEqual(['Pre 1970', '1970–1979', '1980–1989']);
+  });
   it('marks semi-annual families monthly and annual charts annual', () => {
     expect(toCardInput(CHART_BY_ID.ind_vac_total, pts).seriesMeta[0].frequency).toBe('monthly');
     const rate = chartPoints(CHART_BY_ID.ind_rate, EDITIONS, { view: 'series', editionId: '2026-06' });

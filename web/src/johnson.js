@@ -24,7 +24,7 @@
 
 import * as Plot from '@observablehq/plot';
 import { buildIndicatorCard, readOpenPanels } from './indicator-chart.js';
-import { themed, PALETTE, gridMarks, frameMark, plotWidth, plotHeight, fitPlotWidth } from './plot-theme.js';
+import { themed, PALETTE, gridMarks, frameMark, plotWidth, plotHeight, fitPlotWidth, sfTickFormat } from './plot-theme.js';
 import { downloadCardPng, setExportRedraw } from './png-export.js';
 import { escapeHtml } from './escape.js';
 import { getFirm, onFirmChange } from './firm.js';
@@ -423,7 +423,7 @@ function renderCharts() {
       const points = chartPoints(chart, ui.editions, sel);
       if (!points.length) continue;
       const keep = chart.district ? districts : (chart.defaultRows || null);
-      const input = toCardInput(chart, points, { keep, lineOrder: chart.district ? ui.districts : null });
+      const input = toCardInput(chart, points, { keep, lineOrder: chart.district ? ui.districts : (chart.lineOrder || null) });
       if (!input.records.length) continue;
       drawn++;
 
@@ -547,6 +547,8 @@ function buildBarCard(container, { chart, source }) {
     const maxV = Math.max(...data.map(d => d.value), 0);
     const width = plotWidth($plot);
     const isPct = chart.units === 'percent';
+    const yDomain = [0, maxV * 1.12];
+    const yTick = isPct ? (v) => `${v}%` : chart.units === 'sf' ? sfTickFormat(yDomain) : fmtV;
     const svg = Plot.plot(themed({
       width,
       height: exportH ?? plotHeight(width, 380),
@@ -555,7 +557,7 @@ function buildBarCard(container, { chart, source }) {
       // No inset: the theme's 16px default per side is more than a facet is
       // wide once a dozen districts share the card, and the bars collapse to 0.
       x: { axis: null, label: null, domain: periods, inset: 0 },
-      y: { label: isPct ? 'Vacancy (%)' : null, tickFormat: (v) => (isPct ? `${v}%` : fmtV(v)), domain: [0, maxV * 1.12], grid: true },
+      y: { label: isPct ? 'Vacancy (%)' : null, tickFormat: yTick, domain: yDomain, grid: true },
       color: { domain: periods, range: PALETTE, legend: false, label: null },
       marks: [
         ...gridMarks(),
@@ -613,7 +615,7 @@ async function exportData() {
       const points = chartPoints(chart, ui.editions, sel);
       if (!points.length) continue;
       const keep = chart.district ? districts : (chart.defaultRows || null);
-      const { records, seriesMeta } = toCardInput(chart, points, { keep, lineOrder: chart.district ? ui.districts : null });
+      const { records, seriesMeta } = toCardInput(chart, points, { keep, lineOrder: chart.district ? ui.districts : (chart.lineOrder || null) });
       if (!records.length) continue;
       let name = chart.title.replace(/[\\/?*[\]:]/g, ' ').slice(0, 28).trim();
       let n = 1;

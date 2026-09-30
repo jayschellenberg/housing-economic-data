@@ -16,7 +16,7 @@
 
 import * as Plot from '@observablehq/plot';
 import { downloadCardPng, setExportRedraw } from './png-export.js';
-import { themed, PALETTE, gridMarks, frameMark, mirrorYMarks, percentTickFormat, MIRROR_Y_MARGIN,
+import { themed, PALETTE, gridMarks, frameMark, mirrorYMarks, percentTickFormat, sfTickFormat, MIRROR_Y_MARGIN,
          plotWidth, plotHeight, fitPlotWidth, dateAxisTicks } from './plot-theme.js';
 import { escapeHtml } from './escape.js';
 import { getFirm, onFirmChange } from './firm.js';
@@ -626,13 +626,18 @@ export function buildIndicatorCard(container, {
     // percentTickFormat). The exact value stays available in the hover tip,
     // the latest-value chips and the data table, which all use yFormatter.
     const isPercentAxis = seriesMeta.every(s => s.units === 'percent');
-    const yTickFormat = isPercentAxis ? percentTickFormat(yDomain) : yFormatter;
+    // A floor-area axis (Johnson vacant / leased space) reads "3.5M sf" rather
+    // than the seven-digit "3,500,000 sf" that squeezed the plot.
+    const isSfAxis = seriesMeta.every(s => s.units === 'sf');
+    const yTickFormat = isPercentAxis ? percentTickFormat(yDomain)
+                      : isSfAxis      ? sfTickFormat(yDomain)
+                      : yFormatter;
 
     // Percent ticks ("9%") are much narrower than the "$1,500"-width labels the
     // shared 86px left margin is sized for, and the mirrored right axis needs
     // no more room than the left one. Tightening both on a percent axis hands
     // ~10% more width to the plot itself instead of to blank margin.
-    const sideMargin = isPercentAxis ? 48 : null;
+    const sideMargin = isPercentAxis ? 48 : isSfAxis ? 66 : null;
 
     // Fill the card rather than sitting at Plot's 640px default in the corner
     // of a wide one (see plotWidth); the PNG export rasterises the card, so
