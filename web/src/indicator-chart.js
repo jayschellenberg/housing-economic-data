@@ -512,6 +512,9 @@ export function buildIndicatorCard(container, {
   // there is no name, not just the text: it carries a top border and padding
   // that would otherwise leave a stray rule under the chart.
   const $caption = card.querySelector('.chart-caption');
+  // A source line can be long (Cap Rates names three publishers and their
+  // reports): let it wrap, and keep the company name on one line beside it.
+  if (sourceInCaption) $caption.classList.add('chart-caption-sourced');
   const sourceText = sourceLabel ? `Source: ${sourceLabel}` : '';
   function applyFirm(name = getFirm()) {
     if (sourceInCaption) {

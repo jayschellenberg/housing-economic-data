@@ -291,6 +291,9 @@ function renderCharts() {
       const input = toCardInput(id, averageByFirm(rows, type), { lineOrder: FIRM_ORDER });
       const card = buildIndicatorCard($cards, {
         chartId: id, fileStem: id, title: `Winnipeg ${type} Cap Rates`, sourceLabel: SOURCE, table: true, zeroBased: true,
+        // "Source: …" bottom-right of the caption, the company name bottom-left
+        // — out of the subtitle, as on the Johnson Report cards.
+        sourceInCaption: true,
         description: `Each brokerage's overall ${type.toLowerCase()} cap rate: the mean of the mid-points of every class it publishes for the type that quarter. ` + note(),
       });
       card.render(input.records, input.seriesMeta, {
@@ -339,20 +342,22 @@ function buildTableCard(container, { id, title, table }) {
   const avg = `<tr class="font-semibold"><td>Average</td>${subtypes.map(s => `<td>${fmtRate(average[s]?.low)}</td><td>${fmtRate(average[s]?.high)}</td>`).join('')}</tr>`;
   card.innerHTML = `
     <header class="chart-title">${escapeHtml(title)}</header>
-    <p class="chart-sub">Published Low–High range by brokerage • Source: ${escapeHtml(SOURCE)}</p>
+    <p class="chart-sub">Published Low–High range by brokerage</p>
     <div class="cmhc-chart-table-scroll" data-role="plot">
       <table class="cmhc-table cmhc-table-compact"><thead><tr><th rowspan="2">Source</th>${head1}</tr><tr>${head2}</tr></thead>
       <tbody>${body || '<tr><td colspan="99">No figures for this quarter.</td></tr>'}${body ? avg : ''}</tbody></table>
     </div>
-    <div class="chart-caption"><span class="chart-caption-left"></span><span class="chart-source" data-role="source"></span></div>
+    <div class="chart-caption chart-caption-sourced"><span class="chart-caption-left"></span><span class="chart-source" data-role="source"></span></div>
     <div class="chart-actions">
       <button type="button" data-role="copy">Copy table</button>
       <button type="button" data-role="dl-png">Download PNG</button>
     </div>`;
   container.appendChild(card);
-  const $source = card.querySelector('[data-role="source"]');
-  const $caption = card.querySelector('.chart-caption');
-  const applyFirm = (name = getFirm()) => { $source.textContent = name; $caption.hidden = !name; };
+  // Company name bottom-left, "Source: …" bottom-right — the chart cards'
+  // caption layout (sourceInCaption), so the table image reads the same.
+  const $firm = card.querySelector('.chart-caption-left');
+  card.querySelector('[data-role="source"]').textContent = `Source: ${SOURCE}`;
+  const applyFirm = (name = getFirm()) => { $firm.textContent = name; };
   applyFirm(); onFirmChange(applyFirm);
   const tsv = [
     ['Source', ...subtypes.flatMap(s => [`${s} Low`, `${s} High`])].join('\t'),
