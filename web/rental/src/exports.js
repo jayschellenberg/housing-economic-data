@@ -81,42 +81,14 @@ export async function exportXlsx(rows, { criteria = [], title = 'Rental listings
 }
 
 /**
- * PNG of the map as currently shown, with the legend strip and the
- * attribution drawn on. Needs the map created with preserveDrawingBuffer.
+ * PNG of the map as currently viewed, at the site's fixed chart-image size
+ * (1950 × 1050, 300 DPI) with the legend strip and attribution drawn on —
+ * see ../../src/subapp-map-png.js. Needs the map created with
+ * preserveDrawingBuffer.
  * @param {maplibregl.Map} map
  * @param {Array<{label:string,color:string}>} legend
  */
-export function exportMapPng(map, legend = [], filename = `rentals-map-${stamp()}.png`) {
-  const src = map.getCanvas();
-  const dpr = Math.max(1, window.devicePixelRatio || 1);
-  const strip = Math.round(26 * dpr);
-  const out = document.createElement('canvas');
-  out.width = src.width;
-  out.height = src.height + strip;
-  const g = out.getContext('2d');
-  g.fillStyle = '#ffffff';
-  g.fillRect(0, 0, out.width, out.height);
-  g.drawImage(src, 0, 0);
-  // attribution, bottom-right of the map area
-  g.font = `${Math.round(10 * dpr)}px Inter, Arial, sans-serif`;
-  const attr = '© Protomaps © OpenStreetMap contributors';
-  const aw = g.measureText(attr).width + 10 * dpr;
-  g.fillStyle = 'rgba(255,255,255,0.8)';
-  g.fillRect(out.width - aw, src.height - 16 * dpr, aw, 16 * dpr);
-  g.fillStyle = '#333';
-  g.fillText(attr, out.width - aw + 5 * dpr, src.height - 5 * dpr);
-  // legend strip
-  g.font = `${Math.round(11 * dpr)}px Inter, Arial, sans-serif`;
-  let x = 8 * dpr;
-  const y = src.height + strip / 2;
-  for (const item of legend) {
-    g.fillStyle = item.color;
-    g.beginPath(); g.arc(x + 5 * dpr, y, 5 * dpr, 0, Math.PI * 2); g.fill();
-    g.fillStyle = '#333';
-    g.fillText(item.label, x + 14 * dpr, y + 4 * dpr);
-    x += 14 * dpr + g.measureText(item.label).width + 16 * dpr;
-  }
-  return new Promise((resolve) => {
-    out.toBlob((blob) => { if (blob) downloadBlob(blob, filename); resolve(Boolean(blob)); }, 'image/png');
-  });
+export async function exportMapPng(map, legend = [], filename = `rentals-map-${stamp()}.png`) {
+  const { exportFixedMapPng } = await import('../../src/subapp-map-png.js');
+  return exportFixedMapPng(map, legend, filename);
 }

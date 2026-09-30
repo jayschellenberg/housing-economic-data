@@ -45,146 +45,195 @@
             </div>
           </div>
           <p class="hs-hint" id="data-hint"></p>
+          <p class="hs-status" id="status-line" aria-live="polite">Connect the export folder to begin.</p>
         </section>
 
-        <!-- Filters. Ordered by how often each is touched: window, type,
-             bedrooms, geography, rent and source stay in the open; the
-             rest live one click away under Additional filters, whose
-             summary carries a badge naming every control that is set so a
-             collapsed disclosure never narrows results silently. -->
-        <section class="hs-section" id="filters-panel">
-          <div class="hs-section-head">
-            <h2 class="hs-section-title">Filters</h2>
-            <button type="button" id="filters-clear" class="hs-link" title="Reset every filter to its default, including the subject, drawn shapes and municipality picks">Reset</button>
-          </div>
+        <!-- Analysis settings: shown while the Analysis view is open, as a tab's
+             own settings are on the site. The jump list scrolls to a section. -->
+        <section class="hs-section" id="an-settings" hidden>
+          <h2 class="hs-section-title">Analysis</h2>
           <div class="field">
-            <span class="field-label" id="f-window-label">Observed</span>
-            <div class="segmented" id="f-window" role="radiogroup" aria-labelledby="f-window-label"></div>
-            <button type="button" id="f-custom-btn" class="linkish">Custom dates…</button>
-            <div class="row2" id="f-custom-row" hidden>
-              <label>From <input id="f-from" type="date" /></label>
-              <label>To <input id="f-to" type="date" /></label>
-            </div>
-            <span class="hint">"Active" = seen within the policy window of the newest scrape. Custom = listing observed at any point in the range.</span>
-          </div>
-
-          <div class="field">
-            <span class="field-label">Type</span>
-            <div class="checks" id="f-types"></div>
-          </div>
-
-          <div class="field">
-            <span class="field-label">Bedrooms</span>
-            <div class="checks" id="f-beds"></div>
-          </div>
-          <div class="field">
-            <span class="field-label">Rent</span>
-            <div class="row2">
-              <input id="f-rent-lo" type="number" min="0" step="25" placeholder="Min $" aria-label="Minimum rent" />
-              <input id="f-rent-hi" type="number" min="0" step="25" placeholder="Max $" aria-label="Maximum rent" />
+            <span class="field-label">Scope</span>
+            <div class="pill" id="an-scope" role="radiogroup" aria-label="Analysis scope">
+              <button type="button" data-mode="selection" class="active" aria-pressed="true">Selection</button>
+              <button type="button" data-mode="all" aria-pressed="false">All Manitoba</button>
             </div>
           </div>
-
-          <!-- Municipality picker: region groups (the Parcel Search's Sales
-               Analysis groupings from muni-index.json), Select all / Clear,
-               and the Adjacent-regions pill. Also driven from the map when
-               "Select by clicking the map" is on. -->
           <div class="field">
-            <span class="field-label">Municipality</span>
-            <details class="multiselect muni-picker" id="f-munis">
-              <summary><span class="multiselect-label"></span></summary>
-              <div class="multiselect-menu">
-                <input type="search" class="multiselect-search" placeholder="Filter municipalities…" aria-label="Filter municipalities" />
-                <div class="multiselect-tools">
-                  <button type="button" data-role="all" title="Select every municipality currently listed">Select all</button>
-                  <button type="button" data-role="clear">Clear</button>
-                </div>
-                <div class="muni-groups" role="group" aria-label="Municipalities by region"></div>
-              </div>
-            </details>
-            <div class="pill-row" title="Also include every municipality sharing a boundary with the ones you tick. Untick a neighbour to waive it.">
-              <span class="pill-prefix">Adjacent regions:</span>
-              <div class="pill" id="f-munis-adjacent" role="radiogroup" aria-label="Include adjacent municipalities">
-                <button type="button" data-mode="off" class="active" aria-pressed="true">Off</button>
-                <button type="button" data-mode="on" aria-pressed="false">On</button>
-              </div>
+            <span class="field-label">Trend by</span>
+            <div class="pill" id="an-gran" role="radiogroup" aria-label="Trend granularity">
+              <button type="button" data-mode="month" class="active" aria-pressed="true">Month</button>
+              <button type="button" data-mode="week" aria-pressed="false">Week</button>
             </div>
-            <span class="hint" id="f-munis-count"></span>
           </div>
           <div class="field">
-            <span class="field-label">Wpg neighbourhood</span>
-            <details class="multiselect" id="f-nbhds">
-              <summary><span class="multiselect-label"></span></summary>
-              <div class="multiselect-menu"></div>
-            </details>
+            <label class="field-label" for="an-market-by">Group markets by</label>
+            <select id="an-market-by"></select>
           </div>
-          <div class="field">
-            <span class="field-label">MLS area</span>
-            <details class="multiselect" id="f-mls">
-              <summary><span class="multiselect-label"></span></summary>
-              <div class="multiselect-menu"></div>
-            </details>
-          </div>
+          <h2 class="hs-section-title hs-subhead">Sections</h2>
+          <ul class="hs-jump-list" aria-label="Jump to a section">
+            <li><button type="button" data-jump="an-summary-card">Summary</button></li>
+            <li><button type="button" data-jump="an-card-rent">Median rent by bedroom count</button></li>
+            <li><button type="button" data-jump="an-card-psf">Median rent per square foot</button></li>
+            <li><button type="button" data-jump="an-card-inv">Listings observed</button></li>
+            <li><button type="button" data-jump="an-card-hist">Rent distribution</button></li>
+            <li><button type="button" data-jump="an-card-scatter">Rent by size</button></li>
+            <li><button type="button" data-jump="an-band-card">Rent by bedroom count (table)</button></li>
+            <li><button type="button" data-jump="an-market-card">By market (table)</button></li>
+            <li><button type="button" data-jump="an-other-card">Other statistics</button></li>
+          </ul>
+        </section>
 
-
-          <div class="field">
-            <span class="field-label">Source</span>
-            <details class="multiselect" id="f-sources">
-              <summary><span class="multiselect-label"></span></summary>
-              <div class="multiselect-menu"></div>
-            </details>
-          </div>
-
-          <label class="check block">
-            <input id="f-canonical" type="checkbox" /> Dedupe across sources (one row per unit)
-          </label>
-
-          <details class="more-filters">
-            <summary>
-              <span>Additional filters</span>
-              <span class="badge" id="filters-badge" hidden></span>
-            </summary>
-            <div class="field row3">
-              <input id="f-sqft-lo" type="number" min="0" placeholder="Min sf" aria-label="Minimum square feet" />
-              <input id="f-sqft-hi" type="number" min="0" placeholder="Max sf" aria-label="Maximum square feet" />
-              <input id="f-baths" type="number" min="0" step="0.5" placeholder="Min baths" aria-label="Minimum bathrooms" />
-            </div>
-            <div class="field row2">
-              <input id="f-psf-lo" type="number" min="0" step="0.05" placeholder="Min $/sf" aria-label="Minimum rent per square foot" />
-              <input id="f-psf-hi" type="number" min="0" step="0.05" placeholder="Max $/sf" aria-label="Maximum rent per square foot" />
-            </div>
-            <div class="field row2">
-              <label>Parking
-                <select id="f-parking"><option value="any">Any</option><option value="included">Included</option><option value="paid">Paid / extra</option></select>
-              </label>
-              <label>Elevator
-                <select id="f-elevator"><option value="any">Any</option><option value="yes">Yes</option><option value="no">No</option></select>
-              </label>
-              <label>Furnished
-                <select id="f-furnished"><option value="any">Any</option><option value="yes">Yes</option><option value="no">No</option></select>
-              </label>
-              <label>Pets
-                <select id="f-pets"><option value="any">Any</option><option value="allowed">Allowed</option><option value="no">Not allowed</option></select>
-              </label>
-              <label>Laundry
-                <select id="f-laundry"><option value="any">Any</option><option value="in-unit">In-unit</option><option value="in-building">In-building</option></select>
-              </label>
+        <!-- Filters, grouped into sections the way the site's tabs group
+             their settings. Additional filters carries a badge naming every
+             control that is set, so a collapsed disclosure never narrows
+             results silently. #filters-panel wraps every section: the panel
+             listens for changes on it. -->
+        <div id="filters-panel" class="hs-stack">
+          <section class="hs-section">
+            <div class="hs-section-head">
+              <h2 class="hs-section-title">Listings</h2>
+              <button type="button" id="filters-clear" class="hs-link" title="Reset every filter to its default, including the subject, drawn shapes and municipality picks">Reset all filters</button>
             </div>
             <div class="field">
-              <span class="field-label">Utilities included</span>
-              <div class="checks">
-                <label class="check"><input id="f-heat" type="checkbox" /> Heat</label>
-                <label class="check"><input id="f-water" type="checkbox" /> Water</label>
-                <label class="check"><input id="f-electricity" type="checkbox" /> Hydro</label>
+              <span class="field-label" id="f-window-label">Observed</span>
+              <div class="segmented" id="f-window" role="radiogroup" aria-labelledby="f-window-label"></div>
+              <button type="button" id="f-custom-btn" class="linkish">Custom dates…</button>
+              <div class="row2" id="f-custom-row" hidden>
+                <label>From <input id="f-from" type="date" /></label>
+                <label>To <input id="f-to" type="date" /></label>
+              </div>
+              <span class="hint">"Active" = seen within the policy window of the newest scrape. Custom = listing observed at any point in the range.</span>
+            </div>
+
+            <div class="field">
+              <span class="field-label">Type</span>
+              <div class="checks" id="f-types"></div>
+            </div>
+
+            <div class="field">
+              <span class="field-label">Bedrooms</span>
+              <div class="checks" id="f-beds"></div>
+            </div>
+            <div class="field">
+              <span class="field-label">Source</span>
+              <details class="multiselect" id="f-sources">
+                <summary><span class="multiselect-label"></span></summary>
+                <div class="multiselect-menu"></div>
+              </details>
+            </div>
+
+            <label class="check block">
+              <input id="f-canonical" type="checkbox" /> Dedupe across sources (one row per unit)
+            </label>
+
+          </section>
+
+          <section class="hs-section">
+            <h2 class="hs-section-title">Rent</h2>
+            <div class="field">
+              <div class="row2">
+                <input id="f-rent-lo" type="number" min="0" step="25" placeholder="Min $" aria-label="Minimum rent" />
+                <input id="f-rent-hi" type="number" min="0" step="25" placeholder="Max $" aria-label="Maximum rent" />
               </div>
             </div>
-            <div class="field row2">
-              <input id="f-address" type="text" placeholder="Address contains" autocomplete="off" />
-              <input id="f-title" type="text" placeholder="Title contains" autocomplete="off" />
+
+          </section>
+
+          <section class="hs-section">
+            <h2 class="hs-section-title">Location</h2>
+            <!-- Municipality picker: region groups (the Parcel Search's Sales
+                 Analysis groupings from muni-index.json), Select all / Clear,
+                 and the Adjacent-regions pill. Also driven from the map when
+                 "Select by clicking the map" is on. -->
+            <div class="field">
+              <span class="field-label">Municipality</span>
+              <details class="multiselect muni-picker" id="f-munis">
+                <summary><span class="multiselect-label"></span></summary>
+                <div class="multiselect-menu">
+                  <input type="search" class="multiselect-search" placeholder="Filter municipalities…" aria-label="Filter municipalities" />
+                  <div class="multiselect-tools">
+                    <button type="button" data-role="all" title="Select every municipality currently listed">Select all</button>
+                    <button type="button" data-role="clear">Clear</button>
+                  </div>
+                  <div class="muni-groups" role="group" aria-label="Municipalities by region"></div>
+                </div>
+              </details>
+              <div class="pill-row" title="Also include every municipality sharing a boundary with the ones you tick. Untick a neighbour to waive it.">
+                <span class="pill-prefix">Adjacent regions:</span>
+                <div class="pill" id="f-munis-adjacent" role="radiogroup" aria-label="Include adjacent municipalities">
+                  <button type="button" data-mode="off" class="active" aria-pressed="true">Off</button>
+                  <button type="button" data-mode="on" aria-pressed="false">On</button>
+                </div>
+              </div>
+              <span class="hint" id="f-munis-count"></span>
             </div>
-            <label class="check block"><input id="f-coords" type="checkbox" /> Mapped listings only</label>
-          </details>
-        </section>
+            <div class="field">
+              <span class="field-label">Wpg neighbourhood</span>
+              <details class="multiselect" id="f-nbhds">
+                <summary><span class="multiselect-label"></span></summary>
+                <div class="multiselect-menu"></div>
+              </details>
+            </div>
+            <div class="field">
+              <span class="field-label">MLS area</span>
+              <details class="multiselect" id="f-mls">
+                <summary><span class="multiselect-label"></span></summary>
+                <div class="multiselect-menu"></div>
+              </details>
+            </div>
+
+
+          </section>
+
+          <section class="hs-section">
+            <details class="more-filters">
+              <summary>
+                <span>Additional filters</span>
+                <span class="badge" id="filters-badge" hidden></span>
+              </summary>
+              <div class="field row3">
+                <input id="f-sqft-lo" type="number" min="0" placeholder="Min sf" aria-label="Minimum square feet" />
+                <input id="f-sqft-hi" type="number" min="0" placeholder="Max sf" aria-label="Maximum square feet" />
+                <input id="f-baths" type="number" min="0" step="0.5" placeholder="Min baths" aria-label="Minimum bathrooms" />
+              </div>
+              <div class="field row2">
+                <input id="f-psf-lo" type="number" min="0" step="0.05" placeholder="Min $/sf" aria-label="Minimum rent per square foot" />
+                <input id="f-psf-hi" type="number" min="0" step="0.05" placeholder="Max $/sf" aria-label="Maximum rent per square foot" />
+              </div>
+              <div class="field row2">
+                <label>Parking
+                  <select id="f-parking"><option value="any">Any</option><option value="included">Included</option><option value="paid">Paid / extra</option></select>
+                </label>
+                <label>Elevator
+                  <select id="f-elevator"><option value="any">Any</option><option value="yes">Yes</option><option value="no">No</option></select>
+                </label>
+                <label>Furnished
+                  <select id="f-furnished"><option value="any">Any</option><option value="yes">Yes</option><option value="no">No</option></select>
+                </label>
+                <label>Pets
+                  <select id="f-pets"><option value="any">Any</option><option value="allowed">Allowed</option><option value="no">Not allowed</option></select>
+                </label>
+                <label>Laundry
+                  <select id="f-laundry"><option value="any">Any</option><option value="in-unit">In-unit</option><option value="in-building">In-building</option></select>
+                </label>
+              </div>
+              <div class="field">
+                <span class="field-label">Utilities included</span>
+                <div class="checks">
+                  <label class="check"><input id="f-heat" type="checkbox" /> Heat</label>
+                  <label class="check"><input id="f-water" type="checkbox" /> Water</label>
+                  <label class="check"><input id="f-electricity" type="checkbox" /> Hydro</label>
+                </div>
+              </div>
+              <div class="field row2">
+                <input id="f-address" type="text" placeholder="Address contains" autocomplete="off" />
+                <input id="f-title" type="text" placeholder="Title contains" autocomplete="off" />
+              </div>
+              <label class="check block"><input id="f-coords" type="checkbox" /> Mapped listings only</label>
+            </details>
+          </section>
+        </div>
 
         <section class="hs-section hs-section-rule">
           <button type="button" id="an-download-docx" class="hs-btn-primary">Download Word (charts)</button>
@@ -192,32 +241,21 @@
           <p class="hs-hint">The Analysis tab's charts as images — one per page / worksheet. Listings and tables export from the buttons beside them.</p>
         </section>
 
-        <section class="hs-section hs-section-rule">
-          <h2 class="hs-section-title">About</h2>
-          <p class="hs-hint">
-            The firm's weekly scrape of Manitoba rental listings. Medians follow the dashboard's policy: rents
-            inside the display band only, suppressed below the minimum count. "Dedupe across sources" keeps
-            one row for a unit listed on several sites.
-          </p>
-          <div class="hs-links">
-            <a class="hs-link" href="https://manitoba-opendata-parcelsearch.vercel.app/" target="_blank" rel="noreferrer"
-               title="Manitoba Parcel Search (outside Winnipeg)">MB Parcel Search ↗</a>
-            <a class="hs-link" href="https://winnipeg-opendata-parcelsearch.vercel.app/" target="_blank" rel="noreferrer"
-               title="Winnipeg Parcel Search">Wpg Parcel Search ↗</a>
-          </div>
-          <p class="hs-hint" id="about-build"></p>
-        </section>
       </aside>
 
       <main class="hs-main workspace">
-        <p class="status-line" id="status-line" aria-live="polite">Connect the export folder to begin.</p>
+        <p id="empty-state" class="empty-state">
+          No rental listing data is loaded. This site publishes none of it: choose the firm's
+          <code>SharedInfo\Apps\RentalDashboard</code> folder in the sidebar (Choose folder). It is read in
+          this browser only.
+        </p>
 
-        <div class="hs-tabs tabs" role="tablist" aria-label="Views">
+        <div class="hs-tabs tabs" role="tablist" aria-label="Views" hidden>
           <button type="button" role="tab" data-tab="listings" aria-selected="true" aria-controls="tab-listings">Map &amp; listings</button>
           <button type="button" role="tab" data-tab="analysis" aria-selected="false" aria-controls="tab-analysis">Analysis</button>
         </div>
 
-        <div id="tab-listings" role="tabpanel" class="tabpanel">
+        <div id="tab-listings" role="tabpanel" class="tabpanel" hidden>
         <!-- Map. Points = the filtered listings, coloured by bedroom band.
              Overlays are the polygons the geo_* columns were assigned from.
              The subject point + radius narrows the results (it flows into the
@@ -331,24 +369,8 @@
              The charts are the site's chart cards, built by analysis.js into
              #an-charts. -->
         <div id="tab-analysis" role="tabpanel" class="tabpanel" hidden>
-          <section class="card">
-            <div class="analysis-head">
-              <div class="pill-row">
-                <span class="field-label">Scope</span>
-                <div class="pill" id="an-scope" role="radiogroup" aria-label="Analysis scope">
-                  <button type="button" data-mode="selection" class="active" aria-pressed="true">Selection</button>
-                  <button type="button" data-mode="all" aria-pressed="false">All Manitoba</button>
-                </div>
-              </div>
-              <div class="pill-row">
-                <span class="field-label">Trend by</span>
-                <div class="pill" id="an-gran" role="radiogroup" aria-label="Trend granularity">
-                  <button type="button" data-mode="month" class="active" aria-pressed="true">Month</button>
-                  <button type="button" data-mode="week" aria-pressed="false">Week</button>
-                </div>
-              </div>
-              <span class="muted" id="an-summary"></span>
-            </div>
+          <section class="card" id="an-summary-card">
+            <p class="muted" id="an-summary"></p>
             <div class="cards" id="an-kpis"></div>
             <p class="hint">Median rent per bedroom count for the scope; beneath it the mean, the median rent per square foot, and the same figure for the other scope. Rents inside the display band only; suppressed below the minimum count.</p>
           </section>
@@ -356,7 +378,7 @@
           <p class="hint" id="an-trend-note"></p>
           <div class="hs-chart-grid" id="an-charts"></div>
 
-          <section class="card">
+          <section class="card" id="an-band-card">
             <div class="results-head">
               <h2>Rent by bedroom count</h2>
               <div class="btn-row">
@@ -367,11 +389,10 @@
             <div class="table-scroll"><table id="an-band-table" class="stats"></table></div>
           </section>
 
-          <section class="card">
+          <section class="card" id="an-market-card">
             <div class="results-head">
               <h2>By market</h2>
               <div class="btn-row">
-                <label class="inline">Group by <select id="an-market-by"></select></label>
                 <button type="button" id="an-market-csv" class="btn small" title="Download this table as CSV">CSV</button>
                 <button type="button" id="an-market-copy" class="btn small" title="Copy this table, formatted, for Word">Copy for Word</button>
               </div>
@@ -380,7 +401,7 @@
             <p class="hint">Largest 40 markets by listing count. Per-band columns: n, median, mean.</p>
           </section>
 
-          <section class="card">
+          <section class="card" id="an-other-card">
             <h2>Other statistics</h2>
             <div class="table-scroll"><table id="an-other" class="stats"></table></div>
             <p class="hint">Days observed = first to last scrape the listing appeared in (a lower bound on time on market). Rent changed = listings whose asking rent moved between scrapes; median change is first rent to last. Amenity shares are of listings that state the field. ** = no value.</p>
@@ -388,6 +409,21 @@
             <div class="table-scroll"><table id="an-sources" class="stats narrow"></table></div>
           </section>
         </div>
+        <footer class="hs-footer">
+          <p>
+            Source: the firm's weekly scrape of Manitoba rental listing websites, read from the viewer's own locally
+            held copy and not redistributed by this site. Medians follow the dashboard's policy: rents inside the
+            display band only, suppressed below the minimum count. "Dedupe across sources" keeps one row for a unit
+            listed on several sites.
+          </p>
+          <p class="hs-links">
+            <a class="hs-link" href="https://manitoba-opendata-parcelsearch.vercel.app/" target="_blank" rel="noreferrer"
+               title="Manitoba Parcel Search (outside Winnipeg)">MB Parcel Search ↗</a>
+            <a class="hs-link" href="https://winnipeg-opendata-parcelsearch.vercel.app/" target="_blank" rel="noreferrer"
+               title="Winnipeg Parcel Search">Wpg Parcel Search ↗</a>
+            <span id="about-build"></span>
+          </p>
+        </footer>
       </main>
     </div>
 

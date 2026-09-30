@@ -47,12 +47,13 @@ export function initAnalysis({ getContext } = {}) {
   function ensureCards() {
     if (cards) return cards;
     const host = $('an-charts');
-    const make = (title, fileStem) => kit.buildPlotCard(host, { title, fileStem });
+    // `id` is what the sidebar jump list scrolls to.
+    const make = (key, title, fileStem) => kit.buildPlotCard(host, { id: `an-card-${key}`, title, fileStem });
     cards = {
-      rate: make('Median asking rate', 'commercial_median_rate'),
-      count: make('Listings on the market', 'commercial_listings_on_market'),
-      dist: make('Distribution of asking rates', 'commercial_rate_distribution'),
-      scatter: make('Rate against size', 'commercial_rate_vs_size'),
+      rate: make('rate', 'Median asking rate', 'commercial_median_rate'),
+      count: make('count', 'Listings on the market', 'commercial_listings_on_market'),
+      dist: make('dist', 'Distribution of asking rates', 'commercial_rate_distribution'),
+      scatter: make('scatter', 'Rate against size', 'commercial_rate_vs_size'),
     };
     return cards;
   }

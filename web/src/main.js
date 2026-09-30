@@ -109,10 +109,30 @@ function once(fn) {
   return () => { if (!ran) { ran = true; value = fn(); } return value; };
 }
 
+/*
+ * The dashboards' own views (Map & listings / Summary / Analysis) are part of
+ * the link, as the site's tabs are: #rental/analysis, #commercial/summary.
+ * The view named in the URL is handed to the frame as its hash on first load;
+ * after that the frame reports each view change (a same-origin postMessage,
+ * see the dashboards' main.js) and the address bar follows it.
+ */
+const SUBAPP_TABS = { rental: 'subapp-rental', commercial: 'subapp-commercial' };
+const subappView = { rental: null, commercial: null };
+const SUBVIEW_RE = /^[a-z]{1,20}$/;
+let onSubviewChange = () => {};
+
+window.addEventListener('message', (e) => {
+  if (e.origin !== window.location.origin) return;
+  const d = e.data;
+  if (!d || d.type !== 'hed:subview' || !(d.app in subappView) || !SUBVIEW_RE.test(d.view || '')) return;
+  subappView[d.app] = d.view;
+  onSubviewChange(d.app);
+});
+
 /** Point a sub-app frame at its page the first time its tab is shown. */
-function loadSubapp(frameId) {
+function loadSubapp(frameId, view) {
   const f = document.getElementById(frameId);
-  if (f && !f.src && f.dataset.src) f.src = f.dataset.src;
+  if (f && !f.src && f.dataset.src) f.src = f.dataset.src + (view ? `#${view}` : '');
 }
 
 /**
@@ -167,7 +187,14 @@ function setupTabs(initial, onActivate) {
       const tag = document.getElementById(`group-tagline-${g}`);
       if (tag) tag.hidden = !on;
     }
+    // The site footer cites the public CMHC / StatsCan / BoC sources. Each
+    // Local Data tab carries its own source line instead, so the footer would
+    // only mislead there.
+    const footer = document.getElementById('site-footer');
+    if (footer) footer.hidden = group === 'local';
   }
+
+  let activeTab = null;
 
   function activate(name) {
     showGroup(groupOf(name));
@@ -177,13 +204,8 @@ function setupTabs(initial, onActivate) {
       t.btn?.setAttribute('aria-selected', isActive ? 'true' : 'false');
       if (t.panel) t.panel.hidden = !isActive;
     }
-    // URL fragment so the active tab is link-shareable.
-    const hash = name === 'charts' ? '' : `#${name}`;
-    if (window.location.hash !== hash) {
-      const url = new URL(window.location.href);
-      url.hash = hash;
-      window.history.replaceState(null, '', url.toString());
-    }
+    activeTab = name;
+    syncHash();
     // First-activation init for the tab's view. The `once` wrappers dedupe, and
     // async inits swallow their own errors, so a try/catch here only guards the
     // synchronous inits (tables/compare/starts) — one failing tab must not wedge
@@ -191,6 +213,19 @@ function setupTabs(initial, onActivate) {
     try { onActivate?.(name); } catch (e) { console.error('[tab init]', name, e); }
     sizeSubappFrames();
   }
+
+  // URL fragment so the active tab (and a dashboard's view) is link-shareable.
+  function syncHash() {
+    const name = activeTab;
+    const view = subappView[name];
+    const hash = name === 'charts' ? '' : `#${name}${view ? `/${view}` : ''}`;
+    if (window.location.hash !== hash) {
+      const url = new URL(window.location.href);
+      url.hash = hash;
+      window.history.replaceState(null, '', url.toString());
+    }
+  }
+  onSubviewChange = (app) => { if (app === activeTab) syncHash(); };
 
   for (const [key, t] of Object.entries(tabs)) {
     t.btn?.addEventListener('click', () => activate(key));
@@ -287,7 +322,11 @@ async function bootstrap() {
   // (#mi-section-<group>) belong to the Market Indicators tab; treat them
   // as a synonym for the bare #indicators hash so deep links from the
   // sidebar TOC work after a hard refresh.
-  const rawHash = window.location.hash.replace('#', '');
+  const fullHash = window.location.hash.replace('#', '');
+  // #rental/analysis → the Rental Dashboard tab, opened on its Analysis view.
+  const [hashTab, hashView] = fullHash.split('/');
+  const rawHash = hashTab in SUBAPP_TABS && SUBVIEW_RE.test(hashView || '') ? hashTab : fullHash;
+  if (rawHash === hashTab && hashView) subappView[hashTab] = hashView;
   let initialTab = 'charts';
   if (['charts', 'tables', 'compare', 'starts', 'secondary', 'housing', 'census', 'affordability', 'rtb', 'johnson', 'caprates', 'capvsint', 'rental', 'commercial', 'snapshot', 'indicators', 'economic'].includes(rawHash)) {
     initialTab = rawHash;
@@ -326,8 +365,8 @@ async function bootstrap() {
     capvsint:      once(() => initCapVsInterestTab().catch(err => console.error('[cap-vs-interest bootstrap]', err))),
     // The two sub-app tabs are same-origin pages in a frame; loading the
     // frame is the whole init, deferred to the first visit.
-    rental:        once(() => loadSubapp('subapp-rental')),
-    commercial:    once(() => loadSubapp('subapp-commercial')),
+    rental:        once(() => loadSubapp('subapp-rental', subappView.rental)),
+    commercial:    once(() => loadSubapp('subapp-commercial', subappView.commercial)),
   };
   // Trigger the initial tab's init (charts → no-op); wiring runs it on click too.
   setupTabs(initialTab, (name) => tabInit[name]?.());

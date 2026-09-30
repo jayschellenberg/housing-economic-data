@@ -10,9 +10,13 @@
  * controls are in the sidebar (as on every Local Data tab) and the main
  * area shows only the #empty-state line.
  *
- * The last tab is remembered per browser as a convenience only. Storage
- * can be missing or refuse (a private window, blocked site data), and the
- * page must behave the same without it.
+ * The view is part of the link: #listings / #summary / #analysis (Explore
+ * is "listings" in a link, the name Rental uses for the same view). Inside
+ * the site's Local Data tab the parent page is told as well, so its address
+ * bar reads #commercial/summary and a copied link reopens this view. A link's
+ * view wins; otherwise the last tab is remembered per browser as a
+ * convenience only. Storage can be missing or refuse (a private window,
+ * blocked site data), and the page must behave the same without it.
  */
 
 const $ = (id) => document.getElementById(id);
@@ -23,13 +27,25 @@ const PANELS = Object.freeze({
   analysis: 'analysis',
 });
 const DEFAULT_TAB = 'explore';
+const TO_LINK = { explore: 'listings', summary: 'summary', analysis: 'analysis' };
+const FROM_LINK = { listings: 'explore', summary: 'summary', analysis: 'analysis' };
 
 function remembered() {
+  const fromLink = FROM_LINK[window.location.hash.replace('#', '')];
+  if (fromLink) return fromLink;
   try {
     const v = localStorage.getItem(TAB_KEY);
     return v && PANELS[v] ? v : DEFAULT_TAB;
   } catch {
     return DEFAULT_TAB;
+  }
+}
+
+function reportView(tab) {
+  const view = TO_LINK[tab];
+  try { history.replaceState(null, '', `#${view}`); } catch { /* convenience only */ }
+  if (window.parent !== window) {
+    window.parent.postMessage({ type: 'hed:subview', app: 'commercial', view }, window.location.origin);
   }
 }
 
@@ -55,6 +71,7 @@ export function initTabs({ onChange } = {}) {
     }
     const $empty = $('empty-state');
     if ($empty) $empty.hidden = connected;
+    reportView(current);
   }
 
   function show(tab, { focus = false } = {}) {

@@ -178,6 +178,9 @@ function refilter({ fitMap = false } = {}) {
 
 const tabs = initTabs({
   onChange(tab) {
+    // The Analysis settings belong to that view, so they show only with it.
+    const $settings = $('an-settings');
+    if ($settings) $settings.hidden = tab !== 'analysis' || !state.bundle;
     analysis.setOpen(tab === 'analysis');
     // MapLibre measures its container once. Created or last drawn while
     // Explore was hidden, it would come back as a grey, zero-sized canvas.
@@ -197,6 +200,7 @@ const panel = initConnectPanel({
     }
     // Tabs first, so Explore is on screen before MapLibre measures it.
     tabs.setConnected(Boolean(bundle));
+    if (!bundle) $('an-settings').hidden = true;
     if (bundle) ensureMap();
     filters.setRecords(bundle?.records || [], bundle?.manifest || null);
     refilter({ fitMap: Boolean(bundle) });
@@ -227,6 +231,12 @@ for (const [id, kind] of [['an-download-docx', 'docx'], ['an-download-xlsx', 'xl
     await exportCards(btn, kind, [...document.querySelectorAll('#an-charts .chart-card')], 'CommercialDashboard');
   });
 }
+
+// Sidebar jump list (Analysis › Sections), as on the Cap Rates / Johnson tabs.
+document.querySelector('.hs-jump-list')?.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-jump]');
+  if (b) document.getElementById(b.dataset.jump)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
 
 const build = $('build-id');
 if (build) build.textContent = `build ${__APP_COMMIT__} · ${__APP_BUILD_TIME__.slice(0, 10)}`;
