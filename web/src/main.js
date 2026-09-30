@@ -183,7 +183,7 @@ function setupTabs(initial, onActivate) {
   // housing link keeps its plain href="./" so it still resets the filters.
   document.getElementById('group-link-local')?.addEventListener('click', (e) => {
     e.preventDefault();
-    activate('johnson');
+    activate('caprates');
   });
   activate(initial);
 }

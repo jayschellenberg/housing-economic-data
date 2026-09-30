@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="./src/lib/tailwind.css" />
   </head>
   <body class="bg-neutral-50 text-neutral-900 font-sans">
-    <header class="bg-primary-700 text-white px-6 py-3 shadow flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
+    <header class="bg-primary-700 text-white px-6 py-3 shadow">
       <div class="min-w-0">
         <!-- The site name is the way back to the landing view. It points at the
              bare root, so it drops both the #tab fragment and the ?gl/?gu/... filter
@@ -24,26 +24,29 @@
              CMHC / StatsCan site and the way back to the landing view;
              "Local Data" holds the tabs that read files off the viewer's own
              disk (Market Indicators' cap-rate CSV, the Johnson Report folder). -->
+        <div class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
         <nav class="flex flex-wrap items-baseline gap-x-5 gap-y-1" aria-label="Site sections">
           <a id="group-link-housing" href="./" data-group="housing"
              class="cmhc-group-link cmhc-group-link-active"
              title="Rental, housing, census and economic data">Housing &amp; Economic Data</a>
-          <a id="group-link-local" href="#johnson" data-group="local"
+          <a id="group-link-local" href="#caprates" data-group="local"
              class="cmhc-group-link"
-             title="Johnson Report, Cap Rates, Cap Rates vs Interest">Local Data</a>
+             title="Cap Rates, Cap Rates vs Interest, Johnson Report">Local Data</a>
         </nav>
+        <!-- Signs every indicator chart's caption, and so every PNG exported from
+             one (see firm.js). The only place it is set; saved per browser once
+             typed, so it is already on the chart the next time the site opens.
+             Sits on the group-link row to keep the header to two lines. -->
+        <label class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm min-w-0">
+          <span class="text-xs text-primary-100 whitespace-nowrap">Company (signs your charts)</span>
+          <input id="app-firm" type="text" maxlength="60" placeholder="Your firm name"
+                 title="Shown under every indicator chart and in the PNG you download. Saved in this browser. Leave blank for no caption."
+                 class="w-56 max-w-full rounded border border-primary-400 bg-white/95 px-2 py-1 text-sm text-neutral-900 placeholder:text-neutral-400" />
+        </label>
+        </div>
         <p id="group-tagline-housing" class="text-sm text-primary-100">Historical trends, comparison tables and charts spanning Canadian rental, construction, housing stock, affordability, census demographics and economic indicators — Manitoba, Saskatchewan, Alberta &amp; British Columbia in full detail (incl. municipalities); major centres elsewhere.</p>
-        <p id="group-tagline-local" class="text-sm text-primary-100" hidden>The Johnson Report's Winnipeg commercial vacancy, lease rates and sales, the firm's quarterly cap-rate compilation, and cap rates against Bank of Canada rates — read from folders on your computer, never uploaded.</p>
+        <p id="group-tagline-local" class="text-sm text-primary-100" hidden>Market indicators from various copyrighted sources that are read from folders on your computer, never uploaded. Currently works with various Manitoba data and requires sharing from Jason Schellenberg with other confirmed legal subscribers to such data sources.</p>
       </div>
-      <!-- Signs every indicator chart's caption, and so every PNG exported from
-           one (see firm.js). The only place it is set; saved per browser once
-           typed, so it is already on the chart the next time the site opens. -->
-      <label class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm min-w-0">
-        <span class="text-xs text-primary-100 whitespace-nowrap">Company (signs your charts)</span>
-        <input id="app-firm" type="text" maxlength="60" placeholder="Your firm name"
-               title="Shown under every indicator chart and in the PNG you download. Saved in this browser. Leave blank for no caption."
-               class="w-56 max-w-full rounded border border-primary-400 bg-white/95 px-2 py-1 text-sm text-neutral-900 placeholder:text-neutral-400" />
-      </label>
     </header>
 
     <nav id="nav-housing" class="bg-neutral-100 border-b border-neutral-200 px-4 flex gap-1" role="tablist" aria-label="Housing & Economic Data views">
@@ -111,6 +114,14 @@
     <!-- Local Data group: tabs that read the viewer's own files. Shown in
          place of the housing bar while one of its tabs is active. -->
     <nav id="nav-local" class="bg-neutral-100 border-b border-neutral-200 px-4 flex gap-1" role="tablist" aria-label="Local Data views" hidden>
+      <button type="button" role="tab" id="tab-btn-caprates"
+        class="cmhc-tab" data-tab="caprates" aria-selected="false">
+        Cap Rates
+      </button>
+      <button type="button" role="tab" id="tab-btn-capvsint"
+        class="cmhc-tab" data-tab="capvsint" aria-selected="false">
+        Cap Rates vs Interest
+      </button>
       <button type="button" role="tab" id="tab-btn-johnson"
         class="cmhc-tab" data-tab="johnson" aria-selected="false">
         Johnson Report
@@ -122,14 +133,6 @@
       <button type="button" role="tab" id="tab-btn-commercial"
         class="cmhc-tab" data-tab="commercial" aria-selected="false">
         Commercial Dashboard
-      </button>
-      <button type="button" role="tab" id="tab-btn-caprates"
-        class="cmhc-tab" data-tab="caprates" aria-selected="false">
-        Cap Rates
-      </button>
-      <button type="button" role="tab" id="tab-btn-capvsint"
-        class="cmhc-tab" data-tab="capvsint" aria-selected="false">
-        Cap Rates vs Interest
       </button>
     </nav>
 
