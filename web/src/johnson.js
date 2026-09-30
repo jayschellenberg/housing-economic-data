@@ -457,6 +457,8 @@ function renderCharts() {
       card.render(input.records, input.seriesMeta, {
         // Semi-annual measures name the month; annual ones only the year.
         rangeSubtitle: chart.family ? 'month' : 'year',
+        // One line drawn → no legend; its name leads the subtitle instead.
+        singleSeriesInSubtitle: true,
         dashedIds: input.dashedIds,
         monthFrom,
         monthTo,
