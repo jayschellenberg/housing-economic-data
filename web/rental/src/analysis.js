@@ -5,9 +5,10 @@
  *
  * Scope pill: "Selection" is whatever the filters currently match;
  * "All Manitoba" is the default view (active, canonical, in scope) so a
- * selection can be read against the province. Charts are Observable Plot
- * (bundled; nothing fetched), loaded on first use so the listings tab
- * never pays for it.
+ * selection can be read against the province. Charts are the site's chart
+ * cards (../../src/subapp-chart-card.js — Observable Plot, the site theme,
+ * Company caption, 1950 × 1050 PNG), loaded on first use so the listings
+ * tab never pays for them.
  */
 
 import { bandStats, marketTable, trendSeries, histogram, sizePoints, otherStats, MARKET_KEYS } from './lib/analysis.js';
@@ -15,14 +16,15 @@ import { BAND_ORDER, BAND_COLORS, BAND_LABELS } from './lib/bands.js';
 import { tableWordHtml, tableWordText, tableCsv } from './lib/exports.js';
 import { copyRich, downloadBlob, stamp } from './exports.js';
 
-const fmtInt = (n) => (n == null ? '—' : Math.round(n).toLocaleString('en-CA'));
-const fmtMoney = (n) => (n == null ? '—' : `$${Math.round(n).toLocaleString('en-CA')}`);
-const fmtPsf = (n) => (n == null ? '—' : `$${n.toFixed(2)}`);
-const fmtPct = (n, dp = 0) => (n == null ? '—' : `${(n * 100).toFixed(dp)}%`);
-const fmtSignedPct = (n) => (n == null ? '—' : `${n > 0 ? '+' : ''}${n.toFixed(1)}%`);
+const MISSING = '**';   // the site's table convention for no value
+const fmtInt = (n) => (n == null ? MISSING : Math.round(n).toLocaleString('en-CA'));
+const fmtMoney = (n) => (n == null ? MISSING : `$${Math.round(n).toLocaleString('en-CA')}`);
+const fmtPsf = (n) => (n == null ? MISSING : `$${n.toFixed(2)}`);
+const fmtPct = (n, dp = 0) => (n == null ? MISSING : `${(n * 100).toFixed(dp)}%`);
+const fmtSignedPct = (n) => (n == null ? MISSING : `${n > 0 ? '+' : ''}${n.toFixed(1)}%`);
 
 const SERIES = [...BAND_ORDER, 'all'];
-const SERIES_COLORS = { ...BAND_COLORS, all: '#1a1a1a' };
+const SERIES_COLORS = { ...BAND_COLORS, all: '#18181b' };
 
 export function initAnalysis({ getPolicy, getContext, setStatus } = {}) {
   const $ = (id) => document.getElementById(id);
@@ -35,11 +37,6 @@ export function initAnalysis({ getPolicy, getContext, setStatus } = {}) {
   const $marketCopy = $('an-market-copy');
   const $bandTable = $('an-band-table');
   const $bandCopy = $('an-band-copy');
-  const $trendRent = $('an-trend-rent');
-  const $trendPsf = $('an-trend-psf');
-  const $trendInv = $('an-trend-inv');
-  const $hist = $('an-hist');
-  const $scatter = $('an-scatter');
   const $other = $('an-other');
   const $sources = $('an-sources');
   const $trendNote = $('an-trend-note');
@@ -49,8 +46,9 @@ export function initAnalysis({ getPolicy, getContext, setStatus } = {}) {
   let gran = 'month';
   let visible = false;
   let dirty = true;
-  let Plot = null;
-  let plotLoading = null;
+  let kit = null;          // src/subapp-chart-card.js: { Plot, buildPlotCard, … }
+  let kitLoading = null;
+  let rendering = Promise.resolve();
 
   const say = (m) => { if (typeof setStatus === 'function') setStatus(m); };
 
@@ -119,7 +117,7 @@ export function initAnalysis({ getPolicy, getContext, setStatus } = {}) {
     const body = ['all', ...BAND_ORDER].map((k) => {
       const x = k === 'all' ? s.all : s.bands[k];
       return [BAND_LABELS[k], fmtInt(x.n), fmtMoney(x.rent.median), fmtMoney(x.rent.mean), fmtMoney(x.rent.p25), fmtMoney(x.rent.p75),
-        x.n ? fmtMoney(x.rent.min) : '—', x.n ? fmtMoney(x.rent.max) : '—', fmtInt(x.psf.n), fmtPsf(x.psf.median), fmtPsf(x.psf.mean)];
+        x.n ? fmtMoney(x.rent.min) : MISSING, x.n ? fmtMoney(x.rent.max) : MISSING, fmtInt(x.psf.n), fmtPsf(x.psf.median), fmtPsf(x.psf.mean)];
     });
     lastBandTable = { cols, body, title: `Rent by bedroom count — ${scopeLabel()}` };
     $bandTable.textContent = '';
@@ -169,20 +167,35 @@ export function initAnalysis({ getPolicy, getContext, setStatus } = {}) {
   $('an-band-csv')?.addEventListener('click', () => downloadTable(lastBandTable, 'rent-by-bedroom'));
 
   // ---- charts -------------------------------------------------------------------
-  function chartBase(extra = {}) {
-    return {
-      width: Math.max(320, Math.min(760, ($trendRent?.clientWidth || 600))),
-      height: 260, marginLeft: 56, marginRight: 16, marginBottom: 36,
-      style: { fontFamily: 'Inter, system-ui, sans-serif', fontSize: '12px', background: 'transparent' },
-      color: { domain: SERIES.map((k) => BAND_LABELS[k]), range: SERIES.map((k) => SERIES_COLORS[k]), legend: true },
-      ...extra,
+  // The site's chart cards (src/subapp-chart-card.js): maroon title, subtitle,
+  // legend under the plot, Company caption, Download PNG at 1950 × 1050. Built
+  // once, on the first render, into #an-charts; redrawn in place after that.
+  let cards = null;
+  function ensureCards() {
+    if (cards) return cards;
+    const host = $('an-charts');
+    const make = (title, fileStem) => kit.buildPlotCard(host, { title, fileStem });
+    cards = {
+      rent: make('Median rent by bedroom count', 'rental_median_rent'),
+      psf: make('Median rent per square foot', 'rental_median_rent_psf'),
+      inv: make('Listings observed', 'rental_listings_observed'),
+      hist: make('Rent distribution', 'rental_rent_distribution'),
+      scatter: make('Rent by size', 'rental_rent_by_size'),
     };
+    return cards;
   }
   const withLabel = (r) => ({ ...r, Band: BAND_LABELS[r.band] || r.band });
+  const legendFor = (keys) => keys.map((k) => ({ label: BAND_LABELS[k], color: SERIES_COLORS[k] }));
+  const colorFor = (keys) => ({ domain: keys.map((k) => BAND_LABELS[k]), range: keys.map((k) => SERIES_COLORS[k]) });
+  const present = (pts, keys) => keys.filter((k) => pts.some((p) => p.band === k));
 
   function renderCharts() {
-    if (!Plot) return;
+    if (!kit) return;
+    const { Plot } = kit;
+    const c = ensureCards();
     const policy = getPolicy?.() || {};
+    const ctx = getContext?.() || {};
+    const source = `Rental listings, weekly scrape${ctx.published ? ` (published ${ctx.published})` : ''}`;
     const R = rows();
     const ids = scope === 'all' ? new Set(data.all.map((l) => l.id)) : new Set(R.map((l) => l.id));
     const t = trendSeries(data.listings, data.segments, { ids, policy, gran });
@@ -190,54 +203,86 @@ export function initAnalysis({ getPolicy, getContext, setStatus } = {}) {
     const psfPts = t.psf.filter((r) => r.median != null).map(withLabel);
     const invPts = t.inventory.filter((r) => r.band !== 'all').map(withLabel);
     const last = t.periods[t.periods.length - 1];
+    const span = t.periods.length ? `${t.periods[0]} to ${last}` : '';
+    const per = gran === 'month' ? 'Monthly' : 'Weekly';
     $trendNote.textContent = t.periods.length
-      ? `${t.periods.length} ${gran === 'month' ? 'months' : 'weeks'} of scrape history (${t.periods[0]} to ${last}); the latest ${gran} is partial. A listing counts in a period when it was observed in it, at the rent it showed then.`
+      ? `${t.periods.length} ${gran === 'month' ? 'months' : 'weeks'} of scrape history (${span}); the latest ${gran} is partial. A listing counts in a period when it was observed in it, at the rent it showed then.`
       : 'No history for this selection.';
+    // The site theme formats x ticks as plain integers (years); these axes
+    // are dates, so let Plot pick.
+    const timeX = { type: 'utc', label: null, tickFormat: undefined };
+    const money = (v) => `$${v.toLocaleString('en-CA')}`;
 
-    const draw = (el, opts) => { el.textContent = ''; el.appendChild(Plot.plot(opts)); };
-    draw($trendRent, chartBase({
-      y: { grid: true, label: 'Median rent ($/mo)', tickFormat: (v) => `$${v.toLocaleString('en-CA')}` },
-      x: { type: 'utc', label: null },
-      marks: [
-        Plot.lineY(rentPts, { x: 'date', y: 'median', stroke: 'Band', strokeWidth: 2, curve: 'monotone-x' }),
-        Plot.dot(rentPts, { x: 'date', y: 'median', fill: 'Band', r: 3, tip: true, title: (d) => `${d.Band} · ${d.period}\nmedian $${Math.round(d.median).toLocaleString('en-CA')} · mean $${Math.round(d.mean).toLocaleString('en-CA')}\nn = ${d.n}` }),
-      ],
-    }));
-    draw($trendPsf, chartBase({
-      y: { grid: true, label: 'Median rent per sq ft ($/sf/mo)', tickFormat: (v) => `$${v.toFixed(2)}` },
-      x: { type: 'utc', label: null },
-      marks: [
-        Plot.lineY(psfPts, { x: 'date', y: 'median', stroke: 'Band', strokeWidth: 2, curve: 'monotone-x' }),
-        Plot.dot(psfPts, { x: 'date', y: 'median', fill: 'Band', r: 3, tip: true, title: (d) => `${d.Band} · ${d.period}\nmedian $${d.median.toFixed(2)}/sf · mean $${d.mean.toFixed(2)}/sf\nn = ${d.n}` }),
-      ],
-    }));
-    draw($trendInv, chartBase({
-      y: { grid: true, label: 'Listings observed in period' },
-      x: { type: 'utc', label: null },
-      marks: [
-        Plot.areaY(invPts, { x: 'date', y: 'n', fill: 'Band', fillOpacity: 0.75, curve: 'monotone-x', tip: true, title: (d) => `${d.Band} · ${d.period}\n${d.n.toLocaleString('en-CA')} listings` }),
-      ],
-    }));
+    const rentKeys = present(rentPts, SERIES);
+    c.rent.render({
+      subtitle: `${scopeLabel()} • ${per}, ${span}`, source, legend: legendFor(rentKeys),
+      empty: rentPts.length ? '' : 'No rents to trend for this selection.',
+      spec: () => ({
+        x: timeX, y: { label: 'Median rent ($/mo)', tickFormat: money }, color: colorFor(rentKeys),
+        marks: [
+          Plot.lineY(rentPts, { x: 'date', y: 'median', stroke: 'Band', strokeWidth: 2.4, curve: 'monotone-x' }),
+          Plot.dot(rentPts, { x: 'date', y: 'median', fill: 'Band', r: 3, tip: true, title: (d) => `${d.Band} · ${d.period}\nmedian $${Math.round(d.median).toLocaleString('en-CA')} · mean $${Math.round(d.mean).toLocaleString('en-CA')}\nn = ${d.n}` }),
+        ],
+      }),
+    });
+    const psfKeys = present(psfPts, SERIES);
+    c.psf.render({
+      subtitle: `${scopeLabel()} • ${per}, ${span}`, source, legend: legendFor(psfKeys),
+      empty: psfPts.length ? '' : 'No stated sizes to trend for this selection.',
+      spec: () => ({
+        x: timeX, y: { label: 'Median rent ($/sf/mo)', tickFormat: (v) => `$${v.toFixed(2)}` }, color: colorFor(psfKeys),
+        marks: [
+          Plot.lineY(psfPts, { x: 'date', y: 'median', stroke: 'Band', strokeWidth: 2.4, curve: 'monotone-x' }),
+          Plot.dot(psfPts, { x: 'date', y: 'median', fill: 'Band', r: 3, tip: true, title: (d) => `${d.Band} · ${d.period}\nmedian $${d.median.toFixed(2)}/sf · mean $${d.mean.toFixed(2)}/sf\nn = ${d.n}` }),
+        ],
+      }),
+    });
+    const invKeys = present(invPts, BAND_ORDER);
+    c.inv.render({
+      subtitle: `${scopeLabel()} • listings observed per ${gran}, ${span}`, source, legend: legendFor(invKeys),
+      empty: invPts.length ? '' : 'No history for this selection.',
+      spec: () => ({
+        x: timeX, y: { label: 'Listings', tickFormat: (v) => v.toLocaleString('en-CA') }, color: colorFor(invKeys),
+        marks: [
+          Plot.areaY(invPts, { x: 'date', y: 'n', fill: 'Band', fillOpacity: 0.8, curve: 'monotone-x', tip: true, title: (d) => `${d.Band} · ${d.period}\n${d.n.toLocaleString('en-CA')} listings` }),
+          Plot.ruleY([0]),
+        ],
+      }),
+    });
 
     const h = histogram(R, policy, 100).map(withLabel);
-    draw($hist, chartBase({
-      y: { grid: true, label: 'Listings' },
-      x: { label: 'Rent ($/mo, $100 bins)', tickFormat: (v) => `$${(v / 1000).toFixed(v % 1000 ? 1 : 0)}k` },
-      marks: [
-        Plot.rectY(h, { x1: 'bin', x2: (d) => d.bin + 100, y: 'n', fill: 'Band', tip: true, title: (d) => `${d.Band} · $${d.bin.toLocaleString('en-CA')}–${(d.bin + 99).toLocaleString('en-CA')}\n${d.n} listings` }),
-      ],
-    }));
+    const histKeys = present(h, SERIES);
+    c.hist.render({
+      subtitle: `${scopeLabel()} • asking rent in $100 bins`, source, legend: legendFor(histKeys),
+      empty: h.length ? '' : 'No rents in the display band for this selection.',
+      spec: () => ({
+        marginBottom: 46,
+        x: { label: 'Rent ($/mo)', tickFormat: (v) => `$${(v / 1000).toFixed(v % 1000 ? 1 : 0)}k` },
+        y: { label: 'Listings', tickFormat: (v) => v.toLocaleString('en-CA') }, color: colorFor(histKeys),
+        marks: [
+          Plot.rectY(h, { x1: 'bin', x2: (d) => d.bin + 100, y: 'n', fill: 'Band', tip: true, title: (d) => `${d.Band} · $${d.bin.toLocaleString('en-CA')}–${(d.bin + 99).toLocaleString('en-CA')}\n${d.n} listings` }),
+          Plot.ruleY([0]),
+        ],
+      }),
+    });
     const pts = sizePoints(R, policy).map(withLabel);
     const sample = pts.length > 4000 ? pts.filter((_, i) => i % Math.ceil(pts.length / 4000) === 0) : pts;
-    draw($scatter, chartBase({
-      y: { grid: true, label: 'Rent ($/mo)', tickFormat: (v) => `$${v.toLocaleString('en-CA')}` },
-      x: { label: 'Size (sq ft)', domain: [0, Math.min(3000, Math.max(...pts.map((p) => p.sqft), 800))] },
-      marks: [
-        Plot.dot(sample, { x: 'sqft', y: 'rent', fill: 'Band', r: 2.2, fillOpacity: 0.55, tip: true, title: (d) => `${d.address}\n${d.Band} · ${d.sqft.toLocaleString('en-CA')} sf · $${d.rent.toLocaleString('en-CA')}` }),
-        ...BAND_ORDER.filter((k) => pts.filter((p) => p.band === k).length >= 10)
-          .map((k) => Plot.linearRegressionY(pts.filter((p) => p.band === k), { x: 'sqft', y: 'rent', stroke: BAND_COLORS[k], strokeWidth: 2, ci: 0 })),
-      ],
-    }));
+    const ptKeys = present(pts, SERIES);
+    const fitKeys = BAND_ORDER.filter((k) => pts.filter((p) => p.band === k).length >= 10);
+    c.scatter.render({
+      subtitle: `${scopeLabel()} • asking rent against stated size`, source, legend: legendFor(ptKeys),
+      note: 'Lines are least-squares fits per bedroom count where at least 10 listings state a size. Sizes are only stated for about half of listings.',
+      empty: pts.length ? '' : 'No listings with both a rent and a size in this selection.',
+      spec: () => ({
+        marginBottom: 46, clip: true,
+        x: { label: 'Size (sq ft)', tickFormat: (v) => v.toLocaleString('en-CA'), domain: [0, Math.min(3000, Math.max(...pts.map((p) => p.sqft), 800))] },
+        y: { label: 'Rent ($/mo)', tickFormat: money }, color: colorFor(ptKeys),
+        marks: [
+          Plot.dot(sample, { x: 'sqft', y: 'rent', fill: 'Band', r: 2.2, fillOpacity: 0.55, tip: true, title: (d) => `${d.address}\n${d.Band} · ${d.sqft.toLocaleString('en-CA')} sf · $${d.rent.toLocaleString('en-CA')}` }),
+          ...fitKeys.map((k) => Plot.linearRegressionY(pts.filter((p) => p.band === k), { x: 'sqft', y: 'rent', stroke: BAND_COLORS[k], strokeWidth: 2, ci: 0 })),
+        ],
+      }),
+    });
   }
 
   // ---- other stats ----------------------------------------------------------------
@@ -252,11 +297,11 @@ export function initAnalysis({ getPolicy, getContext, setStatus } = {}) {
     for (const k of ['all', ...BAND_ORDER]) {
       const b = o.bands[k];
       const row = document.createElement('tr');
-      [BAND_LABELS[k], fmtInt(b.n), b.daysMedian == null ? '—' : `${fmtInt(b.daysMedian)} d`, fmtPct(b.changedShare), fmtSignedPct(b.changePctMedian),
-        b.parkingKnown ? `${fmtPct(b.parkingShare)} of ${fmtInt(b.parkingKnown)}` : '—',
-        b.elevatorKnown ? `${fmtPct(b.elevatorShare)} of ${fmtInt(b.elevatorKnown)}` : '—',
-        fmtPct(b.heatShare), b.furnishedShare == null ? '—' : fmtPct(b.furnishedShare),
-        b.petsKnown ? `${fmtPct(b.petsShare)} of ${fmtInt(b.petsKnown)}` : '—',
+      [BAND_LABELS[k], fmtInt(b.n), b.daysMedian == null ? MISSING : `${fmtInt(b.daysMedian)} d`, fmtPct(b.changedShare), fmtSignedPct(b.changePctMedian),
+        b.parkingKnown ? `${fmtPct(b.parkingShare)} of ${fmtInt(b.parkingKnown)}` : MISSING,
+        b.elevatorKnown ? `${fmtPct(b.elevatorShare)} of ${fmtInt(b.elevatorKnown)}` : MISSING,
+        fmtPct(b.heatShare), b.furnishedShare == null ? MISSING : fmtPct(b.furnishedShare),
+        b.petsKnown ? `${fmtPct(b.petsShare)} of ${fmtInt(b.petsKnown)}` : MISSING,
       ].forEach((c, i) => row.appendChild(td(c, i ? 'num' : '')));
       tbody.appendChild(row);
     }
@@ -269,13 +314,18 @@ export function initAnalysis({ getPolicy, getContext, setStatus } = {}) {
     $sources.appendChild(sb);
   }
 
-  async function ensurePlot() {
-    if (Plot) return Plot;
-    if (!plotLoading) plotLoading = import('@observablehq/plot').then((m) => { Plot = m; return m; });
-    return plotLoading;
+  async function ensureKit() {
+    if (kit) return kit;
+    if (!kitLoading) kitLoading = import('../../src/subapp-chart-card.js').then((m) => { kit = m; return m; });
+    return kitLoading;
   }
 
-  async function render() {
+  function render() {
+    rendering = renderNow();
+    return rendering;
+  }
+
+  async function renderNow() {
     if (!visible || !dirty) return;
     if (!data.listings.length) { $summary.textContent = 'Connect the export folder to begin.'; return; }
     dirty = false;
@@ -283,7 +333,7 @@ export function initAnalysis({ getPolicy, getContext, setStatus } = {}) {
     renderBandTable();
     renderMarketTable();
     renderOther();
-    await ensurePlot();
+    await ensureKit();
     renderCharts();
   }
 
@@ -295,5 +345,7 @@ export function initAnalysis({ getPolicy, getContext, setStatus } = {}) {
       render();
     },
     setVisible(v) { visible = v; if (v) render(); },
+    /** Resolves once the render in flight (if any) has drawn its charts. */
+    ready: () => rendering,
   };
 }

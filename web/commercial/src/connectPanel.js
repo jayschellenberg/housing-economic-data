@@ -1,8 +1,7 @@
 /*
  * connectPanel.js — the "Data" panel: choose folder, reload, disconnect,
- * update notice. Before a folder is connected the panel is the connect
- * card on Summary; once data loads it moves to the top of Explore as a
- * one-line status with Reload a click away (Jason, 2026-09-28). Its only contract with the rest of the app is
+ * update notice. It lives in the sidebar, as the Data folder section does
+ * on every Local Data tab. Its only contract with the rest of the app is
  * onBundle(bundle | null): called with the parsed bundle whenever the
  * connected data changes, and with null when it is disconnected.
  */
@@ -47,15 +46,6 @@ export function initConnectPanel({ onBundle, setStatus } = {}) {
   const $forget = document.getElementById('data-forget');
   const $update = document.getElementById('data-update');
   const $hint = document.getElementById('data-hint');
-  const $summaryHome = $root.parentElement;
-  const $exploreHome = document.getElementById('explore');
-
-  /** Connected: first thing on Explore. Otherwise: the connect card on Summary. */
-  function placePanel(connected) {
-    const home = connected && $exploreHome ? $exploreHome : $summaryHome;
-    if ($root.parentElement !== home) home.prepend($root);
-  }
-
   const say = (m) => { if (typeof setStatus === 'function') setStatus(m); };
 
   if (!dbAvailable()) {
@@ -63,12 +53,6 @@ export function initConnectPanel({ onBundle, setStatus } = {}) {
     $empty.hidden = true;
     return { refresh: async () => {} };
   }
-
-  // The panel folds to its title once data is connected; only ever as a
-  // default — once the user works the disclosure by hand we stop touching it.
-  let touched = false;
-  $root.addEventListener('toggle', () => { touched = true; });
-  const setOpen = (open) => { if (!touched) $root.open = open; };
 
   function fact(dt, dd) {
     const a = document.createElement('dt'); a.textContent = dt;
@@ -87,11 +71,9 @@ export function initConnectPanel({ onBundle, setStatus } = {}) {
     const info = await describeImport();
     $facts.textContent = '';
     if (!info.present) {
-      placePanel(false);
       $status.textContent = 'Not connected';
       $empty.hidden = false;
       $ready.hidden = true;
-      setOpen(true);
       $hint.textContent = fsAccessSupported()
         ? ''
         : 'This browser has no folder picker — use Chrome or Edge to connect the folder and open flyers.';
@@ -102,7 +84,6 @@ export function initConnectPanel({ onBundle, setStatus } = {}) {
     try {
       bundle = await loadBundle();
     } catch (err) {
-      placePanel(false);
       $status.textContent = 'Needs reload';
       $empty.hidden = true;
       $ready.hidden = false;
@@ -125,8 +106,6 @@ export function initConnectPanel({ onBundle, setStatus } = {}) {
     $hint.textContent = info.auto_refresh
       ? 'Opening this page checks for newer data (Chrome may ask to see the folder first); click Reload to import it.'
       : 'This browser cannot remember the folder — re-import after each publish.';
-    setOpen(false);
-    placePanel(true);
     onBundle?.(bundle);
     return info;
   }
@@ -242,7 +221,7 @@ export function initConnectPanel({ onBundle, setStatus } = {}) {
   async function checkNow() {
     try {
       const handle = await getSavedDirectory();
-      if (!handle) { notice('No folder remembered — choose the published folder again.', { label: 'Choose folder…', run: onChooseFolder }); return; }
+      if (!handle) { notice('No folder remembered — choose the published folder again.', { label: 'Choose folder', run: onChooseFolder }); return; }
       const perm = await directoryPermission(handle, { request: true });
       if (perm !== 'granted') {
         notice('Folder access was not granted, so nothing was checked.', { label: 'Try again', run: checkNow });

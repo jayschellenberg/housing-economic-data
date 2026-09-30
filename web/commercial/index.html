@@ -6,74 +6,296 @@
   <meta name="robots" content="noindex, nofollow" />
   <title>Commercial Availability Explorer</title>
   <link rel="icon" href="data:," />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+  <link rel="stylesheet" href="../src/lib/subapp-house.css" />
   <link rel="stylesheet" href="./src/style.css" />
 </head>
 <body>
-  <header class="topbar">
-    <h1>Commercial Availability Explorer</h1>
-    <p id="status-line" class="status" role="status" aria-live="polite">Connect a folder to begin.</p>
-  </header>
+  <!--
+    The deployed page ships no data and describes none: every count,
+    label and source name below is written by JavaScript from the
+    connected bundle. Nothing here may name what the data contains.
 
-  <main>
-    <!--
-      The deployed page ships no data and describes none: every count,
-      label and source name below is written by JavaScript from the
-      connected bundle. Nothing here may name what the data contains.
-    -->
-    <!-- Outside every tab: "newer data has been published" has to reach
-         whoever is looking, and most of the time that is Explore. -->
-    <p id="data-update" class="notice" hidden></p>
+    Shown inside the site's Local Data › Commercial Dashboard tab, so it
+    has no title bar of its own. The layout is the site's: settings in the
+    left sidebar, views as tabs across the main area, charts as the site's
+    chart cards (../src/lib/subapp-house.css).
+  -->
+  <div class="hs-shell">
+    <aside class="hs-sidebar" aria-label="Data and filters">
+      <!-- Data connection, laid out like the Data folder section on the
+           Cap Rates / Johnson Report tabs. -->
+      <section id="data-panel" class="hs-section">
+        <h2 class="hs-section-title">Data folder</h2>
+        <p id="data-status" class="hs-status">Not connected</p>
 
-    <nav id="tabs" class="tabs" role="tablist" aria-label="Views" hidden>
-      <button type="button" role="tab" id="tab-explore" data-tab="explore" aria-controls="explore" aria-selected="true">Explore</button>
-      <button type="button" role="tab" id="tab-summary" data-tab="summary" aria-controls="panel-summary" aria-selected="false">Summary</button>
-      <button type="button" role="tab" id="tab-analysis" data-tab="analysis" aria-controls="analysis" aria-selected="false">Analysis</button>
-      <span id="tabs-published" class="tabs-published muted small"></span>
-    </nav>
+        <div id="data-empty" class="hs-section">
+          <button id="data-connect" type="button" class="hs-btn-primary">Choose folder</button>
+          <p class="hs-hint">
+            Pick the shared folder that contains <code>export\</code> — not <code>export\</code> itself
+            (a browser can't see a folder's parent, so picking the inner one hides the flyers).
+            Read locally, never uploaded.
+          </p>
+          <p class="hs-hint">
+            Needs Chrome or Edge to remember the folder and open flyers. Other
+            browsers can still load the data, one import at a time.
+          </p>
+        </div>
 
-    <!-- Before a folder is connected this panel IS the page: the connect
-         card, with the overview hidden until there is data to summarise.
-         Once data loads, connectPanel moves #data-panel to the top of
-         Explore. -->
-    <section id="panel-summary" role="tabpanel" aria-labelledby="tab-summary">
-    <details id="data-panel" class="card" open>
-      <summary>
-        <span class="card-title">Data</span>
-        <span id="data-status" class="muted">Not connected</span>
-      </summary>
+        <div id="data-ready" hidden>
+          <dl id="data-facts" class="facts"></dl>
+          <div class="hs-links">
+            <button id="data-reload" type="button" class="hs-link">Reload folder</button>
+            <button id="data-forget" type="button" class="hs-link">Disconnect</button>
+          </div>
+          <p id="data-hint" class="hs-hint"></p>
+        </div>
 
-      <div id="data-empty">
-        <p>
-          This page holds no data of its own. Point it at the shared folder on
-          your computer and everything is read locally in your browser —
-          nothing is uploaded, and nothing leaves this machine.
-        </p>
-        <p class="muted small">
-          Choose the folder that contains <code>export\</code> — not
-          <code>export\</code> itself. A browser can't see a folder's parent,
-          so picking the inner one hides the flyers.
-        </p>
-        <p>
-          <button id="data-connect" type="button" class="primary">Choose folder…</button>
-        </p>
-        <p class="muted small">
-          Needs Chrome or Edge to remember the folder and open flyers. Other
-          browsers can still load the data, one import at a time.
-        </p>
+        <input id="data-folder-input" type="file" webkitdirectory directory multiple hidden />
+      </section>
+
+      <!-- Filters: the controls used most stay in the open; the date window
+           and the toggles sit one click away under Additional filters. The
+           chips above the results grid name every filter that is set, so a
+           collapsed disclosure never narrows results silently. -->
+      <section id="filters" class="hs-section">
+        <div class="hs-section-head">
+          <h2 class="hs-section-title">Filters</h2>
+          <button id="f-clear" type="button" class="hs-link" disabled>Reset</button>
+        </div>
+
+        <fieldset class="field">
+          <legend class="field-label">Showing</legend>
+          <div class="checks">
+            <label class="inline"><input type="radio" name="f-market" value="current" checked /> On the market</label>
+            <label class="inline"><input type="radio" name="f-market" value="any" /> All records</label>
+          </div>
+        </fieldset>
+
+        <div class="field">
+          <span class="field-label">Type</span>
+          <details class="multiselect" id="f-space">
+            <summary><span class="multiselect-label"></span></summary>
+            <div class="multiselect-menu"></div>
+          </details>
+        </div>
+
+        <div class="field">
+          <span class="field-label">Sale / lease</span>
+          <details class="multiselect" id="f-listing">
+            <summary><span class="multiselect-label"></span></summary>
+            <div class="multiselect-menu"></div>
+          </details>
+        </div>
+
+        <div class="field">
+          <span class="field-label">Status</span>
+          <details class="multiselect" id="f-status">
+            <summary><span class="multiselect-label"></span></summary>
+            <div class="multiselect-menu"></div>
+          </details>
+        </div>
+
+        <div class="field">
+          <span class="field-label">Brokerage</span>
+          <details class="multiselect" id="f-brokerage">
+            <summary><span class="multiselect-label"></span></summary>
+            <div class="multiselect-menu"></div>
+          </details>
+        </div>
+
+        <div class="field">
+          <span class="field-label">Municipality</span>
+          <details class="multiselect" id="f-muni">
+            <summary><span class="multiselect-label"></span></summary>
+            <div class="multiselect-menu"></div>
+          </details>
+        </div>
+
+        <div class="field">
+          <span class="field-label">Cluster</span>
+          <details class="multiselect" id="f-cluster">
+            <summary><span class="multiselect-label"></span></summary>
+            <div class="multiselect-menu"></div>
+          </details>
+        </div>
+
+        <div class="field">
+          <span class="field-label">Neighbourhood</span>
+          <details class="multiselect" id="f-nbhd">
+            <summary><span class="multiselect-label"></span></summary>
+            <div class="multiselect-menu"></div>
+          </details>
+        </div>
+
+        <div class="field">
+          <span class="field-label">Size (sf)</span>
+          <div class="row2">
+            <input id="f-sf-lo" type="number" min="0" step="100" placeholder="Min sf" aria-label="Minimum size" />
+            <input id="f-sf-hi" type="number" min="0" step="100" placeholder="Max sf" aria-label="Maximum size" />
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="field-label">Rate ($/sf/yr)</span>
+          <div class="row2">
+            <input id="f-rate-lo" type="number" min="0" step="0.5" placeholder="Min $/sf" aria-label="Minimum rate" />
+            <input id="f-rate-hi" type="number" min="0" step="0.5" placeholder="Max $/sf" aria-label="Maximum rate" />
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="field-label">Sale price</span>
+          <div class="row2">
+            <input id="f-price-lo" type="number" min="0" step="10000" placeholder="Min $" aria-label="Minimum price" />
+            <input id="f-price-hi" type="number" min="0" step="10000" placeholder="Max $" aria-label="Maximum price" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="f-text">Search</label>
+          <input id="f-text" type="search" placeholder="address, name, unit, roll" />
+          <div class="checks" role="radiogroup" aria-label="Search in">
+            <label class="inline"><input type="radio" name="f-text-scope" value="address" checked /> Address</label>
+            <label class="inline"><input type="radio" name="f-text-scope" value="notes" /> Notes</label>
+            <label class="inline"><input type="radio" name="f-text-scope" value="all" /> Everything</label>
+          </div>
+        </div>
+
+        <label class="inline block"><input id="f-collapse" type="checkbox" /> One row per space</label>
+
+        <details class="more-filters">
+          <summary>Additional filters</summary>
+          <div class="field">
+            <span class="field-label">Seen between</span>
+            <div class="row2">
+              <input id="f-from" type="month" aria-label="From cycle" />
+              <input id="f-to" type="month" aria-label="To cycle" />
+            </div>
+          </div>
+          <label class="inline block"><input id="f-flyer" type="checkbox" /> Has a flyer</label>
+          <label class="inline block"><input id="f-mapped" type="checkbox" /> Mapped only</label>
+          <label class="inline block"><input id="f-plausible" type="checkbox" /> Plausible values only</label>
+          <!-- Shown only once a connected folder carries record_source: the
+               deployed page must not imply the licensed data exists. -->
+          <label class="inline block" id="f-brokerage-only-wrap" hidden><input id="f-brokerage-only" type="checkbox" /> Brokerage sources only</label>
+        </details>
+      </section>
+
+      <section class="hs-section hs-section-rule">
+        <button type="button" id="an-download-docx" class="hs-btn-primary">Download Word (charts)</button>
+        <button type="button" id="an-download-xlsx" class="hs-btn-primary">Download Excel (charts)</button>
+        <p class="hs-hint">The Analysis tab's charts as images — one per page / worksheet. The listings export from the buttons above the grid.</p>
+        <p id="build-id" class="hs-hint"></p>
+      </section>
+    </aside>
+
+    <main class="hs-main">
+      <p id="status-line" class="status" role="status" aria-live="polite">Connect a folder to begin.</p>
+      <!-- Outside every tab: "newer data has been published" has to reach
+           whoever is looking, whichever view that is. -->
+      <p id="data-update" class="notice" hidden></p>
+
+      <p id="empty-state" class="empty-state">
+        No commercial availability data is loaded. This site publishes none of it: choose the shared folder in
+        the sidebar (Choose folder). It is read in this browser only.
+      </p>
+
+      <nav id="tabs" class="hs-tabs" role="tablist" aria-label="Views" hidden>
+        <button type="button" role="tab" id="tab-explore" data-tab="explore" aria-controls="explore" aria-selected="true">Map &amp; listings</button>
+        <button type="button" role="tab" id="tab-summary" data-tab="summary" aria-controls="panel-summary" aria-selected="false">Summary</button>
+        <button type="button" role="tab" id="tab-analysis" data-tab="analysis" aria-controls="analysis" aria-selected="false">Analysis</button>
+        <span id="tabs-published" class="hs-tabs-aside"></span>
+      </nav>
+
+      <section id="explore" class="tabpanel" role="tabpanel" aria-labelledby="tab-explore" hidden>
+      <div class="card map-card" id="map-card">
+        <div class="map-toolbar">
+          <div class="map-overlays">
+            <span class="field-label">Overlays</span>
+            <label class="inline"><input id="ov-munis" type="checkbox" /> Municipalities</label>
+            <label class="inline"><input id="ov-clusters" type="checkbox" /> Clusters</label>
+            <label class="inline"><input id="ov-nbhds" type="checkbox" /> Neighbourhoods</label>
+            <!-- Point bubbling, NOT the Winnipeg clusters above it. It was
+                 labelled "Cluster", which is the same word for the other
+                 thing and read as the missing overlay. -->
+            <label class="inline"><input id="map-cluster" type="checkbox" checked /> Group points</label>
+          </div>
+
+          <div class="map-mode" id="map-click-pill">
+            <span class="field-label">Click to select</span>
+            <button type="button" data-mode="off" aria-pressed="true" class="active">Off</button>
+            <button type="button" data-mode="munis" aria-pressed="false">Municipality</button>
+            <button type="button" data-mode="clusters" aria-pressed="false">Cluster</button>
+            <button type="button" data-mode="nbhds" aria-pressed="false">Neighbourhood</button>
+          </div>
+
+          <div class="map-draw" id="shape-tools">
+            <span class="field-label">Draw</span>
+            <button id="shape-tool-circle" type="button" aria-pressed="false">Radius</button>
+            <button id="shape-tool-rectangle" type="button" aria-pressed="false">Rectangle</button>
+            <button id="shape-tool-polygon" type="button" aria-pressed="false">Polygon</button>
+            <button id="shape-tool-clear" type="button" class="quiet">Clear</button>
+            <span id="shape-readout" class="muted small"></span>
+          </div>
+
+          <div class="map-subject">
+            <span class="field-label">Subject</span>
+            <div class="subject-find">
+              <input id="subject-find" type="search" autocomplete="off" spellcheck="false"
+                placeholder="address, or lat, lng" aria-label="Find the subject by address or coordinates"
+                role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="subject-suggest" />
+              <ul id="subject-suggest" class="subject-suggest" role="listbox" hidden></ul>
+            </div>
+            <span class="muted small">or</span>
+            <button id="subject-set" type="button" aria-pressed="false">Place</button>
+            <label class="inline">radius
+              <input id="subject-radius" type="number" min="0" step="0.5" value="0" aria-label="Subject radius in km" /> km
+            </label>
+            <span id="subject-label" class="muted small"></span>
+            <button id="subject-clear" type="button" class="quiet" hidden>Clear</button>
+          </div>
+
+          <button id="map-fit" type="button">Zoom to results</button>
+          <button id="map-png" type="button">Map PNG</button>
+        </div>
+
+        <div id="map" class="map"></div>
+        <div id="map-legend" class="map-legend"></div>
       </div>
 
-      <div id="data-ready" hidden>
-        <dl id="data-facts" class="facts"></dl>
-        <p>
-          <button id="data-reload" type="button">Reload</button>
-          <button id="data-forget" type="button" class="quiet">Disconnect</button>
-        </p>
-        <p id="data-hint" class="muted small"></p>
+      <div class="card">
+        <div class="results-head">
+          <div>
+            <p id="count-line" class="count-line"></p>
+            <p id="median-line" class="median-line muted small"></p>
+            <div id="filter-chips" class="chips"></div>
+          </div>
+          <div class="export-bar">
+            <button id="export-csv" type="button" disabled>CSV</button>
+            <button id="export-xlsx" type="button" disabled>Excel</button>
+            <button id="export-word" type="button" disabled>Copy for Word</button>
+          </div>
+        </div>
+
+        <div class="table-scroll">
+          <table id="results-table" class="results">
+            <thead></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="pager">
+          <button id="page-prev" type="button" disabled>‹ Prev</button>
+          <span id="pager-label" class="muted small"></span>
+          <button id="page-next" type="button" disabled>Next ›</button>
+        </div>
       </div>
+      </section>
 
-      <input id="data-folder-input" type="file" webkitdirectory directory multiple hidden />
-    </details>
-
+      <section id="panel-summary" class="tabpanel" role="tabpanel" aria-labelledby="tab-summary" hidden>
     <section id="overview" hidden>
       <ul id="tiles" class="tiles"></ul>
 
@@ -132,219 +354,12 @@
 
       <p id="restricted-notice" class="notice restricted" hidden></p>
     </section>
-    </section>
+      </section>
 
-    <section id="explore" role="tabpanel" aria-labelledby="tab-explore" hidden>
-      <div class="card" id="filters">
-        <div class="filters-head">
-          <h2>Filters</h2>
-          <button id="f-clear" type="button" class="quiet" disabled>Clear all</button>
-        </div>
-
-        <div class="filter-grid">
-          <fieldset class="filter-field">
-            <legend>Showing</legend>
-            <label class="inline"><input type="radio" name="f-market" value="current" checked /> On the market</label>
-            <label class="inline"><input type="radio" name="f-market" value="any" /> All records</label>
-          </fieldset>
-
-          <label class="filter-field">
-            <span>Type</span>
-            <details class="multiselect" id="f-space">
-              <summary><span class="multiselect-label"></span></summary>
-              <div class="multiselect-menu"></div>
-            </details>
-          </label>
-
-          <label class="filter-field">
-            <span>Sale / lease</span>
-            <details class="multiselect" id="f-listing">
-              <summary><span class="multiselect-label"></span></summary>
-              <div class="multiselect-menu"></div>
-            </details>
-          </label>
-
-          <label class="filter-field">
-            <span>Status</span>
-            <details class="multiselect" id="f-status">
-              <summary><span class="multiselect-label"></span></summary>
-              <div class="multiselect-menu"></div>
-            </details>
-          </label>
-
-          <label class="filter-field">
-            <span>Brokerage</span>
-            <details class="multiselect" id="f-brokerage">
-              <summary><span class="multiselect-label"></span></summary>
-              <div class="multiselect-menu"></div>
-            </details>
-          </label>
-
-          <label class="filter-field">
-            <span>Municipality</span>
-            <details class="multiselect" id="f-muni">
-              <summary><span class="multiselect-label"></span></summary>
-              <div class="multiselect-menu"></div>
-            </details>
-          </label>
-
-          <label class="filter-field">
-            <span>Cluster</span>
-            <details class="multiselect" id="f-cluster">
-              <summary><span class="multiselect-label"></span></summary>
-              <div class="multiselect-menu"></div>
-            </details>
-          </label>
-
-          <label class="filter-field">
-            <span>Neighbourhood</span>
-            <details class="multiselect" id="f-nbhd">
-              <summary><span class="multiselect-label"></span></summary>
-              <div class="multiselect-menu"></div>
-            </details>
-          </label>
-
-          <div class="filter-field">
-            <span>Size (sf)</span>
-            <div class="pair">
-              <input id="f-sf-lo" type="number" min="0" step="100" placeholder="min" aria-label="Minimum size" />
-              <input id="f-sf-hi" type="number" min="0" step="100" placeholder="max" aria-label="Maximum size" />
-            </div>
-          </div>
-
-          <div class="filter-field">
-            <span>Rate ($/sf/yr)</span>
-            <div class="pair">
-              <input id="f-rate-lo" type="number" min="0" step="0.5" placeholder="min" aria-label="Minimum rate" />
-              <input id="f-rate-hi" type="number" min="0" step="0.5" placeholder="max" aria-label="Maximum rate" />
-            </div>
-          </div>
-
-          <div class="filter-field">
-            <span>Sale price</span>
-            <div class="pair">
-              <input id="f-price-lo" type="number" min="0" step="10000" placeholder="min" aria-label="Minimum price" />
-              <input id="f-price-hi" type="number" min="0" step="10000" placeholder="max" aria-label="Maximum price" />
-            </div>
-          </div>
-
-          <div class="filter-field">
-            <span>Seen between</span>
-            <div class="pair">
-              <input id="f-from" type="month" aria-label="From cycle" />
-              <input id="f-to" type="month" aria-label="To cycle" />
-            </div>
-          </div>
-
-          <div class="filter-field search-field">
-            <label for="f-text">Search</label>
-            <input id="f-text" type="search" placeholder="address, name, unit, roll" />
-            <div class="scope-pill" role="radiogroup" aria-label="Search in">
-              <label class="inline"><input type="radio" name="f-text-scope" value="address" checked /> Address</label>
-              <label class="inline"><input type="radio" name="f-text-scope" value="notes" /> Notes</label>
-              <label class="inline"><input type="radio" name="f-text-scope" value="all" /> Everything</label>
-            </div>
-          </div>
-        </div>
-
-        <div class="filter-toggles">
-          <label class="inline"><input id="f-collapse" type="checkbox" /> One row per space</label>
-          <label class="inline"><input id="f-flyer" type="checkbox" /> Has a flyer</label>
-          <label class="inline"><input id="f-mapped" type="checkbox" /> Mapped only</label>
-          <label class="inline"><input id="f-plausible" type="checkbox" /> Plausible values only</label>
-          <!-- Shown only once a connected folder carries record_source: the
-               deployed page must not imply the licensed data exists. -->
-          <label class="inline" id="f-brokerage-only-wrap" hidden><input id="f-brokerage-only" type="checkbox" /> Brokerage sources only</label>
-        </div>
-      </div>
-
-      <div class="card map-card" id="map-card">
-        <div class="map-toolbar">
-          <div class="map-overlays">
-            <span class="muted small">Overlays</span>
-            <label class="inline"><input id="ov-munis" type="checkbox" /> Municipalities</label>
-            <label class="inline"><input id="ov-clusters" type="checkbox" /> Clusters</label>
-            <label class="inline"><input id="ov-nbhds" type="checkbox" /> Neighbourhoods</label>
-            <!-- Point bubbling, NOT the Winnipeg clusters above it. It was
-                 labelled "Cluster", which is the same word for the other
-                 thing and read as the missing overlay. -->
-            <label class="inline"><input id="map-cluster" type="checkbox" checked /> Group points</label>
-          </div>
-
-          <div class="map-mode" id="map-click-pill">
-            <span class="muted small">Click to select</span>
-            <button type="button" data-mode="off" aria-pressed="true" class="active">Off</button>
-            <button type="button" data-mode="munis" aria-pressed="false">Municipality</button>
-            <button type="button" data-mode="clusters" aria-pressed="false">Cluster</button>
-            <button type="button" data-mode="nbhds" aria-pressed="false">Neighbourhood</button>
-          </div>
-
-          <div class="map-draw" id="shape-tools">
-            <span class="muted small">Draw</span>
-            <button id="shape-tool-circle" type="button" aria-pressed="false">Radius</button>
-            <button id="shape-tool-rectangle" type="button" aria-pressed="false">Rectangle</button>
-            <button id="shape-tool-polygon" type="button" aria-pressed="false">Polygon</button>
-            <button id="shape-tool-clear" type="button" class="quiet">Clear</button>
-            <span id="shape-readout" class="muted small"></span>
-          </div>
-
-          <div class="map-subject">
-            <span class="muted small">Subject</span>
-            <div class="subject-find">
-              <input id="subject-find" type="search" autocomplete="off" spellcheck="false"
-                placeholder="address, or lat, lng" aria-label="Find the subject by address or coordinates"
-                role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="subject-suggest" />
-              <ul id="subject-suggest" class="subject-suggest" role="listbox" hidden></ul>
-            </div>
-            <span class="muted small">or</span>
-            <button id="subject-set" type="button" aria-pressed="false">Place</button>
-            <label class="inline">radius
-              <input id="subject-radius" type="number" min="0" step="0.5" value="0" aria-label="Subject radius in km" /> km
-            </label>
-            <span id="subject-label" class="muted small"></span>
-            <button id="subject-clear" type="button" class="quiet" hidden>Clear</button>
-          </div>
-
-          <button id="map-fit" type="button">Fit to results</button>
-          <button id="map-png" type="button">PNG</button>
-        </div>
-
-        <div id="map" class="map"></div>
-        <div id="map-legend" class="map-legend"></div>
-      </div>
-
-      <div class="card">
-        <div class="results-head">
-          <div>
-            <p id="count-line" class="count-line"></p>
-            <p id="median-line" class="median-line muted small"></p>
-            <div id="filter-chips" class="chips"></div>
-          </div>
-          <div class="export-bar">
-            <button id="export-csv" type="button" disabled>CSV</button>
-            <button id="export-xlsx" type="button" disabled>Excel</button>
-            <button id="export-word" type="button" disabled>Copy for Word</button>
-          </div>
-        </div>
-
-        <div class="table-scroll">
-          <table id="results-table" class="results">
-            <thead></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-
-        <div class="pager">
-          <button id="page-prev" type="button" disabled>‹ Prev</button>
-          <span id="pager-label" class="muted small"></span>
-          <button id="page-next" type="button" disabled>Next ›</button>
-        </div>
-      </div>
-    </section>
-
-    <section id="analysis" class="card" role="tabpanel" aria-labelledby="tab-analysis" hidden>
-        <div class="filters-head">
-          <h2>Analysis</h2>
+      <!-- The charts are the site's chart cards, built by analysis.js into
+           #an-charts. -->
+      <section id="analysis" class="tabpanel" role="tabpanel" aria-labelledby="tab-analysis" hidden>
+        <div class="card">
           <div class="analysis-controls">
             <label class="inline">Period
               <select id="an-granularity">
@@ -363,49 +378,35 @@
               </select>
             </label>
           </div>
+          <ul id="an-tiles" class="tiles"></ul>
+          <p id="an-note" class="muted small"></p>
         </div>
 
-        <ul id="an-tiles" class="tiles"></ul>
-        <p id="an-note" class="muted small"></p>
+        <div class="hs-chart-grid" id="an-charts"></div>
 
-        <div class="chart-grid">
-          <figure class="chart">
-            <figcaption>Median asking rate</figcaption>
-            <div id="an-trend-rate"></div>
-          </figure>
-          <figure class="chart">
-            <figcaption>Listings on the market</figcaption>
-            <div id="an-trend-count"></div>
-            <p id="an-coverage" class="notice small" hidden></p>
-          </figure>
-          <figure class="chart">
-            <figcaption>Distribution of asking rates</figcaption>
-            <div id="an-distribution"></div>
-          </figure>
-          <figure class="chart">
-            <figcaption>Rate against size</figcaption>
-            <div id="an-scatter"></div>
-          </figure>
+        <div class="card">
+          <h2>By market</h2>
+          <div class="table-scroll">
+            <table id="an-market-table">
+              <thead>
+                <tr>
+                  <th scope="col">Market</th>
+                  <th scope="col" class="num">Listings</th>
+                  <th scope="col" class="num">Lease</th>
+                  <th scope="col" class="num">Sale</th>
+                  <th scope="col" class="num">Median rate</th>
+                  <th scope="col" class="num">Median price</th>
+                  <th scope="col" class="num">Median size</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <p class="muted small">Largest 25 markets. ** = no value.</p>
         </div>
-
-        <div class="table-scroll">
-          <table id="an-market-table">
-            <thead>
-              <tr>
-                <th scope="col">Market</th>
-                <th scope="col" class="num">Listings</th>
-                <th scope="col" class="num">Lease</th>
-                <th scope="col" class="num">Sale</th>
-                <th scope="col" class="num">Median rate</th>
-                <th scope="col" class="num">Median price</th>
-                <th scope="col" class="num">Median size</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-    </section>
-  </main>
+      </section>
+    </main>
+  </div>
 
   <dialog id="flyer-dialog" class="flyer-dialog">
     <div class="flyer-head">
@@ -427,10 +428,6 @@
       <img id="flyer-image" alt="" />
     </div>
   </dialog>
-
-  <footer class="footer">
-    <span id="build-id" class="muted small"></span>
-  </footer>
 
   <script type="module" src="./src/main.js"></script>
 </body>

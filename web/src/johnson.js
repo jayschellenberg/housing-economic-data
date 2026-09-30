@@ -130,7 +130,7 @@ function wireControls() {
     $rescan.addEventListener('click', async () => {
       showError('');
       const handle = await getSavedDirectory();
-      if (!handle) { showError('No folder is saved yet — choose the web-data folder first.'); return; }
+      if (!handle) { showError('No folder is saved yet — choose the folder first.'); return; }
       const perm = await directoryPermission(handle, { request: true });
       if (perm !== 'granted') { showError('Access to the saved folder was not granted.'); return; }
       try { await runImport(handle, { force: true }); }

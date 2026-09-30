@@ -51,7 +51,7 @@ export async function initCapVsInterestTab() {
   const $to = document.getElementById('cvi-month-to');
   if ($from) $from.value = state.monthFrom;
 
-  buildCapVsInterest({ [RATE_SHARD]: shard }, state, { container: '#cvi-grid' });
+  buildCapVsInterest({ [RATE_SHARD]: shard }, state, { container: '#cvi-grid', controls: '#cvi-controls' });
 
   $from?.addEventListener('change', () => {
     if ($from.value) { state.monthFrom = $from.value; state.monthFromLocked = true; }

@@ -182,35 +182,43 @@ function savePrefs(patch) {
 
 // --- Section -----------------------------------------------------------------
 
-function sectionMarkup() {
+// The firm + overlay pickers. In a tab sidebar (the Cap Rates vs Interest tab
+// passes `controls`) they read as ordinary sidebar sections; beside the card
+// they sit in a light box.
+function controlsMarkup(inSidebar) {
+  const title = 'text-xs font-semibold text-neutral-500 uppercase tracking-wider';
+  return `
+    <div class="${inSidebar ? 'space-y-4' : 'cmhc-cvi-controls border border-neutral-200 rounded bg-neutral-50 p-3 text-sm space-y-3 min-w-0'}">
+      <section class="space-y-1">
+        <h2 class="block ${title}${inSidebar ? ' mb-2' : ''}">Cap-rate source</h2>
+        <label class="flex items-center gap-2 text-sm">Firm
+          <select data-role="cvi-firm" class="${inSidebar ? 'flex-1 ' : ''}border border-neutral-300 rounded px-2 py-1 text-sm"></select>
+        </label>
+      </section>
+      <section class="space-y-1">
+        <div class="flex items-baseline justify-between gap-2${inSidebar ? ' mb-2' : ''}">
+          <h2 class="${title}">Cap-rate overlays</h2>
+          <span data-role="cvi-bulk" class="flex items-center gap-2 text-xs" hidden>
+            <button type="button" data-role="cvi-all" class="underline">All</button>
+            <button type="button" data-role="cvi-none" class="underline">None</button>
+          </span>
+        </div>
+        <div data-role="cvi-types" class="grid gap-1 text-sm"></div>
+      </section>
+      <p data-role="cvi-status" class="text-xs text-neutral-600"></p>
+    </div>
+  `;
+}
+
+function sectionMarkup(controlsElsewhere) {
   return `
     <h2 class="cmhc-mi-section-title">Cap vs Interest</h2>
-    <!-- Chart left, its controls in the column beside it. The card has always
-         occupied one half of a two-column grid (every other section on this
-         tab is two cards wide); the controls used to sit in a full-width strip
-         above it, pushing the chart down the page for no reason while the
-         other half of the row stood empty. -->
+    <!-- Chart left, its controls in the column beside it (or, on the Cap
+         Rates vs Interest tab, in the sidebar with the date range) — the card
+         keeps half of a two-column grid either way, like every other card. -->
     <div class="grid md:grid-cols-2 gap-4 items-start">
       <div data-role="cvi-card-grid" class="min-w-0"></div>
-      <div class="cmhc-cvi-controls border border-neutral-200 rounded bg-neutral-50 p-3 text-sm space-y-3 min-w-0">
-        <div class="space-y-1">
-          <span class="block text-xs font-semibold text-neutral-500 uppercase tracking-wider">Cap-rate source</span>
-          <label class="flex items-center gap-2 text-sm">Firm
-            <select data-role="cvi-firm" class="border border-neutral-300 rounded px-2 py-1 text-sm"></select>
-          </label>
-        </div>
-        <div class="space-y-1">
-          <div class="flex items-baseline justify-between gap-2">
-            <span class="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Cap-rate overlays</span>
-            <span data-role="cvi-bulk" class="flex items-center gap-2 text-xs" hidden>
-              <button type="button" data-role="cvi-all" class="underline">All</button>
-              <button type="button" data-role="cvi-none" class="underline">None</button>
-            </span>
-          </div>
-          <div data-role="cvi-types" class="grid gap-1"></div>
-        </div>
-        <p data-role="cvi-status" class="text-xs text-neutral-600"></p>
-      </div>
+      ${controlsElsewhere ? '' : controlsMarkup(false)}
     </div>
   `;
 }
@@ -223,8 +231,10 @@ function sectionMarkup() {
  *                           { monthFrom, monthTo } read at each render
  * @param {Object} [opts]
  * @param {string} [opts.container]  selector of the element to render into
+ * @param {string} [opts.controls]   selector of a sidebar element to hold the
+ *                                   firm + overlay pickers (default: beside the card)
  */
-export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid' } = {}) {
+export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', controls } = {}) {
   const $grid = document.querySelector(container);
   if (!$grid) return;
 
@@ -252,13 +262,16 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid' }
   section.className = 'cmhc-mi-section';
   section.dataset.group = CAP_GROUP_ID;
   section.id = `mi-section-${CAP_GROUP_ID}`;
-  section.innerHTML = sectionMarkup();
+  const $controlsHost = controls ? document.querySelector(controls) : null;
+  section.innerHTML = sectionMarkup(Boolean($controlsHost));
   $grid.appendChild(section);
+  if ($controlsHost) $controlsHost.innerHTML = controlsMarkup(true);
+  const ctl = $controlsHost || section;
 
-  const $firm   = section.querySelector('[data-role="cvi-firm"]');
-  const $types  = section.querySelector('[data-role="cvi-types"]');
-  const $bulk   = section.querySelector('[data-role="cvi-bulk"]');
-  const $status = section.querySelector('[data-role="cvi-status"]');
+  const $firm   = ctl.querySelector('[data-role="cvi-firm"]');
+  const $types  = ctl.querySelector('[data-role="cvi-types"]');
+  const $bulk   = ctl.querySelector('[data-role="cvi-bulk"]');
+  const $status = ctl.querySelector('[data-role="cvi-status"]');
   const $cardGrid = section.querySelector('[data-role="cvi-card-grid"]');
 
   let prefs = loadPrefs();
@@ -280,8 +293,8 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid' }
     renderCard();
   });
 
-  section.querySelector('[data-role="cvi-all"]').addEventListener('click', () => setAll(true));
-  section.querySelector('[data-role="cvi-none"]').addEventListener('click', () => setAll(false));
+  ctl.querySelector('[data-role="cvi-all"]').addEventListener('click', () => setAll(true));
+  ctl.querySelector('[data-role="cvi-none"]').addEventListener('click', () => setAll(false));
 
   function selectedTypes() {
     const names = orderTypes(Object.keys(series.types));

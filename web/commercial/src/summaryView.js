@@ -10,10 +10,11 @@ import { restrictedColumns } from './lib/bundle.js';
 import { cycleLabel } from './connectPanel.js';
 
 const $ = (id) => document.getElementById(id);
-const fmt = (n) => (n == null ? '—' : Number(n).toLocaleString('en-CA'));
-const money = (n) => (n == null ? '—' : `$${Number(n).toLocaleString('en-CA', { maximumFractionDigits: 0 })}`);
-const rate = (n) => (n == null ? '—' : `$${Number(n).toFixed(2)}`);
-const sf = (n) => (n == null ? '—' : `${Number(n).toLocaleString('en-CA', { maximumFractionDigits: 0 })} sf`);
+const MISSING = '**';   // the site's table convention for no value
+const fmt = (n) => (n == null ? MISSING : Number(n).toLocaleString('en-CA'));
+const money = (n) => (n == null ? MISSING : `$${Number(n).toLocaleString('en-CA', { maximumFractionDigits: 0 })}`);
+const rate = (n) => (n == null ? MISSING : `$${Number(n).toFixed(2)}`);
+const sf = (n) => (n == null ? MISSING : `${Number(n).toLocaleString('en-CA', { maximumFractionDigits: 0 })} sf`);
 
 function tile(label, value, note) {
   const li = document.createElement('li');

@@ -214,6 +214,20 @@ const panel = initConnectPanel({
   },
 });
 
+// Sidebar "Download Word / Excel (charts)": the Analysis charts, one per page
+// / worksheet, as on every site tab. The charts only exist once Analysis has
+// drawn them, so the click opens it first.
+for (const [id, kind] of [['an-download-docx', 'docx'], ['an-download-xlsx', 'xlsx']]) {
+  $(id)?.addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    if (!state.bundle) { setStatus('Connect a folder first.'); return; }
+    tabs.show('analysis');
+    await analysis.ready();
+    const { exportCards } = await import('../../src/subapp-chart-card.js');
+    await exportCards(btn, kind, [...document.querySelectorAll('#an-charts .chart-card')], 'CommercialDashboard');
+  });
+}
+
 const build = $('build-id');
 if (build) build.textContent = `build ${__APP_COMMIT__} · ${__APP_BUILD_TIME__.slice(0, 10)}`;
 

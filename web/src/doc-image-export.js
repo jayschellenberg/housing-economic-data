@@ -97,30 +97,42 @@ export async function captureNodes(nodes, { pixelRatio } = {}) {
 export function wireChartDocExports({ docxBtnId, xlsxBtnId, getNodes, baseName, pixelRatio }) {
   const wire = (btn, kind) => {
     if (!btn) return;
-    btn.addEventListener('click', async () => {
-      const nodes = getNodes().filter(n => n.offsetParent !== null);
-      if (!nodes.length) return;
-      const original = btn.textContent;
-      btn.disabled = true;
-      btn.textContent = 'Preparing…';
-      try {
-        const captures = await captureNodes(nodes, pixelRatio ? { pixelRatio } : undefined);
-        const date = new Date().toISOString().slice(0, 10);
-        if (kind === 'docx') {
-          const { exportChartsToWord } = await import('./word-export.js');
-          await exportChartsToWord(captures, { filename: `${baseName}_${date}.docx` });
-        } else {
-          const { exportChartsToExcel } = await import('./excel-export.js');
-          await exportChartsToExcel(captures, { filename: `${baseName}_${date}.xlsx` });
-        }
-      } catch (err) {
-        console.error(`[${baseName} ${kind} export]`, err);
-      } finally {
-        btn.disabled = false;
-        btn.textContent = original;
-      }
-    });
+    btn.addEventListener('click', () => exportChartNodes(btn, kind, getNodes(), { baseName, pixelRatio }));
   };
   wire(document.getElementById(docxBtnId), 'docx');
   wire(document.getElementById(xlsxBtnId), 'xlsx');
+}
+
+/**
+ * One Word or Excel chart-image download: the visible `nodes`, one per page /
+ * worksheet. `btn` reads "Preparing…" while it runs. Exported for the framed
+ * dashboards, which load this module on the click rather than wiring it up
+ * front (see subapp-chart-card.js).
+ * @param {HTMLButtonElement} btn
+ * @param {'docx'|'xlsx'} kind
+ * @param {Element[]} allNodes
+ * @param {{ baseName: string, pixelRatio?: number }} opts
+ */
+export async function exportChartNodes(btn, kind, allNodes, { baseName, pixelRatio }) {
+  const nodes = allNodes.filter(n => n.offsetParent !== null);
+  if (!nodes.length) return;
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Preparing…';
+  try {
+    const captures = await captureNodes(nodes, pixelRatio ? { pixelRatio } : undefined);
+    const date = new Date().toISOString().slice(0, 10);
+    if (kind === 'docx') {
+      const { exportChartsToWord } = await import('./word-export.js');
+      await exportChartsToWord(captures, { filename: `${baseName}_${date}.docx` });
+    } else {
+      const { exportChartsToExcel } = await import('./excel-export.js');
+      await exportChartsToExcel(captures, { filename: `${baseName}_${date}.xlsx` });
+    }
+  } catch (err) {
+    console.error(`[${baseName} ${kind} export]`, err);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = original;
+  }
 }

@@ -1,7 +1,9 @@
 /*
  * analysis.js — the Analysis tab. All the arithmetic is in
- * lib/analysis.js; this renders it with Observable Plot, which is loaded
- * on first open (Plot + d3 are ~400 kB and most visits never open this).
+ * lib/analysis.js; this renders it as the site's chart cards
+ * (../../src/subapp-chart-card.js — Observable Plot, the site theme, the
+ * Company caption, a 1950 × 1050 PNG), loaded on first open (Plot + d3 are
+ * ~400 kB and most visits never open this).
  *
  * Every chart is drawn from the CURRENT filtered set, so the tab always
  * answers "for the listings I am looking at", and every number that a
@@ -17,53 +19,59 @@ import { BAND_COLORS, BAND_ORDER } from './lib/bands.js';
 import { rateOf } from './lib/filters.js';
 
 const $ = (id) => document.getElementById(id);
-const fmtInt = (n) => (n == null ? '—' : Math.round(n).toLocaleString('en-CA'));
-const fmtRate = (n) => (n == null ? '—' : `$${Number(n).toFixed(2)}`);
-const fmtMoney = (n) => (n == null ? '—' : `$${Math.round(n).toLocaleString('en-CA')}`);
-const fmtPct = (n) => (n == null ? '—' : `${(n * 100).toFixed(0)}%`);
+const MISSING = '**';   // the site's table convention for no value
+const fmtInt = (n) => (n == null ? MISSING : Math.round(n).toLocaleString('en-CA'));
+const fmtRate = (n) => (n == null ? MISSING : `$${Number(n).toFixed(2)}`);
+const fmtMoney = (n) => (n == null ? MISSING : `$${Math.round(n).toLocaleString('en-CA')}`);
+const fmtPct = (n) => (n == null ? MISSING : `${(n * 100).toFixed(0)}%`);
 
-let Plot = null;
-async function ensurePlot() {
-  if (!Plot) Plot = await import('@observablehq/plot');
-  return Plot;
+let kit = null;   // src/subapp-chart-card.js: { Plot, buildPlotCard, … }
+async function ensureKit() {
+  if (!kit) kit = await import('../../src/subapp-chart-card.js');
+  return kit;
 }
 
-const bandColorScale = {
-  color: {
-    domain: [...BAND_ORDER, 'unknown'],
-    range: [...BAND_ORDER.map((b) => BAND_COLORS[b]), BAND_COLORS.unknown],
-    legend: true,
-  },
-};
-
-function place(id, node) {
-  const host = $(id);
-  if (!host) return;
-  host.textContent = '';
-  if (node) host.appendChild(node);
-}
-
-function empty(message) {
-  const p = document.createElement('p');
-  p.className = 'muted small';
-  p.textContent = message;
-  return p;
-}
+const ALL_BANDS = [...BAND_ORDER, 'unknown'];
+const bandColor = (b) => BAND_COLORS[b] || BAND_COLORS.unknown;
+const presentBands = (rows) => ALL_BANDS.filter((b) => rows.some((r) => r.band === b));
+const legendFor = (bands) => bands.map((b) => ({ label: b, color: bandColor(b) }));
+const colorFor = (bands) => ({ domain: bands, range: bands.map(bandColor) });
 
 export function initAnalysis({ getContext } = {}) {
   let open = false;
   let dirty = true;
+  let cards = null;
+  let rendering = Promise.resolve();
+
+  // Built once, on the first render, into #an-charts.
+  function ensureCards() {
+    if (cards) return cards;
+    const host = $('an-charts');
+    const make = (title, fileStem) => kit.buildPlotCard(host, { title, fileStem });
+    cards = {
+      rate: make('Median asking rate', 'commercial_median_rate'),
+      count: make('Listings on the market', 'commercial_listings_on_market'),
+      dist: make('Distribution of asking rates', 'commercial_rate_distribution'),
+      scatter: make('Rate against size', 'commercial_rate_vs_size'),
+    };
+    return cards;
+  }
 
   const $granularity = $('an-granularity');
   const $geo = $('an-geo');
 
-  async function render() {
+  function render() {
+    rendering = renderNow();
+    return rendering;
+  }
+
+  async function renderNow() {
     const ctx = getContext?.();
     if (!ctx || !ctx.bundle) return;
     const { bundle, rows } = ctx;
     const { manifest, runs } = bundle;
     const bands = policy(manifest);
-    const P = await ensurePlot();
+    const { Plot: P } = await ensureKit();
 
     const granularity = $granularity?.value || 'quarter';
     const geoField = $geo?.value || 'municipality';
@@ -78,7 +86,7 @@ export function initAnalysis({ getContext } = {}) {
         [fmtInt(rows.length), 'listings in view', ctx.marketLabel],
         [fmtInt(tom.median), 'median months on market', `n=${fmtInt(tom.n)}`],
         [fmtPct(changes.shareChanged), 'changed their asking price', `${fmtInt(changes.changed)} of ${fmtInt(changes.withHistory)} priced`],
-        [changes.medianChangePct == null ? '—' : `${changes.medianChangePct > 0 ? '+' : ''}${changes.medianChangePct.toFixed(1)}%`,
+        [changes.medianChangePct == null ? MISSING : `${changes.medianChangePct > 0 ? '+' : ''}${changes.medianChangePct.toFixed(1)}%`,
           'median change', `${fmtInt(changes.cuts)} down · ${fmtInt(changes.raises)} up`],
       ]) {
         const li = document.createElement('li');
@@ -90,81 +98,99 @@ export function initAnalysis({ getContext } = {}) {
       }
     }
 
-    // --- trends --------------------------------------------------------
+    // --- charts ------------------------------------------------------
+    const c = ensureCards();
+    const published = manifest.generated_at ? String(manifest.generated_at).slice(0, 10) : '';
+    const source = `Commercial availability listings${published ? ` (published ${published})` : ''}`;
+    const per = { month: 'Monthly', quarter: 'Quarterly', year: 'Yearly' }[granularity] || '';
+    const scope = ctx.marketLabel ? `Listings ${ctx.marketLabel}` : 'Current selection';
+    // Period buckets are labels ("2026-Q3"), not numbers: let Plot format them.
+    // Label at most ~12 of them, or thirty-odd quarters print on top of each other.
+    const bucketX = (rows) => {
+      const all = [...new Set(rows.map((d) => d.bucket))].sort();
+      const step = Math.max(1, Math.ceil(all.length / 12));
+      return { label: null, tickRotate: -40, tickFormat: undefined, ticks: all.filter((_, i) => i % step === 0) };
+    };
+
     // The trend reads the HISTORY, so it is not restricted to what is on
     // the market today: it is every cycle these listings were on it.
     const series = marketByCycle(rows, runs, manifest, { granularity });
     const rateRows = bandSeries(series, 'medianRate');
-    place('an-trend-rate', rateRows.length
-      ? P.plot({
-        marginLeft: 52, marginBottom: 40, height: 260, width: 640,
-        x: { label: null, tickRotate: -40 },
-        y: { label: 'median asking $/sf/yr', grid: true, zero: false },
-        ...bandColorScale,
+    const rateBands = presentBands(rateRows);
+    c.rate.render({
+      subtitle: `${scope} • ${per} median asking rate by type`, source, legend: legendFor(rateBands),
+      empty: rateRows.length ? '' : 'No asking rates in this selection to trend.',
+      spec: () => ({
+        marginBottom: 56,
+        x: bucketX(rateRows),
+        y: { label: 'Asking rate ($/sf/yr)', zero: false, tickFormat: (v) => `$${v.toFixed(0)}` },
+        color: colorFor(rateBands),
         marks: [
-          P.line(rateRows, { x: 'bucket', y: 'value', stroke: 'band', strokeWidth: 1.8 }),
-          P.dot(rateRows, { x: 'bucket', y: 'value', fill: 'band', r: 2.2, title: (d) => `${d.band} ${d.bucket}: $${d.value.toFixed(2)} (n=${d.n})` }),
+          P.line(rateRows, { x: 'bucket', y: 'value', stroke: 'band', strokeWidth: 2.4 }),
+          P.dot(rateRows, { x: 'bucket', y: 'value', fill: 'band', r: 2.6, tip: true, title: (d) => `${d.band} ${d.bucket}: $${d.value.toFixed(2)} (n=${d.n})` }),
         ],
-      })
-      : empty('No asking rates in this selection to trend.'));
+      }),
+    });
 
     const countRows = bandSeries(series, 'onMarket');
-    place('an-trend-count', countRows.length
-      ? P.plot({
-        marginLeft: 52, marginBottom: 40, height: 260, width: 640,
-        x: { label: null, tickRotate: -40 },
-        y: { label: 'listings on the market', grid: true },
-        ...bandColorScale,
-        marks: [
-          P.areaY(countRows, { x: 'bucket', y: 'value', fill: 'band', fillOpacity: 0.75, order: BAND_ORDER }),
-          P.ruleY([0]),
-        ],
-      })
-      : empty('No history for this selection.'));
-
+    const countBands = presentBands(countRows);
     // The count chart's slope is the one number here a reader can most
     // easily mistake for a market fact.
     const coverage = coverageNote(series);
-    const $coverage = $('an-coverage');
-    if ($coverage) {
-      $coverage.textContent = coverage
+    c.count.render({
+      subtitle: `${scope} • ${per} count by type`, source, legend: legendFor(countBands),
+      note: coverage
         ? `Coverage grew from ${coverage.fromCount} brokerage${coverage.fromCount === 1 ? '' : 's'} `
           + `in ${coverage.from} to ${coverage.toCount} in ${coverage.to}. Part of the rise in `
           + `listings is more sources being tracked, not more space coming to market.`
-        : '';
-      $coverage.hidden = !coverage;
-    }
-
-    // --- distribution + scatter ----------------------------------------
-    const rates = rows.map(rateOf);
-    const bins = distribution(rates, { bins: 24, band: bands.leaseRate });
-    place('an-distribution', bins.length
-      ? P.plot({
-        marginLeft: 52, marginBottom: 40, height: 240, width: 480,
-        x: { label: 'asking $/sf/yr' },
-        y: { label: 'listings', grid: true },
+        : '',
+      empty: countRows.length ? '' : 'No history for this selection.',
+      spec: () => ({
+        marginBottom: 56,
+        x: bucketX(countRows),
+        y: { label: 'Listings', tickFormat: (v) => v.toLocaleString('en-CA') },
+        color: colorFor(countBands),
         marks: [
-          P.rectY(bins, { x1: 'x0', x2: 'x1', y: 'n', fill: BAND_COLORS.Office, fillOpacity: 0.85 }),
+          P.areaY(countRows, { x: 'bucket', y: 'value', fill: 'band', fillOpacity: 0.8, order: ALL_BANDS, tip: true, title: (d) => `${d.band} ${d.bucket}: ${d.value}` }),
           P.ruleY([0]),
         ],
-      })
-      : empty('No lease rates in this selection.'));
+      }),
+    });
+
+    const rates = rows.map(rateOf);
+    const bins = distribution(rates, { bins: 24, band: bands.leaseRate });
+    c.dist.render({
+      subtitle: `${scope} • lease listings by asking rate`, source,
+      empty: bins.length ? '' : 'No lease rates in this selection.',
+      spec: () => ({
+        marginBottom: 46,
+        x: { label: 'Asking rate ($/sf/yr)', tickFormat: (v) => `$${v}` },
+        y: { label: 'Listings', tickFormat: (v) => v.toLocaleString('en-CA') },
+        marks: [
+          P.rectY(bins, { x1: 'x0', x2: 'x1', y: 'n', fill: BAND_COLORS.Office, fillOpacity: 0.85, tip: true, title: (d) => `$${d.x0}–$${d.x1}: ${d.n}` }),
+          P.ruleY([0]),
+        ],
+      }),
+    });
 
     const scatter = rateVsSize(rows, manifest);
-    place('an-scatter', scatter.length
-      ? P.plot({
-        marginLeft: 52, marginBottom: 40, height: 240, width: 480,
+    const scatterBands = presentBands(scatter);
+    c.scatter.render({
+      subtitle: `${scope} • asking rate against size (log scale)`, source, legend: legendFor(scatterBands),
+      empty: scatter.length ? '' : 'Nothing with both a size and a rate in this selection.',
+      spec: () => ({
+        marginBottom: 46,
         // Size spans four orders of magnitude; on a linear axis every
         // small unit piles into the left edge.
-        x: { label: 'size (sf)', type: 'log', grid: true },
-        y: { label: 'asking $/sf/yr', grid: true, zero: false },
-        ...bandColorScale,
+        x: { label: 'Size (sf)', type: 'log', tickFormat: (v) => v.toLocaleString('en-CA') },
+        y: { label: 'Asking rate ($/sf/yr)', zero: false, tickFormat: (v) => `$${v.toFixed(0)}` },
+        color: colorFor(scatterBands),
         marks: [P.dot(scatter, {
-          x: 'size', y: 'rate', fill: 'band', r: 2.6, fillOpacity: 0.7,
+          x: 'size', y: 'rate', fill: 'band', r: 2.6, fillOpacity: 0.7, tip: true,
           title: (d) => `${d.address}\n${Math.round(d.size).toLocaleString('en-CA')} sf · $${d.rate.toFixed(2)}`,
         })],
-      })
-      : empty('Nothing with both a size and a rate in this selection.'));
+      }),
+    });
 
     // --- by market -----------------------------------------------------
     const markets = byMarket(rows, manifest, geoField);
@@ -181,7 +207,7 @@ export function initAnalysis({ getContext } = {}) {
           [m.medianRate == null && m.suppressed ? `n=${m.ratedN}` : fmtRate(m.medianRate), 'num',
             m.suppressed ? `Fewer than ${bands.minN} priced listings — too thin to publish a median.` : ''],
           [fmtMoney(m.medianPrice), 'num'],
-          [m.medianSize == null ? '—' : `${fmtInt(m.medianSize)} sf`, 'num'],
+          [m.medianSize == null ? MISSING : `${fmtInt(m.medianSize)} sf`, 'num'],
         ]) {
           const td = document.createElement('td');
           td.textContent = text;
@@ -220,5 +246,5 @@ export function initAnalysis({ getContext } = {}) {
     if (open && dirty) render();
   }
 
-  return { invalidate, render, setOpen, isOpen: () => open };
+  return { invalidate, render, setOpen, isOpen: () => open, ready: () => rendering };
 }
