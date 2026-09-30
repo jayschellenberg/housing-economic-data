@@ -161,15 +161,20 @@ export function geoQualifiedLabels(seriesMeta = []) {
  *
  * A reference band or line is pulled inside the domain as well; a 1-3% target
  * band is useless if the axis crops it out when inflation runs hot.
+ *
+ * `zeroBased` pins the floor at exactly zero for a positive-only series
+ * (Cap Rates and the Johnson Report charts), so a 4.5-6.5% cap-rate window
+ * reads against a full 0-7% axis rather than a zoomed-in slice that
+ * exaggerates small moves. A series that dips negative still gets its room.
  */
-export function yDomainFor(values, { balanceOfOpinion = false, refBand, refLine } = {}) {
+export function yDomainFor(values, { balanceOfOpinion = false, zeroBased = false, refBand, refLine } = {}) {
   const finite = values.filter(Number.isFinite);
   if (finite.length === 0) return [0, 1];
   const dataMin = Math.min(...finite);
   const dataMax = Math.max(...finite);
   const allowsNegative = balanceOfOpinion || dataMin < 0;
   const pad = Math.max(0.05 * (dataMax - dataMin), 0.01);
-  let lo = allowsNegative ? Math.min(0, dataMin - pad) : Math.max(0, dataMin - pad);
+  let lo = allowsNegative ? Math.min(0, dataMin - pad) : (zeroBased ? 0 : Math.max(0, dataMin - pad));
   let hi = allowsNegative ? Math.max(0, dataMax + pad) : dataMax + pad;
   if (refBand) { lo = Math.min(lo, refBand.from); hi = Math.max(hi, refBand.to); }
   if (refLine) { lo = Math.min(lo, refLine.at);   hi = Math.max(hi, refLine.at); }
@@ -391,7 +396,8 @@ export function buildIndicatorCard(container, {
   //   refLine { at, label }       — dashed horizontal rule (the 2% target)
   //   table   true                — render a collapsible data table under the
   //                                 chart, one row per period in the window
-  refBand, refLine, table,
+  //   zeroBased true              — Y axis starts at exactly 0 (see yDomainFor)
+  refBand, refLine, table, zeroBased = false,
   // `sourceLabel` names the publisher — "Statistics Canada", "Bank of Canada
   // & Colliers Average Cap Rates (CR)". It is appended to the SUBTITLE, not
   // the caption: the caption carries the company name (firm.js), the way the
@@ -595,7 +601,7 @@ export function buildIndicatorCard(container, {
 
     const vals = filtered.map(p => p.value);
     const balanceOfOpinion = seriesMeta.some(s => s.units === 'balance_of_opinion');
-    const yDomain = yDomainFor(vals, { balanceOfOpinion, refBand, refLine });
+    const yDomain = yDomainFor(vals, { balanceOfOpinion, zeroBased, refBand, refLine });
     // Draw the zero rule whenever the axis can show negatives — always for a
     // balance of opinion, and for a rate series that actually dips below zero.
     const allowsNegative = balanceOfOpinion || yDomain[0] < 0;

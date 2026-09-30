@@ -45,6 +45,13 @@ describe('yDomainFor', () => {
     expect(lo).toBeLessThanOrEqual(1);
     expect(hi).toBeGreaterThanOrEqual(9.4);
   });
+  it('pins a zero-based positive series at exactly zero', () => {
+    // Cap rates around 5-6%: the default padding would float the floor near
+    // 5%; zeroBased forces a full 0-based axis.
+    expect(yDomainFor([4.9, 5.4, 6.1], { zeroBased: true })[0]).toBe(0);
+    // ...but a series that printed negative still gets room below zero.
+    expect(yDomainFor([-1, 2], { zeroBased: true })[0]).toBeLessThan(-1);
+  });
   it('falls back to a unit domain when nothing is finite', () => {
     expect(yDomainFor([NaN, null, undefined])).toEqual([0, 1]);
   });

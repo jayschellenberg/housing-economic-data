@@ -440,6 +440,7 @@ function renderCharts() {
         title: chart.title,
         sourceLabel: source,
         table: true,
+        zeroBased: true,
         description: chartDescription(chart, sel),
       });
       card.render(input.records, input.seriesMeta, {
