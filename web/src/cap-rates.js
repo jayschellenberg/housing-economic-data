@@ -22,6 +22,7 @@ import { downloadCardPng, setExportRedraw } from './png-export.js';
 import { escapeHtml } from './escape.js';
 import { getFirm, onFirmChange } from './firm.js';
 import { getPref, setPref } from './prefs.js';
+import { buildJumpBar } from './jump-bar.js';
 import {
   TYPE_ORDER, FIRM_ORDER, SUBTYPE_ORDER, quarterList, typesPresent, subtypesFor, rowsUpTo,
   averageByClass, byFirm, rangeSeries, quarterTable, toCardInput, fmtRate, orderBy, breakGaps,
@@ -257,6 +258,7 @@ function renderCharts() {
   const on = enabledTypes();
   const subtypePrefs = ui.prefs.subtypes || {};
   const subtitle = `Winnipeg, quarterly to ${quarter}`;
+  const drawnSections = [];
 
   for (const type of typesPresent(rows)) {
     if (!on.has(type)) continue;
@@ -324,7 +326,9 @@ function renderCharts() {
       ui.cards.set(id, { card: card.card });
     }
     $grid.appendChild(section);
+    drawnSections.push({ id: section.id, label: type });
   }
+  if (drawnSections.length > 1) $grid.prepend(buildJumpBar(drawnSections));
   if (!$grid.childElementCount) {
     const p = document.createElement('p');
     p.className = 'text-sm text-neutral-600';

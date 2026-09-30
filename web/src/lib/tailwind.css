@@ -81,6 +81,38 @@
   border-bottom-color: white;
 }
 
+/* Quick-jump bar at the top of a long chart page (Johnson Report, Cap
+   Rates): one chip per section, sticky under the tab bar so it stays in
+   reach while scrolling. */
+.cmhc-jump-bar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 0;
+  margin: -8px 0 4px;
+  background: var(--color-neutral-50);
+  border-bottom: 1px solid var(--color-neutral-200);
+}
+
+.cmhc-jump-chip {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--color-neutral-300);
+  background: white;
+  color: var(--color-neutral-700);
+  cursor: pointer;
+}
+
+.cmhc-jump-chip:hover {
+  color: var(--cmhc-brand-red);
+  border-color: var(--cmhc-brand-red);
+}
+
 .cmhc-tab:hover {
   color: var(--color-neutral-900);
   background: white;
