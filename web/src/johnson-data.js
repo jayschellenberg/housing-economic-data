@@ -412,6 +412,53 @@ export function allDistricts(editions) {
 }
 
 /**
+ * Picker groups: district names the report prints for the same area in
+ * different tables (or has renamed over the years), shown as one checkbox.
+ * The lines on a chart keep the name that table printed; only the list is
+ * shorter. Jason, 2026-09-30: Central + Exchange (+ the sales table's
+ * "Central/Exchange"); Elmwood + East Kildonan (+ the retail tables'
+ * "Elmwood/East Kildonan"); St Boniface + St Boniface Industrial Park (land);
+ * the sales / land tables' "Kildonan" with North Kildonan.
+ */
+export const DISTRICT_GROUPS = Object.freeze([
+  { label: 'Central/Exchange', members: ['Central', 'Exchange', 'Central/Exchange'] },
+  { label: 'Elmwood/East Kildonan', members: ['Elmwood', 'East Kildonan', 'Elmwood/East Kildonan'] },
+  { label: 'North Kildonan', members: ['North Kildonan', 'Kildonan'] },
+  { label: 'St Boniface', members: ['St Boniface', 'St Boniface Industrial Park'] },
+]);
+
+/**
+ * The sidebar's district checkboxes for these district names: one item per
+ * group (only its members that occur) or ungrouped name, sorted by label.
+ * Overall / Total are left out — those lines are always drawn.
+ * @param {string[]} names  every district label in the data (allDistricts)
+ * @returns {Array<{label: string, members: string[]}>}
+ */
+export function districtPicker(names) {
+  const present = new Set(names.filter(n => !AGGREGATE_LABELS.has(n)));
+  const items = [];
+  const grouped = new Set();
+  for (const g of DISTRICT_GROUPS) {
+    const members = g.members.filter(m => present.has(m));
+    if (!members.length) continue;
+    members.forEach(m => grouped.add(m));
+    items.push({ label: g.label, members });
+  }
+  for (const n of present) if (!grouped.has(n)) items.push({ label: n, members: [n] });
+  return items.sort((a, b) => a.label.localeCompare(b.label));
+}
+
+/**
+ * Normalise a saved selection of district names to whole picker items: a
+ * group counts as chosen when any of its names is (selections saved before
+ * the groups existed could hold one half), and then all of its names are.
+ */
+export function expandSelection(saved, items) {
+  const chosen = new Set(saved);
+  return items.filter(i => i.members.some(m => chosen.has(m))).flatMap(i => i.members);
+}
+
+/**
  * Convert points into the {records, seriesMeta} pair buildIndicatorCard
  * expects. `keep` optionally restricts the lines (district picker); the
  * aggregate line is always kept when present.

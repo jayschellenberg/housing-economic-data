@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   CHARTS, CHART_BY_ID, periodToDate, seasonDate, uniqueColumns, editionPoints, chartPoints,
   mergeLatestWins, toCardInput, allDistricts, sourceLabel, editionsUpTo, titleCase,
+  districtPicker, expandSelection,
 } from '../src/johnson-data.js';
 
 // Cut-down editions in the shape parse_johnson.py writes. Two June editions
@@ -200,5 +201,31 @@ describe('sidebar helpers', () => {
   it('title-cases column names', () => {
     expect(titleCase('POWER CENTRES')).toBe('Power Centres');
     expect(titleCase('TOTAL A,B,C')).toBe('Total A,B,C');
+  });
+});
+
+describe('district picker groups', () => {
+  const NAMES = ['Central', 'Central/Exchange', 'East Kildonan', 'Elmwood', 'Elmwood/East Kildonan', 'Exchange',
+    'Kildonan', 'North Kildonan', 'St Boniface', 'St Boniface Industrial Park', 'St James', 'Overall', 'Total'];
+
+  it('folds the report\'s variant names into one item each and drops the aggregates', () => {
+    const items = districtPicker(NAMES);
+    expect(items.map(i => i.label)).toEqual(['Central/Exchange', 'Elmwood/East Kildonan', 'North Kildonan', 'St Boniface', 'St James']);
+    expect(items.find(i => i.label === 'Central/Exchange').members).toEqual(['Central', 'Exchange', 'Central/Exchange']);
+    expect(items.find(i => i.label === 'North Kildonan').members).toEqual(['North Kildonan', 'Kildonan']);
+  });
+
+  it('lists only the members a group actually has in the data', () => {
+    expect(districtPicker(['Central', 'St James', 'Overall'])).toEqual([
+      { label: 'Central/Exchange', members: ['Central'] },
+      { label: 'St James', members: ['St James'] },
+    ]);
+  });
+
+  it('treats a group as chosen when any of its names was saved', () => {
+    const items = districtPicker(NAMES);
+    expect(expandSelection(['Exchange', 'St James'], items).sort())
+      .toEqual(['Central', 'Central/Exchange', 'Exchange', 'St James']);
+    expect(expandSelection([], items)).toEqual([]);
   });
 });
