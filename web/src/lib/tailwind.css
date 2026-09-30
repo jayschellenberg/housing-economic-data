@@ -129,6 +129,19 @@
   background: white;
 }
 
+/* Cap-rate quarter tables: a two-line header (class over Low / High) with
+   the table's normal cell padding leaves a band of empty maroon; tighten it. */
+.cmhc-table.cmhc-table-compact thead th {
+  padding-top: 3px;
+  padding-bottom: 3px;
+  line-height: 1.2;
+}
+
+.cmhc-table.cmhc-table-compact tbody td {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
 .cmhc-tab:hover {
   color: var(--color-neutral-900);
   background: white;

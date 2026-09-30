@@ -4,7 +4,7 @@ A static site that reads the tracker's published bundle out of a shared
 Dropbox folder and does everything else in the browser. **It ships no
 data.** The deploy is an empty shell; the folder is the access control.
 
-Live: https://commercial-availability-explorer.vercel.app
+Live: https://housing-economic-data.vercel.app/#commercial
 
 ```
 pipeline (v3, Sun 12pm + Wed 5pm)        shared Dropbox folder              browser (this site, on Vercel)

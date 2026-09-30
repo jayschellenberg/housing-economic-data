@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   quarterKey, quarterList, typesPresent, subtypesFor, firmsFor, rowsUpTo, averageByClass, byFirm,
-  rangeSeries, quarterTable, toCardInput, AVERAGE, breakGaps, nextQuarterEnd,
+  rangeSeries, quarterTable, toCardInput, AVERAGE, breakGaps, nextQuarterEnd, averageByFirm, defaultYearFrom,
 } from '../src/cap-rates-data.js';
 
 const row = (quarter, firm, type, subtype, low, high) => ({
@@ -107,5 +107,19 @@ describe('breakGaps', () => {
       { line: 'A', date: '2011-12-31', value: 6 }, { line: 'A', date: '2021-03-31', value: 6.5 },
     ]);
     expect(records.map(r => r.value)).toEqual([6, null, 6.5]);
+  });
+});
+
+describe('averageByFirm', () => {
+  it('averages each firm\'s classes into one line per firm, in percent', () => {
+    const pts = averageByFirm(ROWS, 'Industrial');
+    // Colliers 2026 Q1: Class A 6.5 and Class B 6.75 -> 6.625 (rounded to 2 dp)
+    expect(pts.find(p => p.line === 'Colliers' && p.date === '2026-03-31').value).toBe(6.63);
+    expect(pts.find(p => p.line === 'CBRE' && p.date === '2026-06-30').value).toBe(6.25);
+    expect(pts.some(p => p.line === AVERAGE)).toBe(false);
+  });
+  it('defaults the chart start to five years before the latest quarter', () => {
+    expect(defaultYearFrom(['2021 Q4', '2026 Q2'])).toBe(2021);
+    expect(defaultYearFrom([])).toBeNull();
   });
 });
