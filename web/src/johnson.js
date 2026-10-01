@@ -437,7 +437,7 @@ function renderCharts() {
 
       if (style === 'bars' && chart.district) {
         const card = buildBarCard($cards, { chart, source });
-        card.render(points, { keep: districts, monthFrom, monthTo, lineOrder: ui.districts });
+        card.render(points, { keep: districts, monthFrom, monthTo, lineOrder: ui.districts, subtitle: chart.subtitle || '' });
         ui.cards.set(chart.id, { card: card.card, setOpenPanels: () => {} });
         continue;
       }
@@ -445,7 +445,7 @@ function renderCharts() {
       const card = buildIndicatorCard($cards, {
         chartId: `johnson_${chart.id}`,
         fileStem: `johnson_${chart.id}`,
-        title: chart.title,
+        title: displayTitle(chart),
         sourceLabel: source,
         table: true,
         zeroBased: true,
@@ -457,6 +457,8 @@ function renderCharts() {
       card.render(input.records, input.seriesMeta, {
         // Semi-annual measures name the month; annual ones only the year.
         rangeSubtitle: chart.family ? 'month' : 'year',
+        // The chart's own specifics, where its title leaves them out.
+        subtitle: chart.subtitle || '',
         // One line drawn → no legend; its name leads the subtitle instead.
         singleSeriesInSubtitle: true,
         dashedIds: input.dashedIds,
@@ -479,6 +481,13 @@ function renderCharts() {
   }
 }
 
+/** A chart's title as shown: every Johnson figure is Winnipeg's, so the card,
+ *  the PNG and the Excel sheet say so — "Winnipeg Retail Vacancy by District
+ *  — Total Inventory" (Jason, 2026-09-30). */
+function displayTitle(chart) {
+  return chart.title.startsWith('Winnipeg ') ? chart.title : `Winnipeg ${chart.title}`;
+}
+
 // --- Grouped-bar card ----------------------------------------------------------
 // The form the appraiser's Excel charts take: districts along the x-axis, one
 // bar per period, the last ten periods. Same chrome as the indicator card so
@@ -490,7 +499,7 @@ function buildBarCard(container, { chart, source }) {
   card.className = 'chart-card cmhc-indicator-card md:col-span-2';
   card.dataset.chartId = `johnson_${chart.id}`;
   card.innerHTML = `
-    <header class="chart-title">${escapeHtml(chart.title)}</header>
+    <header class="chart-title">${escapeHtml(displayTitle(chart))}</header>
     <p class="chart-sub" data-role="sub"></p>
     <div data-role="plot" style="min-height:240px"></div>
     <div data-role="empty" class="text-xs text-neutral-500 mt-2" hidden>No data for this selection.</div>
@@ -595,7 +604,8 @@ function buildBarCard(container, { chart, source }) {
       return `${m === '06' ? 'June' : 'December'} ${y}`;
     };
     const first = longLabel(dates[0]), last = longLabel(dates[dates.length - 1]);
-    $sub.textContent = [first === last ? first : `${first} to ${last}`, opts.subtitle].filter(Boolean).join('; ');
+    const range = first === last ? first : `${first} to ${last}`;
+    $sub.textContent = opts.subtitle ? `${opts.subtitle} — ${range}` : range;
     $png.onclick = () => downloadCardPng(card, `johnson_${chart.id}_bars_${new Date().toISOString().slice(0, 10)}.png`, {
       filter: (n) => !(n.classList && n.classList.contains('chart-actions')),
     }).catch(err => console.error('[johnson png]', err));
@@ -636,7 +646,8 @@ async function exportData() {
       while (usedNames.has(name)) name = `${name.slice(0, 25)} ${++n}`;
       usedNames.add(name);
       const ws = wb.addWorksheet(name);
-      ws.addRow([chart.title]);
+      ws.addRow([displayTitle(chart)]);
+      if (chart.subtitle) ws.addRow([chart.subtitle]);
       ws.addRow([`Source: ${source}`]);
       ws.addRow([]);
       const header = ['Date', ...seriesMeta.map(s => s.chartLabel)];

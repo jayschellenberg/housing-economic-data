@@ -61,7 +61,8 @@ export const CHARTS = [
   { id: 'ind_vac_multi',  group: 'ind_vac', kind: 'matrix-rows', series: ['ind_vac_multi_district'],
     title: 'Industrial Vacancy — Multi-Tenant Investment', units: 'percent', district: true, family: 'ind_vac_multi' },
   { id: 'ind_vac_sf',     group: 'ind_vac', kind: 'records-cols', series: ['ind_vac_distribution'],
-    title: 'Industrial Vacant Space — Owner-Occupied vs Investment', units: 'sf', family: 'ind_vac_sf' },
+    // Specifics in the subtitle, so the title fits the exported image.
+    title: 'Industrial Vacant Space', subtitle: 'Owner-Occupied vs Investment', units: 'sf', family: 'ind_vac_sf' },
 
   // --- Industrial leasing (annual, December editions) ---
   { id: 'ind_rate',        group: 'ind_lease', kind: 'matrix-rows', series: ['ind_lease_rate_district'],
@@ -86,7 +87,7 @@ export const CHARTS = [
     groupLabel: true,
     defaultRows: ['Downtown · Class A', 'Downtown · Class B', 'Downtown · Class C', 'Downtown · Total A,B,C', 'Total Suburban', 'Total Inventory'] },
   { id: 'office_sublease',  group: 'office', kind: 'period-rows', series: ['office_sublease_history'],
-    title: 'Downtown Office Vacancy Including Subleases — Investment Class A–C', units: 'percent' },
+    title: 'Downtown Office Vacancy', subtitle: 'Including Subleases, Investment Class A–C', units: 'percent' },
   { id: 'office_dt_rate',   group: 'office', kind: 'records-cols', series: ['office_dt_vac_rate'],
     title: 'Downtown Office Headlease Vacancy — Class A–C', units: 'percent', family: 'office_dt_rate' },
   { id: 'office_dt_lease',  group: 'office', kind: 'records-cols', series: ['office_dt_lease_rates'],
@@ -133,7 +134,7 @@ export const CHARTS = [
     seriesLabels: { office_sales_summary: 'All office', office_sales_users: 'Office — users', office_sales_investors: 'Office — investors', retail_invest_sales: 'Retail investment' },
     column: 'PRICE/SF', title: 'Office & Retail Building Sales — Price per Sq Ft', units: 'dollar_psf' },
   { id: 'comm_sales_volume', group: 'sales', kind: 'records-cols', series: ['comm_sales_volume'],
-    title: 'Dollar Volume of Office, Retail, Miscellaneous & Restaurant Sales', units: 'dollar_millions' },
+    title: 'Office, Retail & Restaurant Sales — Dollar Volume', units: 'dollar_millions' },
 
   // --- Apartment sales (annual) ---
   { id: 'apt_psf', group: 'apt', kind: 'records-col',

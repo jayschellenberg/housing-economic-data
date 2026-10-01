@@ -802,8 +802,11 @@ export function buildIndicatorCard(container, {
       // 'month' → "June 2000 to June 2026", 'year' → "2016 to 2025"
       // (Johnson Report; annual measures have no month to name).
       const end = opts.rangeSubtitle === 'year' ? (d) => String(d.getUTCFullYear()) : longMonthYear;
+      // What the chart is (a one-line series' name, then any caller text),
+      // then the range: "Owner-Occupied vs Investment — 2017 to 2026".
       const range = `${end(xMin)} to ${end(xMax)}`;
-      $sub.textContent = [singleLabel ? `${singleLabel} — ${range}` : range, baseSub, source].filter(Boolean).join('; ');
+      const lead = [singleLabel, baseSub].filter(Boolean).join(' — ');
+      $sub.textContent = [lead ? `${lead} — ${range}` : range, source].filter(Boolean).join('; ');
     } else if (opts.rangePrefix) {
       const monthYear = (d) => `${MONTH_ABBR[d.getUTCMonth()]}-${d.getUTCFullYear()}`;
       const range = `${monthYear(xMin)} to ${monthYear(xMax)}`;
