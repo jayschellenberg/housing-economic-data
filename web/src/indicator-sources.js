@@ -83,6 +83,17 @@ const joinAnd = (xs) => xs.length <= 1 ? (xs[0] || '')
  */
 export function chartSources(catalog, chartId, ids) {
   const all = catalog.series || [];
+  return seriesSources(all.filter(s => s.chartId === chartId && (!ids || ids.has(s.id))), all);
+}
+
+/**
+ * The same, for a list of series given directly — a card that isn't a catalog
+ * chart (Cap vs Interest draws BoC shard series under its own labels).
+ * @param {object[]} series — series meta: provider, productId/vectorId or
+ *   seriesId, sourceUrl, chartLabel; derived ones need `all` to resolve
+ * @param {object[]} [all] — every series, for resolving `derivedFrom`
+ */
+export function seriesSources(series, all = series) {
   const byId = new Map(all.map(s => [s.id, s]));
 
   // Resolve each charted series to the published series behind it, keeping
@@ -103,7 +114,7 @@ export function chartSources(catalog, chartId, ids) {
     seen.add(key);
     bases.push({ s, label });
   };
-  all.filter(s => s.chartId === chartId && (!ids || ids.has(s.id))).forEach(s => resolve(s, s.chartLabel || s.geo || s.id));
+  series.forEach(s => resolve(s, s.chartLabel || s.geo || s.id));
 
   // Group by publisher, in first-seen order.
   const statcan = new Map();  // pid → Map(vector → labels[])

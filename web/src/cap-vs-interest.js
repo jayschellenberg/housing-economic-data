@@ -37,6 +37,7 @@
  */
 
 import { buildIndicatorCard, readOpenPanels } from './indicator-chart.js';
+import { seriesSources } from './indicator-sources.js';
 import { getPref, setPref } from './prefs.js';
 import { getData as getCapRatesData, storeAvailable } from './cap-rates-store.js';
 
@@ -143,6 +144,25 @@ export function orderTypes(names) {
 export function capPublisher(firm) {
   if (firm === ALL_FIRMS) return 'Colliers, CBRE & Cushman & Wakefield (average)';
   return firm || DEFAULT_FIRM;
+}
+
+/**
+ * Explainer Sources for the card: the BoC Valet series behind each rate line,
+ * then the brokerage reports the cap rates come from. The reports get no link —
+ * they are licensed and read from the user's own Cap Rates folder.
+ */
+export function capVsInterestSources(rateMeta, capTypes, firm) {
+  const items = seriesSources(rateMeta).items;
+  if (capTypes.length) {
+    const firms = firm === ALL_FIRMS ? FIRMS : [firm || DEFAULT_FIRM];
+    items.push({
+      citation: `${firms.map(f => (f === 'Colliers' ? 'Colliers Winnipeg' : f)).join(', ')} — ` +
+        'quarterly Winnipeg cap rate market reports (Low–High ranges by property type and class)',
+      detail: `Used for: ${capTypes.map(t => `${t} CR`).join(', ')}. ` +
+        'Read from your local Cap Rates folder; not published with this site.',
+    });
+  }
+  return items;
 }
 
 /** The cap-rate publisher as the caption names it: "Colliers Winnipeg". */
@@ -421,6 +441,9 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', 
       captionPt: 10,
       table: true,
       zeroBased: true,
+      // The caption keeps the reference chart's wording; the specific series
+      // codes and reports are listed under the explainer instead.
+      sources: capVsInterestSources(ui.rateMeta, capTypes, $firm.value),
       description:
         'The BoC overnight target with the 5- and 10-year Government of Canada yields — the ' +
         'benchmarks a cap rate is built off — and, when the Cap Rates folder is loaded, the average ' +
