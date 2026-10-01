@@ -384,8 +384,23 @@ function currentSelection() {
   return { view, editionId };
 }
 
+// Charts open on the last ten years (Jason, 2026-10-01): with "from" left
+// blank they start ten calendar years back from the "to" year, or from the
+// selected edition's year (June 2026 → 2017–2026). The box's placeholder
+// shows the year in use; typing a year overrides it, as on Cap Rates.
+const DEFAULT_YEARS = 10;
+
+function defaultYearFrom() {
+  const id = ui.$edition.value || (ui.editions.length ? ui.editions[ui.editions.length - 1].id : null);
+  const base = Number(ui.prefs.yearTo) || ui.editions.find(e => e.id === id)?.year;
+  return base ? base - (DEFAULT_YEARS - 1) : null;
+}
+
 function monthRange() {
-  const from = ui.prefs.yearFrom ? `${ui.prefs.yearFrom}-01` : null;
+  const dflt = defaultYearFrom();
+  ui.$yearFrom.placeholder = dflt ? String(dflt) : 'from';
+  const fromYear = ui.prefs.yearFrom || dflt;
+  const from = fromYear ? `${fromYear}-01` : null;
   const to = ui.prefs.yearTo ? `${ui.prefs.yearTo}-12` : null;
   return { monthFrom: from, monthTo: to };
 }

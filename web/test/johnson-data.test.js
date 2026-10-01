@@ -258,3 +258,18 @@ describe('office headlease row labels', () => {
     expect(want.every(r => lines.has(r))).toBe(true);
   });
 });
+
+describe('editionPoints: years after the edition', () => {
+  it('drops a row whose year is later than its edition (a typo in the print)', () => {
+    const ed = {
+      id: '2025-06', year: 2025, month: 6, season: 'jun',
+      tables: [{ series: 'comm_vac_sf_summary', season: 'jun', shape: 'records', columns: ['INDUSTRIAL', 'OFFICE', 'RETAIL', 'TOTAL'],
+        rows: [
+          { label: '2024', values: [2410267, 2316151, 849486, 5575904] },
+          { label: '20285', values: [2571161, 2285547, 1148416, 6005124] },
+        ] }],
+    };
+    const dates = new Set(editionPoints(CHART_BY_ID.vac_sf, ed).map(p => p.date.slice(0, 4)));
+    expect([...dates]).toEqual(['2024']);
+  });
+});

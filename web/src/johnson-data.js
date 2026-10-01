@@ -367,7 +367,11 @@ export function editionPoints(chart, edition) {
   if (!fn) return [];
   const out = [];
   for (const t of tablesFor(edition, chart.series)) out.push(...fn(chart, t, edition));
-  return out;
+  // No edition can report a year after its own: such a point is a typo in
+  // the printed table — the June 2025 square-footage summary labels 2025
+  // "20285", which read as 2028. Drop it; later editions carry the real year.
+  const last = edition?.year ? `${edition.year}-12-31` : null;
+  return last ? out.filter(p => p.date <= last) : out;
 }
 
 // --- Views -------------------------------------------------------------------
