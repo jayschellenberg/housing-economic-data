@@ -437,7 +437,7 @@ function renderCharts() {
 
       if (style === 'bars' && chart.district) {
         const card = buildBarCard($cards, { chart, source });
-        card.render(points, { keep: districts, monthFrom, monthTo, lineOrder: ui.districts });
+        card.render(points, { keep: districts, monthFrom, monthTo, lineOrder: ui.districts, subtitle: chart.subtitle || '' });
         ui.cards.set(chart.id, { card: card.card, setOpenPanels: () => {} });
         continue;
       }
@@ -457,6 +457,8 @@ function renderCharts() {
       card.render(input.records, input.seriesMeta, {
         // Semi-annual measures name the month; annual ones only the year.
         rangeSubtitle: chart.family ? 'month' : 'year',
+        // The chart's own specifics, where its title leaves them out.
+        subtitle: chart.subtitle || '',
         // One line drawn → no legend; its name leads the subtitle instead.
         singleSeriesInSubtitle: true,
         dashedIds: input.dashedIds,
@@ -602,7 +604,8 @@ function buildBarCard(container, { chart, source }) {
       return `${m === '06' ? 'June' : 'December'} ${y}`;
     };
     const first = longLabel(dates[0]), last = longLabel(dates[dates.length - 1]);
-    $sub.textContent = [first === last ? first : `${first} to ${last}`, opts.subtitle].filter(Boolean).join('; ');
+    const range = first === last ? first : `${first} to ${last}`;
+    $sub.textContent = opts.subtitle ? `${opts.subtitle} — ${range}` : range;
     $png.onclick = () => downloadCardPng(card, `johnson_${chart.id}_bars_${new Date().toISOString().slice(0, 10)}.png`, {
       filter: (n) => !(n.classList && n.classList.contains('chart-actions')),
     }).catch(err => console.error('[johnson png]', err));
@@ -644,6 +647,7 @@ async function exportData() {
       usedNames.add(name);
       const ws = wb.addWorksheet(name);
       ws.addRow([displayTitle(chart)]);
+      if (chart.subtitle) ws.addRow([chart.subtitle]);
       ws.addRow([`Source: ${source}`]);
       ws.addRow([]);
       const header = ['Date', ...seriesMeta.map(s => s.chartLabel)];
