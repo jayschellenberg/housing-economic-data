@@ -370,7 +370,12 @@ as-of months with their stale flags, and any pipeline lines that signal a
 scrape fell back to last-good data. The `Commit` link is the data commit the
 run pushed. The same summary goes out under a "no new data" subject when
 nothing changed, since a scrape that keeps falling back to last-good data
-also looks like "no change". Both schedules run at 04:41 UTC; the earlier
+also looks like "no change". That includes `r/14`'s history-shrink guard: a
+series that comes back with more than 20% fewer records than the last build
+(a partial StatsCan reply) keeps its last-good history, with this run's
+values laid over it, and gets a "history shrank" note. Set
+`INDICATORS_ALLOW_SHRINK=1` for a run that shortens a series on purpose
+without changing its vector. Both schedules run at 04:41 UTC; the earlier
 07:23 UTC slot was queued 2–8 hours late by GitHub every time.
 
 ## Verifying the pipeline
