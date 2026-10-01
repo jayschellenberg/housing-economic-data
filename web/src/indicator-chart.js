@@ -385,12 +385,45 @@ export function freshnessLimitDays(chartId, frequency) {
   return FRESHNESS_OVERRIDE_DAYS[chartId] ?? (FRESHNESS_DAYS[frequency] || 365);
 }
 
+/** The "Sources" list in a card's explainer — DOM-built, no HTML strings. */
+function renderSources($box, sources, bare) {
+  if (!bare) {
+    const h = document.createElement('p');
+    h.className = 'cmhc-sources-head';
+    h.textContent = 'Sources';
+    $box.appendChild(h);
+  }
+  const ul = document.createElement('ul');
+  for (const { citation, url, detail } of sources) {
+    const li = document.createElement('li');
+    if (url) {
+      const a = document.createElement('a');
+      a.href = url; a.target = '_blank'; a.rel = 'noopener';
+      a.textContent = citation;
+      li.appendChild(a);
+    } else {
+      li.textContent = citation;
+    }
+    if (detail) {
+      const d = document.createElement('div');
+      d.className = 'cmhc-sources-detail';
+      d.textContent = detail;
+      li.appendChild(d);
+    }
+    ul.appendChild(li);
+  }
+  $box.appendChild(ul);
+}
+
 /**
  * Build an indicator chart panel and append it to `container`.
  * Returns { render(records, seriesMeta[]) }.
  */
 export function buildIndicatorCard(container, {
   chartId, title, sourceLabel, description,
+  // Specific references (table numbers, series codes, links) listed under the
+  // explainer: [{ citation, url?, detail? }] — see indicator-sources.js.
+  sources = null,
   // Optional, from the catalog's chart def:
   //   refBand { from, to, label } — shaded horizontal band (the Bank of
   //                                 Canada's 1-3% inflation-control range)
@@ -458,16 +491,18 @@ export function buildIndicatorCard(container, {
         <p class="cmhc-chart-table-note" data-role="table-note"></p>
       </details>
     ` : ''}
-    ${description ? `
+    ${description || sources?.length ? `
       <details class="cmhc-explainer">
-        <summary>What does this mean?</summary>
-        <p data-role="explainer-body"></p>
+        <summary>${description ? 'What does this mean?' : 'Sources'}</summary>
+        ${description ? '<p data-role="explainer-body"></p>' : ''}
+        ${sources?.length ? '<div class="cmhc-sources" data-role="sources"></div>' : ''}
       </details>
     ` : ''}
   `;
   if (description) {
     card.querySelector('[data-role="explainer-body"]').textContent = description;
   }
+  if (sources?.length) renderSources(card.querySelector('[data-role="sources"]'), sources, !description);
   container.appendChild(card);
 
   const $title    = card.querySelector('.chart-title');
@@ -522,7 +557,7 @@ export function buildIndicatorCard(container, {
   // A source line can be long (Cap Rates names three publishers and their
   // reports): let it wrap, and keep the company name on one line beside it.
   if (sourceInCaption) $caption.classList.add('chart-caption-sourced');
-  const sourceText = sourceLabel ? `Source: ${sourceLabel}` : '';
+  let sourceText = sourceLabel ? `Source: ${sourceLabel}` : '';
   function applyFirm(name = signed ? getFirm() : '') {
     if (sourceInCaption) {
       $capLeft.textContent = name || '';
@@ -546,7 +581,20 @@ export function buildIndicatorCard(container, {
   const stem = fileStem || `cmhc_${chartId}`;
   let lastFilename = `${stem}.png`;
 
+  // `opts.sources` ({ label, items }) re-cites the card for the series being
+  // drawn, so turning a geography off drops the table only it came from.
+  const $sources = card.querySelector('[data-role="sources"]');
+  function setSources({ label, items }) {
+    sourceText = label ? `Source: ${label}` : '';
+    if (sourceInCaption) applyFirm();
+    if ($sources && items?.length) {
+      $sources.replaceChildren();
+      renderSources($sources, items, !description);
+    }
+  }
+
   function draw(records, seriesMetaIn, opts = {}) {
+    if (opts.sources) setSources(opts.sources);
     // Display labels only: `opts.dashedIds` names ids, and the caller computed
     // them from the unqualified labels (see geoQualifiedLabels).
     const seriesMeta = geoQualifiedLabels(seriesMetaIn);

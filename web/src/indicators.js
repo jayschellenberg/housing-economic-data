@@ -16,6 +16,7 @@
  */
 
 import { buildIndicatorCard, aggregateDashedIds, geoQualifiedLabels } from './indicator-chart.js';
+import { chartSources } from './indicator-sources.js';
 import { escapeHtml } from './escape.js';
 import { indicatorFmt } from './format.js';
 
@@ -653,12 +654,16 @@ function buildChartSections(catalog, shards) {
       const recordsAll = (shard.records || []).filter(r => idsAll.has(r.id));
       if (recordsAll.length === 0) return;
 
-      const sourceLabel = uniqueProviderLabel(seriesMetaAll);
+      // Table numbers / series codes in the subtitle when they fit, the full
+      // linked list in the explainer either way.
+      const refs = chartSources(catalog, chartId);
+      const sourceLabel = refs.short || uniqueProviderLabel(seriesMetaAll);
       const card = buildIndicatorCard($sectionGrid, {
         chartId,
         title: chartCfg.title,
         sourceLabel,
         description: chartCfg.description,
+        sources: refs.items,
         refBand: chartCfg.refBand,
         refLine: chartCfg.refLine,
         table:   chartCfg.table,
@@ -679,12 +684,13 @@ function buildChartSections(catalog, shards) {
       const records = recordsAll.filter(r => ids.has(r.id));
       card.render(records, seriesMeta, {
         subtitle: subtitleFor(seriesMeta),
+        sources: visibleSources(catalog, chartId, ids),
         monthFrom: state.monthFrom,
         monthTo:   state.monthTo,
         // Components dashed, aggregate (Canada / Total / Overall) solid.
         // Decided on the VISIBLE series: with Canada toggled off there is no
         // solid line for a dash to contrast with, so the rest draw solid.
-        dashedIds: aggregateDashedIds(seriesMeta),
+        dashedIds: dashedIdsFor(chartCfg, seriesMeta),
       });
       // Stash the unfiltered set so rerenderCards() can re-apply the filter
       // without having to re-walk the shard each time.
@@ -702,6 +708,23 @@ function buildChartSections(catalog, shards) {
 function uniqueProviderLabel(seriesMeta) {
   const provs = [...new Set(seriesMeta.map(s => PROVIDER_LABEL[s.provider] || s.provider))];
   return provs.join(' / ');
+}
+
+/**
+ * Which lines draw dashed. A chart can name them with `dashedMatch`, a regex
+ * on the chart label (" paid$" dashes paid rent against solid asking rent);
+ * otherwise components dash against their aggregate (aggregateDashedIds).
+ */
+function dashedIdsFor(chartCfg, seriesMeta) {
+  if (!chartCfg?.dashedMatch) return aggregateDashedIds(seriesMeta);
+  const re = new RegExp(chartCfg.dashedMatch);
+  return seriesMeta.filter(s => re.test(s.chartLabel || '')).map(s => s.id);
+}
+
+/** Sources for just the series on screen, as card.render's `sources` option. */
+function visibleSources(catalog, chartId, ids) {
+  const { short, items } = chartSources(catalog, chartId, ids);
+  return { label: short, items };
 }
 
 function subtitleFor(seriesMeta) {
@@ -883,7 +906,7 @@ function applySectionVisibility() {
 }
 
 function rerenderCards() {
-  lastRender.cards.forEach(({ card, seriesMetaAll, recordsAll, chartCfg }) => {
+  lastRender.cards.forEach(({ chartId, card, seriesMetaAll, recordsAll, chartCfg }) => {
     // Same conditional filter as the initial render — single-geo charts
     // (and geoFilter:false charts) always show their lines.
     const chartGeos = new Set(seriesMetaAll.map(s => s.geo));
@@ -896,9 +919,10 @@ function rerenderCards() {
     const records = recordsAll.filter(r => ids.has(r.id));
     card.render(records, seriesMeta, {
       subtitle: subtitleFor(seriesMeta),
+      sources: visibleSources(lastRender.catalog, chartId, ids),
       monthFrom: state.monthFrom,
       monthTo:   state.monthTo,
-      dashedIds: aggregateDashedIds(seriesMeta),
+      dashedIds: dashedIdsFor(chartCfg, seriesMeta),
     });
   });
   // The Cap vs Interest card isn't catalog-driven, so it isn't in
