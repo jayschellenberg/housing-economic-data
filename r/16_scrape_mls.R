@@ -249,7 +249,14 @@ scrape_headline <- function() {
   sentences <- strsplit(txt, "(?<=[.!?])\\s+", perl = TRUE)[[1]]
   txt_monthly <- paste(sentences[!grepl("YTD|year[- ]to[- ]date", sentences, ignore.case = TRUE)], collapse = " ")
   num <- function(pattern) {
-    m <- regmatches(txt_monthly, regexpr(pattern, txt_monthly, perl = TRUE))
+    # A pattern the runner's PCRE2 rejects must cost one field, not the whole
+    # parse (an invalid regex used to abort every field -> last-good, stale).
+    hit <- tryCatch(regexpr(pattern, txt_monthly, perl = TRUE), error = function(e) {
+      message(sprintf("[16] headline pattern rejected (%s): %s", conditionMessage(e), pattern))
+      NULL
+    })
+    if (is.null(hit)) return(NA_real_)
+    m <- regmatches(txt_monthly, hit)
     if (!length(m)) return(NA_real_)
     as.numeric(gsub("[^0-9.]", "", m[1]))
   }
@@ -258,8 +265,10 @@ scrape_headline <- function() {
   # R's PCRE2 rejects the \u escape, so use the \x{...} form.)
   # WRREB's 2026 wording is "All MLS® sales of 1,326 were down 5% ..." (the ®
   # may carry a footnote digit: "MLS®1"); the older "1,326 MLS® sales" shape is
-  # kept as the fallback.
-  sales  <- num("(?<=All MLS\\x{00ae}[0-9]? sales of )[0-9,]+")
+  # kept as the fallback. The optional digit makes the prefix variable-length,
+  # which a lookbehind can't hold on the runner's older PCRE2 (it only worked
+  # locally on 10.47) -- so match the prefix and drop it with \K instead.
+  sales  <- num("All MLS\\x{00ae}[0-9]? sales of \\K[0-9,]+")
   if (is.na(sales)) sales <- num("[0-9,]+(?=\\s+MLS\\x{00ae} sales)")
   sfd    <- num("(?<=residential[- ]detached average price of \\$)[0-9,]+")
   condo  <- num("(?<=condominium average price of \\$)[0-9,]+")
