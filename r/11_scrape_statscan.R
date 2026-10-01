@@ -63,6 +63,10 @@ results <- lapply(stc_series, function(s) {
     value_col <- intersect(c("val_norm", "VALUE", "value"), names(df))[1]
     raw <- suppressWarnings(as.numeric(df[[value_col]]))
   }
+  # Some tables state their unit only in the UoM label ("Persons in thousands")
+  # with SCALAR_ID 0 — e.g. 14-10-0459 CMA employment — so the catalog row
+  # carries an explicit `valueScale` to keep every series on the same basis.
+  raw <- raw * as.numeric(s$valueScale %||% 1)
   slim <- df %>%
     transmute(
       id        = s$id,
