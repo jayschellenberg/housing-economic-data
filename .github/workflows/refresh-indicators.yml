@@ -19,6 +19,15 @@ on:
         type: choice
         options: ["0", "1"]
 
+# One run at a time: overlapping runs commit the same data files, so the
+# later push hits a rebase conflict and fails (with a failure email + issue),
+# as on 2026-10-01. A run dispatched while one is in flight waits; a newer
+# dispatch replaces an older *pending* one (GitHub keeps one pending per group),
+# which is fine since every run rebuilds from scratch. Never cancel in progress.
+concurrency:
+  group: refresh-indicators
+  cancel-in-progress: false
+
 jobs:
   refresh-indicators:
     runs-on: ubuntu-latest
