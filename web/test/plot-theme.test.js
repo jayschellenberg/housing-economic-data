@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { percentTickFormat, sfTickFormat, dateAxisTicks, MIRROR_Y_MARGIN, plotWidth, plotHeight, PLOT_FALLBACK_WIDTH } from '../src/plot-theme.js';
+import { percentTickFormat, sfTickFormat, personsTickFormat, dateAxisTicks, MIRROR_Y_MARGIN, plotWidth, plotHeight, PLOT_FALLBACK_WIDTH } from '../src/plot-theme.js';
 
 describe('sfTickFormat', () => {
   it('reads millions compactly, dropping trailing zeros', () => {
@@ -11,6 +11,25 @@ describe('sfTickFormat', () => {
   it('uses thousands on a smaller axis and raw sf on a tiny one', () => {
     expect(sfTickFormat([0, 8e5])(2.5e5)).toBe('250K sf');
     expect(sfTickFormat([0, 900])(500)).toBe('500 sf');
+  });
+});
+
+describe('personsTickFormat', () => {
+  it('reads a Canada-scale axis in whole millions', () => {
+    const f = personsTickFormat([0, 21.1e6]);
+    const ticks = [0, 5e6, 10e6, 15e6, 20e6];
+    expect(ticks.map((t, i) => f(t, i, ticks))).toEqual(['0', '5M', '10M', '15M', '20M']);
+  });
+  it('reads a Manitoba-industry axis in thousands, never "0.1M"', () => {
+    const f = personsTickFormat([14000, 102000]);
+    const ticks = [20e3, 40e3, 60e3, 80e3, 100e3];
+    expect(ticks.map((t, i) => f(t, i, ticks))).toEqual(['20k', '40k', '60k', '80k', '100k']);
+  });
+  it('adds a decimal only when ticks would otherwise collide', () => {
+    const f = personsTickFormat([0, 1.6e6]);
+    const ticks = [0, 2e5, 4e5, 6e5, 8e5, 1e6, 1.2e6, 1.4e6];
+    expect(f(1.2e6, 6, ticks)).toBe('1.2M');
+    expect(f(1e6, 5, ticks)).toBe('1M');
   });
 });
 

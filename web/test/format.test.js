@@ -88,3 +88,24 @@ describe('INDICATOR_FMT — agricultural commodity units', () => {
     expect(INDICATOR_FMT.years(null)).toBe('—');
   });
 });
+
+describe('INDICATOR_FMT.persons_thousands — adapts to magnitude', () => {
+  it('renders millions with 2 decimals', () => {
+    expect(INDICATOR_FMT.persons_thousands(21034500)).toBe('21.03M');
+    expect(INDICATOR_FMT.persons_thousands(1052300)).toBe('1.05M');
+  });
+  it('renders thousands with 1 decimal', () => {
+    expect(INDICATOR_FMT.persons_thousands(756100)).toBe('756.1k');
+    expect(INDICATOR_FMT.persons_thousands(52300)).toBe('52.3k');
+    expect(INDICATOR_FMT.persons_thousands(15000)).toBe('15.0k');
+  });
+  it('does not print "1000.0k" or "1000" at the rounding edges', () => {
+    expect(INDICATOR_FMT.persons_thousands(999960)).toBe('1.00M');
+    expect(INDICATOR_FMT.persons_thousands(999.7)).toBe('1.0k');
+  });
+  it('renders small values as a plain number, and missing as "—"', () => {
+    expect(INDICATOR_FMT.persons_thousands(950)).toBe('950');
+    expect(INDICATOR_FMT.persons_thousands(0)).toBe('0');
+    expect(INDICATOR_FMT.persons_thousands(null)).toBe('—');
+  });
+});

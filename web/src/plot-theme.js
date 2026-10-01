@@ -143,6 +143,25 @@ export function sfTickFormat(domain) {
   };
 }
 
+/**
+ * Tick format for a persons axis (LFS employment). One scale for the whole
+ * axis, picked from the domain: "5M" / "10M" when Canada is on it, "20k" /
+ * "40k" for a single Manitoba industry — never the "0.1M" a fixed millions
+ * scale gave. Trailing zeros drop; the exact figure stays in the hover tip,
+ * the chips and the data table (INDICATOR_FMT.persons_thousands).
+ */
+export function personsTickFormat(domain) {
+  const [lo, hi] = domain || [];
+  const max = Math.max(Math.abs(Number(lo)) || 0, Math.abs(Number(hi)) || 0);
+  const [div, suffix] = max >= 1e6 ? [1e6, 'M'] : max >= 1e4 ? [1e3, 'k'] : [1, ''];
+  return (v, _i, ticks) => {
+    const scaled = Array.isArray(ticks) ? ticks.map(t => Number(t) / div) : null;
+    const places = distinctPlaces(scaled, 0);
+    const n = Number((Number(v) / div).toFixed(places));
+    return n === 0 ? '0' : `${n.toLocaleString()}${suffix}`;
+  };
+}
+
 function distinctPlaces(ticks, places) {
   if (!Array.isArray(ticks) || ticks.length < 2) return places;
   let p = places;
