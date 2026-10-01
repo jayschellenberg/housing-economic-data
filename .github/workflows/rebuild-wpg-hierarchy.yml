@@ -15,7 +15,12 @@ on:
         type: choice
         options: ["0", "1"]
 
-# The monthly refresh commits to main too. Never let the two race on a push.
+# One rebuild at a time: a second dispatch waits rather than racing this one
+# on the push. This group does NOT serialize against the monthly refresh-data
+# run (group refresh-data), which also writes wpg_address_index.json. That race
+# is avoided by the schedule (5th vs 2nd of the month), with the commit step's
+# rebase-and-retry as backup. Sharing one group would be worse: GitHub keeps one
+# pending run per group, so a dispatch here could cancel a queued refresh-data.
 concurrency:
   group: wpg-hierarchy-rebuild
   cancel-in-progress: false
