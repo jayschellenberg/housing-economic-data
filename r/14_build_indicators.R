@@ -87,6 +87,77 @@ if (file.exists(rent_csv)) {
   }
 }
 
+# --- Previous build ----------------------------------------------------------
+# The shards on disk are the last good build. Read them once, before
+# clear_dir wipes them, for the shrink guard and the unbuilt-series carry
+# forward below. prevSeriesId is the vector the series was built from then.
+read_prev_shards <- function() {
+  if (!dir.exists(INDICATORS_DIR)) return(tibble::tibble())
+  files <- setdiff(list.files(INDICATORS_DIR, pattern = "\\.json$", full.names = TRUE),
+                   file.path(INDICATORS_DIR, "_catalog.json"))
+  bind_rows(lapply(files, function(f) {
+    doc <- tryCatch(jsonlite::read_json(f, simplifyVector = TRUE), error = function(e) NULL)
+    if (is.null(doc$records) || !length(doc$records)) return(NULL)
+    recs <- tibble::as_tibble(doc$records)
+    sid <- if (is.data.frame(doc$series) && "seriesId" %in% names(doc$series))
+      setNames(as.character(doc$series$seriesId), doc$series$id) else character()
+    recs$prevSeriesId <- unname(sid[recs$id])
+    recs$date  <- as.character(recs$date)
+    recs$value <- as.numeric(recs$value)
+    recs
+  }))
+}
+prev_shards <- read_prev_shards()
+
+# Shard records (id/date/value) back into all_obs's long form.
+prev_as_obs <- function(recs) {
+  recs %>% rowwise() %>% mutate(
+    seriesId  = cat_by_id[[id]]$seriesId %||% cat_by_id[[id]]$vectorId %||% id,
+    units     = cat_by_id[[id]]$units     %||% NA_character_,
+    geo       = cat_by_id[[id]]$geo       %||% NA_character_,
+    frequency = cat_by_id[[id]]$frequency %||% NA_character_,
+    transform = cat_by_id[[id]]$transform %||% NA_character_
+  ) %>% ungroup() %>%
+    transmute(id, seriesId, date = as.character(date), value = as.numeric(value),
+              units, geo, frequency, transform)
+}
+
+# --- History-shrink guard ----------------------------------------------------
+# StatsCan WDS occasionally returns a partial history for one vector (2026-10-01:
+# Regina CPI came back 1997+ instead of 1971+, and the truncated series went
+# live until the next run). If a series lost more than 20% of its records vs
+# the last build, keep the last-good history and lay this run's values over it
+# (so new months and revisions still land). Skipped when the catalog points
+# the series at a different vector than last time (a deliberate source swap);
+# set INDICATORS_ALLOW_SHRINK=1 to accept an intended shrink of the same vector.
+SHRINK_RATIO <- 0.8
+SHRINK_MIN   <- 24
+if (nrow(all_obs) > 0 && nrow(prev_shards) > 0 &&
+    !nzchar(Sys.getenv("INDICATORS_ALLOW_SHRINK"))) {
+  cur_sid <- function(id) {
+    s <- cat_by_id[[id]]
+    as.character(s$seriesId %||% s$vectorId %||% NA_character_)
+  }
+  shrunk <- all_obs %>% count(id, name = "n_new") %>%
+    inner_join(prev_shards %>% group_by(id) %>%
+                 summarise(n_prev = n(), prevSid = first(prevSeriesId), .groups = "drop"),
+               by = "id") %>%
+    filter(n_prev >= SHRINK_MIN, n_new < SHRINK_RATIO * n_prev)
+  shrunk <- shrunk[vapply(seq_len(nrow(shrunk)), function(i) {
+    a <- cur_sid(shrunk$id[i]); b <- shrunk$prevSid[i]
+    is.na(a) || is.na(b) || identical(a, b)
+  }, logical(1)), , drop = FALSE]
+  for (i in seq_len(nrow(shrunk))) {
+    sid  <- shrunk$id[i]
+    keep <- all_obs %>% filter(id == sid)
+    old  <- prev_as_obs(prev_shards %>% filter(id == sid, !date %in% keep$date))
+    all_obs <- bind_rows(all_obs %>% filter(id != sid), old, keep)
+    message(sprintf("[14] %s fetched %d records vs %d last build (history shrank >%d%%); keeping last-good history (%d records)",
+                    sid, shrunk$n_new[i], shrunk$n_prev[i],
+                    round((1 - SHRINK_RATIO) * 100), nrow(old) + nrow(keep)))
+  }
+}
+
 if (nrow(all_obs) == 0) stop("[14] no indicator data found — run the scrape scripts first.")
 
 # --- Derived series ---------------------------------------------------------
@@ -269,25 +340,10 @@ built_ids   <- unique(all_obs$id)
 catalog_ids <- vapply(Filter(function(s) !isTRUE(s$disabled), catalog$series),
                       function(s) s$id %||% "", character(1))
 missing_ids <- setdiff(catalog_ids, built_ids)
-if (length(missing_ids) && dir.exists(INDICATORS_DIR)) {
-  shard_files <- setdiff(list.files(INDICATORS_DIR, pattern = "\\.json$", full.names = TRUE),
-                         file.path(INDICATORS_DIR, "_catalog.json"))
-  preserved <- bind_rows(lapply(shard_files, function(f) {
-    doc <- tryCatch(jsonlite::read_json(f, simplifyVector = TRUE), error = function(e) NULL)
-    if (is.null(doc$records) || !length(doc$records)) return(NULL)
-    recs <- tibble::as_tibble(doc$records)
-    recs[recs$id %in% missing_ids, , drop = FALSE]
-  }))
+if (length(missing_ids) && nrow(prev_shards) > 0) {
+  preserved <- prev_shards %>% filter(id %in% missing_ids)
   if (nrow(preserved) > 0) {
-    preserved <- preserved %>% rowwise() %>% mutate(
-      seriesId  = cat_by_id[[id]]$seriesId %||% cat_by_id[[id]]$vectorId %||% id,
-      units     = cat_by_id[[id]]$units     %||% NA_character_,
-      geo       = cat_by_id[[id]]$geo       %||% NA_character_,
-      frequency = cat_by_id[[id]]$frequency %||% NA_character_,
-      transform = cat_by_id[[id]]$transform %||% NA_character_
-    ) %>% ungroup() %>%
-      transmute(id, seriesId, date = as.character(date), value = as.numeric(value),
-                units, geo, frequency, transform)
+    preserved <- prev_as_obs(preserved)
     all_obs <- bind_rows(all_obs, preserved)
     message(sprintf("[14] preserved %d records for %d unbuilt series (%s)",
                     nrow(preserved), length(unique(preserved$id)),
