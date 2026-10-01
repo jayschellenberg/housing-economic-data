@@ -409,7 +409,7 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', 
       // Titles as the reference appraisal chart words them (the Quarto
       // project's COMBO_TITLE and its rates-only chart).
       title: capTypes.length
-        ? 'Overnight, 5-Year, 10-Year Yields & Cap Rates'
+        ? 'Bank of Canada Overnight, 5-Year, 10-Year Yields & Cap Rates'
         : 'Canadian Rate Environment',
       // "Source: Bank of Canada & Colliers Canada Average Cap Rates" in the
       // caption, bottom-right; 10 pt in print, as on the other Local Data
@@ -436,13 +436,13 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', 
     const records = [...ui.rateRecords, ...capRecords];
     const { monthFrom, monthTo } = ui.rangeRef;
     card.render(records, seriesMeta, {
-      // "Aug-2021 to Aug-2026; Bank of Canada Interest Rates & Bond Yields vs
-      // Capitalization Rates (CR)": the timeframe, then what the chart
-      // compares (CR is the legend's abbreviation).
+      // "Aug-2021 to Aug-2026; Bank of Canada (BoC) Overnight Rates & Bond
+      // Yields vs. Capitalization Rates (CR)": the timeframe, then what the
+      // chart compares, spelling out the legend's BoC and CR.
       rangePrefix: true,
       subtitle: capTypes.length
-        ? 'Bank of Canada Interest Rates & Bond Yields vs Capitalization Rates (CR)'
-        : 'Bank of Canada Interest Rates & Bond Yields',
+        ? 'Bank of Canada (BoC) Overnight Rates & Bond Yields vs. Capitalization Rates (CR)'
+        : 'Bank of Canada (BoC) Overnight Rates & Bond Yields',
       // Cap rates dashed, interest rates solid — as on the reference chart,
       // where the distinction matters more than colour alone at a glance.
       dashedIds: capMeta.map(s => s.id),
