@@ -56,7 +56,12 @@ results <- lapply(stc_series, function(s) {
   # val_norm also divides Percent/Rate series by 100, which turned every
   # unemployment rate into a fraction (5 -> 0.05) from the 2026-09-07 refresh.
   # val_norm is only the fallback when the scalar column is missing.
-  if (all(c("VALUE", "SCALAR_ID") %in% names(df))) {
+  # A catalog `scalarFactor` overrides SCALAR_ID for tables whose metadata is
+  # wrong: 14-10-0459 (LFS by CMA) publishes employment in thousands but tags
+  # it SCALAR_ID 0, which put CMA employment 1000x below the provincial lines.
+  if (!is.null(s$scalarFactor) && "VALUE" %in% names(df)) {
+    raw <- suppressWarnings(as.numeric(df$VALUE)) * 10^as.numeric(s$scalarFactor)
+  } else if (all(c("VALUE", "SCALAR_ID") %in% names(df))) {
     raw <- suppressWarnings(as.numeric(df$VALUE)) *
            10^suppressWarnings(as.numeric(as.character(df$SCALAR_ID)))
   } else {
