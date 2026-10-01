@@ -141,7 +141,8 @@ Winnipeg, Calgary, Edmonton, Regina, Saskatoon, Vancouver, Victoria.
 1. **Discover the CMA vector** for each family that publishes at CMA (§5). Families that do:
    NHPI (18‑10‑0205), BCPI (18‑10‑0289), CPI (18‑10‑0004), building permits (34‑10‑0292),
    CRSPI (18‑10‑0260), and — from a *different* table — employment/unemployment
-   (**14‑10‑0294**, a seasonally‑adjusted 3‑month moving average; coordinate
+   (**14‑10‑0459**, a seasonally‑adjusted 3‑month moving average, 2011+; replaced the
+   inactive 14‑10‑0294 which ended Dec 2020; coordinate
    `geo.char.1.1` with Statistics=Estimate=1, DataType=SA=1).
 2. **CMHC average rent at CMA** is not a WDS vector — it's sliced from
    `historical_rental.csv` in `r/14` by GeoUID. Add the CMA's 3‑digit code to the GeoUID
