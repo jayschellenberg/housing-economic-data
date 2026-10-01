@@ -38,6 +38,7 @@ import { layers as protomapsLayers, namedFlavor } from '@protomaps/basemaps';
 import { bedroomBand, BEDROOM_BANDS } from './lib/filters.js';
 import { BAND_COLORS, BAND_LABELS } from './lib/bands.js';
 import { exportMapPng } from './exports.js';
+import { initSubjectFind } from '../../src/subject-find.js';
 import { initDrawShapes } from './drawShapes.js';
 
 export { BAND_COLORS };
@@ -125,7 +126,7 @@ function rowsToGeoJSON(rows, bands) {
   return { type: 'FeatureCollection', features };
 }
 
-export function initMapView({ container, onSubjectChange, onMuniToggle, onMlsToggle, onShapesChange, getBands, getMuniIndex } = {}) {
+export function initMapView({ container, onSubjectChange, onMuniToggle, onMlsToggle, onShapesChange, getBands, getMuniIndex, lookupSubject } = {}) {
   const $ = (id) => document.getElementById(id);
   const $card = $('map-card');
   const $legend = $('map-legend');
@@ -140,6 +141,7 @@ export function initMapView({ container, onSubjectChange, onMuniToggle, onMlsTog
 
   let rows = [];
   let subject = null;
+  let subjectName = '';           // the address it was found by, if any
   let marker = null;
   let armed = false;             // subject placement
   let clickMode = 'off';         // 'off' | 'munis' | 'mls' — what a map click selects
@@ -150,12 +152,14 @@ export function initMapView({ container, onSubjectChange, onMuniToggle, onMlsTog
   try { clustering = localStorage.getItem(CLUSTER_KEY) !== '0'; } catch { /* default on */ }
   const $cluster = $('map-cluster');
   if ($cluster) $cluster.checked = clustering;
-  // "Grid follows map view": opt-in, remembered. While on, the grid /
-  // count line / analysis narrow to the viewport (main.js applies it after
-  // the filters) and auto-fit is suspended so the two never chase each other.
+  // "Table follows map view": on by default (Jason, 2026-09-30), remembered.
+  // While on, the table / count line / analysis narrow to the viewport
+  // (main.js applies it after the filters). A sidebar filter change still
+  // zooms to the results, so the table never comes up empty for a filter
+  // aimed off-screen; that only moves the map, so nothing chases anything.
   const FOLLOW_KEY = 'mbre_map_follow';
-  let following = false;
-  try { following = localStorage.getItem(FOLLOW_KEY) === '1'; } catch { /* default off */ }
+  let following = true;
+  try { following = localStorage.getItem(FOLLOW_KEY) !== '0'; } catch { /* default on */ }
   const $follow = $('map-follow');
   if ($follow) $follow.checked = following;
   const viewListeners = new Set();
@@ -363,7 +367,12 @@ export function initMapView({ container, onSubjectChange, onMuniToggle, onMlsTog
     const b = map.getBounds();
     return { w: b.getWest(), s: b.getSouth(), e: b.getEast(), n: b.getNorth() };
   }
-  function notifyView() { for (const cb of viewListeners) cb(following ? currentBounds() : null); }
+  // A hidden map narrows nothing: with Hide Map on, the table lists every
+  // filtered listing (as on the Commercial dashboard).
+  function notifyView() {
+    const on = following && !$card.hidden;
+    for (const cb of viewListeners) cb(on ? currentBounds() : null);
+  }
   $follow?.addEventListener('change', () => {
     following = $follow.checked;
     try { localStorage.setItem(FOLLOW_KEY, following ? '1' : '0'); } catch { /* ignore */ }
@@ -491,14 +500,16 @@ export function initMapView({ container, onSubjectChange, onMuniToggle, onMlsTog
     });
   }
   function emitSubject() { onSubjectChange?.(subject ? { lat: subject.lat, lng: subject.lng, radiusKm: radiusKm() } : null); }
-  function setSubject(next, { emit = false } = {}) {
+  function setSubject(next, { emit = false, name = '' } = {}) {
     subject = next ? { lat: next.lat, lng: next.lng } : null;
+    subjectName = subject ? name : '';
     if (subject) {
       if (!marker) {
         marker = new maplibregl.Marker({ color: '#2563eb', draggable: true }).setLngLat([subject.lng, subject.lat]).addTo(map);
         marker.on('dragend', () => {
           const ll = marker.getLngLat();
           subject = { lat: ll.lat, lng: ll.lng };
+          subjectName = '';
           drawRadius(); renderSubject(); emitSubject();
         });
       } else marker.setLngLat([subject.lng, subject.lat]);
@@ -508,14 +519,28 @@ export function initMapView({ container, onSubjectChange, onMuniToggle, onMlsTog
   }
   function renderSubject() {
     $subjectClear.hidden = !subject;
-    $subjectLabel.textContent = subject ? `${subject.lat.toFixed(5)}, ${subject.lng.toFixed(5)}` : '';
+    $subjectLabel.textContent = !subject ? ''
+      : subjectName || `${subject.lat.toFixed(5)}, ${subject.lng.toFixed(5)}`;
   }
   $subjectBtn.addEventListener('click', () => {
     armed = !armed;
     $subjectBtn.setAttribute('aria-pressed', String(armed));
     map.getCanvas().style.cursor = armed ? 'crosshair' : '';
   });
-  $subjectClear.addEventListener('click', () => setSubject(null, { emit: true }));
+  $subjectClear.addEventListener('click', () => { setSubject(null, { emit: true }); finder.clear(); });
+
+  // Find the subject by address or "lat, lng" — the same box as on the
+  // Commercial map (src/subject-find.js); main.js resolves the query.
+  const finder = initSubjectFind({
+    $find: $('subject-find'),
+    $suggest: $('subject-suggest'),
+    lookup: (q) => (lookupSubject ? lookupSubject(q) : Promise.resolve([])),
+    addressLabel: 'address',
+    onPick: (h) => {
+      setSubject({ lat: h.lat, lng: h.lng }, { emit: true, name: h.label });
+      whenLoaded(() => map.easeTo({ center: [h.lng, h.lat], zoom: Math.max(map.getZoom(), 15), duration: 500 }));
+    },
+  });
   $radius.addEventListener('change', () => { drawRadius(); if (subject) emitSubject(); });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && armed) { armed = false; $subjectBtn.setAttribute('aria-pressed', 'false'); map.getCanvas().style.cursor = ''; }
@@ -544,7 +569,8 @@ export function initMapView({ container, onSubjectChange, onMuniToggle, onMlsTog
     $hide.querySelector('.map-toggle-label').textContent = hidden ? 'Show Map' : 'Hide Map';
     if (!hidden) { $card.classList.remove('expanded'); $expand.setAttribute('aria-pressed', 'false'); }
     try { localStorage.setItem('mbre_map_hidden', hidden ? '1' : '0'); } catch { /* ignore */ }
-    if (!hidden) setTimeout(() => map.resize(), 0);
+    if (!hidden) setTimeout(() => { map.resize(); notifyView(); }, 0);
+    else notifyView();
   });
   $expand.addEventListener('click', () => {
     const expanded = !$card.classList.contains('expanded');
@@ -573,7 +599,7 @@ export function initMapView({ container, onSubjectChange, onMuniToggle, onMlsTog
       whenLoaded(() => {
         listingsData = rowsToGeoJSON(rows, getBands?.());
         map.getSource('listings').setData(listingsData);
-        if (fit && rows.length && !following) fitToRows();
+        if (fit && rows.length) fitToRows();
       });
     },
     setClustering,

@@ -255,7 +255,16 @@
       </nav>
 
       <section id="explore" class="tabpanel" role="tabpanel" aria-labelledby="tab-explore" hidden>
+      <!-- Hide / Expand sit outside the card, so Show Map is still there
+           once the card is hidden (as on the Rental dashboard). -->
+      <div class="view-bar">
+        <button type="button" id="map-toggle-btn" aria-pressed="false"
+                title="Hide the map so the table gets the whole workspace"><span class="map-toggle-label">Hide Map</span></button>
+        <button type="button" id="map-expand-btn" aria-pressed="false"
+                title="Expand the map to most of the screen. Click again to restore.">Expand Map</button>
+      </div>
       <div class="card map-card" id="map-card">
+        <!-- Same two rows, order and wording as the Rental dashboard's map. -->
         <div class="map-toolbar">
           <div class="map-overlays">
             <span class="field-label">Overlays</span>
@@ -266,22 +275,26 @@
                  labelled "Cluster", which is the same word for the other
                  thing and read as the missing overlay. -->
             <label class="inline"><input id="map-cluster" type="checkbox" checked /> Group points</label>
+            <label class="inline" title="Show in the table, count line and Analysis only the listings inside the map as it is currently panned and zoomed. Untick to list every listing that matches the filters."><input id="map-follow" type="checkbox" checked /> Table follows map view</label>
           </div>
-
-          <div class="map-mode" id="map-click-pill">
+        </div>
+        <div class="map-toolbar">
+          <div class="pill-row">
             <span class="field-label">Click to select</span>
-            <button type="button" data-mode="off" aria-pressed="true" class="active">Off</button>
-            <button type="button" data-mode="munis" aria-pressed="false">Municipality</button>
-            <button type="button" data-mode="clusters" aria-pressed="false">Cluster</button>
-            <button type="button" data-mode="nbhds" aria-pressed="false">Neighbourhood</button>
+            <div class="pill" id="map-click-pill" role="radiogroup" aria-label="What a map click selects">
+              <button type="button" data-mode="off" aria-pressed="true" class="active">Off</button>
+              <button type="button" data-mode="munis" aria-pressed="false">Municipality</button>
+              <button type="button" data-mode="clusters" aria-pressed="false">Cluster</button>
+              <button type="button" data-mode="nbhds" aria-pressed="false">Neighbourhood</button>
+            </div>
           </div>
 
           <div class="map-draw" id="shape-tools">
             <span class="field-label">Draw</span>
-            <button id="shape-tool-circle" type="button" aria-pressed="false">Radius</button>
-            <button id="shape-tool-rectangle" type="button" aria-pressed="false">Rectangle</button>
-            <button id="shape-tool-polygon" type="button" aria-pressed="false">Polygon</button>
-            <button id="shape-tool-clear" type="button" class="quiet">Clear</button>
+            <button id="shape-tool-circle" type="button" aria-pressed="false" title="Draw radius — click the centre on the map, then click again to set the radius. Click a finished shape to flip Include/Exclude; Esc cancels.">Radius</button>
+            <button id="shape-tool-rectangle" type="button" aria-pressed="false" title="Draw rectangle — click one corner on the map, then the opposite corner. Click a finished shape to flip Include/Exclude; Esc cancels.">Rectangle</button>
+            <button id="shape-tool-polygon" type="button" aria-pressed="false" title="Draw polygon — click vertices on the map; double-click or click the first vertex to close. Click a finished shape to flip Include/Exclude; Esc cancels.">Polygon</button>
+            <button id="shape-tool-clear" type="button" title="Clear all drawn shapes">Clear</button>
             <span id="shape-readout" class="muted small"></span>
           </div>
 
@@ -294,16 +307,16 @@
               <ul id="subject-suggest" class="subject-suggest" role="listbox" hidden></ul>
             </div>
             <span class="muted small">or</span>
-            <button id="subject-set" type="button" aria-pressed="false">Place</button>
+            <button id="subject-set" type="button" aria-pressed="false" title="Click, then click the map to place the subject. Drag the marker to move it. Esc cancels.">Place</button>
             <label class="inline">radius
               <input id="subject-radius" type="number" min="0" step="0.5" value="0" aria-label="Subject radius in km" /> km
             </label>
             <span id="subject-label" class="muted small"></span>
-            <button id="subject-clear" type="button" class="quiet" hidden>Clear</button>
+            <button id="subject-clear" type="button" hidden title="Remove the subject point">Clear subject</button>
           </div>
 
-          <button id="map-fit" type="button">Zoom to results</button>
-          <button id="map-png" type="button">Map PNG</button>
+          <button id="map-fit" type="button" title="Zoom to the filtered listings">Zoom to results</button>
+          <button id="map-png" type="button" title="Download the map as shown, with legend and attribution, as a PNG for a report exhibit">Map PNG</button>
         </div>
 
         <div id="map" class="map"></div>

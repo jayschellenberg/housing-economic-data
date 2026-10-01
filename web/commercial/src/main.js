@@ -43,6 +43,11 @@ const state = {
   // under the hand that made it.
   shapes: [],
   subject: null,
+  // The map's viewport while "Table follows map view" is on ({w,s,e,n}),
+  // else null. Not a filter: the map keeps plotting all of state.filtered;
+  // the table, count line and Analysis read state.shown.
+  view: null,
+  shown: [],
 };
 
 function setStatus(msg) {
@@ -55,6 +60,7 @@ const flyers = initFlyerViewer({ setStatus });
 const results = initResultsTable({
   setStatus,
   getContext: () => ({
+    viewNote: state.view ? `map view · ${state.filtered.length.toLocaleString('en-CA')} in the full selection` : '',
     manifest: state.bundle?.manifest || null,
     chips: describeFilters(state.filters, state.bundle?.manifest),
     cycle: state.bundle?.manifest?.cycles?.last || null,
@@ -67,7 +73,7 @@ const results = initResultsTable({
 const analysis = initAnalysis({
   getContext: () => ({
     bundle: state.bundle,
-    rows: state.filtered,
+    rows: state.shown,
     marketLabel: state.filters.market === 'current'
       ? `on the market ${state.bundle?.manifest?.cycles?.last || ''}`
       : 'all records',
@@ -129,6 +135,7 @@ function ensureMap() {
     },
     lookupSubject: findSubject,
   });
+  map.onViewChange((bounds) => { state.view = bounds; applyView(); });
   return map;
 }
 
@@ -162,6 +169,7 @@ function applyMapFilters(rows) {
 function refilter({ fitMap = false } = {}) {
   if (!state.bundle) {
     state.filtered = [];
+    state.shown = [];
     results.render([]);
     map?.setRows([]);
     return;
@@ -169,8 +177,19 @@ function refilter({ fitMap = false } = {}) {
   annotateDistance(state.bundle.records, state.subject);
   const sidebar = applyFilters(state.bundle.records, state.filters, state.bundle.manifest);
   state.filtered = applyMapFilters(sidebar);
-  results.render(state.filtered);
   map?.setRows(state.filtered, { fit: fitMap });
+  applyView();
+}
+
+/** The table / count line / Analysis set: the filtered records inside the
+ *  map's viewport while it is followed, else all of them. */
+function applyView() {
+  const v = state.view;
+  state.shown = v
+    ? state.filtered.filter((r) => r.latitude != null && r.longitude != null
+      && r.longitude >= v.w && r.longitude <= v.e && r.latitude >= v.s && r.latitude <= v.n)
+    : state.filtered;
+  results.render(state.shown);
   // Charts are rebuilt only while the tab is open; otherwise the next
   // open does it. Plot is ~400 kB and most visits never open it.
   analysis.invalidate();

@@ -282,7 +282,7 @@
               <label class="check"><input type="checkbox" id="ov-mls" /> MLS areas</label>
               <label class="check"><input type="checkbox" id="ov-nbhds" /> Wpg neighbourhoods</label>
               <label class="check" title="Merge nearby listings into count bubbles when zoomed out; click a bubble to zoom in"><input type="checkbox" id="map-cluster" checked /> Group points</label>
-              <label class="check" title="Narrow the listings grid, count line and Analysis to what the map currently shows, as you pan and zoom. The map itself keeps plotting the whole filtered set. Auto-zoom to results is paused while this is on."><input type="checkbox" id="map-follow" /> Grid follows map view</label>
+              <label class="check" title="Show in the table, count line and Analysis only the listings inside the map as it is currently panned and zoomed. Untick to list every listing that matches the filters."><input type="checkbox" id="map-follow" checked /> Table follows map view</label>
             </div>
           </div>
           <div class="map-toolbar">
@@ -305,6 +305,13 @@
             </span>
             <div class="map-subject" role="group" aria-label="Subject property">
               <span class="field-label">Subject</span>
+              <div class="subject-find">
+                <input id="subject-find" type="search" autocomplete="off" spellcheck="false"
+                  placeholder="address, or lat, lng" aria-label="Find the subject by address or coordinates"
+                  role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="subject-suggest" />
+                <ul id="subject-suggest" class="subject-suggest" role="listbox" hidden></ul>
+              </div>
+              <span class="muted">or</span>
               <button type="button" id="subject-set" class="btn small" aria-pressed="false"
                       title="Click, then click the map to place the subject. Drag the marker to move it. Esc cancels.">Place</button>
               <label class="inline">radius <input id="subject-radius" type="number" min="0" step="0.5" value="2" aria-label="Radius in kilometres" /> km</label>

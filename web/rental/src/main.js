@@ -15,6 +15,10 @@ import { initAnalysis } from './analysis.js';
 import { describeFilters } from './lib/exports.js';
 import { applyFilters, annotateDistance, subjectOf, defaultFilters } from './lib/filters.js';
 import { buildMuniIndex } from './lib/munis.js';
+// The Commercial dashboard's address / "lat, lng" lookup, fed this bundle's
+// listings (Rental ships no civic address file, so listing addresses are the
+// places it knows).
+import { buildSubjectIndex, lookupSubject } from '../../commercial/src/lib/subjectLookup.js';
 
 const $ = (id) => document.getElementById(id);
 const fmt = (n) => Number(n || 0).toLocaleString('en-CA');
@@ -84,8 +88,23 @@ function viewCriteria() {
   const f = (x) => x.toFixed(4);
   return [`Within the map view at export time: lng ${f(v.w)} to ${f(v.e)}, lat ${f(v.s)} to ${f(v.n)}`];
 }
+// Built on the first lookup, and again for a newly loaded bundle.
+let subjectIndex = null;
+let subjectIndexFor = null;
+async function findSubject(query) {
+  if (!state.bundle) return [];
+  if (!subjectIndex || subjectIndexFor !== state.bundle) {
+    subjectIndex = buildSubjectIndex('', state.bundle.listings.map((l) => ({
+      address: l.address, latitude: l.lat, longitude: l.lng, municipality: l.geo_municipality || l.city,
+    })));
+    subjectIndexFor = state.bundle;
+  }
+  return lookupSubject(query, subjectIndex);
+}
+
 const mapView = initMapView({
   container: 'map',
+  lookupSubject: findSubject,
   getBands: () => policy().bedroom_bands,
   getMuniIndex: () => state.muniIndex,
   onSubjectChange(s) {
