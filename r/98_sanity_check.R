@@ -24,12 +24,16 @@ ALLOW_SHRINK         <- identical(Sys.getenv("REFRESH_ALLOW_SHRINK"), "1")
 # if a loss that large is genuinely intended.
 HARD_FLOOR_PCT       <- as.numeric(Sys.getenv("REFRESH_HARD_FLOOR_PCT", unset = "60"))
 
+# `git show` goes to a temp file, not stdout = TRUE: R splits captured lines at
+# ~8 KB, which corrupts minified JSON (every indicator shard is one long line).
 read_prev_json <- function(path) {
-  raw <- tryCatch(system2("git", c("show", paste0("HEAD:", path)),
-                          stdout = TRUE, stderr = FALSE),
-                  error = function(e) NULL)
-  if (is.null(raw) || length(raw) == 0) return(NULL)
-  tryCatch(jsonlite::fromJSON(paste(raw, collapse = "\n"), simplifyVector = FALSE),
+  tmp <- tempfile(fileext = ".json")
+  on.exit(unlink(tmp), add = TRUE)
+  status <- tryCatch(system2("git", c("show", paste0("HEAD:", path)),
+                             stdout = tmp, stderr = FALSE),
+                     error = function(e) 1L)
+  if (!identical(as.integer(status), 0L) || !file.exists(tmp) || file.size(tmp) == 0) return(NULL)
+  tryCatch(jsonlite::fromJSON(tmp, simplifyVector = FALSE),
            error = function(e) NULL)
 }
 
@@ -169,6 +173,62 @@ if (length(schema_removals)) {
     quit(status = 1L)
   }
   cat("\n[sanity] REFRESH_ALLOW_SCHEMA_CHANGE=1 — proceeding despite category changes.\n")
+}
+
+# --- Scale check: percent series silently rescaled to fractions --------------
+# Record counts don't move when an upstream changes units, so the 2026-09-07
+# cansim 0.5.0 bump (val_norm started dividing Percent/Rate by 100) shipped
+# 0.05% unemployment for weeks. For every "percent" indicator series, compare
+# the latest up-to-24 dates it shares with HEAD; a median ratio around 1/100
+# means the values were divided by 100. Only drops abort — the refresh that
+# repairs such a bug jumps ~100x UP and must be allowed through. Override with
+# REFRESH_ALLOW_SCALE_CHANGE=1 for an intended unit change.
+ALLOW_SCALE_CHANGE <- identical(Sys.getenv("REFRESH_ALLOW_SCALE_CHANGE"), "1")
+indicators_dir <- "web/public/data/indicators"
+scale_drops <- character(0)
+shard_paths <- setdiff(list.files(indicators_dir, pattern = "\\.json$", full.names = TRUE),
+                       file.path(indicators_dir, "_catalog.json"))
+for (path in shard_paths) {
+  path <- gsub("\\\\", "/", path)
+  curr_doc <- read_curr_json(path)
+  prev_doc <- read_prev_json(path)
+  if (is.null(curr_doc) || is.null(prev_doc)) next
+  pct_ids <- vapply(Filter(function(s) identical(s$units, "percent"), curr_doc$series %||% list()),
+                    function(s) s$id %||% "", character(1))
+  if (!length(pct_ids)) next
+  recs_df <- function(doc) {
+    r <- Filter(function(x) (x$id %||% "") %in% pct_ids && is.numeric(x$value), doc$records %||% list())
+    if (!length(r)) return(NULL)
+    data.frame(id    = vapply(r, function(x) x$id, ""),
+               date  = vapply(r, function(x) as.character(x$date), ""),
+               value = vapply(r, function(x) as.numeric(x$value), 0),
+               stringsAsFactors = FALSE)
+  }
+  cr <- recs_df(curr_doc); pr <- recs_df(prev_doc)
+  if (is.null(cr) || is.null(pr)) next
+  both <- merge(cr, pr, by = c("id", "date"), suffixes = c(".curr", ".prev"))
+  both <- both[is.finite(both$value.prev) & abs(both$value.prev) > 1e-9 & is.finite(both$value.curr), ]
+  for (sid in unique(both$id)) {
+    b <- both[both$id == sid, ]
+    b <- head(b[order(b$date, decreasing = TRUE), ], 24)
+    if (nrow(b) < 3) next
+    ratio <- stats::median(b$value.curr / b$value.prev)
+    if (is.finite(ratio) && ratio > 0.002 && ratio < 0.05)
+      scale_drops <- c(scale_drops, sprintf("%s (%s): recent values ~%.0fx smaller than HEAD (median ratio %.4f over %d dates; e.g. %s: %g -> %g)",
+        sid, basename(path), 1 / ratio, ratio, nrow(b), b$date[1], b$value.prev[1], b$value.curr[1]))
+  }
+}
+if (length(scale_drops)) {
+  cat("\n[sanity] PERCENT SERIES RESCALED — values dropped ~100x vs the last refresh (percent -> fraction?):\n")
+  for (s in scale_drops) cat("  -", s, "\n")
+  if (!ALLOW_SCALE_CHANGE) {
+    cat("\n[sanity] Aborting: check the scraper's value column / scalar handling (e.g. cansim val_norm normalising percents).\n")
+    cat("[sanity] If this unit change is intended, set REFRESH_ALLOW_SCALE_CHANGE=1.\n")
+    quit(status = 1L)
+  }
+  cat("\n[sanity] REFRESH_ALLOW_SCALE_CHANGE=1 — proceeding despite the rescale.\n")
+} else {
+  cat("\n[sanity] percent series scale check: OK.\n")
 }
 
 failures <- Filter(function(c) !c$ok, checks)
