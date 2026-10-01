@@ -52,9 +52,9 @@ const PREF_KEY = 'capVsInterest.v2';
 // which read fine under "Government of Canada bond yields" but not next to
 // "Office CR".
 const RATE_LINES = [
-  { id: 'boc.policy_target', label: 'BoC overnight target' },
-  { id: 'boc.goc_5yr',       label: '5-year bond yield' },
-  { id: 'boc.goc_10yr',      label: '10-year bond yield' },
+  { id: 'boc.policy_target', label: 'Overnight Target' },
+  { id: 'boc.goc_5yr',       label: '5-Year Bond Yield' },
+  { id: 'boc.goc_10yr',      label: '10-Year Bond Yield' },
 ];
 const RATE_SHARD = 'mortgage_market';
 
