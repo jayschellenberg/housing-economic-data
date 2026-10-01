@@ -19,6 +19,16 @@ on:
         type: choice
         options: ["0", "1"]
 
+# Two overlapping runs both build the generated indicator files from the same
+# base, so whichever pushes second hits a rebase conflict in
+# indicators-manifest.json / economic-update.json and throws its work away
+# (2026-10-01: a dispatch right after PR #122/#123 lost its refresh that way).
+# Queue instead of cancelling: the later run starts from the earlier run's data
+# commit. GitHub keeps at most one pending run per group, which is fine here.
+concurrency:
+  group: refresh-indicators
+  cancel-in-progress: false
+
 jobs:
   refresh-indicators:
     runs-on: ubuntu-latest
@@ -38,6 +48,10 @@ jobs:
         with:
           # Full history so the commit step can rebase onto main if it advanced.
           fetch-depth: 0
+          # Branch tip at job start, not github.sha (the tip at trigger time).
+          # A run queued behind another by the concurrency group must build on
+          # top of that run's data commit, or its push conflicts anyway.
+          ref: ${{ github.ref_name }}
 
       - uses: r-lib/actions/setup-r@v2
         with:
