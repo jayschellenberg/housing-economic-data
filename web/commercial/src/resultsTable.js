@@ -128,7 +128,7 @@ export function initResultsTable({ getContext, setStatus, onFlyer, onSnapshot } 
 
     const ctx = getContext?.() || {};
     const stats = summarize(rows, ctx.manifest);
-    $('count-line').textContent = countLine(stats);
+    $('count-line').textContent = countLine(stats) + (ctx.viewNote ? ` (${ctx.viewNote})` : '');
     $('median-line').textContent = medianLine(stats);
     $('pager-label').textContent = sorted.length
       ? `Page ${page} of ${total} · showing ${slice.length} of ${sorted.length.toLocaleString('en-CA')}`

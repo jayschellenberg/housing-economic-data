@@ -51,6 +51,7 @@ import { askingText, addressOf } from './lib/results.js';
 import { sizeOf } from './lib/filters.js';
 import { initDrawShapes } from './drawShapes.js';
 import { exportMapPng } from './exports.js';
+import { initSubjectFind } from '../../src/subject-find.js';
 
 export { BAND_COLORS };
 
@@ -188,6 +189,17 @@ export function initMapView({
   try { clustering = localStorage.getItem(CLUSTER_KEY) !== '0'; } catch { /* default on */ }
   const $cluster = $('map-cluster');
   if ($cluster) $cluster.checked = clustering;
+  // "Table follows map view": on by default (Jason, 2026-09-30), remembered.
+  // While on, the table, count line and Analysis narrow to the viewport
+  // (main.js applies it after the filters); the map keeps plotting every
+  // filtered listing. Same as the Rental dashboard.
+  const FOLLOW_KEY = 'commavail_map_follow';
+  let following = true;
+  try { following = localStorage.getItem(FOLLOW_KEY) !== '0'; } catch { /* default on */ }
+  const $follow = $('map-follow');
+  if ($follow) $follow.checked = following;
+  const viewListeners = new Set();
+  let moveTimer = null;
   const pendingOnLoad = [];
 
   const map = new MapLibreMap({
@@ -537,102 +549,24 @@ export function initMapView({
   });
   $subjectClear?.addEventListener('click', () => {
     setSubject(null, { emit: true });
-    if ($find) $find.value = '';
+    finder.clear();   // defined below; runs on click, after init
   });
 
   // ---- subject by address ------------------------------------------------
   // What resolves an address is main.js's business (the index is built from
-  // the bundle, lazily, on first use); this is only the combobox.
-  const $find = $('subject-find');
-  const $suggest = $('subject-suggest');
-  let hits = [];
-  let active = -1;
-  let seq = 0;
-
-  function closeSuggest() {
-    if ($suggest) $suggest.hidden = true;
-    $find?.setAttribute('aria-expanded', 'false');
-    $find?.removeAttribute('aria-activedescendant');
-    active = -1;
-  }
-
-  function paintSuggest(message) {
-    if (!$suggest) return;
-    $suggest.textContent = '';
-    if (!hits.length) {
-      if (!message) { closeSuggest(); return; }
-      const li = document.createElement('li');
-      li.className = 'empty';
-      li.textContent = message;
-      $suggest.appendChild(li);
-    }
-    hits.forEach((h, i) => {
-      const li = document.createElement('li');
-      li.id = `subject-opt-${i}`;
-      li.setAttribute('role', 'option');
-      li.setAttribute('aria-selected', String(i === active));
-      const name = document.createElement('span');
-      name.textContent = h.label;
-      const where = document.createElement('span');
-      where.className = 'where';
-      where.textContent = h.source === 'address' ? 'Winnipeg address'
-        : h.source === 'coordinates' ? 'coordinates' : (h.where || 'listing');
-      li.append(name, where);
-      // mousedown, not click: a click fires after the input's blur, and the
-      // blur would already have closed the list it landed on.
-      li.addEventListener('mousedown', (e) => { e.preventDefault(); pick(h); });
-      $suggest.appendChild(li);
-    });
-    $suggest.hidden = false;
-    $find.setAttribute('aria-expanded', 'true');
-    if (active >= 0) $find.setAttribute('aria-activedescendant', `subject-opt-${active}`);
-    else $find.removeAttribute('aria-activedescendant');
-  }
-
-  function pick(h) {
-    closeSuggest();
-    if ($find) $find.value = h.label;
-    setSubject({ lat: h.lat, lng: h.lng }, { emit: true, name: h.label });
-    whenLoaded(() => map.easeTo({
-      center: [h.lng, h.lat], zoom: Math.max(map.getZoom(), 15), duration: 500,
-    }));
-  }
-
-  async function refresh() {
-    const q = ($find?.value || '').trim();
-    const mine = ++seq;
-    if (q.length < 2) { hits = []; closeSuggest(); return; }
-    if ($find && !lookupSubject) return;
-    const found = await lookupSubject(q);
-    if (mine !== seq) return;          // a later keystroke already answered
-    hits = found || [];
-    active = hits.length ? 0 : -1;
-    paintSuggest(/\d/.test(q) ? 'No address or listing by that number here'
-      : 'Start with the civic number, or paste lat, lng');
-  }
-
-  let timer = null;
-  $find?.addEventListener('input', () => {
-    clearTimeout(timer);
-    timer = setTimeout(refresh, 150);
+  // the bundle, lazily, on first use); the combobox is shared with the Rental
+  // dashboard (src/subject-find.js).
+  const finder = initSubjectFind({
+    $find: $('subject-find'),
+    $suggest: $('subject-suggest'),
+    lookup: (q) => (lookupSubject ? lookupSubject(q) : Promise.resolve([])),
+    onPick: (h) => {
+      setSubject({ lat: h.lat, lng: h.lng }, { emit: true, name: h.label });
+      whenLoaded(() => map.easeTo({
+        center: [h.lng, h.lat], zoom: Math.max(map.getZoom(), 15), duration: 500,
+      }));
+    },
   });
-  $find?.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      if (!hits.length) return;
-      e.preventDefault();
-      active = (active + (e.key === 'ArrowDown' ? 1 : -1) + hits.length) % hits.length;
-      paintSuggest();
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      clearTimeout(timer);
-      if (hits.length) pick(hits[Math.max(0, active)]);
-      else refresh();
-    } else if (e.key === 'Escape') {
-      closeSuggest();
-    }
-  });
-  $find?.addEventListener('blur', () => setTimeout(closeSuggest, 0));
-  $find?.addEventListener('focus', () => { if (hits.length) paintSuggest(); });
   $radius?.addEventListener('change', () => { drawRadius(); if (subject) emitSubject(); });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && armed) {
@@ -641,6 +575,53 @@ export function initMapView({
       map.getCanvas().style.cursor = '';
     }
   });
+
+  // ---- follow the view ----------------------------------------------------
+  function currentBounds() {
+    const b = map.getBounds();
+    return { w: b.getWest(), s: b.getSouth(), e: b.getEast(), n: b.getNorth() };
+  }
+  function notifyView() {
+    const on = following && !($('map-card')?.hidden);
+    for (const cb of viewListeners) cb(on ? currentBounds() : null);
+  }
+  $follow?.addEventListener('change', () => {
+    following = $follow.checked;
+    try { localStorage.setItem(FOLLOW_KEY, following ? '1' : '0'); } catch { /* ignore */ }
+    notifyView();
+  });
+  map.on('moveend', () => {
+    if (!following) return;
+    // A hidden map (another tab, Hide Map) has a degenerate viewport —
+    // never narrow on that.
+    if (!map.getContainer().clientWidth || !map.getContainer().clientHeight) return;
+    clearTimeout(moveTimer);
+    moveTimer = setTimeout(notifyView, 250);   // let a fling settle first
+  });
+
+  // ---- hide / expand -------------------------------------------------------
+  const $hide = $('map-toggle-btn');
+  const $expand = $('map-expand-btn');
+  const HIDDEN_KEY = 'commavail_map_hidden';
+  function setHidden(hidden) {
+    if (!$card || !$hide) return;
+    $card.hidden = hidden;
+    $hide.setAttribute('aria-pressed', String(hidden));
+    $hide.querySelector('.map-toggle-label').textContent = hidden ? 'Show Map' : 'Hide Map';
+    if (!hidden) { $card.classList.remove('expanded'); $expand?.setAttribute('aria-pressed', 'false'); }
+    try { localStorage.setItem(HIDDEN_KEY, hidden ? '1' : '0'); } catch { /* ignore */ }
+    if (!hidden) setTimeout(() => { map.resize(); notifyView(); }, 0);
+    else notifyView();                    // hidden: the table lists everything
+  }
+  $hide?.addEventListener('click', () => setHidden(!$card.hidden));
+  $expand?.addEventListener('click', () => {
+    const expanded = !$card.classList.contains('expanded');
+    $card.classList.toggle('expanded', expanded);
+    $expand.setAttribute('aria-pressed', String(expanded));
+    if (expanded && $card.hidden) setHidden(false);
+    setTimeout(() => map.resize(), 0);
+  });
+  try { if (localStorage.getItem(HIDDEN_KEY) === '1') setHidden(true); } catch { /* ignore */ }
 
   // ---- fit --------------------------------------------------------------
   function fitToRows() {
@@ -685,6 +666,11 @@ export function initMapView({
     },
     fit: fitToRows,
     resize: () => map.resize(),
+    /** Viewport changes while "Table follows map view" is on: the callback
+     *  gets {w,s,e,n}, or null when following is off or the map is hidden. */
+    onViewChange(cb) { viewListeners.add(cb); },
+    isFollowing: () => following && !($card && $card.hidden),
+    getBounds: currentBounds,
     isLoaded: () => loaded,
     /** How many listings are currently plotted. Checks assert on this
      *  rather than reaching into MapLibre's private source data, which

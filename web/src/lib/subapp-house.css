@@ -349,3 +349,23 @@ a.hs-link { display: inline-flex; align-items: center; gap: 4px; }
   line-height: 1.4;
 }
 .cmhc-kpi-delta-window { color: var(--hs-neutral-500); }
+
+/* ---- "Find the subject" combobox on both dashboards' maps (subject-find.js) ---- */
+.subject-find { position: relative; }
+.subject-find input {
+  font: inherit; font-size: 12px; width: 15rem; max-width: 60vw;
+  padding: 3px 6px; border: 1px solid var(--hs-neutral-300); border-radius: 4px; background: #fff;
+}
+.subject-suggest {
+  position: absolute; z-index: 20; left: 0; top: calc(100% + 2px);
+  min-width: 100%; width: max-content; max-width: 26rem; margin: 0; padding: 3px 0;
+  list-style: none; background: #fff; border: 1px solid var(--hs-neutral-200);
+  border-radius: 4px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+.subject-suggest li {
+  padding: 4px 10px; cursor: pointer; font-size: 13px;
+  display: flex; justify-content: space-between; gap: 14px;
+}
+.subject-suggest li[aria-selected="true"], .subject-suggest li:hover { background: #eef3f8; }
+.subject-suggest .where { color: var(--hs-neutral-500); font-size: 12px; white-space: nowrap; }
+.subject-suggest li.empty { cursor: default; color: var(--hs-neutral-500); }
