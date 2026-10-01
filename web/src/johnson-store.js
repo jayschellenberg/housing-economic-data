@@ -19,6 +19,8 @@
  * anything with a TTL or a clear-all.
  */
 
+import { resolveAppFolder, filterAppFiles } from './app-market-data.js';
+
 const DB_NAME = 'hed-johnson';
 const DB_VERSION = 1;
 const EDITIONS = 'editions';   // key: edition id "2026-06" → the edition JSON
@@ -93,7 +95,8 @@ export function fsAccessSupported() {
 /** Ask the user to nominate the web-data folder. Requires a user gesture. */
 export async function pickDirectory() {
   if (!fsAccessSupported()) throw new Error('File System Access not supported in this browser');
-  const handle = await window.showDirectoryPicker({ id: 'johnson-report', mode: 'read' });
+  const picked = await window.showDirectoryPicker({ id: 'johnson-report', mode: 'read' });
+  const handle = await resolveAppFolder(picked, ['JohnsonReport']);
   await putMeta('dirHandle', handle);
   return handle;
 }
@@ -231,6 +234,7 @@ export async function checkForUpdates(dirHandle) {
  * is no auto-refresh — the user re-picks when they have a new edition.
  */
 export async function importFromFileList(fileList, { onProgress } = {}) {
+  fileList = filterAppFiles(fileList, ['JohnsonReport']);
   const files = Array.from(fileList || [])
     .map(f => ({ f, id: (f.name.match(EDITION_FILE_RE) || [])[1] }))
     .filter(x => x.id)

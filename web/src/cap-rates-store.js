@@ -4,7 +4,7 @@
  *
  * The data is one file, cap_rates.json, written by
  * Cap-Rates/ingest/parse_cap_rates.py and published to
- * SharedInfo\Apps\CapRates. The user nominates that folder once; the browser
+ * SharedInfo\AppMarketData\CapRates. The user nominates that folder once; the browser
  * keeps a handle, stores the parsed JSON in IndexedDB ('hed-cap-rates') and
  * re-reads the file on the next visit when its modification time changed.
  * Nothing is uploaded and the site ships none of it.
@@ -15,7 +15,7 @@ import { createFolderStore, fsAccessSupported, storeAvailable, directoryPermissi
 export { fsAccessSupported, storeAvailable, directoryPermission };
 
 const DATA_FILE = /^cap_rates\.json$/i;
-const store = createFolderStore({ dbName: 'hed-cap-rates', pickerId: 'cap-rates', stores: ['files'] });
+const store = createFolderStore({ dbName: 'hed-cap-rates', pickerId: 'cap-rates', stores: ['files'], appPath: ['CapRates'] });
 
 export const pickDirectory = () => store.pickDirectory();
 export const getSavedDirectory = () => store.getSavedDirectory();

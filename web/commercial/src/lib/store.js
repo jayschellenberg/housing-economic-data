@@ -18,6 +18,7 @@
  */
 
 import { FILES } from './bundle.js';
+import { resolveAppFolder, filterAppFiles } from '../../../src/app-market-data.js';
 import {
   detectLayout, flyerSegments, snapshotSegments, EXPORT_DIR, FLYERS_DIR,
 } from './flyerPath.js';
@@ -122,7 +123,8 @@ export async function requestPersistence() {
 /** Ask the user to nominate the published folder. Needs a user gesture. */
 export async function pickDirectory() {
   if (!fsAccessSupported()) throw new Error('File System Access not supported in this browser');
-  const handle = await window.showDirectoryPicker({ id: 'commavail-published', mode: 'read' });
+  const picked = await window.showDirectoryPicker({ id: 'commavail-published', mode: 'read' });
+  const handle = await resolveAppFolder(picked, ['CommercialAvailability']);
   await putMeta('dirHandle', handle);   // handles are structured-cloneable
   return handle;
 }
@@ -189,6 +191,7 @@ export async function importFromDirectory(dirHandle, { onProgress, force = false
  *  drag-drop. No handle is retained, so no update detection and no
  *  flyers. */
 export async function importFromFileList(fileList, { onProgress } = {}) {
+  fileList = filterAppFiles(fileList, ['CommercialAvailability']);
   const byName = new Map();
   for (const f of Array.from(fileList || [])) {
     const base = f.name.split('/').pop();
@@ -196,7 +199,7 @@ export async function importFromFileList(fileList, { onProgress } = {}) {
   }
   const missing = REQUIRED.filter((n) => !byName.has(n));
   if (missing.length) {
-    throw new Error(`Not the published folder: ${missing.join(', ')} not found. Pick the shared CommercialAvailability folder.`);
+    throw new Error(`Not the published folder: ${missing.join(', ')} not found. Pick the shared AppMarketData folder or its CommercialAvailability subfolder.`);
   }
   return importFiles(KNOWN.filter((n) => byName.has(n)).map((n) => [n, byName.get(n)]), {
     onProgress, force: true, hasHandle: false, layout: null, flyers: false,
