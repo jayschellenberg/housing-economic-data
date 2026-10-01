@@ -53,8 +53,8 @@ const PREF_KEY = 'capVsInterest.v2';
 // "Office CR".
 const RATE_LINES = [
   { id: 'boc.policy_target', label: 'BoC overnight target' },
-  { id: 'boc.goc_5yr',       label: '5-year GoC yield' },
-  { id: 'boc.goc_10yr',      label: '10-year GoC yield' },
+  { id: 'boc.goc_5yr',       label: '5-year bond yield' },
+  { id: 'boc.goc_10yr',      label: '10-year bond yield' },
 ];
 const RATE_SHARD = 'mortgage_market';
 
@@ -145,11 +145,11 @@ export function capPublisher(firm) {
   return firm || DEFAULT_FIRM;
 }
 
-/** The cap-rate publisher as the caption names it: "Colliers Canada". */
+/** The cap-rate publisher as the caption names it: "Colliers Winnipeg". */
 function captionPublisher(firm) {
-  if (firm === ALL_FIRMS) return 'Colliers Canada, CBRE & Cushman & Wakefield';
+  if (firm === ALL_FIRMS) return 'Colliers Winnipeg, CBRE & Cushman & Wakefield';
   const f = firm || DEFAULT_FIRM;
-  return f === 'Colliers' ? 'Colliers Canada' : f;
+  return f === 'Colliers' ? 'Colliers Winnipeg' : f;
 }
 
 // --- Monthly resampling ------------------------------------------------------
@@ -409,9 +409,9 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', 
       // Titles as the reference appraisal chart words them (the Quarto
       // project's COMBO_TITLE and its rates-only chart).
       title: capTypes.length
-        ? 'Bank of Canada Overnight, 5-Year, 10-Year Yields & Cap Rates'
+        ? 'Canada Overnight, 5/10-Year Bond Yields & Cap Rates'
         : 'Canadian Rate Environment',
-      // "Source: Bank of Canada & Colliers Canada Average Cap Rates" in the
+      // "Source: Bank of Canada & Colliers Winnipeg Average Cap Rates" in the
       // caption, bottom-right; 10 pt in print, as on the other Local Data
       // tabs (Jason, 2026-09-30).
       sourceLabel: capTypes.length
@@ -436,13 +436,13 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', 
     const records = [...ui.rateRecords, ...capRecords];
     const { monthFrom, monthTo } = ui.rangeRef;
     card.render(records, seriesMeta, {
-      // "Aug-2021 to Aug-2026; Bank of Canada (BoC) Overnight Rates & Bond
-      // Yields vs. Capitalization Rates (CR)": the timeframe, then what the
-      // chart compares, spelling out the legend's BoC and CR.
+      // "Aug-2021 to Aug-2026; Overnight Rates/Bond Yields vs. Capitalization
+      // Rates (CR)": the timeframe, then what the chart compares (CR is the
+      // legend's abbreviation). Kept to one line of the exported image.
       rangePrefix: true,
       subtitle: capTypes.length
-        ? 'Bank of Canada (BoC) Overnight Rates & Bond Yields vs. Capitalization Rates (CR)'
-        : 'Bank of Canada (BoC) Overnight Rates & Bond Yields',
+        ? 'Overnight Rates/Bond Yields vs. Capitalization Rates (CR)'
+        : 'Overnight Rates/Bond Yields',
       // Cap rates dashed, interest rates solid — as on the reference chart,
       // where the distinction matters more than colour alone at a glance.
       dashedIds: capMeta.map(s => s.id),
