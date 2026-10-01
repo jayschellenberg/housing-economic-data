@@ -129,3 +129,8 @@ visits, a changed mtime after the next publish offers a Reload, and
 flyers open. Firefox and Safari have no directory picker, so they fall
 back to a folder `<input>` — the data loads, but nothing is remembered
 and flyers are out of reach.
+
+Either `CommercialAvailability\` or the whole shared `AppMarketData\`
+folder can be connected: `resolveAppFolder` (`web/src/app-market-data.js`)
+steps down to `CommercialAvailability` before the handle is saved, and the
+`<input>` fallback keeps only that subfolder's files.
