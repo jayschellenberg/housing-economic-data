@@ -18,6 +18,7 @@
 import { buildIndicatorCard, readOpenPanels, aggregateDashedIds } from './indicator-chart.js';
 import { getPref, setPref, resolveProvince, rememberProvince } from './prefs.js';
 import { initAgMap } from './ag-map.js';
+import { chartSources } from './indicator-sources.js';
 
 const loadJson = (path) =>
   fetch(path).then((r) => (r.ok ? r.json() : Promise.reject(new Error(r.status)))).catch(() => null);
@@ -394,10 +395,14 @@ export async function initAgriculture() {
         const records = meta.flatMap((s) => recordsById[s.id] || []);
         if (!records.length) continue;
 
+        // Table numbers in the subtitle, the linked list in the explainer —
+        // for just the provinces on this chart (cards rebuild on every change).
+        const refs = chartSources(catalog, chartId, new Set(meta.map((s) => s.id)));
         const card = buildIndicatorCard($secGrid, {
           chartId,
           title: spec.title(prov),
-          sourceLabel: 'Statistics Canada',
+          sourceLabel: refs.short || 'Statistics Canada',
+          sources: refs.items,
           description: spec.desc || cfg.description,
           // Every ag chart carries a data table (the hover tooltip comes with
           // buildIndicatorCard). AG_CHARTS is this tab's curated spec, so the

@@ -49,3 +49,16 @@ describe('chartSources for the visible series only', () => {
     expect(items).toHaveLength(1);
   });
 });
+
+describe('chartSources on the Agriculture tab', () => {
+  it('has an official title for every StatsCan table an agriculture chart uses', () => {
+    const ag = new Set(Object.entries(catalog.displayGroups)
+      .filter(([, g]) => g?.tab === 'agriculture').map(([id]) => id));
+    const charts = new Set(catalog.series.filter(s => ag.has(s.displayGroup) && s.chartId).map(s => s.chartId));
+    for (const id of charts) {
+      for (const item of chartSources(catalog, id).items) {
+        expect(item.citation, id).toMatch(/Table \d\d-\d\d-\d{4}-01 {2}\S/);
+      }
+    }
+  });
+});
