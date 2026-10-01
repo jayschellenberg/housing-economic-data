@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "generated": "2026-09-28T15:41:34Z",
-  "dataAsOf": "2026-09-28",
+  "generated": "2026-10-01T15:52:15Z",
+  "dataAsOf": "2026-10-01",
   "intro": {
     "censusYear": 2021,
     "provincePopulation": 1342153,
@@ -158,11 +158,11 @@
     }
   },
   "mls": {
-    "asOf": "May 2014",
+    "asOf": "August 2026",
     "source": "Winnipeg Regional Real Estate Board (WRREB) — https://www.winnipegregionalrealestatenews.com/market-statistics/market-releases/article/628/august-sees-the-highest-year-to-date-residential-detached-and-condominium-average-prices-on-record",
-    "stale": false,
+    "stale": true,
     "sales": {
-      "value": 2026,
+      "value": 1326,
       "vsPriorYearPct": -4,
       "vs5yrAvgPct": -3
     },
@@ -172,7 +172,7 @@
       "vs5yrAvgPct": -4
     },
     "sfd_avg_price": {
-      "value": 468679,
+      "value": 439216,
       "vsPriorYearPct": 1,
       "vs5yrAvgPct": 8,
       "priorYearValue": 469832,
@@ -186,23 +186,23 @@
       "fiveYrAvg": 363560
     },
     "condo_avg_price": {
-      "value": 288834,
+      "value": 283715,
       "vsPriorYearPct": 6,
       "vs5yrAvgPct": 9,
       "priorYearValue": 277068,
       "fiveYrAvg": 269656
     },
     "hpi": {
-      "benchmarkLatest": 418400,
-      "benchmarkLatestDate": "July 2026",
+      "benchmarkLatest": 413900,
+      "benchmarkLatestDate": "August 2026",
       "isRecordHigh": false,
       "peakValue": 425900,
       "peakDate": "June 2026",
-      "pctFromPeak": -1.8,
+      "pctFromPeak": -2.8,
       "recentLowValue": 345700,
       "recentLowDate": "December 2023",
-      "pctFromRecentLow": 21,
-      "fiveYrChangePct": 21.7
+      "pctFromRecentLow": 19.7,
+      "fiveYrChangePct": 19.8
     }
   },
   "outlook": {
@@ -634,8 +634,8 @@
           "units": "dollar",
           "geo": "Winnipeg",
           "frequency": "monthly",
-          "latestDate": "2026-07-01",
-          "latestValue": 418400
+          "latestDate": "2026-08-01",
+          "latestValue": 413900
         },
         {
           "id": "mls.hpi.calgary.sf",
@@ -643,8 +643,8 @@
           "units": "dollar",
           "geo": "Calgary",
           "frequency": "monthly",
-          "latestDate": "2026-07-01",
-          "latestValue": 686200
+          "latestDate": "2026-08-01",
+          "latestValue": 683500
         },
         {
           "id": "mls.hpi.edmonton.sf",
@@ -652,8 +652,8 @@
           "units": "dollar",
           "geo": "Edmonton",
           "frequency": "monthly",
-          "latestDate": "2026-07-01",
-          "latestValue": 510400
+          "latestDate": "2026-08-01",
+          "latestValue": 506700
         },
         {
           "id": "mls.hpi.saskatoon.sf",
@@ -661,8 +661,8 @@
           "units": "dollar",
           "geo": "Saskatoon",
           "frequency": "monthly",
-          "latestDate": "2026-07-01",
-          "latestValue": 521200
+          "latestDate": "2026-08-01",
+          "latestValue": 516000
         },
         {
           "id": "mls.hpi.regina.sf",
@@ -670,8 +670,8 @@
           "units": "dollar",
           "geo": "Regina",
           "frequency": "monthly",
-          "latestDate": "2026-07-01",
-          "latestValue": 376500
+          "latestDate": "2026-08-01",
+          "latestValue": 376600
         },
         {
           "id": "mls.hpi.vancouver.sf",
@@ -679,8 +679,8 @@
           "units": "dollar",
           "geo": "Vancouver",
           "frequency": "monthly",
-          "latestDate": "2026-07-01",
-          "latestValue": 1829500
+          "latestDate": "2026-08-01",
+          "latestValue": 1804900
         },
         {
           "id": "mls.hpi.victoria.sf",
@@ -688,8 +688,8 @@
           "units": "dollar",
           "geo": "Victoria",
           "frequency": "monthly",
-          "latestDate": "2026-07-01",
-          "latestValue": 1170200
+          "latestDate": "2026-08-01",
+          "latestValue": 1163100
         }
       ],
       "records": [
@@ -1989,6 +1989,11 @@
           "value": 418400
         },
         {
+          "id": "mls.hpi.winnipeg.sf",
+          "date": "2026-08-01",
+          "value": 413900
+        },
+        {
           "id": "mls.hpi.calgary.sf",
           "date": "2005-01-01",
           "value": 227500
@@ -3282,6 +3287,11 @@
           "id": "mls.hpi.calgary.sf",
           "date": "2026-07-01",
           "value": 686200
+        },
+        {
+          "id": "mls.hpi.calgary.sf",
+          "date": "2026-08-01",
+          "value": 683500
         },
         {
           "id": "mls.hpi.edmonton.sf",
@@ -4579,6 +4589,11 @@
           "value": 510400
         },
         {
+          "id": "mls.hpi.edmonton.sf",
+          "date": "2026-08-01",
+          "value": 506700
+        },
+        {
           "id": "mls.hpi.saskatoon.sf",
           "date": "2005-01-01",
           "value": 134100
@@ -5872,6 +5887,11 @@
           "id": "mls.hpi.saskatoon.sf",
           "date": "2026-07-01",
           "value": 521200
+        },
+        {
+          "id": "mls.hpi.saskatoon.sf",
+          "date": "2026-08-01",
+          "value": 516000
         },
         {
           "id": "mls.hpi.regina.sf",
@@ -7169,6 +7189,11 @@
           "value": 376500
         },
         {
+          "id": "mls.hpi.regina.sf",
+          "date": "2026-08-01",
+          "value": 376600
+        },
+        {
           "id": "mls.hpi.vancouver.sf",
           "date": "2005-01-01",
           "value": 533600
@@ -8464,6 +8489,11 @@
           "value": 1829500
         },
         {
+          "id": "mls.hpi.vancouver.sf",
+          "date": "2026-08-01",
+          "value": 1804900
+        },
+        {
           "id": "mls.hpi.victoria.sf",
           "date": "2005-01-01",
           "value": 371000
@@ -9757,6 +9787,11 @@
           "id": "mls.hpi.victoria.sf",
           "date": "2026-07-01",
           "value": 1170200
+        },
+        {
+          "id": "mls.hpi.victoria.sf",
+          "date": "2026-08-01",
+          "value": 1163100
         }
       ]
     }

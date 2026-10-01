@@ -3,7 +3,7 @@
   "asOf": "August 2026",
   "source": "Winnipeg Regional Real Estate Board (WRREB) — https://www.winnipegregionalrealestatenews.com/market-statistics/market-releases/article/628/august-sees-the-highest-year-to-date-residential-detached-and-condominium-average-prices-on-record",
   "fetched": "2026-09-28",
-  "stale": false,
+  "stale": true,
   "sales": {
     "value": 1326,
     "vsPriorYearPct": -4,
