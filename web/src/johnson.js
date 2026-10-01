@@ -445,7 +445,7 @@ function renderCharts() {
       const card = buildIndicatorCard($cards, {
         chartId: `johnson_${chart.id}`,
         fileStem: `johnson_${chart.id}`,
-        title: chart.title,
+        title: displayTitle(chart),
         sourceLabel: source,
         table: true,
         zeroBased: true,
@@ -479,6 +479,13 @@ function renderCharts() {
   }
 }
 
+/** A chart's title as shown: every Johnson figure is Winnipeg's, so the card,
+ *  the PNG and the Excel sheet say so — "Winnipeg Retail Vacancy by District
+ *  — Total Inventory" (Jason, 2026-09-30). */
+function displayTitle(chart) {
+  return chart.title.startsWith('Winnipeg ') ? chart.title : `Winnipeg ${chart.title}`;
+}
+
 // --- Grouped-bar card ----------------------------------------------------------
 // The form the appraiser's Excel charts take: districts along the x-axis, one
 // bar per period, the last ten periods. Same chrome as the indicator card so
@@ -490,7 +497,7 @@ function buildBarCard(container, { chart, source }) {
   card.className = 'chart-card cmhc-indicator-card md:col-span-2';
   card.dataset.chartId = `johnson_${chart.id}`;
   card.innerHTML = `
-    <header class="chart-title">${escapeHtml(chart.title)}</header>
+    <header class="chart-title">${escapeHtml(displayTitle(chart))}</header>
     <p class="chart-sub" data-role="sub"></p>
     <div data-role="plot" style="min-height:240px"></div>
     <div data-role="empty" class="text-xs text-neutral-500 mt-2" hidden>No data for this selection.</div>
@@ -636,7 +643,7 @@ async function exportData() {
       while (usedNames.has(name)) name = `${name.slice(0, 25)} ${++n}`;
       usedNames.add(name);
       const ws = wb.addWorksheet(name);
-      ws.addRow([chart.title]);
+      ws.addRow([displayTitle(chart)]);
       ws.addRow([`Source: ${source}`]);
       ws.addRow([]);
       const header = ['Date', ...seriesMeta.map(s => s.chartLabel)];
