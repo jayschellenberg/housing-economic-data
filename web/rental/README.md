@@ -2,8 +2,9 @@
 
 Static Vite site for the firm's scraped rental data, modelled on the
 Sales Analysis tab of the Manitoba Parcel Search. **Ships no data**: a
-user connects the published `RentalDashboard\` folder (Dropbox,
-AppMarketData) once through the File System Access API; its `export\`
+user connects the published `RentalDashboard\` folder (or the whole
+shared `AppMarketData\` folder, which `web/src/app-market-data.js` steps
+down from) once through the File System Access API; its `export\`
 subfolder is read into IndexedDB, after each weekly publish a Reload
 imports the changed files, and its `evidence\` subfolder is walked on
 demand to open archived listing pages. Connecting `export\` alone still

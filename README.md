@@ -13,6 +13,14 @@ The header carries two top-level groups, each with its own tab bar:
 included, and the landing view) and **Local Data** (Cap Rates, Cap Rates vs Interest, Johnson Report,
 Rental Dashboard and Commercial Dashboard — tabs whose data comes from folders
 on the viewer's disk).
+
+The Local Data folders all live in one Dropbox folder shared with colleagues,
+**AppMarketData** (Jason's copy: `D:\Dropbox\SharedInfo\AppMarketData`), holding
+`CapRates`, `CommercialAvailability`, `JohnsonReport`, `RentalDashboard` and
+`SalesData` (the last read by the two parcel-search sites). Each tab accepts
+its own subfolder or `AppMarketData` itself: `web/src/app-market-data.js`
+(`resolveAppFolder`) steps down to the tab's subfolder before the handle is
+saved, and `filterAppFiles` does the same for the folder-`<input>` fallback.
 `TAB_GROUP` in `web/src/main.js` says which tabs belong to Local Data; every
 other tab is Housing.
 
