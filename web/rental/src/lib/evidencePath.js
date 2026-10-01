@@ -20,7 +20,7 @@ export function detectLayout({ dirs, files }) {
   const d = new Set(dirs), f = new Set(files);
   if (d.has(EXPORT_DIR)) return { layout: 'parent', evidence: d.has(EVIDENCE_DIR) };
   if (f.has('manifest.json')) return { layout: 'export', evidence: false };
-  throw new Error('Not the RentalDashboard folder: expected an export\\ subfolder (or manifest.json). Pick Dropbox → SharedInfo → Apps → RentalDashboard.');
+  throw new Error('Not the RentalDashboard folder: expected an export\\ subfolder (or manifest.json). Pick the shared AppMarketData folder or its RentalDashboard subfolder.');
 }
 
 /**

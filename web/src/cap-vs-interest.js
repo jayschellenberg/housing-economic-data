@@ -10,7 +10,7 @@
  *
  * NO CAP-RATE DATA SHIPS WITH THE SITE. The rates come from the committed BoC
  * shard; the cap rates are the SAME local data the Cap Rates tab reads — the
- * firm's cap_rates.json in the SharedInfo\Apps\CapRates folder, held in this
+ * firm's cap_rates.json in the SharedInfo\AppMarketData\CapRates folder, held in this
  * browser's IndexedDB by cap-rates-store.js. Picking that folder once on the
  * Cap Rates tab serves both tabs, so there is one cap-rate source to
  * maintain. (An earlier version took a separate Colliers CSV here; that path

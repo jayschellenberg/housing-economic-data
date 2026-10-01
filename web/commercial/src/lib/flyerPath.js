@@ -24,7 +24,7 @@ export function detectLayout({ dirs, files }) {
   const d = new Set(dirs), f = new Set(files);
   if (d.has(EXPORT_DIR)) return { layout: 'parent', flyers: d.has(FLYERS_DIR) };
   if (f.has('manifest.json')) return { layout: 'export', flyers: false };
-  throw new Error('That folder has no export\\ subfolder (or manifest.json). Pick the shared CommercialAvailability folder.');
+  throw new Error('That folder has no export\\ subfolder (or manifest.json). Pick the shared AppMarketData folder or its CommercialAvailability subfolder.');
 }
 
 /**

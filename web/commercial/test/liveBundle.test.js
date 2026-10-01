@@ -16,7 +16,7 @@ import { FILES, parseBundle, restrictedColumns, dataCycle } from '../src/lib/bun
 import { currentRecords, bySpaceType } from '../src/lib/summary.js';
 
 const PUBLISHED = process.env.COMMAVAIL_PUBLISHED_DIR
-  || 'D:\\Dropbox\\SharedInfo\\Apps\\CommercialAvailability';
+  || 'D:\\Dropbox\\SharedInfo\\AppMarketData\\CommercialAvailability';
 const EXPORT = path.join(PUBLISHED, 'export');
 const present = ['manifest', 'records', 'runs']
   .every((k) => existsSync(path.join(EXPORT, FILES[k])));

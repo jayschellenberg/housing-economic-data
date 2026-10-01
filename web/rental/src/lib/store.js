@@ -19,6 +19,7 @@
 
 import { FILES } from './bundle.js';
 import { detectLayout, evidenceSegments, EXPORT_DIR, EVIDENCE_DIR } from './evidencePath.js';
+import { resolveAppFolder, filterAppFiles } from '../../../src/app-market-data.js';
 
 const DB_NAME = 'mb-rental-explorer';
 const DB_VERSION = 1;
@@ -115,7 +116,8 @@ export async function requestPersistence() {
 /** Ask the user to nominate the export folder. Needs a user gesture. */
 export async function pickDirectory() {
   if (!fsAccessSupported()) throw new Error('File System Access not supported in this browser');
-  const handle = await window.showDirectoryPicker({ id: 'rental-export', mode: 'read' });
+  const picked = await window.showDirectoryPicker({ id: 'rental-export', mode: 'read' });
+  const handle = await resolveAppFolder(picked, ['RentalDashboard']);
   await putMeta('dirHandle', handle);   // handles are structured-cloneable
   return handle;
 }
@@ -180,6 +182,7 @@ export async function importFromDirectory(dirHandle, { onProgress, force = false
 /** Fallback for browsers without File System Access: a folder <input>
  *  or drag-drop. No handle is retained, so no update detection. */
 export async function importFromFileList(fileList, { onProgress } = {}) {
+  fileList = filterAppFiles(fileList, ['RentalDashboard']);
   const byName = new Map();
   for (const f of Array.from(fileList || [])) {
     const base = f.name.split('/').pop();
@@ -187,7 +190,7 @@ export async function importFromFileList(fileList, { onProgress } = {}) {
   }
   const missing = REQUIRED.filter((n) => !byName.has(n));
   if (missing.length) {
-    throw new Error(`Not the RentalDashboard folder: ${missing.join(', ')} not found. Pick Dropbox → SharedInfo → Apps → RentalDashboard.`);
+    throw new Error(`Not the RentalDashboard folder: ${missing.join(', ')} not found. Pick the shared AppMarketData folder or its RentalDashboard subfolder.`);
   }
   return importFiles(REQUIRED.map((n) => [n, byName.get(n)]), { onProgress, force: true, hasHandle: false, layout: null, evidence: false });
 }

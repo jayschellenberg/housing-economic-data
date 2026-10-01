@@ -10,6 +10,8 @@
  * plumbing; new tabs use this.
  */
 
+import { resolveAppFolder } from './app-market-data.js';
+
 export function storeAvailable() {
   return typeof indexedDB !== 'undefined';
 }
@@ -37,8 +39,10 @@ export async function directoryPermission(handle, { request = false } = {}) {
  * @param {string} o.dbName     IndexedDB database name, unique per tab
  * @param {string} o.pickerId   showDirectoryPicker `id` (remembers the last folder)
  * @param {string[]} [o.stores] object stores to create besides 'meta'
+ * @param {string[]} [o.appPath] the tab's folder below AppMarketData; a pick
+ *   of AppMarketData (or a folder on the path) steps down to it
  */
-export function createFolderStore({ dbName, pickerId, stores = ['files'] }) {
+export function createFolderStore({ dbName, pickerId, stores = ['files'], appPath = null }) {
   const META = 'meta';
   let dbPromise = null;
 
@@ -97,7 +101,8 @@ export function createFolderStore({ dbName, pickerId, stores = ['files'] }) {
     /** Ask the user to nominate the folder. Requires a user gesture. */
     async pickDirectory() {
       if (!fsAccessSupported()) throw new Error('File System Access not supported in this browser');
-      const handle = await window.showDirectoryPicker({ id: pickerId, mode: 'read' });
+      const picked = await window.showDirectoryPicker({ id: pickerId, mode: 'read' });
+      const handle = appPath ? await resolveAppFolder(picked, appPath) : picked;
       await api.putMeta('dirHandle', handle);
       return handle;
     },

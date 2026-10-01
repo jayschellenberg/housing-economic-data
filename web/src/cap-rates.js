@@ -5,7 +5,7 @@
  *
  * NO CAP-RATE DATA SHIPS WITH THE SITE. The workbook's quarterly sheets are
  * parsed by Cap-Rates/ingest/parse_cap_rates.py into cap_rates.json and
- * published to SharedInfo\Apps\CapRates; the user nominates that folder
+ * published to SharedInfo\AppMarketData\CapRates; the user nominates that folder
  * here and the browser reads it locally (cap-rates-store.js).
  *
  * Per property type: average cap rate by class, one class by firm, that
