@@ -51,15 +51,24 @@ results <- lapply(stc_series, function(s) {
   # cansim returns columns: REF_DATE, VALUE, VECTOR, etc. Normalise to our
   # long-form schema: id / date / value / units / geo / frequency.
   date_col  <- intersect(c("REF_DATE", "Date"), names(df))[1]
-  # Prefer val_norm — that's cansim's already-scaled (by SCALAR_FACTOR) value.
-  # VALUE is the raw column where dollar amounts are typically in thousands.
-  value_col <- intersect(c("val_norm", "VALUE", "value"), names(df))[1]
+  # Scale VALUE by the WDS scalar factor ourselves (SCALAR_ID 3 = thousands,
+  # 6 = millions, ...) rather than taking cansim's val_norm: since cansim 0.5.0
+  # val_norm also divides Percent/Rate series by 100, which turned every
+  # unemployment rate into a fraction (5 -> 0.05) from the 2026-09-07 refresh.
+  # val_norm is only the fallback when the scalar column is missing.
+  if (all(c("VALUE", "SCALAR_ID") %in% names(df))) {
+    raw <- suppressWarnings(as.numeric(df$VALUE)) *
+           10^suppressWarnings(as.numeric(as.character(df$SCALAR_ID)))
+  } else {
+    value_col <- intersect(c("val_norm", "VALUE", "value"), names(df))[1]
+    raw <- suppressWarnings(as.numeric(df[[value_col]]))
+  }
   slim <- df %>%
     transmute(
       id        = s$id,
       seriesId  = s$vectorId,
       date      = as.character(as.Date(.data[[date_col]])),
-      value     = suppressWarnings(as.numeric(.data[[value_col]])),
+      value     = raw,
       units     = s$units,
       geo       = s$geo,
       frequency = s$frequency,
