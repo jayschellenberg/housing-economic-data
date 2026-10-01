@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated": "2026-10-01T15:52:15Z",
+  "generated": "2026-10-01T16:07:00Z",
   "dataAsOf": "2026-10-01",
   "intro": {
     "censusYear": 2021,
@@ -96,8 +96,8 @@
       "stale": false
     },
     "unemployment_rate": {
-      "value": 0.05,
-      "changePP": -0,
+      "value": 5,
+      "changePP": -0.8,
       "period": "August 2026",
       "comparison": "year-over-year",
       "source": "Statistics Canada (Labour Force Survey)",
