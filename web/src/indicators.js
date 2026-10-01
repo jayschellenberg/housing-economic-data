@@ -690,7 +690,7 @@ function buildChartSections(catalog, shards) {
         // Components dashed, aggregate (Canada / Total / Overall) solid.
         // Decided on the VISIBLE series: with Canada toggled off there is no
         // solid line for a dash to contrast with, so the rest draw solid.
-        dashedIds: aggregateDashedIds(seriesMeta),
+        dashedIds: dashedIdsFor(chartCfg, seriesMeta),
       });
       // Stash the unfiltered set so rerenderCards() can re-apply the filter
       // without having to re-walk the shard each time.
@@ -708,6 +708,17 @@ function buildChartSections(catalog, shards) {
 function uniqueProviderLabel(seriesMeta) {
   const provs = [...new Set(seriesMeta.map(s => PROVIDER_LABEL[s.provider] || s.provider))];
   return provs.join(' / ');
+}
+
+/**
+ * Which lines draw dashed. A chart can name them with `dashedMatch`, a regex
+ * on the chart label (" paid$" dashes paid rent against solid asking rent);
+ * otherwise components dash against their aggregate (aggregateDashedIds).
+ */
+function dashedIdsFor(chartCfg, seriesMeta) {
+  if (!chartCfg?.dashedMatch) return aggregateDashedIds(seriesMeta);
+  const re = new RegExp(chartCfg.dashedMatch);
+  return seriesMeta.filter(s => re.test(s.chartLabel || '')).map(s => s.id);
 }
 
 /** Sources for just the series on screen, as card.render's `sources` option. */
@@ -911,7 +922,7 @@ function rerenderCards() {
       sources: visibleSources(lastRender.catalog, chartId, ids),
       monthFrom: state.monthFrom,
       monthTo:   state.monthTo,
-      dashedIds: aggregateDashedIds(seriesMeta),
+      dashedIds: dashedIdsFor(chartCfg, seriesMeta),
     });
   });
   // The Cap vs Interest card isn't catalog-driven, so it isn't in

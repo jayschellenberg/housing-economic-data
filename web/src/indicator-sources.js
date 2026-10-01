@@ -40,6 +40,7 @@ const STATCAN_TITLES = {
   '32-10-0077': 'Farm product prices, crops and livestock',
   '34-10-0143': 'Canada Mortgage and Housing Corporation, housing starts, under construction and completions in centres 10,000 and over, Canada, provinces, selected census metropolitan areas',
   '34-10-0292': 'Building permits, by type of structure and type of work',
+  '46-10-0092': 'Asking rent and paid rent prices, by rental unit type and number of bedrooms, experimental estimates',
 };
 
 const OTHER_SOURCES = {
