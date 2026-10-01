@@ -50,6 +50,17 @@ export const fPctFrac1 = (v, missing = '**') =>
 export const fPctInt = (v, missing = '**') =>
   miss(v) ? missing : `${Math.round(Number(v))}%`;
 
+// Persons at a readable magnitude: 1,052,300 → "1.05M", 52,300 → "52.3k",
+// 950 → "950". Thresholds sit at the rounding edge so 999,960 reads "1.00M",
+// not "1000.0k".
+function fPersonsCompact(v) {
+  const n = Number(v);
+  const a = Math.abs(n);
+  if (a >= 999950) return `${(n / 1e6).toFixed(2)}M`;
+  if (a >= 999.5) return `${(n / 1e3).toFixed(1)}k`;
+  return Math.round(n).toLocaleString();
+}
+
 // Indicator / economic-series formatters keyed by the series `units`. These
 // render missing values as "—" (the indicators convention, not the "**" of the
 // tables above). Shared by indicators.js (KPI tiles) and indicator-chart.js
@@ -72,9 +83,11 @@ export const INDICATOR_FMT = {
   acres:              (v) => v == null ? '—' : `${Math.round(Number(v)).toLocaleString()} ac`,
   years:              (v) => v == null ? '—' : `${Number(v).toFixed(1)} yrs`,
   persons:            (v) => v == null ? '—' : Math.round(Number(v)).toLocaleString(),
-  // StatsCan "Persons in thousands": cansim's val_norm already applied the ×1000
-  // scalar, so the value is raw persons — render as millions (21,034,500 → "21.0M").
-  persons_thousands:  (v) => v == null ? '—' : `${(Number(v) / 1e6).toFixed(1)}M`,
+  // StatsCan "Persons in thousands": r/11 already applied the ×1000 scalar, so
+  // the value is raw persons. Scaled to its own magnitude, since one chart can
+  // hold Canada (21,034,500 → "21.03M") next to a single Manitoba industry
+  // (52,300 → "52.3k"); a fixed "M" rendered the industries as "0.1M".
+  persons_thousands:  (v) => v == null ? '—' : fPersonsCompact(v),
   ratio:              (v) => v == null ? '—' : Number(v).toFixed(2),
   // Johnson Report units: lease rates and sale prices per square foot keep
   // their cents ($6.24/sf is not $6/sf), and floor areas are whole sq ft.

@@ -17,7 +17,7 @@
 import * as Plot from '@observablehq/plot';
 import { ticks as d3Ticks } from 'd3';
 import { downloadCardPng, setExportRedraw, EXPORT_W, EXPORT_H, EXPORT_DPI } from './png-export.js';
-import { themed, PALETTE, gridMarks, frameMark, mirrorYMarks, percentTickFormat, sfTickFormat, MIRROR_Y_MARGIN,
+import { themed, PALETTE, gridMarks, frameMark, mirrorYMarks, percentTickFormat, sfTickFormat, personsTickFormat, MIRROR_Y_MARGIN,
          plotWidth, plotHeight, fitPlotWidth, dateAxisTicks } from './plot-theme.js';
 import { escapeHtml } from './escape.js';
 import { getFirm, onFirmChange } from './firm.js';
@@ -704,8 +704,12 @@ export function buildIndicatorCard(container, {
     // A floor-area axis (Johnson vacant / leased space) reads "3.5M sf" rather
     // than the seven-digit "3,500,000 sf" that squeezed the plot.
     const isSfAxis = seriesMeta.every(s => s.units === 'sf');
+    // An employment axis reads "20k" / "5M" on one scale (personsTickFormat)
+    // rather than mixing "950" / "52.3k" / "1.05M" across its ticks.
+    const isPersonsAxis = seriesMeta.every(s => s.units === 'persons_thousands');
     const yTickFormat = isPercentAxis ? percentTickFormat(yDomain)
                       : isSfAxis      ? sfTickFormat(yDomain)
+                      : isPersonsAxis ? personsTickFormat(yDomain)
                       : yFormatter;
 
     // Percent ticks ("9%") are much narrower than the "$1,500"-width labels the
