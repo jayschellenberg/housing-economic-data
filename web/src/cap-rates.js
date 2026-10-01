@@ -216,8 +216,12 @@ function renderQuarterPicker() {
 function enabledTypes() {
   const saved = ui.prefs.types;
   const on = new Set(Array.isArray(saved) ? saved : TYPE_ORDER);
-  // A choice saved before Office was split: "Office" means both halves.
-  if (on.has('Office')) { on.add('Downtown Office'); on.add('Suburban Office'); }
+  // A choice saved before Office was split: "Office" means both halves. Only
+  // for such a save — TYPE_ORDER still lists the plain "Office" type, so
+  // expanding it unconditionally re-ticked both halves on every untick.
+  if (Array.isArray(saved) && !ui.prefs.officeSplit && on.has('Office')) {
+    on.add('Downtown Office'); on.add('Suburban Office');
+  }
   return on;
 }
 
@@ -234,7 +238,7 @@ function renderTypeToggles() {
     cb.addEventListener('change', () => {
       const next = enabledTypes();
       if (cb.checked) next.add(t); else next.delete(t);
-      ui.prefs = savePrefs({ types: [...TYPE_ORDER, ...types].filter((x, i, a) => a.indexOf(x) === i && next.has(x)) });
+      ui.prefs = savePrefs({ officeSplit: true, types: [...TYPE_ORDER, ...types].filter((x, i, a) => a.indexOf(x) === i && next.has(x)) });
       renderCharts();
     });
     const text = document.createElement('span'); text.textContent = t;
@@ -404,8 +408,24 @@ function buildTableCard(container, { id, title, subtitle, table }) {
     const scale = Math.min(EXPORT_W / card.offsetWidth, EXPORT_H / card.offsetHeight);
     $source.style.setProperty('font-size', `${(CAPTION_IMAGE_PX / scale).toFixed(2)}px`, 'important');
   };
+  // The table stands in for a chart's plot: the exporter sizes its box so the
+  // card fills the 1950 × 1050 frame like the trend charts do, and the rows
+  // stretch to fill it — rather than the image centring a short table between
+  // bands of white. Never below the table's own height.
+  const $scroll = card.querySelector('[data-role="plot"]');
+  const $table = $scroll.querySelector('table');
   setExportRedraw(card, (h) => {
-    if (h == null) { $source.style.removeProperty('font-size'); return; }
+    if (h == null) {
+      $source.style.removeProperty('font-size');
+      $scroll.style.removeProperty('height'); $scroll.style.removeProperty('overflow');
+      $table.style.removeProperty('height');
+      return;
+    }
+    $scroll.style.removeProperty('height'); $table.style.removeProperty('height');
+    const natural = $scroll.offsetHeight;
+    $scroll.style.setProperty('height', `${Math.max(h, natural)}px`);
+    $scroll.style.setProperty('overflow', 'visible');
+    $table.style.setProperty('height', '100%');
     fitCaption(); fitCaption();
   });
   const tsv = [

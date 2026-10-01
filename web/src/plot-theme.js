@@ -67,10 +67,10 @@ export function themed(spec = {}) {
 /**
  * Per-chart helpers for the dashed grid + frame. Call from `marks: [...]`.
  */
-export function gridMarks() {
+export function gridMarks({ yTicks } = {}) {
   return [
     Plot.gridX({ stroke: GRID_STROKE, strokeDasharray: GRID_DASHARRAY, strokeOpacity: 1 }),
-    Plot.gridY({ stroke: GRID_STROKE, strokeDasharray: GRID_DASHARRAY, strokeOpacity: 1 }),
+    Plot.gridY({ stroke: GRID_STROKE, strokeDasharray: GRID_DASHARRAY, strokeOpacity: 1, ...(yTicks ? { ticks: yTicks } : {}) }),
   ];
 }
 
@@ -88,7 +88,7 @@ export function frameMark() {
  */
 export const MIRROR_Y_MARGIN = 62;
 
-export function mirrorYMarks(tickFormat, { label = null, labelOffset } = {}) {
+export function mirrorYMarks(tickFormat, { label = null, labelOffset, ticks } = {}) {
   // BOTH axes have to be declared. Plot drops its implicit y axis as soon as
   // any explicit axisY mark exists, so adding only the right-hand one MOVES
   // the axis across instead of mirroring it. The left axis carries the label;
@@ -97,8 +97,9 @@ export function mirrorYMarks(tickFormat, { label = null, labelOffset } = {}) {
     Plot.axisY({
       anchor: 'left', tickFormat, tickSize: 3,
       label, labelOffset, labelAnchor: 'center', labelArrow: 'none',
+      ...(ticks ? { ticks } : {}),
     }),
-    Plot.axisY({ anchor: 'right', tickFormat, tickSize: 3, label: null }),
+    Plot.axisY({ anchor: 'right', tickFormat, tickSize: 3, label: null, ...(ticks ? { ticks } : {}) }),
   ];
 }
 

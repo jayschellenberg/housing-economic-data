@@ -15,6 +15,7 @@
  */
 
 import * as Plot from '@observablehq/plot';
+import { ticks as d3Ticks } from 'd3';
 import { downloadCardPng, setExportRedraw, EXPORT_W, EXPORT_H, EXPORT_DPI } from './png-export.js';
 import { themed, PALETTE, gridMarks, frameMark, mirrorYMarks, percentTickFormat, sfTickFormat, MIRROR_Y_MARGIN,
          plotWidth, plotHeight, fitPlotWidth, dateAxisTicks } from './plot-theme.js';
@@ -670,6 +671,13 @@ export function buildIndicatorCard(container, {
     // this is also what keeps a band of white out of every exported image.
     const width = plotWidth($plot);
 
+    // The PNG export redraws shorter than the card, and Plot picks its y
+    // ticks from the plot's height — so the image ticked every 2% where the
+    // screen showed every 1%. Reuse the on-screen ticks (recorded below)
+    // unless they would crowd the shorter plot.
+    const yTicks = exportH != null && screenYTicks && exportH / screenYTicks.length >= 22
+      ? screenYTicks : null;
+
     const spec = themed({
       width,
       height: exportH ?? plotHeight(width, 330),
@@ -693,7 +701,7 @@ export function buildIndicatorCard(container, {
       },
       color: { domain: colorDomain, range: seriesColours, legend: false, label: null },
       marks: [
-        ...gridMarks(),
+        ...gridMarks({ yTicks }),
         ...(refBand ? [Plot.rect([refBand], {
           x1: xMin, x2: xMax, y1: 'from', y2: 'to',
           fill: REF_COLOUR, fillOpacity: 0.07,
@@ -717,8 +725,8 @@ export function buildIndicatorCard(container, {
             defined: (d) => d.value != null,
           })),
         ...(mirrorY
-          ? mirrorYMarks(yTickFormat)
-          : [Plot.axisY({ anchor: 'left', tickFormat: yTickFormat, tickSize: 3, label: null })]),
+          ? mirrorYMarks(yTickFormat, { ticks: yTicks })
+          : [Plot.axisY({ anchor: 'left', tickFormat: yTickFormat, tickSize: 3, label: null, ...(yTicks ? { ticks: yTicks } : {}) })]),
         Plot.tip(periods, Plot.pointerX({
           x: 'date',
           y: 'anchor',
@@ -730,6 +738,11 @@ export function buildIndicatorCard(container, {
       ],
     });
     const svgEl = Plot.plot(spec);
+    if (exportH == null) {
+      // The ticks Plot drew: its default count is the y range over 35px.
+      const ys = svgEl.scale('y');
+      screenYTicks = d3Ticks(ys.domain[0], ys.domain[1], Math.abs(ys.range[1] - ys.range[0]) / 35);
+    }
 
     // Custom vertical legend on the right.
     const legendEl = document.createElement('div');
@@ -869,8 +882,10 @@ export function buildIndicatorCard(container, {
     draw(records, seriesMeta, opts);
   }
   fitPlotWidth($plot, () => { if (lastRender) draw(...lastRender); });
-  // The PNG export redraws at its own fixed plot height (png-export.js).
+  // The PNG export redraws at its own fixed plot height (png-export.js),
+  // with the y ticks of the last on-screen draw.
   let exportH = null;
+  let screenYTicks = null;
   // A fixed caption size for the image: the card is scaled to fit the
   // 1950 × 1050 frame, so the CSS size is the target image px over that scale.
   const fitCaptionForExport = (h) => {
