@@ -76,6 +76,8 @@ export async function initJohnson() {
     $viewRadios: [...document.querySelectorAll('input[name="jr-view"]')],
     $styleRadios: [...document.querySelectorAll('input[name="jr-style"]')],
     $districts: document.getElementById('jr-districts'),
+    $districtMenu: document.getElementById('jr-district-menu'),
+    $districtSummary: document.getElementById('jr-district-summary-text'),
     $districtsAll: document.getElementById('jr-districts-all'),
     $districtsNone: document.getElementById('jr-districts-none'),
     $yearFrom: document.getElementById('jr-year-from'),
@@ -184,6 +186,9 @@ function wireControls() {
   ui.$yearTo.addEventListener('change', onYear);
   ui.$districtsAll.addEventListener('click', () => setDistricts(ui.districts));
   ui.$districtsNone.addEventListener('click', () => setDistricts([]));
+  // District dropdown closes on an outside click or Esc.
+  document.addEventListener('click', (e) => { if (ui.$districtMenu.open && !ui.$districtMenu.contains(e.target)) ui.$districtMenu.open = false; });
+  ui.$districtMenu.addEventListener('keydown', (e) => { if (e.key === 'Escape') { ui.$districtMenu.open = false; ui.$districtMenu.querySelector('summary').focus(); } });
 
   ui.$xlsx?.addEventListener('click', () => exportData().catch(err => {
     console.error('[johnson excel]', err);
@@ -308,6 +313,7 @@ function renderDistrictPicker() {
   const chosen = new Set(selectedDistricts());
   const $box = ui.$districts;
   $box.replaceChildren();
+  renderDistrictSummary();
   if (!ui.districts.length) {
     const hint = document.createElement('span');
     hint.className = 'text-xs text-neutral-500';
@@ -326,6 +332,7 @@ function renderDistrictPicker() {
       const next = new Set(selectedDistricts());
       for (const m of item.members) { if (cb.checked) next.add(m); else next.delete(m); }
       ui.prefs = savePrefs({ districts: ui.districts.filter(x => next.has(x)) });
+      renderDistrictSummary();
       renderCharts();
     });
     const text = document.createElement('span');
@@ -335,10 +342,25 @@ function renderDistrictPicker() {
   }
 }
 
+/** The dropdown's closed face: "All districts (12)", "3 of 12", a name or two. */
+function renderDistrictSummary() {
+  const items = ui.pickerItems || [];
+  const chosen = new Set(selectedDistricts());
+  const shown = items.filter(it => it.members.some(m => chosen.has(m))).map(it => it.label);
+  ui.$districtSummary.textContent = !items.length ? 'No data'
+    : shown.length === items.length ? `All districts (${items.length})`
+    : shown.length === 0 ? 'None selected'
+    : shown.length <= 2 ? shown.join(', ')
+    : `${shown.length} of ${items.length} districts`;
+}
+
 function enabledGroups() {
   const saved = ui.prefs.groups;
-  if (Array.isArray(saved)) return new Set(saved);
-  return new Set(GROUPS.map(g => g.id));
+  if (!Array.isArray(saved)) return new Set(GROUPS.map(g => g.id));
+  const on = new Set(saved);
+  // Saved before Industrial vacancy + leasing merged: either one ⇒ Industrial.
+  if (on.has('ind_vac') || on.has('ind_lease')) on.add('industrial');
+  return on;
 }
 
 function renderSectionToggles() {

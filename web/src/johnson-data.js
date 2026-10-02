@@ -40,8 +40,9 @@
 // series interleaves them; a chart with no family is annual.
 
 export const GROUPS = [
-  { id: 'ind_vac',   label: 'Industrial vacancy' },
-  { id: 'ind_lease', label: 'Industrial leasing' },
+  // Vacancy and leasing were two sections until 2026-10; one now (Jason).
+  // johnson.js maps a saved choice of either old id onto this one.
+  { id: 'industrial', label: 'Industrial' },
   { id: 'office',    label: 'Office' },
   { id: 'retail',    label: 'Retail' },
   { id: 'summary',   label: 'Vacancy summary' },
@@ -52,31 +53,31 @@ export const GROUPS = [
 
 export const CHARTS = [
   // --- Industrial vacancy (semi-annual, by district) ---
-  { id: 'ind_vac_total',  group: 'ind_vac', kind: 'matrix-rows', series: ['ind_vac_total_district'],
+  { id: 'ind_vac_total',  group: 'industrial', kind: 'matrix-rows', series: ['ind_vac_total_district'],
     title: 'Industrial Vacancy — Total Inventory', units: 'percent', district: true, family: 'ind_vac_total' },
-  { id: 'ind_vac_invest', group: 'ind_vac', kind: 'matrix-rows', series: ['ind_vac_invest_district'],
+  { id: 'ind_vac_invest', group: 'industrial', kind: 'matrix-rows', series: ['ind_vac_invest_district'],
     title: 'Industrial Vacancy — Investment Properties', units: 'percent', district: true, family: 'ind_vac_invest' },
-  { id: 'ind_vac_single', group: 'ind_vac', kind: 'matrix-rows', series: ['ind_vac_single_district'],
+  { id: 'ind_vac_single', group: 'industrial', kind: 'matrix-rows', series: ['ind_vac_single_district'],
     title: 'Industrial Vacancy — Single-Tenant Investment', units: 'percent', district: true, family: 'ind_vac_single' },
-  { id: 'ind_vac_multi',  group: 'ind_vac', kind: 'matrix-rows', series: ['ind_vac_multi_district'],
+  { id: 'ind_vac_multi',  group: 'industrial', kind: 'matrix-rows', series: ['ind_vac_multi_district'],
     title: 'Industrial Vacancy — Multi-Tenant Investment', units: 'percent', district: true, family: 'ind_vac_multi' },
-  { id: 'ind_vac_sf',     group: 'ind_vac', kind: 'records-cols', series: ['ind_vac_distribution'],
+  { id: 'ind_vac_sf',     group: 'industrial', kind: 'records-cols', series: ['ind_vac_distribution'],
     // Specifics in the subtitle, so the title fits the exported image.
     title: 'Industrial Vacant Space', subtitle: 'Owner-Occupied vs Investment', units: 'sf', family: 'ind_vac_sf' },
 
   // --- Industrial leasing (annual, December editions) ---
-  { id: 'ind_rate',        group: 'ind_lease', kind: 'matrix-rows', series: ['ind_lease_rate_district'],
+  { id: 'ind_rate',        group: 'industrial', kind: 'matrix-rows', series: ['ind_lease_rate_district'],
     title: 'Industrial Net Lease Rates by District', units: 'dollar_psf', district: true },
-  { id: 'ind_rate_single', group: 'ind_lease', kind: 'matrix-rows', series: ['ind_lease_rate_single'],
+  { id: 'ind_rate_single', group: 'industrial', kind: 'matrix-rows', series: ['ind_lease_rate_single'],
     title: 'Industrial Net Lease Rates — Single-Tenant', units: 'dollar_psf', district: true },
-  { id: 'ind_rate_multi',  group: 'ind_lease', kind: 'matrix-rows', series: ['ind_lease_rate_multi'],
+  { id: 'ind_rate_multi',  group: 'industrial', kind: 'matrix-rows', series: ['ind_lease_rate_multi'],
     title: 'Industrial Net Lease Rates — Multi-Tenant', units: 'dollar_psf', district: true },
-  { id: 'ind_rate_age',    group: 'ind_lease', kind: 'matrix-rows', series: ['ind_lease_rate_age'],
+  { id: 'ind_rate_age',    group: 'industrial', kind: 'matrix-rows', series: ['ind_lease_rate_age'],
     // Oldest cohort first in the legend; the rest keep the report's row order.
     title: 'Industrial Net Lease Rates by Building Age', units: 'dollar_psf', lineOrder: ['Pre 1970'] },
-  { id: 'ind_leased_sf',   group: 'ind_lease', kind: 'matrix-rows', series: ['ind_leasing_sf_district'],
+  { id: 'ind_leased_sf',   group: 'industrial', kind: 'matrix-rows', series: ['ind_leasing_sf_district'],
     title: 'Industrial Space Leased by District', units: 'sf', district: true },
-  { id: 'ind_rate_type',   group: 'ind_lease', kind: 'records-cols', series: ['ind_leasing_by_type'],
+  { id: 'ind_rate_type',   group: 'industrial', kind: 'records-cols', series: ['ind_leasing_by_type'],
     columns: { 'RATE': 'Single-tenant rate', 'RATE#2': 'Multi-tenant rate', 'RATE#3': 'All rate' },
     title: 'Industrial Net Lease Rates by Property Type', units: 'dollar_psf' },
 
