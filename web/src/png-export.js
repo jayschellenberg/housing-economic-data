@@ -14,6 +14,9 @@
  *   3. Whatever the card's final box, it is scaled to fit and centred on a
  *      white 1950 × 1050 canvas, so the output size never varies. Cards that
  *      can't redraw (census/housing bar charts, maps) land here with a margin.
+ *      Exception: cards registered with `setExportCropHeight` (the Cap Rates
+ *      tables, whose fixed 12 pt text can't fill 1050 px) keep the 1950 px
+ *      width but are cropped to their own height — no bands of white.
  *   4. A pHYs chunk stamps 300 DPI into the PNG, so Word and friends place it
  *      at 6.5 in wide instead of guessing from 96 DPI.
  */
@@ -35,6 +38,12 @@ const MIN_PLOT_H = 140;
 const PROBE_PLOT_H = 240;
 
 const redraws = new WeakMap();
+const cropped = new WeakSet();
+
+/** Export this card at 1950 px wide but only as tall as it is (≤ 1050). */
+export function setExportCropHeight(card) {
+  cropped.add(card);
+}
 
 /**
  * Let the exporter redraw this card's plot at a given height. `fn(h)` must
@@ -78,13 +87,14 @@ export async function captureCard(card, { filter } = {}) {
       skipFonts: true,
       ...(filter ? { filter } : {}),
     });
+    const dw = Math.round(w * scale), dh = Math.round(h * scale);
+    const outH = cropped.has(card) ? Math.min(EXPORT_H, dh) : EXPORT_H;
     const out = document.createElement('canvas');
-    out.width = EXPORT_W; out.height = EXPORT_H;
+    out.width = EXPORT_W; out.height = outH;
     const ctx = out.getContext('2d');
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, EXPORT_W, EXPORT_H);
-    const dw = Math.round(w * scale), dh = Math.round(h * scale);
-    ctx.drawImage(src, Math.round((EXPORT_W - dw) / 2), Math.round((EXPORT_H - dh) / 2), dw, dh);
+    ctx.fillRect(0, 0, EXPORT_W, outH);
+    ctx.drawImage(src, Math.round((EXPORT_W - dw) / 2), Math.round((outH - dh) / 2), dw, dh);
     return out;
   } finally {
     card.classList.remove('cmhc-exporting');

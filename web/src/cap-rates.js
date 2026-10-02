@@ -15,7 +15,7 @@
  */
 
 import { buildIndicatorCard, readOpenPanels } from './indicator-chart.js';
-import { downloadCardPng, setExportRedraw, EXPORT_W, EXPORT_H, EXPORT_DPI } from './png-export.js';
+import { downloadCardPng, setExportRedraw, setExportCropHeight, EXPORT_W, EXPORT_H, EXPORT_DPI } from './png-export.js';
 import { escapeHtml } from './escape.js';
 import { getPref, setPref } from './prefs.js';
 import { buildJumpBar } from './jump-bar.js';
@@ -460,6 +460,9 @@ function buildTableCard(container, { id, title, subtitle, table }) {
       c.style.setProperty('line-height', '1.15');
     }
   };
+  // The 12 pt table is shorter than the 1050 px frame: crop the PNG to it
+  // rather than centring it between bands of white (Jason, 2026-10-02).
+  setExportCropHeight(card);
   setExportRedraw(card, (h) => {
     if (h == null) {
       $source.style.removeProperty('font-size');
