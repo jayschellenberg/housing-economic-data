@@ -266,13 +266,11 @@
              Overlays are the polygons the geo_* columns were assigned from.
              The subject point + radius narrows the results (it flows into the
              filter state, so it shows in the Additional-filters badge and is
-             cleared by Reset). Hide / Expand sit outside the card so Show map
-             is still there once the card is hidden. -->
-        <div class="view-bar">
-          <button type="button" id="map-toggle-btn" class="btn small" aria-pressed="false"
-                  title="Hide the map so the table gets the whole workspace"><span class="map-toggle-label">Hide Map</span></button>
-          <button type="button" id="map-expand-btn" class="btn small" aria-pressed="false"
-                  title="Expand the map to most of the screen. Click again to restore.">Expand Map</button>
+             cleared by Reset). Hide / Expand live on the legend row; the bar
+             below only shows while the card is hidden, so there is always a
+             way back. -->
+        <div class="view-bar" id="map-show-bar" hidden>
+          <button type="button" id="map-show-btn" class="btn small" title="Show the map again">Show Map</button>
         </div>
         <section class="card map-card" id="map-card">
           <div class="map-toolbar">
@@ -325,7 +323,15 @@
             <div id="map" class="map" role="region" aria-label="Map of filtered listings"></div>
             <div id="shape-readout" class="shape-readout" hidden aria-live="polite"></div>
           </div>
-          <div class="map-legend" id="map-legend" aria-label="Bedroom colour legend"></div>
+          <div class="map-foot">
+            <div class="map-legend" id="map-legend" aria-label="Bedroom colour legend"></div>
+            <div class="view-bar">
+              <button type="button" id="map-toggle-btn" class="btn small" aria-pressed="false"
+                      title="Hide the map so the table gets the whole workspace"><span class="map-toggle-label">Hide Map</span></button>
+              <button type="button" id="map-expand-btn" class="btn small" aria-pressed="false"
+                      title="Expand the map to most of the screen. Click again to restore.">Expand Map</button>
+            </div>
+          </div>
         </section>
 
         <section class="card" id="results-card" hidden>

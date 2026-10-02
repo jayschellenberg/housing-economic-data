@@ -562,21 +562,23 @@ export function initMapView({ container, onSubjectChange, onMuniToggle, onMlsTog
     await new Promise((r) => (map.loaded() ? r() : map.once('idle', r)));
     await exportMapPng(map, legend);
   });
-  $hide.addEventListener('click', () => {
-    const hidden = !$card.hidden;
+  function setHidden(hidden) {
     $card.hidden = hidden;
     $hide.setAttribute('aria-pressed', String(hidden));
     $hide.querySelector('.map-toggle-label').textContent = hidden ? 'Show Map' : 'Hide Map';
+    const $showBar = $('map-show-bar');
+    if ($showBar) $showBar.hidden = !hidden;   // the legend-row buttons hide with the card
     if (!hidden) { $card.classList.remove('expanded'); $expand.setAttribute('aria-pressed', 'false'); }
     try { localStorage.setItem('mbre_map_hidden', hidden ? '1' : '0'); } catch { /* ignore */ }
     if (!hidden) setTimeout(() => { map.resize(); notifyView(); }, 0);
     else notifyView();
-  });
+  }
+  $hide.addEventListener('click', () => setHidden(!$card.hidden));
+  $('map-show-btn')?.addEventListener('click', () => setHidden(false));
   $expand.addEventListener('click', () => {
     const expanded = !$card.classList.contains('expanded');
     $card.classList.toggle('expanded', expanded);
     $expand.setAttribute('aria-pressed', String(expanded));
-    if (expanded && $card.hidden) { $card.hidden = false; $hide.setAttribute('aria-pressed', 'false'); }
     setTimeout(() => map.resize(), 0);
   });
   try {
@@ -584,6 +586,8 @@ export function initMapView({ container, onSubjectChange, onMuniToggle, onMlsTog
       $card.hidden = true;
       $hide.setAttribute('aria-pressed', 'true');
       $hide.querySelector('.map-toggle-label').textContent = 'Show Map';
+      const $showBar = $('map-show-bar');
+      if ($showBar) $showBar.hidden = false;
     }
   } catch { /* ignore */ }
 

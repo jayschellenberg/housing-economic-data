@@ -212,6 +212,11 @@ table.stats.narrow { width: auto; min-width: 320px; }
 .shape-tools .btn:disabled { opacity: 0.45; cursor: default; }
 .view-bar { display: flex; justify-content: flex-end; gap: 6px; }
 .view-bar .btn[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.view-bar[hidden] { display: none; }
+/* Legend left, Hide / Expand right, on the one row under the map. */
+.map-foot { display: flex; align-items: flex-start; gap: 4px 12px; margin-top: 6px; }
+.map-foot .map-legend { flex: 1; margin-top: 0; }
+.map-foot .view-bar { flex: none; }
 .hover-popup .maplibregl-popup-content { pointer-events: none; box-shadow: 0 2px 10px rgba(0,0,0,0.18); }
 
 #an-kpis { margin-bottom: 8px; }
