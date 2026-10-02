@@ -506,6 +506,12 @@ async function exportData() {
       if (office) sheets.push(['Office', office]);
     }
   }
+  // Excel percentages: store the fraction (0.065) and format it as 6.50%.
+  // The tables hold percent units (6.5), the raw rows fractions (0.065).
+  const PCT = '0.00%';
+  const frac = (v) => (v == null || !Number.isFinite(v) ? null : Math.round(v * 1e4) / 1e6);
+  const raw = (v) => (v == null || !Number.isFinite(v) ? null : Math.round(v * 1e6) / 1e6);
+  const fmtPct = (row, from) => row.eachCell((c, i) => { if (i >= from && typeof c.value === 'number') c.numFmt = PCT; });
   for (const [type, t] of sheets) {
     const ws = wb.addWorksheet(`${type} ${quarter}`.slice(0, 31));
     ws.addRow([`Winnipeg ${type} Cap Rates — ${quarter}`]).font = { bold: true };
@@ -513,19 +519,17 @@ async function exportData() {
     ws.addRow([]);
     ws.addRow(['Source', ...t.subtypes.flatMap(s => [s, ''])]).font = { bold: true };
     ws.addRow(['', ...t.subtypes.flatMap(() => ['Low', 'High'])]).font = { bold: true };
-    for (const f of t.firms) ws.addRow([f, ...t.subtypes.flatMap(s => [t.cells[f]?.[s]?.low ?? null, t.cells[f]?.[s]?.high ?? null])]);
-    ws.addRow(['Average', ...t.subtypes.flatMap(s => [t.average[s]?.low ?? null, t.average[s]?.high ?? null])]).font = { bold: true };
+    for (const f of t.firms) fmtPct(ws.addRow([f, ...t.subtypes.flatMap(s => [frac(t.cells[f]?.[s]?.low), frac(t.cells[f]?.[s]?.high)])]), 2);
+    const avgRow = ws.addRow(['Average', ...t.subtypes.flatMap(s => [frac(t.average[s]?.low), frac(t.average[s]?.high)])]);
+    avgRow.font = { bold: true }; fmtPct(avgRow, 2);
     ws.getColumn(1).width = 22;
-    ws.addRow([]);
-    ws.addRow(['Values in percent.']);
   }
   const all = wb.addWorksheet('All rows');
-  all.addRow(['Quarter', 'Date', 'Market', 'Firm', 'Type', 'Class', 'Low %', 'High %', 'Mid %']).font = { bold: true };
+  all.addRow(['Quarter', 'Date', 'Market', 'Firm', 'Type', 'Class', 'Low', 'High', 'Mid']).font = { bold: true };
   // orderBy() sorts strings, not row objects — sort the rows directly.
   const byText = (x, y) => String(x ?? '').localeCompare(String(y ?? ''));
   for (const r of [...rows].sort((a, b) => byText(a.date, b.date) || byText(a.type, b.type) || byText(a.firm, b.firm) || byText(a.subtype, b.subtype))) {
-    all.addRow([r.quarter, r.date, r.market, r.firm, r.type, r.subtype,
-      r.low == null ? null : r.low * 100, r.high == null ? null : r.high * 100, r.mid == null ? null : r.mid * 100]);
+    fmtPct(all.addRow([r.quarter, r.date, r.market, r.firm, r.type, r.subtype, raw(r.low), raw(r.high), raw(r.mid)]), 7);
   }
   [12, 12, 12, 22, 14, 24, 8, 8, 8].forEach((w, i) => { all.getColumn(i + 1).width = w; });
 
