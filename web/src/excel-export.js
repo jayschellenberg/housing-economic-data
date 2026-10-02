@@ -109,7 +109,9 @@ export async function exportIndicatorsToExcel({ catalog, shards }) {
   wb.created = new Date();
 
   const FMT_NUMBER = {
-    percent: '0.00"%"',
+    // Percent series hold 4.75 for 4.75%; the cell gets the fraction (below)
+    // so Excel treats it as a true percentage, not 4.75 with a "%" sign.
+    percent: '0.00%',
     dollar:  '#,##0',
     dollar_millions: '#,##0',
     index:   '0.00',
@@ -153,8 +155,11 @@ export async function exportIndicatorsToExcel({ catalog, shards }) {
     });
     const sortedDates = [...byDate.keys()].sort();
 
+    const isPct = shard.series.map(s => s.units === 'percent');
+    const cellValue = (v, i) => (v == null || !Number.isFinite(v) ? null
+      : isPct[i] ? Math.round(v * 1e6) / 1e8 : v);
     sortedDates.forEach(d => {
-      const row = [d, ...seriesIds.map(id => byDate.get(d)?.[id] ?? null)];
+      const row = [d, ...seriesIds.map((id, i) => cellValue(byDate.get(d)?.[id], i))];
       const r = ws.addRow(row);
       r.getCell(1).alignment = { horizontal: 'left' };
       r.eachCell((cell, colNumber) => {
