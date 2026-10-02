@@ -87,7 +87,6 @@ export async function initJohnson() {
     $yearFrom: document.getElementById('jr-year-from'),
     $yearTo: document.getElementById('jr-year-to'),
     $sections: document.getElementById('jr-section-toggles'),
-    $jump: document.getElementById('jr-jump-list'),
     $xlsx: document.getElementById('jr-download-xlsx'),
     $empty: document.getElementById('jr-empty'),
     // One "About these charts" note at the foot of the page, in place of a
@@ -399,7 +398,6 @@ function setGroups(ids) {
 function renderSectionToggles() {
   const on = enabledGroups();
   ui.$sections.replaceChildren();
-  ui.$jump.replaceChildren();
   const shown = GROUPS.filter(g => on.has(g.id)).map(g => g.label);
   ui.$sectionSummary.textContent = shown.length === GROUPS.length ? `All sections (${GROUPS.length})`
     : shown.length === 0 ? 'None selected'
@@ -420,18 +418,6 @@ function renderSectionToggles() {
     text.textContent = g.label;
     label.append(cb, text);
     ui.$sections.appendChild(label);
-
-    const li = document.createElement('li');
-    const a = document.createElement('a');
-    a.href = `#jr-section-${g.id}`;
-    a.className = 'underline text-accent-600';
-    a.textContent = g.label;
-    a.addEventListener('click', (e) => {
-      e.preventDefault();
-      document.getElementById(`jr-section-${g.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-    li.appendChild(a);
-    ui.$jump.appendChild(li);
   }
 }
 
