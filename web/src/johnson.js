@@ -77,6 +77,8 @@ export async function initJohnson() {
     $styleRadios: [...document.querySelectorAll('input[name="jr-style"]')],
     $districts: document.getElementById('jr-districts'),
     $districtMenu: document.getElementById('jr-district-menu'),
+    $folderToggle: document.getElementById('jr-folder-toggle'),
+    $folderBody: document.getElementById('jr-folder-body'),
     $districtSummary: document.getElementById('jr-district-summary-text'),
     $districtsAll: document.getElementById('jr-districts-all'),
     $districtsNone: document.getElementById('jr-districts-none'),
@@ -166,6 +168,13 @@ function wireControls() {
     renderAll();
     setStatus(noDataText());
     $clear.hidden = true;
+  });
+
+  // Once editions are loaded the folder controls are rarely needed: the status
+  // line stays visible and the buttons + help fold away (remembered per browser).
+  ui.$folderToggle.addEventListener('click', () => {
+    ui.prefs = savePrefs({ folderCollapsed: !ui.prefs.folderCollapsed });
+    renderFolderBody();
   });
 
   ui.$edition.addEventListener('change', () => {
@@ -263,10 +272,21 @@ async function maybeAutoRefresh() {
 // --- Sidebar -----------------------------------------------------------------
 
 function renderAll() {
+  renderFolderBody();
   renderEditionPicker();
   renderDistrictPicker();
   renderSectionToggles();
   renderCharts();
+}
+
+function renderFolderBody() {
+  // With nothing loaded the folder controls are the only way in, so never hide them.
+  const loaded = ui.editions.length > 0;
+  const collapsed = loaded && !!ui.prefs.folderCollapsed;
+  ui.$folderBody.hidden = collapsed;
+  ui.$folderToggle.hidden = !loaded;
+  ui.$folderToggle.textContent = collapsed ? 'Show' : 'Hide';
+  ui.$folderToggle.setAttribute('aria-expanded', String(!collapsed));
 }
 
 function renderEditionPicker() {
