@@ -22,7 +22,7 @@ import { buildJumpBar } from './jump-bar.js';
 import {
   TYPE_ORDER, FIRM_ORDER, quarterList, typesPresent, rowsUpTo, splitOfficeByLocation,
   TOTAL_ONLY_TYPES, collapseClasses, officeTotalsTable,
-  averageByFirm, quarterTable, toCardInput, fmtRate, orderBy, defaultYearFrom,
+  averageByFirm, quarterTable, toCardInput, fmtRate, defaultYearFrom,
 } from './cap-rates-data.js';
 import {
   storeAvailable, fsAccessSupported, pickDirectory, getSavedDirectory, directoryPermission,
@@ -62,6 +62,10 @@ export async function initCapRates() {
     $clear: document.getElementById('cr-clear'),
     $quarter: document.getElementById('cr-quarter'),
     $types: document.getElementById('cr-type-toggles'),
+    $typeMenu: document.getElementById('cr-type-menu'),
+    $typeSummary: document.getElementById('cr-type-summary-text'),
+    $folderToggle: document.getElementById('cr-folder-toggle'),
+    $folderBody: document.getElementById('cr-folder-body'),
     $jump: document.getElementById('cr-jump-list'),
     $yearFrom: document.getElementById('cr-year-from'),
     $xlsx: document.getElementById('cr-download-xlsx'),
@@ -123,6 +127,17 @@ function wireControls() {
     setStatus(noDataText());
     $clear.hidden = true;
   });
+  // Once data is loaded the folder controls are rarely needed: the status line
+  // stays visible and the buttons + help fold away (remembered per browser).
+  ui.$folderToggle.addEventListener('click', () => {
+    ui.prefs = savePrefs({ folderCollapsed: !ui.prefs.folderCollapsed });
+    renderFolderBody();
+  });
+  // Property-type dropdown: All / None, and close on an outside click or Esc.
+  document.getElementById('cr-type-all').addEventListener('click', () => setTypes(typesPresent(ui.data?.rows || [])));
+  document.getElementById('cr-type-none').addEventListener('click', () => setTypes([]));
+  document.addEventListener('click', (e) => { if (ui.$typeMenu.open && !ui.$typeMenu.contains(e.target)) ui.$typeMenu.open = false; });
+  ui.$typeMenu.addEventListener('keydown', (e) => { if (e.key === 'Escape') { ui.$typeMenu.open = false; ui.$typeMenu.querySelector('summary').focus(); } });
   ui.$quarter.addEventListener('change', () => { ui.prefs = savePrefs({ quarter: ui.$quarter.value }); renderCharts(); });
   ui.$yearFrom.addEventListener('change', () => { ui.prefs = savePrefs({ yearFrom: ui.$yearFrom.value || null }); renderCharts(); });
   ui.$xlsx?.addEventListener('click', () => exportData().catch(err => {
@@ -190,6 +205,7 @@ async function maybeAutoRefresh() {
 // --- Sidebar -----------------------------------------------------------------
 
 function renderAll() {
+  renderFolderBody();
   renderQuarterPicker();
   renderTypeToggles();
   renderCharts();
@@ -225,21 +241,44 @@ function enabledTypes() {
   return on;
 }
 
+function renderFolderBody() {
+  // With no data the folder controls are the only way in, so never hide them.
+  const collapsed = !!ui.data && !!ui.prefs.folderCollapsed;
+  ui.$folderBody.hidden = collapsed;
+  ui.$folderToggle.hidden = !ui.data;
+  ui.$folderToggle.textContent = collapsed ? 'Show' : 'Hide';
+  ui.$folderToggle.setAttribute('aria-expanded', String(!collapsed));
+}
+
+/** Save a new set of ticked types (keeps TYPE_ORDER first) and redraw. */
+function setTypes(list) {
+  const types = ui.data ? typesPresent(ui.data.rows) : [];
+  const next = new Set(list);
+  ui.prefs = savePrefs({ officeSplit: true, types: [...TYPE_ORDER, ...types].filter((x, i, a) => a.indexOf(x) === i && next.has(x)) });
+  renderTypeToggles();
+  renderCharts();
+}
+
 function renderTypeToggles() {
   const types = ui.data ? typesPresent(ui.data.rows) : [];
   const on = enabledTypes();
   ui.$types.replaceChildren();
   ui.$jump.replaceChildren();
+  const shown = types.filter(t => on.has(t));
+  ui.$typeSummary.textContent = !types.length ? 'No data'
+    : shown.length === types.length ? `All types (${types.length})`
+    : shown.length === 0 ? 'None selected'
+    : shown.length <= 2 ? shown.join(', ')
+    : `${shown.length} of ${types.length} types`;
   for (const t of types) {
     const label = document.createElement('label');
-    label.className = 'flex items-center gap-1 text-sm';
+    label.className = 'flex items-center gap-1 text-sm cursor-pointer';
     const cb = document.createElement('input');
     cb.type = 'checkbox'; cb.checked = on.has(t);
     cb.addEventListener('change', () => {
       const next = enabledTypes();
       if (cb.checked) next.add(t); else next.delete(t);
-      ui.prefs = savePrefs({ officeSplit: true, types: [...TYPE_ORDER, ...types].filter((x, i, a) => a.indexOf(x) === i && next.has(x)) });
-      renderCharts();
+      setTypes([...next]);
     });
     const text = document.createElement('span'); text.textContent = t;
     label.append(cb, text);
@@ -379,7 +418,7 @@ function buildTableCard(container, { id, title, subtitle, table }) {
     const c = cells[f]?.[s];
     return `<td>${fmtRate(c?.low)}</td><td>${fmtRate(c?.high)}</td>`;
   }).join('')}</tr>`).join('');
-  const avg = `<tr class="font-semibold"><td>Average</td>${subtypes.map(s => `<td>${fmtRate(average[s]?.low)}</td><td>${fmtRate(average[s]?.high)}</td>`).join('')}</tr>`;
+  const avg = `<tr class="font-semibold cr-avg-row"><td>Average</td>${subtypes.map(s => `<td>${fmtRate(average[s]?.low)}</td><td>${fmtRate(average[s]?.high)}</td>`).join('')}</tr>`;
   card.innerHTML = `
     <header class="chart-title">${escapeHtml(title)}</header>
     <p class="chart-sub">${escapeHtml(subtitle)}</p>
@@ -403,30 +442,35 @@ function buildTableCard(container, { id, title, subtitle, table }) {
   // the card is laid out at the standard 750 px export width (png-export's
   // redraw hook) and scaled to fit, so the CSS size is that over the scale,
   // measured twice because the caption's own size moves the card's height.
+  // The table text prints at 12 pt the same way, in compact rows at their
+  // natural height (Jason, 2026-10-02: no longer stretched to fill the frame).
   const CAPTION_IMAGE_PX = (10 / 72) * EXPORT_DPI;
-  const fitCaption = () => {
-    const scale = Math.min(EXPORT_W / card.offsetWidth, EXPORT_H / card.offsetHeight);
-    $source.style.setProperty('font-size', `${(CAPTION_IMAGE_PX / scale).toFixed(2)}px`, 'important');
-  };
-  // The table stands in for a chart's plot: the exporter sizes its box so the
-  // card fills the 1950 × 1050 frame like the trend charts do, and the rows
-  // stretch to fill it — rather than the image centring a short table between
-  // bands of white. Never below the table's own height.
+  const TABLE_IMAGE_PX = (12 / 72) * EXPORT_DPI;
   const $scroll = card.querySelector('[data-role="plot"]');
   const $table = $scroll.querySelector('table');
+  const $cells = [...$table.querySelectorAll('th, td')];
+  const fit = () => {
+    const scale = Math.min(EXPORT_W / card.offsetWidth, EXPORT_H / card.offsetHeight);
+    $source.style.setProperty('font-size', `${(CAPTION_IMAGE_PX / scale).toFixed(2)}px`, 'important');
+    const px = TABLE_IMAGE_PX / scale;
+    $table.style.setProperty('font-size', `${px.toFixed(2)}px`);
+    // Tight rows: a fifth of the text size above and below, line height 1.15.
+    for (const c of $cells) {
+      c.style.setProperty('padding', `${(px * 0.2).toFixed(2)}px ${(px * 0.5).toFixed(2)}px`);
+      c.style.setProperty('line-height', '1.15');
+    }
+  };
   setExportRedraw(card, (h) => {
     if (h == null) {
       $source.style.removeProperty('font-size');
-      $scroll.style.removeProperty('height'); $scroll.style.removeProperty('overflow');
-      $table.style.removeProperty('height');
+      $scroll.style.removeProperty('overflow');
+      $table.style.removeProperty('font-size');
+      for (const c of $cells) { c.style.removeProperty('padding'); c.style.removeProperty('line-height'); }
       return;
     }
-    $scroll.style.removeProperty('height'); $table.style.removeProperty('height');
-    const natural = $scroll.offsetHeight;
-    $scroll.style.setProperty('height', `${Math.max(h, natural)}px`);
     $scroll.style.setProperty('overflow', 'visible');
-    $table.style.setProperty('height', '100%');
-    fitCaption(); fitCaption();
+    // The sizes move the card's height, which moves the scale: settle it.
+    fit(); fit(); fit();
   });
   const tsv = [
     ['Source', ...subtypes.flatMap(s => [`${s} Low`, `${s} High`])].join('\t'),
@@ -477,7 +521,9 @@ async function exportData() {
   }
   const all = wb.addWorksheet('All rows');
   all.addRow(['Quarter', 'Date', 'Market', 'Firm', 'Type', 'Class', 'Low %', 'High %', 'Mid %']).font = { bold: true };
-  for (const r of orderBy(rows.map(r => r), []).sort((a, b) => a.date.localeCompare(b.date) || a.type.localeCompare(b.type))) {
+  // orderBy() sorts strings, not row objects — sort the rows directly.
+  const byText = (x, y) => String(x ?? '').localeCompare(String(y ?? ''));
+  for (const r of [...rows].sort((a, b) => byText(a.date, b.date) || byText(a.type, b.type) || byText(a.firm, b.firm) || byText(a.subtype, b.subtype))) {
     all.addRow([r.quarter, r.date, r.market, r.firm, r.type, r.subtype,
       r.low == null ? null : r.low * 100, r.high == null ? null : r.high * 100, r.mid == null ? null : r.mid * 100]);
   }

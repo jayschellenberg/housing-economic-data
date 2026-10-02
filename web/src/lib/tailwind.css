@@ -890,3 +890,8 @@
 /* Semantic chip colours — favourable / unfavourable / flat are driven by the
    chart's goodDirection field in the catalog. NHPI rising = favourable
    (green); 5-yr GoC rising = unfavourable (red, cap rates expanding). */
+
+/* Cap Rates: property-type dropdown checklist (a <details> styled as a select). */
+#cr-type-menu > summary::-webkit-details-marker { display: none; }
+/* Cap Rates tables: dark-red rule between the last brokerage and Average. */
+.cmhc-table tbody tr.cr-avg-row td { border-top: 2px solid var(--cmhc-brand-red); }
