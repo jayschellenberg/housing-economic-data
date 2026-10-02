@@ -8,16 +8,17 @@
 
 import { toPng } from 'html-to-image';
 import { CHART_EXPORT_FILTER } from './indicator-chart.js';
-import { captureCard, canvasToPngBlob, EXPORT_W, EXPORT_H, EXPORT_DPI } from './png-export.js';
+import { captureCard, canvasToPngBlob, EXPORT_W, EXPORT_DPI } from './png-export.js';
 
 // The per-tab Word/Excel chart exports capture the same shape as the
 // single-card PNG button, so they share its filter. (It also drops the
 // collapsible data table, which these cards render closed anyway.)
 const EXPORT_FILTER = CHART_EXPORT_FILTER;
 
-/** Display size of a fixed-size chart image at 96 DPI: 6.5 × 3.5 in → 624 × 336. */
+/** Display size of a fixed-size chart image at 96 DPI: 6.5 × 3.5 in → 624 × 336.
+ *  (Height-cropped cards, e.g. Cap Rates tables, are shorter: see png-export.js.) */
 const FIXED_DISPLAY_W = Math.round(EXPORT_W / EXPORT_DPI * 96);
-const FIXED_DISPLAY_H = Math.round(EXPORT_H / EXPORT_DPI * 96);
+const displayH = (canvas) => Math.round(canvas.height / EXPORT_DPI * 96);
 
 const blobToDataUrl = (blob) => new Promise((resolve, reject) => {
   const r = new FileReader();
@@ -55,7 +56,7 @@ export async function captureNodes(nodes, { pixelRatio } = {}) {
       captures.push({
         dataUrl: await blobToDataUrl(await canvasToPngBlob(canvas)),
         width:  FIXED_DISPLAY_W,
-        height: FIXED_DISPLAY_H,
+        height: displayH(canvas),
         title:  nodeTitle(node, captures.length),
       });
       continue;
