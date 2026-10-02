@@ -1011,11 +1011,15 @@
         <section>
           <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Edition</h2>
           <select id="jr-edition" class="w-full border border-neutral-300 rounded px-2 py-1 text-sm" disabled></select>
-          <div class="mt-2 space-y-1 text-sm">
-            <label class="flex items-start gap-2"><input type="radio" name="jr-view" value="series" checked class="mt-1" />
-              <span>Long series <span class="text-xs text-neutral-500 block">every edition up to this one, latest revision wins</span></span></label>
-            <label class="flex items-start gap-2"><input type="radio" name="jr-view" value="edition" class="mt-1" />
-              <span>As published <span class="text-xs text-neutral-500 block">only this edition's tables — the snapshot in time</span></span></label>
+          <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+            <label class="flex items-center gap-2"><input type="radio" name="jr-view" value="series" checked />
+              <span>Long series</span></label>
+            <label class="flex items-center gap-2"><input type="radio" name="jr-view" value="edition" />
+              <span>As published</span></label>
+          </div>
+          <div class="mt-1 space-y-0.5 text-xs text-neutral-500">
+            <p><span class="font-medium">Long Series:</span> Every edition up to this one, latest revision wins.</p>
+            <p><span class="font-medium">As published:</span> Only this edition's tables — the snapshot in time.</p>
           </div>
         </section>
 
@@ -1069,7 +1073,6 @@
               <div id="jr-section-toggles" class="grid gap-1 text-sm max-h-80 overflow-y-auto"></div>
             </div>
           </details>
-          <ul id="jr-jump-list" class="cmhc-mi-jump-list grid gap-1 text-sm mt-2"></ul>
         </section>
 
         <section class="pt-2 border-t border-neutral-200 space-y-2">
