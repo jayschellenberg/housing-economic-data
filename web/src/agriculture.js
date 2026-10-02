@@ -15,7 +15,7 @@
  * them off the Market Indicators tab.
  */
 
-import { buildIndicatorCard, readOpenPanels, aggregateDashedIds } from './indicator-chart.js';
+import { buildIndicatorCard, readOpenPanels, aggregateDashedIds, geoQualifiedLabels } from './indicator-chart.js';
 import { getPref, setPref, resolveProvince, rememberProvince } from './prefs.js';
 import { initAgMap } from './ag-map.js';
 import { chartSources } from './indicator-sources.js';
@@ -294,6 +294,31 @@ export async function initAgriculture() {
       $canada,
     );
   }
+  // Excel (data): every chart as currently drawn — the checked geographies and
+  // year range — one sheet each. renderCharts refreshes `exportCharts`.
+  let exportCharts = [];
+  const $xlsx = document.getElementById('ag-download-xlsx');
+  $xlsx?.addEventListener('click', async () => {
+    if (!exportCharts.length) return;
+    const original = $xlsx.textContent;
+    $xlsx.disabled = true;
+    $xlsx.textContent = 'Preparing…';
+    try {
+      const { exportChartDataToExcel } = await import('./excel-export.js');
+      await exportChartDataToExcel(exportCharts, {
+        filename: `Agriculture_${selected.map((p) => p.abbr).join('-')}_${new Date().toISOString().slice(0, 10)}.xlsx`,
+        heading: `Agriculture — ${provincesLabel(selected)}${showCanada ? ' and Canada' : ''}`,
+      });
+      $xlsx.textContent = original;
+    } catch (err) {
+      console.error('[agriculture excel]', err);
+      $xlsx.textContent = 'Export failed';
+      setTimeout(() => { $xlsx.textContent = original; }, 2000);
+    } finally {
+      $xlsx.disabled = false;
+    }
+  });
+
   render();
 
   /** The national line is independent of the provinces — charts only. */
@@ -357,6 +382,9 @@ export async function initAgriculture() {
         .filter(([, panels]) => panels.length),
     );
     $grid.replaceChildren();
+    exportCharts = [];
+    const inRange = (d) => (!monthFrom || String(d).slice(0, 7) >= monthFrom)
+      && (!monthTo || String(d).slice(0, 7) <= monthTo);
     let total = 0;
     // One <section> per group (header + 2-col grid), matching the jump bar.
     for (const sec of SECTIONS) {
@@ -420,6 +448,13 @@ export async function initAgriculture() {
           subtitle: spec.subtitle(prov), monthFrom, monthTo,
           dashedIds: aggregateDashedIds(meta),
         });
+        const shown = records.filter((r) => inRange(r.date));
+        if (shown.length) {
+          exportCharts.push({
+            title: spec.title(prov), subtitle: spec.subtitle(prov), source: refs.short || 'Statistics Canada',
+            sources: refs.items, series: geoQualifiedLabels(meta), records: shown,
+          });
+        }
         const panels = openPanels.get(chartId);
         if (panels) card.setOpenPanels(panels);
         n += 1; total += 1;
