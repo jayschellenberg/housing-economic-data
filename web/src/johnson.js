@@ -728,8 +728,18 @@ async function exportData() {
       ws.addRow(header).font = { bold: true };
       const dates = [...new Set(records.map(r => r.date))].sort();
       const byKey = new Map(records.map(r => [`${r.id}\u0000${r.date}`, r.value]));
+      // Percent charts hold 5.2 for 5.2%: write the fraction (0.052) with a
+      // percent format, so Excel shows 5.2% and formulas treat it as a rate.
+      // As many decimals as the report used on this chart (at most 2).
+      const isPct = chart.units === 'percent';
+      const places = (v) => (Number.isFinite(v) ? (String(v).split('.')[1] || '').length : 0);
+      const dp = isPct ? Math.min(2, Math.max(0, ...records.map(r => places(r.value)))) : 0;
+      const pctFmt = dp ? `0.${'0'.repeat(dp)}%` : '0%';
+      const cell = (v) => (v == null || !Number.isFinite(v) ? null
+        : isPct ? Math.round(v * 10 ** dp) / 10 ** (dp + 2) : v);
       for (const d of dates) {
-        ws.addRow([d, ...seriesMeta.map(s => byKey.get(`${s.id}\u0000${d}`) ?? null)]);
+        const row = ws.addRow([d, ...seriesMeta.map(s => cell(byKey.get(`${s.id}\u0000${d}`)))]);
+        if (isPct) row.eachCell((c, i) => { if (i > 1 && typeof c.value === 'number') c.numFmt = pctFmt; });
       }
       ws.getColumn(1).width = 12;
       for (let c = 2; c <= header.length; c++) ws.getColumn(c).width = Math.max(12, header[c - 1].length + 2);
