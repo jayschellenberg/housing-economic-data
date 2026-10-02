@@ -608,12 +608,15 @@ export function initMapView({
     $card.hidden = hidden;
     $hide.setAttribute('aria-pressed', String(hidden));
     $hide.querySelector('.map-toggle-label').textContent = hidden ? 'Show Map' : 'Hide Map';
+    const $showBar = $('map-show-bar');
+    if ($showBar) $showBar.hidden = !hidden;   // the legend-row buttons hide with the card
     if (!hidden) { $card.classList.remove('expanded'); $expand?.setAttribute('aria-pressed', 'false'); }
     try { localStorage.setItem(HIDDEN_KEY, hidden ? '1' : '0'); } catch { /* ignore */ }
     if (!hidden) setTimeout(() => { map.resize(); notifyView(); }, 0);
     else notifyView();                    // hidden: the table lists everything
   }
   $hide?.addEventListener('click', () => setHidden(!$card.hidden));
+  $('map-show-btn')?.addEventListener('click', () => setHidden(false));
   $expand?.addEventListener('click', () => {
     const expanded = !$card.classList.contains('expanded');
     $card.classList.toggle('expanded', expanded);
