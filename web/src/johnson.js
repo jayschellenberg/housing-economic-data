@@ -77,6 +77,8 @@ export async function initJohnson() {
     $styleRadios: [...document.querySelectorAll('input[name="jr-style"]')],
     $districts: document.getElementById('jr-districts'),
     $districtMenu: document.getElementById('jr-district-menu'),
+    $sectionMenu: document.getElementById('jr-section-menu'),
+    $sectionSummary: document.getElementById('jr-section-summary-text'),
     $folderToggle: document.getElementById('jr-folder-toggle'),
     $folderBody: document.getElementById('jr-folder-body'),
     $districtSummary: document.getElementById('jr-district-summary-text'),
@@ -195,9 +197,13 @@ function wireControls() {
   ui.$yearTo.addEventListener('change', onYear);
   ui.$districtsAll.addEventListener('click', () => setDistricts(ui.districts));
   ui.$districtsNone.addEventListener('click', () => setDistricts([]));
-  // District dropdown closes on an outside click or Esc.
-  document.addEventListener('click', (e) => { if (ui.$districtMenu.open && !ui.$districtMenu.contains(e.target)) ui.$districtMenu.open = false; });
-  ui.$districtMenu.addEventListener('keydown', (e) => { if (e.key === 'Escape') { ui.$districtMenu.open = false; ui.$districtMenu.querySelector('summary').focus(); } });
+  document.getElementById('jr-sections-all').addEventListener('click', () => setGroups(GROUPS.map(g => g.id)));
+  document.getElementById('jr-sections-none').addEventListener('click', () => setGroups([]));
+  // The District and Section dropdowns close on an outside click or Esc.
+  for (const $menu of [ui.$districtMenu, ui.$sectionMenu]) {
+    document.addEventListener('click', (e) => { if ($menu.open && !$menu.contains(e.target)) $menu.open = false; });
+    $menu.addEventListener('keydown', (e) => { if (e.key === 'Escape') { $menu.open = false; $menu.querySelector('summary').focus(); } });
+  }
 
   ui.$xlsx?.addEventListener('click', () => exportData().catch(err => {
     console.error('[johnson excel]', err);
@@ -383,10 +389,22 @@ function enabledGroups() {
   return on;
 }
 
+function setGroups(ids) {
+  const next = new Set(ids);
+  ui.prefs = savePrefs({ groups: GROUPS.map(x => x.id).filter(id => next.has(id)) });
+  renderSectionToggles();
+  renderCharts();
+}
+
 function renderSectionToggles() {
   const on = enabledGroups();
   ui.$sections.replaceChildren();
   ui.$jump.replaceChildren();
+  const shown = GROUPS.filter(g => on.has(g.id)).map(g => g.label);
+  ui.$sectionSummary.textContent = shown.length === GROUPS.length ? `All sections (${GROUPS.length})`
+    : shown.length === 0 ? 'None selected'
+    : shown.length <= 2 ? shown.join(', ')
+    : `${shown.length} of ${GROUPS.length} sections`;
   for (const g of GROUPS) {
     const label = document.createElement('label');
     label.className = 'flex items-center gap-1 text-sm';
@@ -396,8 +414,7 @@ function renderSectionToggles() {
     cb.addEventListener('change', () => {
       const next = enabledGroups();
       if (cb.checked) next.add(g.id); else next.delete(g.id);
-      ui.prefs = savePrefs({ groups: GROUPS.map(x => x.id).filter(id => next.has(id)) });
-      renderCharts();
+      setGroups([...next]);
     });
     const text = document.createElement('span');
     text.textContent = g.label;
