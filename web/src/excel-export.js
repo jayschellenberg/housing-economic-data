@@ -15,6 +15,38 @@ import ExcelJS from 'exceljs';
 const BRAND_RED = 'FF7C1014';
 const BORDER_THIN = { style: 'thin', color: { argb: 'FF595959' } };
 
+// Number formats by indicator `units`, shared by the Market Indicators and
+// Agriculture data exports. Percent series hold 4.75 for 4.75%; the cell gets
+// the fraction (indicatorCellValue) so Excel treats it as a true percentage,
+// not 4.75 with a "%" sign.
+const FMT_NUMBER = {
+  percent: '0.00%',
+  dollar:  '#,##0',
+  dollar_millions: '#,##0',
+  dollar_per_cwt: '#,##0.00',
+  dollar_per_dozen: '#,##0.00',
+  dollar_per_kg: '#,##0.00',
+  dollar_per_kl: '#,##0.00',
+  dollar_per_tonne: '#,##0.00',
+  acres:   '#,##0',
+  index:   '0.00',
+  units:   '#,##0',
+  persons: '#,##0',
+  ratio:   '0.00',
+  balance_of_opinion: '0',
+};
+const indicatorCellValue = (v, units) => (v == null || !Number.isFinite(v) ? null
+  : units === 'percent' ? Math.round(v * 1e6) / 1e8 : v);
+
+function styleHeaderRow(row) {
+  row.eachCell((c) => {
+    c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND_RED } };
+    c.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+    c.alignment = { vertical: 'top', horizontal: 'center', wrapText: true };
+    c.border = { top: BORDER_THIN, left: BORDER_THIN, right: BORDER_THIN, bottom: BORDER_THIN };
+  });
+}
+
 /**
  * @param {Array} built  list of rendered tables (output of tables.js render)
  * @param {Object} opts  { filename, maxYear }
@@ -108,19 +140,6 @@ export async function exportIndicatorsToExcel({ catalog, shards }) {
   wb.creator = 'Housing & Economic Data';
   wb.created = new Date();
 
-  const FMT_NUMBER = {
-    // Percent series hold 4.75 for 4.75%; the cell gets the fraction (below)
-    // so Excel treats it as a true percentage, not 4.75 with a "%" sign.
-    percent: '0.00%',
-    dollar:  '#,##0',
-    dollar_millions: '#,##0',
-    index:   '0.00',
-    units:   '#,##0',
-    persons: '#,##0',
-    ratio:   '0.00',
-    balance_of_opinion: '0',
-  };
-
   // One sheet per group, in catalog order. Groups tagged for another tab (e.g.
   // Agriculture) are exported from that tab, not the Market Indicators workbook.
   const groupOrder = Object.entries(catalog.displayGroups || {})
@@ -155,11 +174,8 @@ export async function exportIndicatorsToExcel({ catalog, shards }) {
     });
     const sortedDates = [...byDate.keys()].sort();
 
-    const isPct = shard.series.map(s => s.units === 'percent');
-    const cellValue = (v, i) => (v == null || !Number.isFinite(v) ? null
-      : isPct[i] ? Math.round(v * 1e6) / 1e8 : v);
     sortedDates.forEach(d => {
-      const row = [d, ...seriesIds.map((id, i) => cellValue(byDate.get(d)?.[id], i))];
+      const row = [d, ...seriesIds.map((id, i) => indicatorCellValue(byDate.get(d)?.[id], shard.series[i].units))];
       const r = ws.addRow(row);
       r.getCell(1).alignment = { horizontal: 'left' };
       r.eachCell((cell, colNumber) => {
@@ -214,6 +230,70 @@ export async function exportIndicatorsToExcel({ catalog, shards }) {
   const blob = new Blob([buf],
     { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   triggerDownload(blob, `MarketIndicators_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+/**
+ * One worksheet per chart, exactly as charted: the series and date range on
+ * screen, in the chart's legend order, plus a Sources sheet. Used by the
+ * Agriculture tab, whose charts draw from several indicator shards at once.
+ *
+ * @param {Array<{title, subtitle, source, sources, series, records}>} charts
+ *   series: [{ id, chartLabel, units }]; records: [{ id, date, value }];
+ *   sources: [{ citation, url?, detail? }]
+ * @param {{ filename: string, heading: string }} opts
+ */
+export async function exportChartDataToExcel(charts, { filename, heading }) {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'Housing & Economic Data';
+  wb.created = new Date();
+  const used = new Set();
+  const safe = (s) => s.replace(/[\\/?*[\]:]/g, ' ');
+  for (const ch of charts) {
+    let name = safe(ch.title).slice(0, 31).trim();
+    for (let n = 2; used.has(name); n++) name = `${safe(ch.title).slice(0, 27).trim()} ${n}`;
+    used.add(name);
+    const ws = wb.addWorksheet(name, { properties: { defaultColWidth: 14 } });
+    ws.addRow([ch.title]).font = { name: 'Calibri', size: 12, bold: true };
+    if (ch.subtitle) ws.addRow([ch.subtitle]).font = { name: 'Calibri', size: 10 };
+    if (ch.source) ws.addRow([`Source: ${ch.source}`]).font = { name: 'Calibri', size: 10, italic: true };
+    ws.addRow([]);
+    styleHeaderRow(ws.addRow(['Date', ...ch.series.map(s => s.chartLabel || s.id)]));
+    const byDate = new Map();
+    for (const r of ch.records) {
+      if (!byDate.has(r.date)) byDate.set(r.date, {});
+      byDate.get(r.date)[r.id] = r.value;
+    }
+    for (const d of [...byDate.keys()].sort()) {
+      const r = ws.addRow([d, ...ch.series.map(s => indicatorCellValue(byDate.get(d)[s.id], s.units))]);
+      r.eachCell({ includeEmpty: true }, (cell, col) => {
+        cell.font = { name: 'Calibri', size: 10 };
+        cell.border = { top: BORDER_THIN, left: BORDER_THIN, right: BORDER_THIN, bottom: BORDER_THIN };
+        if (col > 1) {
+          cell.alignment = { horizontal: 'right' };
+          cell.numFmt = FMT_NUMBER[ch.series[col - 2]?.units] || '0.00';
+        }
+      });
+    }
+    ws.getColumn(1).width = 12;
+    ch.series.forEach((s, i) => { ws.getColumn(i + 2).width = Math.max(14, (s.chartLabel || s.id).length + 2); });
+  }
+
+  const src = wb.addWorksheet('Sources', { properties: { defaultColWidth: 22 } });
+  src.addRow([heading]).font = { name: 'Calibri', size: 12, bold: true };
+  src.addRow([]);
+  styleHeaderRow(src.addRow(['Chart', 'Source', 'Series', 'Link']));
+  for (const ch of charts) {
+    for (const it of ch.sources || []) src.addRow([ch.title, it.citation, it.detail || '', it.url || '']);
+  }
+  [45, 70, 40, 55].forEach((w, i) => { src.getColumn(i + 1).width = w; });
+  src.addRow([]);
+  src.addRow(['Exported', new Date().toISOString().slice(0, 10)]);
+  src.addRow(['App', 'https://housing-economic-data.vercel.app/']);
+  src.addRow(['Caveats', 'Public data, see source links for definitions. Verify before relying on for appraisals.']);
+
+  const buf = await wb.xlsx.writeBuffer();
+  triggerDownload(new Blob([buf],
+    { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), filename);
 }
 
 /**
