@@ -255,13 +255,10 @@
       </nav>
 
       <section id="explore" class="tabpanel" role="tabpanel" aria-labelledby="tab-explore" hidden>
-      <!-- Hide / Expand sit outside the card, so Show Map is still there
-           once the card is hidden (as on the Rental dashboard). -->
-      <div class="view-bar">
-        <button type="button" id="map-toggle-btn" aria-pressed="false"
-                title="Hide the map so the table gets the whole workspace"><span class="map-toggle-label">Hide Map</span></button>
-        <button type="button" id="map-expand-btn" aria-pressed="false"
-                title="Expand the map to most of the screen. Click again to restore.">Expand Map</button>
+      <!-- Hide / Expand live on the legend row; this bar only shows while
+           the card is hidden, so there is always a way back. -->
+      <div class="view-bar" id="map-show-bar" hidden>
+        <button type="button" id="map-show-btn" title="Show the map again">Show Map</button>
       </div>
       <div class="card map-card" id="map-card">
         <!-- Same two rows, order and wording as the Rental dashboard's map. -->
@@ -320,7 +317,15 @@
         </div>
 
         <div id="map" class="map"></div>
-        <div id="map-legend" class="map-legend"></div>
+        <div class="map-foot">
+          <div id="map-legend" class="map-legend"></div>
+          <div class="view-bar">
+            <button type="button" id="map-toggle-btn" aria-pressed="false"
+                    title="Hide the map so the table gets the whole workspace"><span class="map-toggle-label">Hide Map</span></button>
+            <button type="button" id="map-expand-btn" aria-pressed="false"
+                    title="Expand the map to most of the screen. Click again to restore.">Expand Map</button>
+          </div>
+        </div>
       </div>
 
       <div class="card">
