@@ -122,10 +122,8 @@
       "stale": false
     },
     "minimum_wage": {
-      "value": 16,
-      "effective": "October 2025",
-      "nextValue": 16.4,
-      "nextEffective": "October 1, 2026",
+      "value": 16.4,
+      "effective": "October 2026",
       "source": "Province of Manitoba",
       "manual": true
     },
