@@ -22,10 +22,18 @@ import os
 import re
 import sys
 import time
+from datetime import date
 
 MANIFEST = "web/public/data/indicators-manifest.json"
 BENCH = "web/public/data/economy/mls_benchmark.json"
 HEADLINE = "web/public/data/economy/mls_winnipeg.json"
+DEMAND = "web/public/data/indicators/demand.json"
+
+# The weekly run has no CMHC rent history (historical_rental.csv), so r/14
+# can't recompute the annual rent YoY series and carries last-good forward --
+# every week. Rms surveys in October and CMHC publishes in late January (the
+# refresh-data.yml release-day cron is Jan 28), so the next value is due then.
+RENT_YOY = re.compile(r"derived\.rent\.[a-z_]+\.yoy.*could not compute")
 
 # Lines the scrapes emit when they kept last-good data or skipped something.
 SOFT_FAIL = re.compile(
@@ -68,6 +76,24 @@ def collapse(lines):
     return out
 
 
+def rent_expectation(today=None):
+    """(note text, overdue?) for the weekly derived.rent YoY carry-forward."""
+    series = load(DEMAND, {}).get("series", [])
+    latest = max((x.get("latestDate", "") for x in series
+                  if str(x.get("id", "")).startswith("derived.rent.")), default="")
+    if not latest[:4].isdigit():
+        return "annual CMHC rent YoY carried forward (weekly run has no rent history)", False
+    survey = int(latest[:4])
+    due = date(survey + 2, 1, 31)
+    overdue = (today or date.today()) > due
+    text = (f"annual CMHC rent YoY carried forward - weekly run has no rent history. "
+            f"Latest: October {survey} survey. Next: October {survey + 1} survey, "
+            f"CMHC release late January {survey + 2} (monthly CMHC refresh, Jan 28 run)")
+    if overdue:
+        text += " - OVERDUE, check the CMHC refresh"
+    return text, overdue
+
+
 def main(tmp, start):
     prev = load(os.path.join(tmp, "manifest.prev.json"), {})
     curr = load(MANIFEST, {})
@@ -98,6 +124,14 @@ def main(tmp, start):
                 line = line.strip()
                 if line.startswith("[") and SOFT_FAIL.search(line):
                     notes.append(line)
+    expected = []
+    if any(RENT_YOY.search(n) for n in notes):
+        text, overdue = rent_expectation()
+        if overdue:
+            notes = [n if not RENT_YOY.search(n) else n + "  <- " + text for n in notes]
+        else:
+            notes = [n for n in notes if not RENT_YOY.search(n)]
+            expected.append(text)
     notes = collapse(list(dict.fromkeys(notes)))[:25]
 
     mins = (time.time() - start) / 60 if start else 0
@@ -117,6 +151,8 @@ def main(tmp, start):
         if notes else "Pipeline notes: none - every scrape returned fresh data.",
     ]
     out += ["  " + n for n in notes]
+    if expected:
+        out += ["", "Expected every week (no action needed):"] + ["  " + e for e in expected]
     text = "\n".join(out)
 
     with open(os.path.join(tmp, "summary.txt"), "w", encoding="utf-8") as f:
