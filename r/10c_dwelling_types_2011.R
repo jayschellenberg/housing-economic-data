@@ -18,6 +18,7 @@
   if (length(m)) dirname(normalizePath(m[1], winslash = "/")) else "r"
 }
 source(file.path(.this_dir, "lib", "cmhc_helpers.R"))   # jsonlite, dplyr, DATA_DIR, WEB_DATA
+source(file.path(.this_dir, "lib", "statcan_download.R"))   # www12 manual-download fallback
 # CSD-level 2011 lives in the ~330 MB 301 file; data.table::fread reads just the
 # needed columns. Optional — CSD 2011 is skipped gracefully if it's unavailable.
 if (!requireNamespace("data.table", quietly = TRUE))
@@ -43,7 +44,8 @@ fetch_unzip <- function(fmt, want_pat) {
   if (!length(list.files(dl_dir, pattern = want_pat, full.names = TRUE, ignore.case = TRUE))) {
     zp <- file.path(dl_dir, paste0(fmt, ".zip"))
     message(sprintf("[10c] downloading %s %s ...", CTLG, fmt))
-    utils::download.file(sprintf("%s?CTLG=%s&FMT=%s&Lang=E", BASE, CTLG, fmt), zp, mode = "wb", quiet = TRUE)
+    statcan_fetch_file(sprintf("%s?CTLG=%s&FMT=%s&Lang=E", BASE, CTLG, fmt), zp,
+                       sprintf("%s_%s.zip", CTLG, fmt), tag = "10c")
     utils::unzip(zp, exdir = dl_dir)
   }
   list.files(dl_dir, pattern = want_pat, full.names = TRUE, ignore.case = TRUE)[1]
@@ -110,7 +112,8 @@ cpt <- parse_file(f101, skip = 1, geoCol = 1, charCol = 4, totalCol = 6,
                   geo_ok = function(g) g == "01" || grepl("^[0-9]{2}$", g))
 cma <- parse_file(f201, skip = 2, geoCol = 1, charCol = 6, totalCol = 8,
                   geo_ok = function(g) grepl("^[0-9]{3}$", g))
-f301 <- tryCatch(fetch_unzip("CSV301", "-301\\.csv$"), error = function(e) NULL)
+f301 <- tryCatch(fetch_unzip("CSV301", "-301\\.csv$"),   # a bot-check block still aborts
+                 error = function(e) if (inherits(e, "statcan_blocked")) stop(e) else NULL)
 # Manitoba + western municipalities (SK/AB/BC) — the national 301 file carries
 # every province's CSDs; keep MB plus the three western provinces so their
 # municipalities gain the 2011 back-year (target western baseline). Best-effort.

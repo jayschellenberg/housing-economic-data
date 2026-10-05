@@ -17,6 +17,7 @@
   if (length(m)) dirname(normalizePath(m[1], winslash = "/")) else "r"
 }
 source(file.path(.this_dir, "lib", "cmhc_helpers.R"))   # jsonlite, dplyr, DATA_DIR, WEB_DATA
+source(file.path(.this_dir, "lib", "statcan_download.R"))   # www12 manual-download fallback
 
 PERIOD_LABELS_2006    <- c("1985 or before", "1986 to 2006")    # coarse 2-band split
 CONDITION_LABELS_2006 <- c("Regular maintenance or minor repairs needed", "Major repairs needed")
@@ -29,7 +30,8 @@ fetch_unzip <- function(fmt, sub) {
   if (!dir.exists(outdir) || !length(list.files(outdir, pattern = "\\.csv$", ignore.case = TRUE))) {
     zp <- file.path(dl_dir, paste0(sub, ".zip"))
     message(sprintf("[09] downloading 2006 %s ...", fmt))
-    utils::download.file(sprintf("%s?CTLG=%s&FMT=%s&Lang=E", BASE, CTLG, fmt), zp, mode = "wb", quiet = TRUE)
+    statcan_fetch_file(sprintf("%s?CTLG=%s&FMT=%s&Lang=E", BASE, CTLG, fmt), zp,
+                       sprintf("%s_%s.zip", CTLG, fmt), tag = "09")
     utils::unzip(zp, exdir = outdir)
   }
   outdir

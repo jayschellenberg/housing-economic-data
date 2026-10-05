@@ -39,6 +39,8 @@ cache_dir <- file.path(repo_root, "r", "lib", "cache", "geo")
 out_dir   <- file.path(repo_root, "web", "public", "data", "geo")
 dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
 dir.create(out_dir,   recursive = TRUE, showWarnings = FALSE)
+ROOT <- repo_root
+source(file.path(repo_root, "r", "lib", "statcan_download.R"))   # www12 manual-download fallback
 
 # --- Config ----------------------------------------------------------------
 PROVINCES <- c("46", "47", "48", "59")     # MB, SK, AB, BC — the provinces in the data
@@ -93,8 +95,7 @@ download_if_needed <- function(zipname) {
     message(sprintf("  cached: %s (%.1f MB)", zipname, file.info(dest)$size / 1e6)); return(dest)
   }
   message(sprintf("  downloading: %s", file.path(BASE_URL, zipname)))
-  old <- getOption("timeout"); options(timeout = 600); on.exit(options(timeout = old), add = TRUE)
-  utils::download.file(file.path(BASE_URL, zipname), dest, mode = "wb", quiet = TRUE)
+  statcan_fetch_file(file.path(BASE_URL, zipname), dest, zipname, tag = "20")
   dest
 }
 

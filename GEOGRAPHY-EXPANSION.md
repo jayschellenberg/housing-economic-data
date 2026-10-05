@@ -92,6 +92,13 @@ To add a province at the 2016+2021 tier:
   it you MUST re‑run `r/08` + `r/09` to put MB's 2011/2006 back. Run order: r/07 → r/08 → r/09.
 - Run order for dwelling type: r/10 → r/10b → r/10c → r/10d (10d last sets the source string).
 - Frontend (`housing.js`) is data‑driven — the province appears automatically.
+- **StatCan bot check (since 2026‑10):** www12.statcan.gc.ca answers scripts with a Cloudflare
+  403. The zip downloads in r/08, r/09, r/10c, r/10d and r/20 go through `r/lib/statcan_download.R`:
+  when blocked they stop with the URL to open in Chrome and the exact filename to save it as in
+  `r/lib/cache/statcan-manual/` (or `$STATCAN_MANUAL_DIR`); re‑run and it is picked up.
+  The 2016 per‑area REST calls in r/07 and r/10b can't be fetched by hand — they cache each
+  response under `r/lib/cache/statcan-rest/` and **abort** on a block (rather than silently
+  dropping 2016). If that persists, rewrite them onto the bulk 2016 Census Profile CSVs.
 
 ### 3d. Census Profile (`r/12_census_profile.R`, run locally with a CensusMapper key)
 MB = full; SK/AB/BC = PR/CMA/CD **+ municipal CSDs** at 2011/2016/2021 (PR #3 — CSD cascade +
