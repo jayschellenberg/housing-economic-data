@@ -15,7 +15,7 @@
   if (length(m)) dirname(normalizePath(m[1], winslash = "/")) else "r"
 }
 source(file.path(.this_dir, "lib", "cmhc_helpers.R"))  # jsonlite, dplyr, WEB_DATA
-source(file.path(.this_dir, "lib", "statcan_download.R"))  # www12 bot-check handling
+source(file.path(.this_dir, "lib", "census2016.R"))  # 2016 profile via CensusMapper (www12 is bot-blocked)
 suppressPackageStartupMessages({
   if (!requireNamespace("httr", quietly = TRUE)) install.packages("httr", repos = "https://cloud.r-project.org")
   library(httr)
@@ -35,10 +35,9 @@ PERIOD_LABELS <- c("1920 or before", "1921 to 1945", "1946 to 1960",
 CONDITION_LABELS <- c("Regular maintenance needed", "Minor repairs are needed",
                       "Major repairs needed")                       # condition ids 2..4
 
-# 2016 Census Profile uses coarser bands + a combined condition category. Pulled
-# per-area from the CPR2016 REST service (no CODR cube). TEXT_IDs: 27026 = total
-# period, 27027..27033 = the 7 bands; 27034 = total condition, 27035/27036 = the
-# two condition categories.
+# 2016 Census Profile uses coarser bands + a combined condition category. No
+# CODR cube, and the www12 CPR2016 REST service is behind a bot check since
+# 2026-10, so it comes from CensusMapper (r/lib/census2016.R; needs CM_API_KEY).
 PERIOD_LABELS_2016 <- c("1960 or before", "1961 to 1980", "1981 to 1990",
                         "1991 to 2000", "2001 to 2005", "2006 to 2010",
                         "2011 to 2016")
@@ -125,33 +124,17 @@ for (b in seq_len(n_batches)) {
 }
 reqs$value <- vals
 
-# --- 4b. 2016 Census Profile (per-area REST; coarser bands + combined cond) ---
-dguid_2016 <- function(code, lvl) {
-  if (lvl == "country")       "2016A000011124"
-  else if (lvl == "province") paste0("2016A0002", code)
-  else                        paste0("2016A0005", code)   # csd
-}
-fetch_2016 <- function(dguid) {
-  url <- sprintf("https://www12.statcan.gc.ca/rest/census-recensement/CPR2016.json?lang=E&dguid=%s&topic=0&notes=0&stat=0", dguid)
-  raw <- statcan_rest_json(url, paste0("CPR2016_", dguid), tag = "07")   # cached; aborts on bot check
-  if (is.null(raw)) return(NULL)
-  txt <- sub("^[^{\\[]*", "", raw)
-  j <- tryCatch(jsonlite::fromJSON(txt, simplifyVector = FALSE), error = function(e) NULL)
-  if (is.null(j) || is.null(j$DATA)) return(NULL)
-  cols <- unlist(j$COLUMNS); ti <- which(cols == "TEXT_ID"); vi <- which(cols == "T_DATA_DONNEE")
-  m <- list(); for (row in j$DATA) m[[as.character(row[[ti]])]] <- row[[vi]]
-  num <- function(id) { v <- m[[as.character(id)]]; if (is.null(v)) NA_real_ else suppressWarnings(as.numeric(v)) }
-  list(total = num(27026),
-       age   = vapply(27027:27033, num, numeric(1)),   # 7 bands
-       cond  = c(num(27035), num(27036)))              # reg-or-minor, major
-}
-message(sprintf("[07] Fetching 2016 Census Profile for %d areas...", nrow(areas)))
-prof2016 <- vector("list", nrow(areas))
-for (i in seq_len(nrow(areas))) {
-  prof2016[[i]] <- fetch_2016(dguid_2016(areas$code[i], areas$lvl[i]))
-  if (i %% 100 == 0 || i == nrow(areas)) message(sprintf("[07]   2016 %d/%d", i, nrow(areas)))
-  Sys.sleep(0.05)
-}
+# --- 4b. 2016 Census Profile (CensusMapper CA16; coarser bands + combined cond) ---
+message("[07] Fetching 2016 Census Profile (CensusMapper CA16)...")
+tbl2016 <- census2016_fetch(provs = c("46", "47", "48", "59"), levels = c("C", "PR", "CSD"), tag = "07")
+prof2016 <- lapply(seq_len(nrow(areas)), function(i) {
+  uid <- if (areas$lvl[i] == "country") "CA" else areas$code[i]
+  r <- census2016_row(tbl2016, uid, areas$lvl[i], CA16_PERIOD[["total"]])
+  if (is.null(r)) return(NULL)
+  list(total = r[[CA16_PERIOD[["total"]]]],
+       age   = unlist(r[1, CA16_PERIOD[-1]], use.names = FALSE),   # 7 bands
+       cond  = unlist(r[1, CA16_CONDITION], use.names = FALSE))    # reg-or-minor, major
+})
 message(sprintf("[07] 2016 areas returned: %d", sum(!vapply(prof2016, is.null, logical(1)))))
 
 # --- 5. Assemble per-area profiles + write JSON ------------------------------

@@ -8,12 +8,12 @@
 # check), save it into STATCAN_MANUAL_DIR under the exact name the error message
 # gives, and re-run the script. Default folder: r/lib/cache/statcan-manual/
 # (git-ignored); override with the STATCAN_MANUAL_DIR environment variable.
+# (The 2016 per-area REST lookups moved to CensusMapper — r/lib/census2016.R.)
 #
 # Needs ROOT (repo root) defined before sourcing — cmhc_helpers.R sets it.
 
 STATCAN_MANUAL_DIR <- Sys.getenv("STATCAN_MANUAL_DIR",
                                  file.path(ROOT, "r", "lib", "cache", "statcan-manual"))
-STATCAN_REST_CACHE <- file.path(ROOT, "r", "lib", "cache", "statcan-rest")
 
 # TRUE when a response body / downloaded file is the bot-check page, not data.
 statcan_is_blocked <- function(x) {
@@ -61,35 +61,4 @@ statcan_fetch_file <- function(url, dest, manual_name, tag = "statcan") {
     "  2. Save the file as:\n     %s\n",
     "  3. Re-run this script."),
     tag, url, normalizePath(manual, winslash = "/", mustWork = FALSE)))
-}
-
-# GET a www12 REST JSON endpoint (e.g. CPR2016.json per DGUID), cached on disk
-# under r/lib/cache/statcan-rest/<key>.json so re-runs don't re-hit StatCan.
-# Returns the JSON text, or NULL when the area has no data / keeps failing.
-# Aborts the whole run on the bot check — otherwise every area would silently
-# come back NULL and the 2016 census year would be dropped from the output.
-# Hundreds of per-area calls can't sensibly be downloaded by hand; if the block
-# persists, these scripts need a rewrite onto the bulk 2016 profile CSVs.
-statcan_rest_json <- function(url, key, tag = "statcan", tries = 3) {
-  dir.create(STATCAN_REST_CACHE, recursive = TRUE, showWarnings = FALSE)
-  cp <- file.path(STATCAN_REST_CACHE, paste0(key, ".json"))
-  if (file.exists(cp) && file.info(cp)$size > 0)
-    return(paste(readLines(cp, warn = FALSE, encoding = "UTF-8"), collapse = "\n"))
-  for (attempt in seq_len(tries)) {
-    resp <- tryCatch(httr::GET(url, httr::timeout(40)), error = function(e) NULL)
-    if (!is.null(resp)) {
-      txt <- httr::content(resp, as = "text", encoding = "UTF-8")
-      if (httr::status_code(resp) == 403 && statcan_is_blocked(txt))
-        statcan_blocked_stop(sprintf(paste0(
-          "[%s] StatCan's bot check is blocking the www12 REST API (%s).\n",
-          "  Per-area REST calls can't be downloaded by hand; nothing was written.\n",
-          "  Responses cached so far are kept in %s."), tag, url, STATCAN_REST_CACHE))
-      if (httr::status_code(resp) == 200) {
-        writeLines(txt, cp, useBytes = TRUE)
-        return(txt)
-      }
-    }
-    Sys.sleep(1)
-  }
-  NULL
 }

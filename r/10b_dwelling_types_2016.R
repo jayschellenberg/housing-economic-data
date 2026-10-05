@@ -2,13 +2,11 @@
 # r/10b_dwelling_types_2016.R
 # Add 2016 Census structural type onto web/public/data/housing/dwelling_types.json
 # (which r/10 populated with 2021). Structural type is 100%-data, so it lives in
-# the 2016 Census Profile (98-316) — pulled per-area from the CPR2016 REST
-# service (no CODR cube). Covers Canada + provinces + the MB/SK CMAs/CAs already
-# in the JSON. Run AFTER r/10. Census-frequency, run-on-demand.
-#
-# CPR2016 structural-type TEXT_IDs (verified live): 3000 = total; the eight leaf
-# types map to our canonical order as 3001/3004/3005/3006/3007/3002/3008/3009
-# (3003 "Other attached dwelling" is a subtotal we skip).
+# the 2016 Census Profile (98-316). No CODR cube, and the www12 CPR2016 REST
+# service is behind a bot check since 2026-10, so it comes from CensusMapper
+# (r/lib/census2016.R; needs CM_API_KEY). Covers Canada + provinces + the
+# CMAs/CAs and CSDs already in the JSON. Run AFTER r/10. Census-frequency,
+# run-on-demand.
 # =============================================================================
 
 .this_dir <- {
@@ -17,69 +15,24 @@
   if (length(m)) dirname(normalizePath(m[1], winslash = "/")) else "r"
 }
 source(file.path(.this_dir, "lib", "cmhc_helpers.R"))   # jsonlite, dplyr, WEB_DATA
-source(file.path(.this_dir, "lib", "statcan_download.R"))   # www12 bot-check handling
-suppressPackageStartupMessages({
-  if (!requireNamespace("httr", quietly = TRUE)) install.packages("httr", repos = "https://cloud.r-project.org")
-  library(httr)
-})
-`%||%` <- function(a, b) if (is.null(a)) b else a
-
-# Canonical 8-type order (same as r/10) → CPR2016 TEXT_IDs.
-TYPE_TEXT_IDS_2016 <- c(3001L,  # Single-detached house
-                        3004L,  # Semi-detached house
-                        3005L,  # Row house
-                        3006L,  # Apartment or flat in a duplex
-                        3007L,  # Apartment, building with fewer than five storeys
-                        3002L,  # Apartment, building with five or more storeys
-                        3008L,  # Other single-attached house
-                        3009L)  # Movable dwelling
-
-# DGUID candidates per area. CMAs and census agglomerations share level "cma"
-# in our JSON but use different 2016 DGUID schemas (S0503 = CMA, S0504 = CA), so
-# try both and keep whichever returns data.
-dguid_2016 <- function(uid, level) {
-  if (level == "country")       "2016A000011124"
-  else if (level == "province") paste0("2016A0002", uid)
-  else if (level == "cma")      c(paste0("2016S0503", uid), paste0("2016S0504", uid))
-  else                          paste0("2016A0005", uid)   # csd
-}
-
-fetch_one_2016 <- function(dguid) {
-  url <- sprintf("https://www12.statcan.gc.ca/rest/census-recensement/CPR2016.json?lang=E&dguid=%s&topic=0&notes=0&stat=0", dguid)
-  raw <- statcan_rest_json(url, paste0("CPR2016_", dguid), tag = "10b")   # cached; aborts on bot check
-  if (is.null(raw)) return(NULL)
-  txt <- sub("^[^{\\[]*", "", raw)
-  j <- tryCatch(jsonlite::fromJSON(txt, simplifyVector = FALSE), error = function(e) NULL)
-  if (is.null(j) || is.null(j$DATA)) return(NULL)
-  cols <- unlist(j$COLUMNS); ti <- which(cols == "TEXT_ID"); vi <- which(cols == "T_DATA_DONNEE")
-  m <- list(); for (row in j$DATA) m[[as.character(row[[ti]])]] <- row[[vi]]
-  num <- function(id) { v <- m[[as.character(id)]]; if (is.null(v)) NA_real_ else suppressWarnings(as.numeric(v)) }
-  total <- num(3000L)
-  if (!is.finite(total) || total <= 0) return(NULL)
-  list(total = total, types = vapply(TYPE_TEXT_IDS_2016, num, numeric(1)))
-}
-
-# Try each DGUID candidate (CMA schema, then CA schema) until one returns data.
-fetch_2016 <- function(uid, level) {
-  for (dg in dguid_2016(uid, level)) {
-    res <- fetch_one_2016(dg)
-    if (!is.null(res)) return(res)
-  }
-  NULL
-}
+source(file.path(.this_dir, "lib", "census2016.R"))   # 2016 profile via CensusMapper (www12 is bot-blocked)
 
 # --- Merge onto the multi-year JSON ------------------------------------------
 json_path <- file.path(WEB_DATA, "housing", "dwelling_types.json")
 doc <- jsonlite::read_json(json_path)
 cleanv <- function(v) lapply(v, function(x) if (length(x) && is.finite(x)) round(x) else NA)
 
-message(sprintf("[10b] fetching 2016 structural type for %d areas...", length(doc$areas)))
+# CMA + CSD levels only for the provinces the JSON carries them for.
+sub_provs <- unique(vapply(Filter(function(a) a$level %in% c("cma", "csd"), doc$areas),
+                           function(a) as.character(a$prov), ""))
+message(sprintf("[10b] fetching 2016 structural type (CensusMapper CA16) for %d areas...", length(doc$areas)))
+tbl2016 <- census2016_fetch(provs = sub_provs, tag = "10b")
 added <- 0
 doc$areas <- lapply(doc$areas, function(a) {
-  b <- fetch_2016(a$uid, a$level)
-  Sys.sleep(0.05)
-  if (!is.null(b)) {
-    a$census[["2016"]] <- list(total = round(b$total), types = cleanv(b$types))
+  r <- census2016_row(tbl2016, a$uid, a$level, CA16_TYPES[["total"]])
+  if (!is.null(r)) {
+    a$census[["2016"]] <- list(total = round(r[[CA16_TYPES[["total"]]]]),
+                               types = cleanv(unlist(r[1, CA16_TYPES[-1]], use.names = FALSE)))
     added <<- added + 1
   }
   a

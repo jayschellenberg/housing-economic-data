@@ -96,9 +96,11 @@ To add a province at the 2016+2021 tier:
   403. The zip downloads in r/08, r/09, r/10c, r/10d and r/20 go through `r/lib/statcan_download.R`:
   when blocked they stop with the URL to open in Chrome and the exact filename to save it as in
   `r/lib/cache/statcan-manual/` (or `$STATCAN_MANUAL_DIR`); re‑run and it is picked up.
-  The 2016 per‑area REST calls in r/07 and r/10b can't be fetched by hand — they cache each
-  response under `r/lib/cache/statcan-rest/` and **abort** on a block (rather than silently
-  dropping 2016). If that persists, rewrite them onto the bulk 2016 Census Profile CSVs.
+  The 2016 figures in r/07 and r/10b no longer touch www12: they come from CensusMapper
+  (`r/lib/census2016.R`, dataset CA16, needs `CM_API_KEY` — run with
+  `R_ENVIRON_USER=C:/Users/Jason/Documents/.Renviron`). Checked against the old REST values:
+  all within ±10 (StatCan random rounding). Non‑tracted CAs ("(D)": Brandon, Steinbach…) have
+  no CensusMapper values and are summed from their member CSDs.
 
 ### 3d. Census Profile (`r/12_census_profile.R`, run locally with a CensusMapper key)
 MB = full; SK/AB/BC = PR/CMA/CD **+ municipal CSDs** at 2011/2016/2021 (PR #3 — CSD cascade +
