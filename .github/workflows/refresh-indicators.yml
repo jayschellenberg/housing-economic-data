@@ -30,7 +30,7 @@ concurrency:
 
 jobs:
   refresh-indicators:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # 90, not 60. The pipeline's wall time is dominated by how fast the
     # StatsCan WDS answers a few hundred sequential vector calls, and that
     # swings hard: recent scheduled runs took 5, 7, 19, 26, 32, 34 and 45
