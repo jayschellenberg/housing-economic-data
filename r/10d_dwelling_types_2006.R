@@ -18,6 +18,7 @@
   if (length(m)) dirname(normalizePath(m[1], winslash = "/")) else "r"
 }
 source(file.path(.this_dir, "lib", "cmhc_helpers.R"))   # jsonlite, dplyr, DATA_DIR, WEB_DATA
+source(file.path(.this_dir, "lib", "statcan_download.R"))   # www12 manual-download fallback
 
 TOTAL_PAT <- "^Total private dwellings occupied by usual residents$"
 # Canonical 8-type slot → regex matching the 2006 "... - as a %" label (trimmed).
@@ -38,7 +39,8 @@ fetch_unzip <- function(fmt, want_pat) {
   if (!length(list.files(dl_dir, pattern = want_pat, full.names = TRUE, ignore.case = TRUE))) {
     zp <- file.path(dl_dir, paste0(fmt, ".zip"))
     message(sprintf("[10d] downloading %s %s ...", CTLG, fmt))
-    utils::download.file(sprintf("%s?CTLG=%s&FMT=%s&Lang=E", BASE, CTLG, fmt), zp, mode = "wb", quiet = TRUE)
+    statcan_fetch_file(sprintf("%s?CTLG=%s&FMT=%s&Lang=E", BASE, CTLG, fmt), zp,
+                       sprintf("%s_%s.zip", CTLG, fmt), tag = "10d")
     utils::unzip(zp, exdir = dl_dir)
   }
   list.files(dl_dir, pattern = want_pat, full.names = TRUE, ignore.case = TRUE)[1]
@@ -88,7 +90,8 @@ cma <- parse_file(f201, skip = 3, geoCol = 1, charCol = 6, totalCol = 8,
 # CSD file (Geo_Code 1, Characteristic 7, Total 9). Best-effort.
 # Manitoba CSDs only — SK & AB municipalities carry 2016 + 2021 census data only
 # (no pre-2016 municipal detail), so the 2006 back-year is Manitoba-only.
-f301mb <- tryCatch(fetch_unzip("CSV301", "-301-MAN\\.csv$"),  error = function(e) NULL)
+f301mb <- tryCatch(fetch_unzip("CSV301", "-301-MAN\\.csv$"),   # a bot-check block still aborts
+                   error = function(e) if (inherits(e, "statcan_blocked")) stop(e) else NULL)
 csd_mb <- if (!is.null(f301mb)) parse_file(f301mb, skip = 3, geoCol = 1, charCol = 7, totalCol = 9,
                                            geo_ok = function(g) grepl("^46[0-9]{5}$", g)) else list()
 csd <- csd_mb

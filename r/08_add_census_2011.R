@@ -16,6 +16,7 @@
   if (length(m)) dirname(normalizePath(m[1], winslash = "/")) else "r"
 }
 source(file.path(.this_dir, "lib", "cmhc_helpers.R"))   # jsonlite, dplyr, DATA_DIR, WEB_DATA
+source(file.path(.this_dir, "lib", "statcan_download.R"))   # www12 manual-download fallback
 suppressPackageStartupMessages({ if (!requireNamespace("utils", quietly = TRUE)) {} })
 
 PERIOD_LABELS_2011 <- c("1960 or before", "1961 to 1980", "1981 to 1990",
@@ -32,7 +33,7 @@ fetch_unzip <- function(fmt, sub) {
     zp <- file.path(dl_dir, paste0(sub, ".zip"))
     url <- sprintf("https://www12.statcan.gc.ca/nhs-enm/2011/dp-pd/prof/details/download-telecharger/comprehensive/comp_download.cfm?CTLG=99-004-XWE2011001&FMT=%s&Lang=E", fmt)
     message(sprintf("[08] downloading %s ...", fmt))
-    utils::download.file(url, zp, mode = "wb", quiet = TRUE)
+    statcan_fetch_file(url, zp, sprintf("99-004-XWE2011001_%s.zip", fmt), tag = "08")
     utils::unzip(zp, exdir = outdir)
   }
   outdir

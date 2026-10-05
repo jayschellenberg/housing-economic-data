@@ -17,6 +17,7 @@
   if (length(m)) dirname(normalizePath(m[1], winslash = "/")) else "r"
 }
 source(file.path(.this_dir, "lib", "cmhc_helpers.R"))   # jsonlite, dplyr, WEB_DATA
+source(file.path(.this_dir, "lib", "statcan_download.R"))   # www12 bot-check handling
 suppressPackageStartupMessages({
   if (!requireNamespace("httr", quietly = TRUE)) install.packages("httr", repos = "https://cloud.r-project.org")
   library(httr)
@@ -45,22 +46,17 @@ dguid_2016 <- function(uid, level) {
 
 fetch_one_2016 <- function(dguid) {
   url <- sprintf("https://www12.statcan.gc.ca/rest/census-recensement/CPR2016.json?lang=E&dguid=%s&topic=0&notes=0&stat=0", dguid)
-  for (attempt in 1:3) {
-    resp <- tryCatch(GET(url, timeout(40)), error = function(e) NULL)
-    if (!is.null(resp) && status_code(resp) == 200) {
-      txt <- sub("^[^{\\[]*", "", content(resp, as = "text", encoding = "UTF-8"))
-      j <- tryCatch(jsonlite::fromJSON(txt, simplifyVector = FALSE), error = function(e) NULL)
-      if (is.null(j) || is.null(j$DATA)) return(NULL)
-      cols <- unlist(j$COLUMNS); ti <- which(cols == "TEXT_ID"); vi <- which(cols == "T_DATA_DONNEE")
-      m <- list(); for (row in j$DATA) m[[as.character(row[[ti]])]] <- row[[vi]]
-      num <- function(id) { v <- m[[as.character(id)]]; if (is.null(v)) NA_real_ else suppressWarnings(as.numeric(v)) }
-      total <- num(3000L)
-      if (!is.finite(total) || total <= 0) return(NULL)
-      return(list(total = total, types = vapply(TYPE_TEXT_IDS_2016, num, numeric(1))))
-    }
-    Sys.sleep(1)
-  }
-  NULL
+  raw <- statcan_rest_json(url, paste0("CPR2016_", dguid), tag = "10b")   # cached; aborts on bot check
+  if (is.null(raw)) return(NULL)
+  txt <- sub("^[^{\\[]*", "", raw)
+  j <- tryCatch(jsonlite::fromJSON(txt, simplifyVector = FALSE), error = function(e) NULL)
+  if (is.null(j) || is.null(j$DATA)) return(NULL)
+  cols <- unlist(j$COLUMNS); ti <- which(cols == "TEXT_ID"); vi <- which(cols == "T_DATA_DONNEE")
+  m <- list(); for (row in j$DATA) m[[as.character(row[[ti]])]] <- row[[vi]]
+  num <- function(id) { v <- m[[as.character(id)]]; if (is.null(v)) NA_real_ else suppressWarnings(as.numeric(v)) }
+  total <- num(3000L)
+  if (!is.finite(total) || total <= 0) return(NULL)
+  list(total = total, types = vapply(TYPE_TEXT_IDS_2016, num, numeric(1)))
 }
 
 # Try each DGUID candidate (CMA schema, then CA schema) until one returns data.
