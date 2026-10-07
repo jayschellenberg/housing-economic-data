@@ -13,7 +13,8 @@
  *     segment  all | ac | apt | condo | house
  *     unit     total | 0br | 1br | 2br | 3br
  *     metric   rent | mom | yoy
- *     src      't' = report table, 'd' = derived from a neighbouring month's change
+ *     src      't' = report table, 'd' = derived from a neighbouring month's change,
+ *              'c' = computed from two published rents (Canada / province M/M)
  */
 
 export const SOURCE = 'Rentals.ca & Urbanation National Rent Report';
