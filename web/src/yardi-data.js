@@ -15,6 +15,8 @@ export const SOURCE = 'Yardi Canadian National Multifamily Report';
 export const CMAS = ['National', 'Winnipeg', 'Saskatoon', 'Calgary', 'Edmonton', 'Vancouver',
   'Toronto', 'Hamilton', 'Kitchener–Cambridge–Waterloo', 'London', 'Ottawa–Gatineau', 'Montreal', 'Halifax'];
 export const DEFAULT_CENTRES = ['Winnipeg', 'National'];
+/** Charts open here: Q3 2023 data is the first with bedroom-type detail. */
+export const DEFAULT_FROM = '2023Q3';
 
 export const PROVINCES = ['National', 'Manitoba', 'Saskatchewan', 'Alberta', 'British Columbia', 'Ontario', 'Quebec', 'Nova Scotia'];
 /** The province a CMA sits in, for highlighting the expense rows. */
@@ -57,10 +59,11 @@ export const GROUPS = [
 
 /** All-units trend charts: one line per selected centre. */
 export const CENTRE_CHARTS = [
-  { id: 'rent', group: 'total', metric: 'rent', title: 'Average In-Place Rent',
+  // withNational: National is always drawn beside the centre (Jason, 2026-10-07).
+  { id: 'rent', group: 'total', metric: 'rent', title: 'Average In-Place Rent', withNational: true,
     subtitle: 'All units; read off the report’s history chart (approximate)' },
-  { id: 'rent_yoy', group: 'total', metric: 'rent_yoy', title: 'In-Place Rent Change, Year over Year' },
-  { id: 'lol', group: 'total', metric: 'lol', title: 'New-Lease Rent Change (Lease over Lease)' },
+  { id: 'rent_yoy', group: 'total', metric: 'rent_yoy', title: 'In-Place Rent Change, Year over Year', withNational: true },
+  { id: 'lol', group: 'total', metric: 'lol', title: 'New-Lease Rent Change (Lease over Lease)', withNational: true },
   { id: 'vacancy', group: 'total', metric: 'vacancy', title: 'Apartment Vacancy Rate' },
   { id: 'turnover', group: 'total', metric: 'turnover', title: 'Annual Tenant Turnover' },
   { id: 'stay', group: 'leasing', metric: 'stay', title: 'Average Resident Length of Stay', subtitle: 'Months' },

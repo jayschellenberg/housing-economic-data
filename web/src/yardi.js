@@ -25,9 +25,9 @@ import { escapeHtml } from './escape.js';
 import { getPref, setPref } from './prefs.js';
 import { buildJumpBar } from './jump-bar.js';
 import {
-  SOURCE, CMAS, DEFAULT_CENTRES, PROVINCES, CMA_PROVINCE, SEGMENTS, METRICS, GROUPS,
+  SOURCE, CMAS, DEFAULT_CENTRES, DEFAULT_FROM, PROVINCES, CMA_PROVINCE, SEGMENTS, METRICS, GROUPS,
   CENTRE_CHARTS, BEDROOM_CHARTS, EXPENSE_METRICS,
-  qOrd, qLabel, indexObs, toCardInput, quarterRanges, quarterList, expenseQuarter, valueAt,
+  qOrd, qLabel, indexObs, toCardInput, quarterRanges, expenseQuarter, valueAt,
 } from './yardi-data.js';
 import {
   storeAvailable, fsAccessSupported, pickDirectory, getSavedDirectory, directoryPermission,
@@ -66,6 +66,7 @@ export async function initYardi() {
     $folderBody: document.getElementById('yr-folder-body'),
     $quarter: document.getElementById('yr-quarter'),
     $yearFrom: document.getElementById('yr-year-from'),
+    $quarterFrom: document.getElementById('yr-quarter-from'),
     $centre: document.getElementById('yr-centre'),
     $units: document.getElementById('yr-units'),
     $sectionMenu: document.getElementById('yr-section-menu'),
@@ -147,6 +148,7 @@ function wireControls() {
   }
   ui.$quarter.addEventListener('change', () => { ui.prefs = savePrefs({ quarter: ui.$quarter.value }); renderCharts(); });
   ui.$yearFrom.addEventListener('change', () => { ui.prefs = savePrefs({ yearFrom: ui.$yearFrom.value || null }); renderCharts(); });
+  ui.$quarterFrom.addEventListener('change', () => { ui.prefs = savePrefs({ quarterFrom: ui.$quarterFrom.value }); renderCharts(); });
   ui.$xlsx?.addEventListener('click', () => exportData().catch(err => {
     console.error('[yardi excel]', err);
     showError('Excel export failed: ' + (err?.message || err));
@@ -242,8 +244,8 @@ function renderQuarterPicker() {
   else if (eds.length) $sel.value = eds[0].id;
   $sel.disabled = eds.length === 0;
   ui.$yearFrom.value = ui.prefs.yearFrom || '';
-  const qs = quarterList(ui.data);
-  ui.$yearFrom.placeholder = qs.length ? qs[0].slice(0, 4) : 'year';
+  ui.$yearFrom.placeholder = DEFAULT_FROM.slice(0, 4);
+  ui.$quarterFrom.value = String(ui.prefs.quarterFrom || DEFAULT_FROM.slice(-1));
 }
 
 /** One centre at a time (Jason, 2026-10-07); an older multi-centre pref keeps its first pick. */
@@ -334,7 +336,9 @@ function selection() {
   const eds = editionsDesc();
   const q = ui.$quarter.value || eds[0]?.id || null;
   const edition = (ui.data?.editions || []).find(e => e.id === q) || null;
-  const from = ui.prefs.yearFrom ? `${ui.prefs.yearFrom}Q1` : null;
+  // Charts start at the chosen quarter + year; by default Q3 2023, when the
+  // bedroom-type detail begins (Jason, 2026-10-07). A blank year keeps 2023.
+  const from = `${ui.prefs.yearFrom || DEFAULT_FROM.slice(0, 4)}Q${ui.prefs.quarterFrom || DEFAULT_FROM.slice(-1)}`;
   const centre = selectedCentre();
   return { q, edition, from, centre, centres: [centre], units: selectedUnits() };
 }
@@ -404,10 +408,14 @@ function renderCharts() {
 
     if (g.id === 'total' || g.id === 'leasing') {
       for (const ch of CENTRE_CHARTS.filter(c => c.group === g.id)) {
-        const lines = [{ label: sel.centre, geo: sel.centre, seg: 'total', metric: ch.metric }];
+        // The rent charts always carry National beside the centre (Jason,
+        // 2026-10-07); the others show the centre alone.
+        const withNational = ch.withNational && sel.centre !== 'National';
+        const geos = withNational ? [sel.centre, 'National'] : [sel.centre];
+        const lines = geos.map(geo => ({ label: geo, geo, seg: 'total', metric: ch.metric }));
         if (lineCard($cards, `yardi_${ch.id}`, {
           // The centre already leads the title; don't repeat it in the subtitle.
-          title: `${sel.centre} ${ch.title}`, subtitle: ch.subtitle || '', lines, nameInSubtitle: false,
+          title: `${geos.join(' & ')} ${ch.title}`, subtitle: ch.subtitle || '', lines, nameInSubtitle: false,
         })) drawn++;
       }
     } else if (g.id === 'bedroom') {
@@ -745,7 +753,8 @@ async function exportData() {
   };
   if (on.has('total') || on.has('leasing')) {
     for (const ch of CENTRE_CHARTS.filter(c => on.has(c.group))) {
-      writeSeries(`${sel.centre} ${ch.title}`, [{ label: sel.centre, geo: sel.centre, seg: 'total', metric: ch.metric }]);
+      const geos = ch.withNational && sel.centre !== 'National' ? [sel.centre, 'National'] : [sel.centre];
+      writeSeries(`${geos.join(' & ')} ${ch.title}`, geos.map(geo => ({ label: geo, geo, seg: 'total', metric: ch.metric })));
     }
   }
   if (on.has('bedroom')) {
