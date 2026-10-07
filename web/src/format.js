@@ -82,6 +82,8 @@ export const INDICATOR_FMT = {
   // Farm-structure units (Census of Agriculture).
   acres:              (v) => v == null ? '—' : `${Math.round(Number(v)).toLocaleString()} ac`,
   years:              (v) => v == null ? '—' : `${Number(v).toFixed(1)} yrs`,
+  // Yardi length of stay (whole months as published).
+  months:             (v) => v == null ? '—' : `${Math.round(Number(v))} mo`,
   persons:            (v) => v == null ? '—' : Math.round(Number(v)).toLocaleString(),
   // StatsCan "Persons in thousands": r/11 already applied the ×1000 scalar, so
   // the value is raw persons. Scaled to its own magnitude, since one chart can
