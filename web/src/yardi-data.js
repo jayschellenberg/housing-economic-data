@@ -59,13 +59,15 @@ export const GROUPS = [
 
 /** All-units trend charts: one line per selected centre. */
 export const CENTRE_CHARTS = [
-  // withNational: National is always drawn beside the centre (Jason, 2026-10-07).
+  // withNational: National is always drawn beside the centre (Jason, 2026-10-07;
+  // vacancy and turnover added the same day).
   { id: 'rent', group: 'total', metric: 'rent', title: 'Average In-Place Rent', withNational: true,
     subtitle: 'All units; read off the report’s history chart (approximate)' },
   { id: 'rent_yoy', group: 'total', metric: 'rent_yoy', title: 'In-Place Rent Change, Year over Year', withNational: true },
-  { id: 'lol', group: 'total', metric: 'lol', title: 'New-Lease Rent Change (Lease over Lease)', withNational: true },
-  { id: 'vacancy', group: 'total', metric: 'vacancy', title: 'Apartment Vacancy Rate' },
-  { id: 'turnover', group: 'total', metric: 'turnover', title: 'Annual Tenant Turnover' },
+  // "Lease over lease" sits in the subtitle so the title fits one line.
+  { id: 'lol', group: 'total', metric: 'lol', title: 'New-Lease Rent Change', subtitle: 'Lease over lease', withNational: true },
+  { id: 'vacancy', group: 'total', metric: 'vacancy', title: 'Apartment Vacancy Rate', withNational: true },
+  { id: 'turnover', group: 'total', metric: 'turnover', title: 'Annual Tenant Turnover', withNational: true },
   { id: 'stay', group: 'leasing', metric: 'stay', title: 'Average Resident Length of Stay', subtitle: 'Months' },
 ];
 

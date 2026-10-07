@@ -487,8 +487,9 @@ const fmtPct = (p) => (p ? `${p.v.toFixed(1)}%` : MISSING);
  * One table for the centre and month, laid out as Jason asked (2026-10-07):
  * a row for the centre (the chosen property types) and a row for its
  * province (apartments & condos); a column group per ticked unit type —
- * 1-BR, 2-BR … with All units last — each with the rent and its Y/Y change.
- * M/M is left out: Rentals.ca publishes it for cities only.
+ * 1-BR, 2-BR … with All units last — each with the rent, M/M and Y/Y.
+ * Rentals.ca publishes M/M for cities only; Canada's and the provinces' M/M
+ * are computed from consecutive months' published rents (parser src "c").
  */
 function monthTables($cards, sel, source) {
   const m = sel.month;
@@ -501,18 +502,22 @@ function monthTables($cards, sel, source) {
       spec: { level: 'province', geo: sel.province, seg: 'ac' } });
   }
   const at = (pl, unit, metric) => (pl.cityOnly && !CITY_UNITS.has(unit) ? null : valueAt(ui.index, { ...pl.spec, unit, metric }, m));
-  const rows = places.map(pl => [pl.label, ...units.flatMap(u => [fmtMoney(at(pl, u.id, 'rent')), fmtPct(at(pl, u.id, 'yoy'))])])
+  const SUB = ['rent', 'mom', 'yoy'];
+  const fmt = (metric, p) => (metric === 'rent' ? fmtMoney(p) : fmtPct(p));
+  const rows = places.map(pl => [pl.label, ...units.flatMap(u => SUB.map(mt => fmt(mt, at(pl, u.id, mt))))])
     .filter(r => r.slice(1).some(x => x !== MISSING));
-  const cols = units.map((u, i) => ({ u, i })).filter(({ i }) => rows.some(r => r[1 + 2 * i] !== MISSING || r[2 + 2 * i] !== MISSING));
+  const span = SUB.length;
+  const cells = (r, i) => r.slice(1 + span * i, 1 + span * (i + 1));
+  const cols = units.map((u, i) => ({ u, i })).filter(({ i }) => rows.some(r => cells(r, i).some(x => x !== MISSING)));
   if (!rows.length || !cols.length) return 0;
-  const keep = (r) => [r[0], ...cols.flatMap(({ i }) => [r[1 + 2 * i], r[2 + 2 * i]])];
+  const keep = (r) => [r[0], ...cols.flatMap(({ i }) => cells(r, i))];
   const short = (u) => u.label.replace('-Bedroom', '-BR');
   buildTableCard($cards, {
     id: `rentalsca_table_${slug(sel.centre)}`,
     title: `${sel.centre} Average Asking Rents — ${mLabel(m)}`,
     subtitle: places.length > 1 ? `${sel.centre}: ${SEGMENTS[sel.seg].toLowerCase()}; ${places[1].label}: ${SEGMENTS.ac.toLowerCase()}` : SEGMENTS[sel.seg],
     groups: cols.map(({ u }) => short(u)),
-    head: ['', ...cols.flatMap(() => ['Rent', 'Y/Y'])],
+    head: ['', ...cols.flatMap(() => ['Rent', 'M/M', 'Y/Y'])],
     rows: rows.map(keep), source, wide: true,
   });
   return 1;
@@ -529,7 +534,7 @@ function buildTableCard(container, { id, title, subtitle, head, rows, source, wi
     <div class="cmhc-chart-table-scroll" data-role="plot" style="max-height:none;min-height:0">
       <table class="cmhc-table cmhc-table-compact"><thead>${groups
         // A column group per unit type over its Rent / Y/Y pair.
-        ? `<tr><th rowspan="2"></th>${groups.map(g => `<th colspan="2">${escapeHtml(g)}</th>`).join('')}</tr><tr>${head.slice(1).map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr>`
+        ? `<tr><th rowspan="2"></th>${groups.map(g => `<th colspan="${(head.length - 1) / groups.length}">${escapeHtml(g)}</th>`).join('')}</tr><tr>${head.slice(1).map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr>`
         : `<tr>${head.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr>`}</thead>
       <tbody>${rows.map(r => `<tr>${r.map(x => `<td>${escapeHtml(String(x))}</td>`).join('')}</tr>`).join('')}</tbody></table>
     </div>
@@ -581,7 +586,8 @@ function buildTableCard(container, { id, title, subtitle, head, rows, source, wi
     fit();
   });
   // Copied headers name the group too: "1-BR Rent", "1-BR Y/Y".
-  const flatHead = groups ? [head[0], ...head.slice(1).map((h, i) => `${groups[Math.floor(i / 2)]} ${h}`)] : head;
+  const per = groups ? (head.length - 1) / groups.length : 1;
+  const flatHead = groups ? [head[0], ...head.slice(1).map((h, i) => `${groups[Math.floor(i / per)]} ${h}`)] : head;
   const tsv = [flatHead, ...rows].map(r => r.join('\t')).join('\n');
   const $copy = card.querySelector('[data-role="copy"]');
   $copy.addEventListener('click', async () => {
@@ -605,13 +611,14 @@ async function exportData() {
   const metricLabel = { rent: 'Average asking rent', mom: 'Change, month over month', yoy: 'Change, year over year' };
   const ws = wb.addWorksheet('Observations');
   ws.addRow([`${SOURCE} — to ${mLabel(sel.month)}`]).font = { bold: true };
-  ws.addRow(['Rents in dollars per month; changes in percent. "Estimated" = worked out from a neighbouring report\'s change columns.']);
+  ws.addRow(['Rents in dollars per month; changes in percent. "Estimated" = worked out from a neighbouring report\'s change columns; "Computed" = M/M for Canada and the provinces, from two months\' published rents.']);
   ws.addRow([]);
   ws.addRow(['Month', 'Level', 'Geography', 'Property types', 'Unit', 'Measure', 'Value', 'Read from', 'Report']).font = { bold: true };
   for (const [m, geo, level, seg, unit, metric, v, src, rep] of ui.data.obs) {
     if (mOrd(m) > mOrd(sel.month)) continue;
     ws.addRow([mLabel(m), level, geo, segLabel[seg] || seg, UNIT_LABEL[unit] || unit, metricLabel[metric] || metric, v,
-      src === 't' ? 'Report table' : 'Estimated', rep ? `${mLabel(reportMonth(rep))} report` : '']);
+      src === 't' ? 'Report table' : src === 'c' ? 'Computed from report rents' : 'Estimated',
+      rep ? `${mLabel(reportMonth(rep))} report` : '']);
   }
   [16, 10, 26, 26, 12, 26, 10, 14, 22].forEach((w, i) => { ws.getColumn(i + 1).width = w; });
   const buf = await wb.xlsx.writeBuffer();
