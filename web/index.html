@@ -126,6 +126,10 @@
         class="cmhc-tab" data-tab="johnson" aria-selected="false">
         Johnson Report
       </button>
+      <button type="button" role="tab" id="tab-btn-yardi"
+        class="cmhc-tab" data-tab="yardi" aria-selected="false">
+        Yardi Rental
+      </button>
       <button type="button" role="tab" id="tab-btn-rental"
         class="cmhc-tab" data-tab="rental" aria-selected="false">
         Rental Dashboard
@@ -1118,6 +1122,134 @@
         </section>
         <footer class="text-xs text-neutral-500 pt-4 border-t border-neutral-200">
           Source: The Johnson Report (Wayne K. Johnson, CPA, CA), Winnipeg commercial real estate market report, June and December editions.
+          The report is copyrighted; figures shown here are read from the viewer's own locally held copy and are not redistributed by this site.
+        </footer>
+      </main>
+    </div>
+
+    <!-- ============================================================
+         Yardi Rental tab — apartment rents, new-lease change, vacancy,
+         turnover, length of stay, digital leasing and expenses from the
+         quarterly Yardi Canadian National Multifamily Report.
+         NO DATA SHIPS WITH THE SITE: Yardi-Rental/ingest/parse_yardi.py
+         parses the PDFs and publishes yardi.json to
+         SharedInfo\AppMarketData\RentalData; see yardi.js / yardi-store.js.
+         ============================================================ -->
+    <div id="tab-panel-yardi" class="grid md:grid-cols-[320px_1fr] min-h-[calc(100vh-110px)]" role="tabpanel" aria-labelledby="tab-btn-yardi" hidden>
+      <aside class="bg-white border-r border-neutral-200 p-4 space-y-4 overflow-y-auto" aria-label="Yardi Rental filters">
+        <section>
+          <div class="flex items-center justify-between mb-2">
+            <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Data folder</h2>
+            <button id="yr-folder-toggle" type="button" class="text-xs underline text-neutral-600" aria-controls="yr-folder-body" aria-expanded="true" hidden>Hide</button>
+          </div>
+          <p id="yr-folder-status" class="text-xs text-neutral-600 mb-2"></p>
+          <p id="yr-folder-error" class="text-xs text-red-700 mb-2" hidden></p>
+          <div id="yr-folder-body">
+          <div class="space-y-2">
+            <button id="yr-pick-folder" type="button"
+              class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+              Choose folder
+            </button>
+            <input id="yr-pick-fallback" type="file" webkitdirectory multiple hidden
+              class="block w-full text-xs file:mr-2 file:rounded file:border file:border-neutral-300 file:bg-white file:px-2 file:py-1 file:text-xs" />
+            <div class="flex gap-3 text-xs">
+              <button id="yr-rescan" type="button" class="underline text-neutral-600">Reload folder</button>
+              <button id="yr-clear" type="button" class="underline text-neutral-600" hidden>Disconnect</button>
+            </div>
+          </div>
+          <p class="text-xs text-neutral-500 mt-2">Pick the firm's shared <code>AppMarketData</code> folder or its <code>RentalData</code> subfolder. Read locally, never uploaded.</p>
+          </div>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Quarter</h2>
+          <select id="yr-quarter" class="w-full border border-neutral-300 rounded px-2 py-1 text-sm" disabled></select>
+          <p class="text-xs text-neutral-500 mt-1">The data quarter: each report comes out the quarter after (the Q3 2026 report holds Q2 2026 data). Sets the tables' quarter and the end of the charts.</p>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Charts from</h2>
+          <input id="yr-year-from" type="number" min="2000" max="2100" placeholder="year" class="w-24 border border-neutral-300 rounded px-2 py-1 text-sm" />
+          <p class="text-xs text-neutral-500 mt-1">Leave blank for all history.</p>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Centres</h2>
+          <details id="yr-centre-menu" class="relative">
+            <summary class="list-none cursor-pointer w-full border border-neutral-300 rounded px-2 py-1 text-sm bg-white flex items-center justify-between">
+              <span id="yr-centre-summary-text">Winnipeg, National</span><span aria-hidden="true" class="text-neutral-500">&#9662;</span>
+            </summary>
+            <div class="absolute left-0 right-0 z-20 mt-1 bg-white border border-neutral-300 rounded shadow-lg p-2">
+              <div class="flex gap-3 text-xs mb-1 pb-1 border-b border-neutral-200">
+                <button id="yr-centres-all" type="button" class="underline text-neutral-600">All</button>
+                <button id="yr-centres-none" type="button" class="underline text-neutral-600">None</button>
+              </div>
+              <div id="yr-centres" class="grid gap-1 max-h-80 overflow-y-auto"></div>
+            </div>
+          </details>
+          <p class="text-xs text-neutral-500 mt-1">Lines on the trend charts, a bedroom-type chart set per centre, and the rows in the quarter tables (Winnipeg → Manitoba in the expense table). With none ticked, the tables list every CMA.</p>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Sections</h2>
+          <details id="yr-section-menu" class="relative">
+            <summary class="list-none cursor-pointer w-full border border-neutral-300 rounded px-2 py-1 text-sm bg-white flex items-center justify-between">
+              <span id="yr-section-summary-text">All sections</span><span aria-hidden="true" class="text-neutral-500">&#9662;</span>
+            </summary>
+            <div class="absolute left-0 right-0 z-20 mt-1 bg-white border border-neutral-300 rounded shadow-lg p-2">
+              <div class="flex gap-3 text-xs mb-1 pb-1 border-b border-neutral-200">
+                <button id="yr-sections-all" type="button" class="underline text-neutral-600">All</button>
+                <button id="yr-sections-none" type="button" class="underline text-neutral-600">None</button>
+              </div>
+              <div id="yr-section-toggles" class="grid gap-1 text-sm max-h-80 overflow-y-auto"></div>
+            </div>
+          </details>
+        </section>
+
+        <section class="pt-2 border-t border-neutral-200 space-y-2">
+          <button id="yr-download-xlsx" type="button"
+            class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+            Download Excel (data)
+          </button>
+          <p class="text-xs text-neutral-500">One sheet per visible trend chart, plus every observation to the selected quarter, each marked table (exact) or chart (approximate).</p>
+          <button id="yr-download-docx-charts" type="button"
+            class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+            Download Word (charts)
+          </button>
+          <button id="yr-download-xlsx-charts" type="button"
+            class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+            Download Excel (charts)
+          </button>
+          <p class="text-xs text-neutral-500">Every visible chart and table as an image — one per page / worksheet.</p>
+        </section>
+      </aside>
+
+      <main class="p-4 space-y-4 overflow-x-hidden">
+        <p id="yr-empty" class="text-sm text-neutral-600 max-w-2xl">
+          No Yardi data is loaded. The Yardi report is copyrighted, so this site publishes none of it: choose the firm's shared
+          <code>AppMarketData</code> folder or its <code>RentalData</code> subfolder (published by <code>ingest\run.bat</code> in the
+          Yardi-Rental project). The charts render from that folder in this browser only.
+        </p>
+        <section id="yr-chart-grid" class="space-y-6"></section>
+        <section id="yr-about" class="max-w-4xl space-y-2 text-sm text-neutral-700" hidden>
+          <h2 class="cmhc-mi-section-title">About these charts</h2>
+          <p>
+            Figures from Yardi's quarterly Canadian National Multifamily Report, which covers about 6,000
+            professionally managed purpose-built rental properties (over 500,000 units) in 12 CMAs. In-place rent
+            is the average monthly rent across all leases (new, renewal and existing). New-lease change compares a
+            new lease's rent with the previous lease on the same unit. Annual turnover is move-outs over the past
+            12 months as a share of units; length of stay is the average residency of tenants who moved out.
+            Expenses are trailing 12-month operating costs per unit by province: controllable costs exclude taxes
+            and insurance, and total expense includes them.
+          </p>
+          <p>
+            The tables are as published for the selected quarter; "**" means Yardi's sample was too small to
+            report. Bedroom-type figures start with the Q3 2023 data, length of stay with Q2 2025, and expenses with Q3 2025.
+          </p>
+          <div id="yr-about-approx" class="space-y-2"></div>
+        </section>
+        <footer class="text-xs text-neutral-500 pt-4 border-t border-neutral-200">
+          Source: Yardi Canadian National Multifamily Report (Yardi Systems, LLC), quarterly.
           The report is copyrighted; figures shown here are read from the viewer's own locally held copy and are not redistributed by this site.
         </footer>
       </main>

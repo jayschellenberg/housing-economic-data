@@ -24,6 +24,7 @@ import { initRtb } from './rtb.js';
 import { initAgriculture } from './agriculture.js';
 import { initJohnson } from './johnson.js';
 import { initCapRates } from './cap-rates.js';
+import { initYardi } from './yardi.js';
 import { initCapVsInterestTab } from './cap-vs-interest-tab.js';
 import { wireChartDocExports } from './doc-image-export.js';
 import { getFirm, setFirm, onFirmChange } from './firm.js';
@@ -167,6 +168,7 @@ function setupTabs(initial, onActivate) {
     rtb:        { btn: document.getElementById('tab-btn-rtb'),        panel: document.getElementById('tab-panel-rtb') },
     johnson:    { btn: document.getElementById('tab-btn-johnson'),    panel: document.getElementById('tab-panel-johnson') },
     caprates:   { btn: document.getElementById('tab-btn-caprates'),   panel: document.getElementById('tab-panel-caprates') },
+    yardi:      { btn: document.getElementById('tab-btn-yardi'),      panel: document.getElementById('tab-panel-yardi') },
     capvsint:   { btn: document.getElementById('tab-btn-capvsint'),   panel: document.getElementById('tab-panel-capvsint') },
     rental:     { btn: document.getElementById('tab-btn-rental'),     panel: document.getElementById('tab-panel-rental') },
     commercial: { btn: document.getElementById('tab-btn-commercial'), panel: document.getElementById('tab-panel-commercial') },
@@ -175,7 +177,7 @@ function setupTabs(initial, onActivate) {
   // Which top-level group each tab belongs to. The header shows one group
   // link as active and one tab bar (#nav-housing / #nav-local) at a time;
   // everything not listed here is Housing & Economic Data.
-  const TAB_GROUP = { johnson: 'local', caprates: 'local', capvsint: 'local', rental: 'local', commercial: 'local' };
+  const TAB_GROUP = { johnson: 'local', yardi: 'local', caprates: 'local', capvsint: 'local', rental: 'local', commercial: 'local' };
   const groupOf = (name) => TAB_GROUP[name] || 'housing';
 
   function showGroup(group) {
@@ -328,7 +330,7 @@ async function bootstrap() {
   const rawHash = hashTab in SUBAPP_TABS && SUBVIEW_RE.test(hashView || '') ? hashTab : fullHash;
   if (rawHash === hashTab && hashView) subappView[hashTab] = hashView;
   let initialTab = 'charts';
-  if (['charts', 'tables', 'compare', 'starts', 'secondary', 'housing', 'census', 'affordability', 'rtb', 'johnson', 'caprates', 'capvsint', 'rental', 'commercial', 'snapshot', 'indicators', 'agriculture', 'economic'].includes(rawHash)) {
+  if (['charts', 'tables', 'compare', 'starts', 'secondary', 'housing', 'census', 'affordability', 'rtb', 'johnson', 'yardi', 'caprates', 'capvsint', 'rental', 'commercial', 'snapshot', 'indicators', 'agriculture', 'economic'].includes(rawHash)) {
     initialTab = rawHash;
   } else if (rawHash.startsWith('mi-section-')) {
     initialTab = 'indicators';
@@ -362,6 +364,7 @@ async function bootstrap() {
     agriculture:   once(() => initAgriculture().catch(err => console.error('[agriculture bootstrap]', err))),
     johnson:       once(() => initJohnson().catch(err => console.error('[johnson bootstrap]', err))),
     caprates:      once(() => initCapRates().catch(err => console.error('[cap-rates bootstrap]', err))),
+    yardi:         once(() => initYardi().catch(err => console.error('[yardi bootstrap]', err))),
     capvsint:      once(() => initCapVsInterestTab().catch(err => console.error('[cap-vs-interest bootstrap]', err))),
     // The two sub-app tabs are same-origin pages in a frame; loading the
     // frame is the whole init, deferred to the first visit.
@@ -429,6 +432,12 @@ async function bootstrap() {
     xlsxBtnId: 'jr-download-xlsx-charts',
     baseName:  'JohnsonReport',
     getNodes:  () => [...document.querySelectorAll('#jr-chart-grid .chart-card')].filter(hasPlot),
+  });
+  wireChartDocExports({
+    docxBtnId: 'yr-download-docx-charts',
+    xlsxBtnId: 'yr-download-xlsx-charts',
+    baseName:  'YardiRental',
+    getNodes:  () => [...document.querySelectorAll('#yr-chart-grid .chart-card')].filter(hasPlot),
   });
   wireChartDocExports({
     docxBtnId: 'ag-download-docx-charts',
