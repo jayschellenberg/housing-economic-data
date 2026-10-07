@@ -741,7 +741,7 @@ export function buildIndicatorCard(container, {
         type: 'utc',
         label: 'Date',
         labelOffset: 42,
-        ...dateAxisTicks(xMin, xMax),
+        ...dateAxisTicks(xMin, xMax, { quarters: !!opts.quarterTicks }),
         inset: 8,
       },
       y: {

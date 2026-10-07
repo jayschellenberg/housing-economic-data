@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { percentTickFormat, sfTickFormat, personsTickFormat, dateAxisTicks, MIRROR_Y_MARGIN, plotWidth, plotHeight, PLOT_FALLBACK_WIDTH } from '../src/plot-theme.js';
+import { percentTickFormat, sfTickFormat, personsTickFormat, dateAxisTicks, unitLineStyle, UNIT_COLOURS, PALETTE, MIRROR_Y_MARGIN, plotWidth, plotHeight, PLOT_FALLBACK_WIDTH } from '../src/plot-theme.js';
 
 describe('sfTickFormat', () => {
   it('reads millions compactly, dropping trailing zeros', () => {
@@ -121,9 +121,28 @@ describe('dateAxisTicks', () => {
     const { ticks } = dateAxisTicks(d('2024-02-01'), d('2026-09-01'));
     expect(ticks.map(t => t.toISOString().slice(0, 7))).toEqual(['2024-07', '2025-01', '2025-07', '2026-01', '2026-07']);
   });
+  it('labels quarters on a quarterly axis, on quarter starts', () => {
+    const { ticks, tickFormat } = dateAxisTicks(d('2023-07-01'), d('2026-04-01'), { quarters: true });
+    expect(ticks.map(tickFormat)).toEqual(['Q3 2023', 'Q1 2024', 'Q3 2024', 'Q1 2025', 'Q3 2025', 'Q1 2026']);
+  });
+  it('keeps quarter labels on a long quarterly axis', () => {
+    const { ticks, tickFormat } = dateAxisTicks(d('2022-04-01'), d('2026-04-01'), { quarters: true });
+    expect(ticks.map(tickFormat)).toEqual(['Q1 2023', 'Q1 2024', 'Q1 2025', 'Q1 2026']);
+  });
   it('spaces a ten-month axis every two months, on the calendar', () => {
     const { ticks } = dateAxisTicks(d('2025-11-01'), d('2026-09-01'));
     // Every second month from January: Nov, Jan, Mar, May, Jul, Sep.
     expect(ticks.map(t => t.toISOString().slice(0, 7))).toEqual(['2025-11', '2026-01', '2026-03', '2026-05', '2026-07', '2026-09']);
+  });
+});
+
+describe('unitLineStyle', () => {
+  it('colours units as the CMHC charts do, bedrooms dashed, total solid', () => {
+    const meta = [{ id: 'c:Studio' }, { id: 'c:1-Bedroom' }, { id: 'c:All units' }, { id: 'c:Other' }];
+    const unit = { 'c:Studio': 'bachelor', 'c:1-Bedroom': '1br', 'c:All units': 'total' };
+    const { seriesColours, dashedIds } = unitLineStyle(meta, (id) => unit[id]);
+    expect(seriesColours).toEqual({ 'c:Studio': PALETTE[0], 'c:1-Bedroom': PALETTE[1], 'c:All units': PALETTE[4] });
+    expect(dashedIds).toEqual(['c:Studio', 'c:1-Bedroom']);
+    expect(UNIT_COLOURS['0br']).toBe(UNIT_COLOURS.bachelor);
   });
 });

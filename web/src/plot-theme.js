@@ -17,6 +17,36 @@ export const PALETTE = [
   '#65a30d', // lime
 ];
 
+/**
+ * Unit-type colours as the CMHC Rental Charts draw them (PALETTE in category
+ * order: Studio, 1 Bedroom, 2 Bedroom, 3 Bedroom +, Total), so a unit type is
+ * the same colour on every rental tab. Keys cover each source's unit ids
+ * (Yardi "bachelor", Rentals.ca "0br"). Use with unitLineStyle().
+ */
+export const UNIT_COLOURS = {
+  bachelor: PALETTE[0], '0br': PALETTE[0],
+  '1br': PALETTE[1], '2br': PALETTE[2], '3br': PALETTE[3],
+  total: PALETTE[4],
+};
+
+/**
+ * Card render options that style a unit-type breakdown the CMHC way: each
+ * unit in its UNIT_COLOURS colour, the bedroom lines dashed and the
+ * all-units total solid (dashed even when the total is unticked, as on
+ * the CMHC tabs). `unitOf` maps a series id to its unit id.
+ */
+export function unitLineStyle(seriesMeta, unitOf) {
+  const seriesColours = {};
+  const dashedIds = [];
+  for (const s of seriesMeta) {
+    const unit = unitOf(s.id);
+    if (!(unit in UNIT_COLOURS)) continue;
+    seriesColours[s.id] = UNIT_COLOURS[unit];
+    if (unit !== 'total') dashedIds.push(s.id);
+  }
+  return { seriesColours, dashedIds };
+}
+
 export const GRID_STROKE      = '#d4d4d8';
 export const GRID_DASHARRAY   = '3,3';
 export const FRAME_STROKE     = '#18181b';
@@ -182,19 +212,25 @@ export const MAX_MONTH_TICKS = 6;
  * ranges), labelled with the year (Plot's quarterly ticks repeated it,
  * "2022 2022 2022").
  *
+ * `quarters` (quarterly series, e.g. Yardi): short-axis ticks fall on
+ * quarter starts, every 3/6/12 months, labelled "Q3 2023".
+ *
  * @param {Date} lo
  * @param {Date} hi
+ * @param {{ quarters?: boolean }} [opts]
  * @returns {{ ticks?: Date[], tickFormat: Function }}
  */
-export function dateAxisTicks(lo, hi) {
+export function dateAxisTicks(lo, hi, { quarters = false } = {}) {
   const y0 = lo?.getUTCFullYear?.(), y1 = hi?.getUTCFullYear?.();
-  const monthYear = (d) => d.toLocaleString('en-CA', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+  const monthYear = quarters
+    ? (d) => `Q${Math.floor(d.getUTCMonth() / 3) + 1} ${d.getUTCFullYear()}`
+    : (d) => d.toLocaleString('en-CA', { month: 'short', year: 'numeric', timeZone: 'UTC' });
   if (!Number.isFinite(y0) || !Number.isFinite(y1)) return { tickFormat: monthYear };
   const m0 = y0 * 12 + lo.getUTCMonth(), m1 = y1 * 12 + hi.getUTCMonth();
   // Up to three years: month ticks (a 2024-02 to 2026-09 axis otherwise kept
   // only "2025" and "2026").
   if (m1 - m0 <= 36) {
-    const step = [1, 2, 3, 6, 12].find(k => Math.floor(m1 / k) - Math.ceil(m0 / k) + 1 <= MAX_MONTH_TICKS) || 12;
+    const step = (quarters ? [3, 6, 12] : [1, 2, 3, 6, 12]).find(k => Math.floor(m1 / k) - Math.ceil(m0 / k) + 1 <= MAX_MONTH_TICKS) || 12;
     const ticks = [];
     // Aligned to the calendar (every 3 months = Jan / Apr / Jul / Oct).
     for (let m = Math.ceil(m0 / step) * step; m <= m1; m += step) {
@@ -210,7 +246,8 @@ export function dateAxisTicks(lo, hi) {
     const d = new Date(Date.UTC(y, 0, 1));
     if (d >= lo && d <= hi) ticks.push(d);
   }
-  return { ticks, tickFormat: (d) => String(d.getUTCFullYear()) };
+  // Yearly ticks fall on January, so a quarterly axis reads "Q1 2024".
+  return { ticks, tickFormat: quarters ? monthYear : (d) => String(d.getUTCFullYear()) };
 }
 
 /**
