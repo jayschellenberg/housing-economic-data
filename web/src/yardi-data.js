@@ -49,8 +49,8 @@ export const METRICS = {
 
 export const GROUPS = [
   { id: 'total',    label: 'Rents, Vacancy & Turnover' },
-  { id: 'bedroom',  label: 'By Bedroom Type' },
-  { id: 'tables',   label: 'Quarter Tables' },
+  { id: 'bedroom',  label: 'By Unit Type' },
+  { id: 'tables',   label: 'Quarter Table' },
   { id: 'leasing',  label: 'Length of Stay & Digital Leasing' },
   { id: 'expense',  label: 'Operating Expenses by Province' },
 ];
@@ -70,10 +70,10 @@ export const CENTRE_CHARTS = [
 
 /** Per-centre bedroom charts: one line per bedroom type. */
 export const BEDROOM_CHARTS = [
-  { id: 'rent', metric: 'rent', title: 'In-Place Rent by Bedroom Type' },
-  { id: 'lol', metric: 'lol', title: 'New-Lease Rent Change by Bedroom Type' },
-  { id: 'vacancy', metric: 'vacancy', title: 'Vacancy Rate by Bedroom Type' },
-  { id: 'turnover', metric: 'turnover', title: 'Annual Turnover by Bedroom Type' },
+  { id: 'rent', metric: 'rent', title: 'In-Place Rent by Unit Type' },
+  { id: 'lol', metric: 'lol', title: 'New-Lease Rent Change by Unit Type' },
+  { id: 'vacancy', metric: 'vacancy', title: 'Vacancy Rate by Unit Type' },
+  { id: 'turnover', metric: 'turnover', title: 'Annual Turnover by Unit Type' },
 ];
 
 export const EXPENSE_METRICS = ['exp_rm', 'exp_ctrl', 'exp_total'];

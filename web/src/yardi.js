@@ -10,8 +10,9 @@
  * and the browser reads it locally (yardi-store.js).
  *
  * Laid out like the Johnson Report tab: a sidebar quarter (edition) picker
- * that also ends the charts, a centre checklist (Winnipeg + National by
- * default), section toggles, and one "About these charts" note. Figures read
+ * that also ends the charts, one centre at a time (Winnipeg by default),
+ * unit-type checkboxes for the unit-type charts and the quarter table,
+ * section toggles, and one "About these charts" note. Figures read
  * off the report's charts rather than its tables are approximate; the note
  * says which.
  */
@@ -26,7 +27,7 @@ import { buildJumpBar } from './jump-bar.js';
 import {
   SOURCE, CMAS, DEFAULT_CENTRES, PROVINCES, CMA_PROVINCE, SEGMENTS, METRICS, GROUPS,
   CENTRE_CHARTS, BEDROOM_CHARTS, EXPENSE_METRICS,
-  qOrd, qLabel, indexObs, toCardInput, quarterRanges, quarterList, quarterTable, expenseQuarter, valueAt,
+  qOrd, qLabel, indexObs, toCardInput, quarterRanges, quarterList, expenseQuarter, valueAt,
 } from './yardi-data.js';
 import {
   storeAvailable, fsAccessSupported, pickDirectory, getSavedDirectory, directoryPermission,
@@ -65,9 +66,8 @@ export async function initYardi() {
     $folderBody: document.getElementById('yr-folder-body'),
     $quarter: document.getElementById('yr-quarter'),
     $yearFrom: document.getElementById('yr-year-from'),
-    $centreMenu: document.getElementById('yr-centre-menu'),
-    $centres: document.getElementById('yr-centres'),
-    $centreSummary: document.getElementById('yr-centre-summary-text'),
+    $centre: document.getElementById('yr-centre'),
+    $units: document.getElementById('yr-units'),
     $sectionMenu: document.getElementById('yr-section-menu'),
     $sections: document.getElementById('yr-section-toggles'),
     $sectionSummary: document.getElementById('yr-section-summary-text'),
@@ -138,11 +138,10 @@ function wireControls() {
     ui.prefs = savePrefs({ folderCollapsed: !ui.prefs.folderCollapsed });
     renderFolderBody();
   });
-  document.getElementById('yr-centres-all').addEventListener('click', () => setCentres(CMAS));
-  document.getElementById('yr-centres-none').addEventListener('click', () => setCentres([]));
+  ui.$centre.addEventListener('change', () => { ui.prefs = savePrefs({ centre: ui.$centre.value }); renderCharts(); });
   document.getElementById('yr-sections-all').addEventListener('click', () => setGroups(GROUPS.map(g => g.id)));
   document.getElementById('yr-sections-none').addEventListener('click', () => setGroups([]));
-  for (const $menu of [ui.$centreMenu, ui.$sectionMenu]) {
+  for (const $menu of [ui.$sectionMenu]) {
     document.addEventListener('click', (e) => { if ($menu.open && !$menu.contains(e.target)) $menu.open = false; });
     $menu.addEventListener('keydown', (e) => { if (e.key === 'Escape') { $menu.open = false; $menu.querySelector('summary').focus(); } });
   }
@@ -211,6 +210,7 @@ function renderAll() {
   renderFolderBody();
   renderQuarterPicker();
   renderCentrePicker();
+  renderUnitToggles();
   renderSectionToggles();
   renderCharts();
 }
@@ -246,40 +246,50 @@ function renderQuarterPicker() {
   ui.$yearFrom.placeholder = qs.length ? qs[0].slice(0, 4) : 'year';
 }
 
-function selectedCentres() {
-  const saved = ui.prefs.centres;
-  return Array.isArray(saved) ? CMAS.filter(c => saved.includes(c)) : DEFAULT_CENTRES.slice();
-}
-
-function setCentres(list) {
-  ui.prefs = savePrefs({ centres: CMAS.filter(c => list.includes(c)) });
-  renderCentrePicker();
-  renderCharts();
+/** One centre at a time (Jason, 2026-10-07); an older multi-centre pref keeps its first pick. */
+function selectedCentre() {
+  const p = ui.prefs;
+  if (CMAS.includes(p.centre)) return p.centre;
+  const old = Array.isArray(p.centres) ? CMAS.find(c => p.centres.includes(c) && c !== 'National') : null;
+  return old || DEFAULT_CENTRES[0];
 }
 
 function renderCentrePicker() {
-  const chosen = new Set(selectedCentres());
-  ui.$centres.replaceChildren();
+  ui.$centre.replaceChildren();
   for (const c of CMAS) {
-    const label = document.createElement('label');
-    label.className = 'flex items-center gap-1 text-sm';
-    const cb = document.createElement('input');
-    cb.type = 'checkbox'; cb.checked = chosen.has(c);
-    cb.addEventListener('change', () => {
-      const next = new Set(selectedCentres());
-      if (cb.checked) next.add(c); else next.delete(c);
-      setCentres([...next]);
-    });
-    const text = document.createElement('span'); text.textContent = c;
-    label.append(cb, text);
-    ui.$centres.appendChild(label);
+    const opt = document.createElement('option');
+    opt.value = c; opt.textContent = c;
+    ui.$centre.appendChild(opt);
   }
-  // Local centres first, National last — the order the lines are drawn in.
-  const shown = [...CMAS.filter(c => chosen.has(c) && c !== 'National'), ...(chosen.has('National') ? ['National'] : [])];
-  ui.$centreSummary.textContent = shown.length === CMAS.length ? `All centres (${CMAS.length})`
-    : shown.length === 0 ? 'None selected'
-    : shown.length <= 2 ? shown.join(', ')
-    : `${shown.length} of ${CMAS.length} centres`;
+  ui.$centre.value = selectedCentre();
+}
+
+/** Unit types: All units + the four bedroom types. */
+const UNIT_TYPES = [{ id: 'total', label: 'All units' }, ...SEGMENTS];
+
+function selectedUnits() {
+  const saved = ui.prefs.units;
+  return Array.isArray(saved) ? UNIT_TYPES.filter(u => saved.includes(u.id)) : UNIT_TYPES.slice();
+}
+
+function renderUnitToggles() {
+  const on = new Set(selectedUnits().map(u => u.id));
+  ui.$units.replaceChildren();
+  for (const u of UNIT_TYPES) {
+    const label = document.createElement('label');
+    label.className = 'flex items-center gap-2 text-sm';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.checked = on.has(u.id);
+    cb.addEventListener('change', () => {
+      const next = new Set(selectedUnits().map(x => x.id));
+      if (cb.checked) next.add(u.id); else next.delete(u.id);
+      ui.prefs = savePrefs({ units: UNIT_TYPES.map(x => x.id).filter(id => next.has(id)) });
+      renderCharts();
+    });
+    const text = document.createElement('span'); text.textContent = u.label;
+    label.append(cb, text);
+    ui.$units.appendChild(label);
+  }
 }
 
 function enabledGroups() {
@@ -325,25 +335,14 @@ function selection() {
   const q = ui.$quarter.value || eds[0]?.id || null;
   const edition = (ui.data?.editions || []).find(e => e.id === q) || null;
   const from = ui.prefs.yearFrom ? `${ui.prefs.yearFrom}Q1` : null;
-  const centres = selectedCentres();
-  // Winnipeg (or the first local centre) takes the first colour; National
-  // goes last so it reads as the benchmark line.
-  const lineOrder = [...centres.filter(c => c !== 'National'), ...centres.filter(c => c === 'National')];
-  return { q, edition, from, centres: lineOrder };
+  const centre = selectedCentre();
+  return { q, edition, from, centre, centres: [centre], units: selectedUnits() };
 }
 
 /** "Yardi Canadian National Multifamily Report, Q3 2026" — the edition
  *  whose data quarter is selected (its cover is one quarter later). */
 function sourceFor(edition) {
   return edition ? `${SOURCE}, ${edition.cover}` : SOURCE;
-}
-
-/** "Winnipeg Apartment Vacancy Rate", "Winnipeg & National …", or the bare
- *  title when three or more centres share the chart (the legend names them). */
-function centreTitle(title, centres) {
-  if (centres.length === 1) return `${centres[0]} ${title}`;
-  if (centres.length === 2) return `${centres[0]} & ${centres[1]} ${title}`;
-  return title;
 }
 
 // --- Charts ------------------------------------------------------------------
@@ -374,7 +373,9 @@ function renderCharts() {
     return s;
   };
 
-  const lineCard = ($cards, id, { title, subtitle = '', lines, zeroBased }) => {
+  // Every Yardi chart's Y axis starts at 0 (or below, if a series dips
+  // negative) — Jason, 2026-10-07.
+  const lineCard = ($cards, id, { title, subtitle = '', lines, zeroBased = true, nameInSubtitle = true }) => {
     // Lines join across a missing edition (Q3 2024, Q1 2026): the gap is a
     // report the firm lacks, not a quarter Yardi left out. The About note says so.
     const input = toCardInput(id, ui.index, lines, { ...range, bridge: true });
@@ -388,7 +389,7 @@ function renderCharts() {
       sourceInCaption: true, signed: false, captionPt: 10,
     });
     card.render(input.records, input.seriesMeta, {
-      rangeSubtitle: 'quarter', subtitle, singleSeriesInSubtitle: true, dashedIds: [],
+      rangeSubtitle: 'quarter', subtitle, singleSeriesInSubtitle: nameInSubtitle, dashedIds: [],
     });
     card.setOpenPanels(open.get(id) || []);
     ui.cards.set(id, { card: card.card });
@@ -403,23 +404,20 @@ function renderCharts() {
 
     if (g.id === 'total' || g.id === 'leasing') {
       for (const ch of CENTRE_CHARTS.filter(c => c.group === g.id)) {
-        const lines = sel.centres.map(c => ({ label: c, geo: c, seg: 'total', metric: ch.metric }));
-        const units = METRICS[ch.metric].units;
+        const lines = [{ label: sel.centre, geo: sel.centre, seg: 'total', metric: ch.metric }];
         if (lineCard($cards, `yardi_${ch.id}`, {
-          title: centreTitle(ch.title, sel.centres), subtitle: ch.subtitle || '', lines,
-          zeroBased: units !== 'dollar' && ch.metric !== 'lol' && ch.metric !== 'rent_yoy',
+          // The centre already leads the title; don't repeat it in the subtitle.
+          title: `${sel.centre} ${ch.title}`, subtitle: ch.subtitle || '', lines, nameInSubtitle: false,
         })) drawn++;
       }
     } else if (g.id === 'bedroom') {
-      // Charts side by side: each metric for each centre (Winnipeg | National).
+      // One chart per measure, a line per ticked unit type (All units too:
+      // its in-place rent is the chart-read history line).
       for (const ch of BEDROOM_CHARTS) {
-        for (const c of sel.centres) {
-          const lines = SEGMENTS.map(sg => ({ label: sg.label, geo: c, seg: sg.id, metric: ch.metric }));
-          if (lineCard($cards, `yardi_bed_${ch.id}_${slug(c)}`, {
-            title: `${c} ${ch.title}`, lines,
-            zeroBased: ch.metric === 'vacancy' || ch.metric === 'turnover',
-          })) drawn++;
-        }
+        const lines = sel.units.map(u => ({ label: u.label, geo: sel.centre, seg: u.id, metric: ch.metric }));
+        if (lineCard($cards, `yardi_bed_${ch.id}_${slug(sel.centre)}`, {
+          title: `${sel.centre} ${ch.title}`, lines,
+        })) drawn++;
       }
     } else if (g.id === 'tables') {
       drawn += quarterTables($cards, sel, source);
@@ -432,7 +430,7 @@ function renderCharts() {
   if (!$grid.childElementCount) {
     const p = document.createElement('p');
     p.className = 'text-sm text-neutral-600';
-    p.textContent = sel.centres.length ? 'Nothing to draw for this quarter and section selection.' : 'No centres selected.';
+    p.textContent = sel.units.length ? 'Nothing to draw for this quarter and section selection.' : 'No unit types ticked.';
     $grid.appendChild(p);
   }
   renderApproxNote(approx);
@@ -457,7 +455,9 @@ const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-');
 function renderApproxNote(approx) {
   const $n = ui.$approx;
   $n.replaceChildren();
-  const isRentLevel = (a) => a.chart.endsWith('Average In-Place Rent');
+  // The all-units rent level, alone or as the "All units" line of the
+  // unit-type rent chart, is chart-read throughout.
+  const isRentLevel = (a) => a.chart.endsWith('Average In-Place Rent') || (a.chart.includes('In-Place Rent by Unit Type') && a.label === 'All units');
   const qs = approx.filter(a => !isRentLevel(a)).flatMap(a => a.quarters);
   const parts = [];
   if (approx.some(isRentLevel)) {
@@ -497,52 +497,31 @@ const COL_HEAD = {
 };
 
 /**
- * The rows a quarter table lists: only the sidebar's centres, local centres
- * first and National last (Jason, 2026-10-07: "only show Winnipeg when that
- * is set"). With no centre ticked, every CMA in Yardi's own order.
+ * One table for the centre and quarter: a row per ticked unit type (Jason,
+ * 2026-10-07 — it replaced an all-units table plus four one-row bedroom
+ * tables). Columns a quarter never published (renewal %, quarterly turnover)
+ * drop out; length of stay and digital leasing exist for All units only.
  */
-function tableGeos(sel) {
-  return sel.centres.length ? { geos: sel.centres, filtered: true } : { geos: CMAS, filtered: false };
-}
-
-/** "Winnipeg & National Rent, Vacancy and Turnover", or "… by CMA" for a long list. */
-function tableTitle(base, sel, filtered) {
-  return filtered && sel.centres.length <= 2 ? centreTitle(base, sel.centres) : `${base} by CMA`;
-}
+const TABLE_METRICS = ['rent', 'rent_yoy', 'lol', 'vacancy', 'turnover', 'turnover_q', 'renewal', 'stay', 'digital_conv', 'digital_per100'];
 
 function quarterTables($cards, sel, source) {
-  let n = 0;
-  const { geos, filtered } = tableGeos(sel);
-  // Bold marks the sidebar's centres only when other CMAs are listed beside them.
-  const highlight = filtered ? new Set() : new Set(sel.centres);
-  const total = quarterTable(ui.index, {
-    geos, seg: 'total', q: sel.q,
-    metrics: ['rent_yoy', 'lol', 'vacancy', 'turnover', 'turnover_q', 'renewal', 'stay', 'digital_conv', 'digital_per100'],
+  const cell = (seg, m) => {
+    const p = (ui.index.get(`${sel.centre}|${seg}|${m}`) || []).find(x => x.q === sel.q && x.src === 't');
+    return p && Number.isFinite(p.v) ? p.v : null;
+  };
+  // Short row labels: "1-Bedroom" wrapped in the nine-column PNG.
+  const rows = sel.units.map(u => ({ geo: u.label.replace('-Bedroom', '-Bed'), values: TABLE_METRICS.map(m => cell(u.id, m)) }));
+  const keep = TABLE_METRICS.map((_, i) => rows.some(r => r.values[i] != null));
+  const t = {
+    cols: TABLE_METRICS.filter((_, i) => keep[i]),
+    rows: rows.map(r => ({ geo: r.geo, values: r.values.filter((_, i) => keep[i]) })).filter(r => r.values.some(v => v != null)),
+  };
+  if (!t.rows.length) return 0;
+  buildTableCard($cards, {
+    id: `yardi_table_${slug(sel.centre)}`, title: `${sel.centre} Rent, Vacancy and Turnover — ${qLabel(sel.q)}`,
+    subtitle: 'As published', table: t, highlight: new Set(), source, wide: true, rowHead: 'Unit type',
   });
-  if (total.rows.length) {
-    if (!filtered) sortRows(total);
-    buildTableCard($cards, {
-      id: 'yardi_table_total', title: `${tableTitle('Rent, Vacancy and Turnover', sel, filtered)} — ${qLabel(sel.q)}`,
-      subtitle: 'All units; as published', table: total, highlight, source, wide: true,
-    });
-    n++;
-  }
-  for (const sg of SEGMENTS) {
-    const t = quarterTable(ui.index, { geos, seg: sg.id, q: sel.q, metrics: ['rent', 'lol', 'vacancy', 'turnover'] });
-    if (!t.rows.length) continue;
-    if (!filtered) sortRows(t);
-    buildTableCard($cards, {
-      id: `yardi_table_${sg.id}`, title: `${tableTitle(`${sg.label} Units`, sel, filtered)} — ${qLabel(sel.q)}`,
-      subtitle: 'As published', table: t, highlight, source,
-    });
-    n++;
-  }
-  return n;
-}
-
-/** Yardi's own order: highest first on the table's first column. */
-function sortRows(t) {
-  t.rows.sort((a, b) => (b.values[0] ?? -Infinity) - (a.values[0] ?? -Infinity));
+  return 1;
 }
 
 function buildTableCard(container, { id, title, subtitle, table, highlight, source, wide = false, rowHead = 'CMA' }) {
@@ -766,14 +745,13 @@ async function exportData() {
   };
   if (on.has('total') || on.has('leasing')) {
     for (const ch of CENTRE_CHARTS.filter(c => on.has(c.group))) {
-      writeSeries(centreTitle(ch.title, sel.centres), sel.centres.map(c => ({ label: c, geo: c, seg: 'total', metric: ch.metric })));
+      writeSeries(`${sel.centre} ${ch.title}`, [{ label: sel.centre, geo: sel.centre, seg: 'total', metric: ch.metric }]);
     }
   }
   if (on.has('bedroom')) {
     for (const ch of BEDROOM_CHARTS) {
-      for (const c of sel.centres) {
-        writeSeries(`${c} ${ch.title}`, SEGMENTS.map(sg => ({ label: sg.label, geo: c, seg: sg.id, metric: ch.metric })));
-      }
+      writeSeries(`${sel.centre} ${ch.title}`,
+        sel.units.map(u => ({ label: u.label, geo: sel.centre, seg: u.id, metric: ch.metric })));
     }
   }
   const all = wb.addWorksheet('All observations');

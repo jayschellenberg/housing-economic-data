@@ -112,9 +112,18 @@ describe('dateAxisTicks', () => {
     const { ticks, tickFormat } = dateAxisTicks(d('1990-03-01'), d('2026-01-01'));
     expect(ticks.map(tickFormat)).toEqual(['1995', '2000', '2005', '2010', '2015', '2020', '2025']);
   });
-  it('labels month and year on a short axis', () => {
+  it('labels month and year on a short axis, at most six ticks', () => {
     const { ticks, tickFormat } = dateAxisTicks(d('2025-06-01'), d('2026-03-01'));
-    expect(ticks).toBeUndefined();
+    expect(ticks.length).toBeLessThanOrEqual(6);
     expect(tickFormat(d('2025-09-01'))).toMatch(/Sep.*2025/);
+  });
+  it('uses six-monthly ticks on a 2-3 year axis', () => {
+    const { ticks } = dateAxisTicks(d('2024-02-01'), d('2026-09-01'));
+    expect(ticks.map(t => t.toISOString().slice(0, 7))).toEqual(['2024-07', '2025-01', '2025-07', '2026-01', '2026-07']);
+  });
+  it('spaces a ten-month axis every two months, on the calendar', () => {
+    const { ticks } = dateAxisTicks(d('2025-11-01'), d('2026-09-01'));
+    // Every second month from January: Nov, Jan, Mar, May, Jul, Sep.
+    expect(ticks.map(t => t.toISOString().slice(0, 7))).toEqual(['2025-11', '2026-01', '2026-03', '2026-05', '2026-07', '2026-09']);
   });
 });

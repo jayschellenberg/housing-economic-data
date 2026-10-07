@@ -45,7 +45,7 @@ export const GROUPS = [
   { id: 'city', label: 'Asking Rents by Centre' },
   { id: 'province', label: 'Asking Rents by Province' },
   { id: 'national', label: 'Canada by Property Type' },
-  { id: 'tables', label: 'Month Tables' },
+  { id: 'tables', label: 'Month Table' },
 ];
 
 // --- Months -----------------------------------------------------------------
