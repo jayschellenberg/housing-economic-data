@@ -1178,20 +1178,15 @@
         </section>
 
         <section>
-          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Centres</h2>
-          <details id="yr-centre-menu" class="relative">
-            <summary class="list-none cursor-pointer w-full border border-neutral-300 rounded px-2 py-1 text-sm bg-white flex items-center justify-between">
-              <span id="yr-centre-summary-text">Winnipeg, National</span><span aria-hidden="true" class="text-neutral-500">&#9662;</span>
-            </summary>
-            <div class="absolute left-0 right-0 z-20 mt-1 bg-white border border-neutral-300 rounded shadow-lg p-2">
-              <div class="flex gap-3 text-xs mb-1 pb-1 border-b border-neutral-200">
-                <button id="yr-centres-all" type="button" class="underline text-neutral-600">All</button>
-                <button id="yr-centres-none" type="button" class="underline text-neutral-600">None</button>
-              </div>
-              <div id="yr-centres" class="grid gap-1 max-h-80 overflow-y-auto"></div>
-            </div>
-          </details>
-          <p class="text-xs text-neutral-500 mt-1">Lines on the trend charts, a bedroom-type chart set per centre, and the rows in the quarter tables (Winnipeg → Manitoba in the expense table). With none ticked, the tables list every CMA.</p>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Centre</h2>
+          <select id="yr-centre" class="w-full border border-neutral-300 rounded px-2 py-1 text-sm"></select>
+          <p class="text-xs text-neutral-500 mt-1">Every chart and the quarter table show this centre (Winnipeg → Manitoba in the expense table; the expense bars keep all provinces for comparison).</p>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Unit types</h2>
+          <div id="yr-units" class="grid gap-1"></div>
+          <p class="text-xs text-neutral-500 mt-1">Lines on the unit-type charts and rows in the quarter table. Bedroom-type figures start with the Q3 2023 data.</p>
         </section>
 
         <section>
@@ -1305,20 +1300,15 @@
         </section>
 
         <section>
-          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Centres</h2>
-          <details id="rc-centre-menu" class="relative">
-            <summary class="list-none cursor-pointer w-full border border-neutral-300 rounded px-2 py-1 text-sm bg-white flex items-center justify-between">
-              <span id="rc-centre-summary-text">No data</span><span aria-hidden="true" class="text-neutral-500">&#9662;</span>
-            </summary>
-            <div class="absolute left-0 right-0 z-20 mt-1 bg-white border border-neutral-300 rounded shadow-lg p-2">
-              <div class="flex gap-3 text-xs mb-1 pb-1 border-b border-neutral-200">
-                <button id="rc-centres-all" type="button" class="underline text-neutral-600">All</button>
-                <button id="rc-centres-none" type="button" class="underline text-neutral-600">None</button>
-              </div>
-              <div id="rc-centres" class="grid gap-1 max-h-80 overflow-y-auto"></div>
-            </div>
-          </details>
-          <p class="text-xs text-neutral-500 mt-1">Lines on the centre charts and rows in the tables. Each city's province (Winnipeg → Manitoba) is added to the province charts.</p>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Centre</h2>
+          <select id="rc-centre" class="w-full border border-neutral-300 rounded px-2 py-1 text-sm" disabled></select>
+          <p class="text-xs text-neutral-500 mt-1">The centre charts and the month table show this centre; the province charts show its province (Winnipeg → Manitoba).</p>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Unit types</h2>
+          <div id="rc-units" class="grid gap-1"></div>
+          <p class="text-xs text-neutral-500 mt-1">Lines on the charts and rows in the month table. Rentals.ca publishes studio and 3-bedroom rents by province only, so the centre charts use All units, 1-bed and 2-bed.</p>
         </section>
 
         <section>

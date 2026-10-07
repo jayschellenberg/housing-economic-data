@@ -169,12 +169,18 @@ function distinctPlaces(ticks, places) {
   return p;
 }
 
+/** Most month labels a short date axis carries. */
+export const MAX_MONTH_TICKS = 6;
+
 /**
- * Tick marks and format for a date x axis spanning [lo, hi]. Plot's default
- * utc ticks are quarters or months once the axis is wide, and a year-only
- * label then repeats ("2022 2022 2022"). Spans of two years or more get one
- * tick per year (or per 2/5/10 years on long ranges), labelled with the year;
- * shorter spans keep Plot's ticks, labelled month + year.
+ * Tick marks and format for a date x axis spanning [lo, hi].
+ *
+ * Up to three years: month ticks every 1/2/3/6/12 months, aligned to the
+ * calendar, so there are at most MAX_MONTH_TICKS of them, labelled month +
+ * year (Plot's own monthly ticks ran "Nov 2025Dec 2025" together on a
+ * 10-month axis). Longer: one tick per year (or per 2/5/10 years on long
+ * ranges), labelled with the year (Plot's quarterly ticks repeated it,
+ * "2022 2022 2022").
  *
  * @param {Date} lo
  * @param {Date} hi
@@ -182,8 +188,20 @@ function distinctPlaces(ticks, places) {
  */
 export function dateAxisTicks(lo, hi) {
   const y0 = lo?.getUTCFullYear?.(), y1 = hi?.getUTCFullYear?.();
-  if (!Number.isFinite(y0) || !Number.isFinite(y1) || y1 - y0 < 2) {
-    return { tickFormat: (d) => d.toLocaleString('en-CA', { month: 'short', year: 'numeric', timeZone: 'UTC' }) };
+  const monthYear = (d) => d.toLocaleString('en-CA', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+  if (!Number.isFinite(y0) || !Number.isFinite(y1)) return { tickFormat: monthYear };
+  const m0 = y0 * 12 + lo.getUTCMonth(), m1 = y1 * 12 + hi.getUTCMonth();
+  // Up to three years: month ticks (a 2024-02 to 2026-09 axis otherwise kept
+  // only "2025" and "2026").
+  if (m1 - m0 <= 36) {
+    const step = [1, 2, 3, 6, 12].find(k => Math.floor(m1 / k) - Math.ceil(m0 / k) + 1 <= MAX_MONTH_TICKS) || 12;
+    const ticks = [];
+    // Aligned to the calendar (every 3 months = Jan / Apr / Jul / Oct).
+    for (let m = Math.ceil(m0 / step) * step; m <= m1; m += step) {
+      const d = new Date(Date.UTC(Math.floor(m / 12), m % 12, 1));
+      if (d >= lo && d <= hi) ticks.push(d);
+    }
+    return { ticks, tickFormat: monthYear };
   }
   const span = y1 - y0;
   const step = span <= 12 ? 1 : span <= 24 ? 2 : span <= 50 ? 5 : 10;

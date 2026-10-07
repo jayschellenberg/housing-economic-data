@@ -9,7 +9,8 @@
  * that folder here and the browser reads it locally (rentalsca-store.js).
  *
  * Laid out like the Yardi Rental tab: a month picker that also ends the
- * charts, a centre checklist (Winnipeg + Canada by default), a property-type
+ * charts, one centre at a time (Winnipeg by default), unit-type checkboxes,
+ * a property-type
  * choice for the city figures, section toggles and one "About" note. Months
  * estimated from a neighbouring report's change columns are listed there.
  */
@@ -61,9 +62,8 @@ export async function initRentalsCa() {
     $month: document.getElementById('rc-month'),
     $yearFrom: document.getElementById('rc-year-from'),
     $segment: document.getElementById('rc-segment'),
-    $centreMenu: document.getElementById('rc-centre-menu'),
-    $centres: document.getElementById('rc-centres'),
-    $centreSummary: document.getElementById('rc-centre-summary-text'),
+    $centre: document.getElementById('rc-centre'),
+    $units: document.getElementById('rc-units'),
     $sectionMenu: document.getElementById('rc-section-menu'),
     $sections: document.getElementById('rc-section-toggles'),
     $sectionSummary: document.getElementById('rc-section-summary-text'),
@@ -134,11 +134,10 @@ function wireControls() {
     ui.prefs = savePrefs({ folderCollapsed: !ui.prefs.folderCollapsed });
     renderFolderBody();
   });
-  document.getElementById('rc-centres-all').addEventListener('click', () => setCentres(allCentres()));
-  document.getElementById('rc-centres-none').addEventListener('click', () => setCentres([]));
+  ui.$centre.addEventListener('change', () => { ui.prefs = savePrefs({ centre: ui.$centre.value }); renderCharts(); });
   document.getElementById('rc-sections-all').addEventListener('click', () => setGroups(GROUPS.map(g => g.id)));
   document.getElementById('rc-sections-none').addEventListener('click', () => setGroups([]));
-  for (const $menu of [ui.$centreMenu, ui.$sectionMenu]) {
+  for (const $menu of [ui.$sectionMenu]) {
     document.addEventListener('click', (e) => { if ($menu.open && !$menu.contains(e.target)) $menu.open = false; });
     $menu.addEventListener('keydown', (e) => { if (e.key === 'Escape') { $menu.open = false; $menu.querySelector('summary').focus(); } });
   }
@@ -215,6 +214,7 @@ function renderAll() {
   renderMonthPicker();
   renderSegment();
   renderCentrePicker();
+  renderUnitToggles();
   renderSectionToggles();
   renderCharts();
 }
@@ -258,50 +258,54 @@ function allCentres() {
   return [CANADA, ...(ui.cities || [])];
 }
 
-function selectedCentres() {
-  const saved = ui.prefs.centres;
+/** One centre at a time (Jason, 2026-10-07); an older multi-centre pref keeps its first city. */
+function selectedCentre() {
   const all = allCentres();
-  return Array.isArray(saved) ? all.filter(c => saved.includes(c)) : DEFAULT_CENTRES.filter(c => all.includes(c));
-}
-
-function setCentres(list) {
-  ui.prefs = savePrefs({ centres: allCentres().filter(c => list.includes(c)) });
-  renderCentrePicker();
-  renderCharts();
+  const p = ui.prefs;
+  if (all.includes(p.centre)) return p.centre;
+  const old = Array.isArray(p.centres) ? all.find(c => p.centres.includes(c) && c !== CANADA) : null;
+  return old || (all.includes(DEFAULT_CENTRES[0]) ? DEFAULT_CENTRES[0] : all[0]);
 }
 
 function renderCentrePicker() {
-  const chosen = new Set(selectedCentres());
-  ui.$centres.replaceChildren();
+  ui.$centre.replaceChildren();
   for (const c of allCentres()) {
-    const label = document.createElement('label');
-    label.className = 'flex items-center gap-1 text-sm';
-    const cb = document.createElement('input');
-    cb.type = 'checkbox'; cb.checked = chosen.has(c);
-    cb.addEventListener('change', () => {
-      const next = new Set(selectedCentres());
-      if (cb.checked) next.add(c); else next.delete(c);
-      setCentres([...next]);
-    });
-    const text = document.createElement('span');
+    const opt = document.createElement('option');
     const prov = ui.data?.city_province?.[c];
-    text.textContent = prov ? `${c} (${prov})` : c;
-    label.append(cb, text);
-    ui.$centres.appendChild(label);
+    opt.value = c; opt.textContent = prov ? `${c} (${prov})` : c;
+    ui.$centre.appendChild(opt);
   }
-  const shown = orderedCentres([...chosen]);
-  const total = allCentres().length;
-  ui.$centreSummary.textContent = !ui.data ? 'No data'
-    : shown.length === total ? `All centres (${total})`
-    : shown.length === 0 ? 'None selected'
-    : shown.length <= 2 ? shown.join(', ')
-    : `${shown.length} of ${total} centres`;
+  ui.$centre.disabled = !ui.data;
+  if (ui.data) ui.$centre.value = selectedCentre();
 }
 
-/** Cities first (Winnipeg takes the first colour), Canada last as the benchmark. */
-function orderedCentres(list) {
-  const set = new Set(list);
-  return [...allCentres().filter(c => c !== CANADA && set.has(c)), ...(set.has(CANADA) ? [CANADA] : [])];
+/** Default: the three unit types the city table carries. */
+const DEFAULT_UNITS = ['total', '1br', '2br'];
+
+function selectedUnits() {
+  const saved = ui.prefs.units;
+  const on = new Set(Array.isArray(saved) ? saved : DEFAULT_UNITS);
+  return UNITS.filter(u => on.has(u.id));
+}
+
+function renderUnitToggles() {
+  const on = new Set(selectedUnits().map(u => u.id));
+  ui.$units.replaceChildren();
+  for (const u of UNITS) {
+    const label = document.createElement('label');
+    label.className = 'flex items-center gap-2 text-sm';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.checked = on.has(u.id);
+    cb.addEventListener('change', () => {
+      const next = new Set(selectedUnits().map(x => x.id));
+      if (cb.checked) next.add(u.id); else next.delete(u.id);
+      ui.prefs = savePrefs({ units: UNITS.map(x => x.id).filter(id => next.has(id)) });
+      renderCharts();
+    });
+    const text = document.createElement('span'); text.textContent = u.label;
+    label.append(cb, text);
+    ui.$units.appendChild(label);
+  }
 }
 
 function enabledGroups() {
@@ -346,10 +350,10 @@ function selection() {
   const ms = ui.data?.months || [];
   const month = ui.$month.value || ms[ms.length - 1] || null;
   const from = ui.prefs.yearFrom ? `${ui.prefs.yearFrom}-01` : null;
-  const centres = orderedCentres(selectedCentres());
-  // Provinces of the chosen cities (Winnipeg → Manitoba), then Canada.
-  const provinces = [...new Set(centres.filter(c => c !== CANADA).map(c => ui.data?.city_province?.[c]).filter(Boolean))];
-  return { month, from, centres, provinces, seg: segment() };
+  const centre = selectedCentre();
+  // The centre's province (Winnipeg → Manitoba); Canada for Canada.
+  const province = centre === CANADA ? CANADA : (ui.data?.city_province?.[centre] || null);
+  return { month, from, centre, province, units: selectedUnits(), seg: segment() };
 }
 
 function sourceFor(month) {
@@ -358,23 +362,12 @@ function sourceFor(month) {
   return reported ? `${SOURCE}, ${mLabel(reportMonth(month))}` : SOURCE;
 }
 
-function centreTitle(title, centres) {
-  if (centres.length === 1) return `${centres[0]} ${title}`;
-  if (centres.length === 2) return `${centres[0]} & ${centres[1]} ${title}`;
-  return title;
-}
-
 const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
 // --- Charts ------------------------------------------------------------------
 
-const CENTRE_CHARTS = [
-  { id: '1br', unit: '1br', metric: 'rent', title: '1-Bedroom Average Asking Rent', units: 'dollar' },
-  { id: '2br', unit: '2br', metric: 'rent', title: '2-Bedroom Average Asking Rent', units: 'dollar' },
-  { id: 'total', unit: 'total', metric: 'rent', title: 'Average Asking Rent, All Units', units: 'dollar' },
-  { id: '1br_yoy', unit: '1br', metric: 'yoy', title: '1-Bedroom Asking Rent Change, Year over Year', units: 'percent' },
-  { id: '2br_yoy', unit: '2br', metric: 'yoy', title: '2-Bedroom Asking Rent Change, Year over Year', units: 'percent' },
-];
+// Units the city table carries (Rentals.ca publishes no city studio / 3-bed).
+const CITY_UNITS = new Set(['total', '1br', '2br']);
 
 function renderCharts() {
   const { $grid } = ui;
@@ -399,7 +392,8 @@ function renderCharts() {
     for (const d of input.derived) derived.push(...d.months);
     const card = buildIndicatorCard($cards, {
       chartId: id, fileStem: id, title, sourceLabel: source, table: true,
-      zeroBased: false, mirrorY: false,
+      // Y from 0 (or below, if a series dips negative) — Jason, 2026-10-07.
+      zeroBased: true, mirrorY: false,
       sourceInCaption: true, signed: false, captionPt: 10,
     });
     card.render(input.records, input.seriesMeta, {
@@ -421,30 +415,29 @@ function renderCharts() {
     let drawn = 0;
 
     if (g.id === 'city') {
-      for (const ch of CENTRE_CHARTS) {
-        const lines = sel.centres.map(c => ({ label: c, ...centreSource(c, sel.seg), unit: ch.unit, metric: ch.metric }));
-        if (lineCard($cards, `rentalsca_${ch.id}_${sel.seg}`, {
-          title: centreTitle(ch.title, sel.centres), subtitle: SEGMENTS[sel.seg], lines, units: ch.units,
+      // One chart per measure, a line per ticked unit type (Jason, 2026-10-07).
+      const cityUnits = sel.units.filter(u => CITY_UNITS.has(u.id));
+      for (const [id, metric, title, units] of [['rent', 'rent', 'Average Asking Rent', 'dollar'],
+                                                ['yoy', 'yoy', 'Asking Rent Change, Year over Year', 'percent']]) {
+        const lines = cityUnits.map(u => ({ label: u.label, ...centreSource(sel.centre, sel.seg), unit: u.id, metric }));
+        if (lineCard($cards, `rentalsca_${id}_${sel.seg}_${slug(sel.centre)}`, {
+          title: `${sel.centre} ${title}`, subtitle: SEGMENTS[sel.seg], lines, units,
         })) drawn++;
       }
-    } else if (g.id === 'province') {
+    } else if (g.id === 'province' && sel.province) {
       // Apartments & condos: the one province series that runs from 2024.
-      for (const p of [...sel.provinces, CANADA]) {
-        const lines = UNITS.map(u => ({ label: u.label, level: 'province', geo: p, seg: 'ac', unit: u.id, metric: 'rent' }));
-        if (lineCard($cards, `rentalsca_prov_${slug(p)}`, {
-          title: `${p} Average Asking Rent by Unit Type`, subtitle: SEGMENTS.ac, lines, units: 'dollar',
+      for (const [id, metric, title, units] of [['rent', 'rent', 'Average Asking Rent', 'dollar'],
+                                                ['yoy', 'yoy', 'Asking Rent Change, Year over Year', 'percent']]) {
+        const lines = sel.units.map(u => ({ label: u.label, level: 'province', geo: sel.province, seg: 'ac', unit: u.id, metric }));
+        if (lineCard($cards, `rentalsca_prov_${id}_${slug(sel.province)}`, {
+          title: `${sel.province} ${title}`, subtitle: SEGMENTS.ac, lines, units,
         })) drawn++;
       }
-      const yoy = [...sel.provinces, CANADA].map(p => ({ label: p, level: 'province', geo: p, seg: 'ac', unit: 'total', metric: 'yoy' }));
-      if (lineCard($cards, 'rentalsca_prov_yoy', {
-        title: 'Asking Rent Change by Province, Year over Year', subtitle: `${SEGMENTS.ac}, all units`, lines: yoy, units: 'percent',
-      })) drawn++;
     } else if (g.id === 'national') {
-      for (const [id, unit, title] of [['total', 'total', 'Canada Average Asking Rent by Property Type'],
-                                       ['1br', '1br', 'Canada 1-Bedroom Asking Rent by Property Type'],
-                                       ['2br', '2br', 'Canada 2-Bedroom Asking Rent by Property Type']]) {
-        const lines = PROPERTY_TYPES.map(t => ({ label: t.label, level: 'national', geo: CANADA, seg: t.id, unit, metric: 'rent' }));
-        if (lineCard($cards, `rentalsca_nat_${id}`, { title, lines, units: 'dollar' })) drawn++;
+      for (const u of sel.units.filter(x => CITY_UNITS.has(x.id))) {
+        const lines = PROPERTY_TYPES.map(t => ({ label: t.label, level: 'national', geo: CANADA, seg: t.id, unit: u.id, metric: 'rent' }));
+        const what = u.id === 'total' ? 'Average Asking Rent' : `${u.label} Asking Rent`;
+        if (lineCard($cards, `rentalsca_nat_${u.id}`, { title: `Canada ${what} by Property Type`, lines, units: 'dollar' })) drawn++;
       }
     } else if (g.id === 'tables') {
       drawn += monthTables($cards, sel, source);
@@ -455,7 +448,7 @@ function renderCharts() {
   if (!$grid.childElementCount) {
     const p = document.createElement('p');
     p.className = 'text-sm text-neutral-600';
-    p.textContent = sel.centres.length ? 'Nothing to draw for this month and section selection.' : 'No centres selected.';
+    p.textContent = sel.units.length ? 'Nothing to draw for this month and section selection.' : 'No unit types ticked.';
     $grid.appendChild(p);
   }
   renderEstimateNote(derived);
@@ -486,40 +479,28 @@ function renderEstimateNote(derived) {
 const fmtMoney = (p) => (p ? `$${Math.round(p.v).toLocaleString('en-CA')}${p.src === 'd' ? '*' : ''}` : MISSING);
 const fmtPct = (p) => (p ? `${p.v.toFixed(1)}%` : MISSING);
 
+/**
+ * One table for the centre and month (Jason, 2026-10-07): a row per ticked
+ * unit type — the centre's asking rent with M/M and Y/Y (for the chosen
+ * property types), then its province's apartments & condos rent and Y/Y.
+ */
 function monthTables($cards, sel, source) {
-  let n = 0;
   const m = sel.month;
-  // City table: only the sidebar's centres (as on the Yardi tab).
-  const cityRows = sel.centres.map(c => {
-    const at = (unit, metric) => valueAt(ui.index, { ...centreSource(c, sel.seg), unit, metric }, m);
-    return [c, fmtMoney(at('1br', 'rent')), fmtPct(at('1br', 'mom')), fmtPct(at('1br', 'yoy')),
-      fmtMoney(at('2br', 'rent')), fmtPct(at('2br', 'mom')), fmtPct(at('2br', 'yoy')), fmtMoney(at('total', 'rent'))];
-  }).filter(r => r.slice(1).some(x => x !== MISSING));
-  if (cityRows.length) {
-    buildTableCard($cards, {
-      id: `rentalsca_table_city_${sel.seg}`,
-      title: `${centreTitle('Average Asking Rents', sel.centres)} — ${mLabel(m)}`,
-      subtitle: SEGMENTS[sel.seg],
-      head: ['Centre', '1-Bed', 'M/M', 'Y/Y', '2-Bed', 'M/M', 'Y/Y', 'All Units'],
-      rows: cityRows, source, wide: true,
-    });
-    n++;
-  }
-  const provRows = [...sel.provinces, CANADA].map(p => {
-    const at = (unit, metric) => valueAt(ui.index, { level: 'province', geo: p, seg: 'ac', unit, metric }, m);
-    return [p, ...UNITS.map(u => fmtMoney(at(u.id, 'rent'))), fmtPct(at('total', 'yoy'))];
-  }).filter(r => r.slice(1).some(x => x !== MISSING));
-  if (provRows.length) {
-    buildTableCard($cards, {
-      id: 'rentalsca_table_province',
-      title: `Average Asking Rents by Province and Unit Type — ${mLabel(m)}`,
-      subtitle: SEGMENTS.ac,
-      head: ['Province', ...UNITS.map(u => u.label), 'Y/Y (all units)'],
-      rows: provRows, source, wide: true,
-    });
-    n++;
-  }
-  return n;
+  const city = (unit, metric) => (CITY_UNITS.has(unit) ? valueAt(ui.index, { ...centreSource(sel.centre, sel.seg), unit, metric }, m) : null);
+  const prov = (unit, metric) => (sel.province ? valueAt(ui.index, { level: 'province', geo: sel.province, seg: 'ac', unit, metric }, m) : null);
+  const rows = sel.units.map(u => [u.label,
+    fmtMoney(city(u.id, 'rent')), fmtPct(city(u.id, 'mom')), fmtPct(city(u.id, 'yoy')),
+    fmtMoney(prov(u.id, 'rent')), fmtPct(prov(u.id, 'yoy'))]).filter(r => r.slice(1).some(x => x !== MISSING));
+  if (!rows.length) return 0;
+  const provHead = sel.province === CANADA ? 'Canada' : sel.province;
+  buildTableCard($cards, {
+    id: `rentalsca_table_${slug(sel.centre)}`,
+    title: `${sel.centre} Average Asking Rents — ${mLabel(m)}`,
+    subtitle: `${SEGMENTS[sel.seg]}; ${provHead ? `${provHead}: ${SEGMENTS.ac.toLowerCase()}` : ''}`.replace(/; $/, ''),
+    head: ['Unit type', 'Rent', 'M/M', 'Y/Y', ...(provHead ? [`${provHead} Rent`, `${provHead} Y/Y`] : [])],
+    rows: provHead ? rows : rows.map(r => r.slice(0, 4)), source, wide: true,
+  });
+  return 1;
 }
 
 function buildTableCard(container, { id, title, subtitle, head, rows, source, wide = false }) {
