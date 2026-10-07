@@ -53,7 +53,7 @@ export const GROUPS = [
   { id: 'total',    label: 'Rents, Vacancy & Turnover' },
   { id: 'bedroom',  label: 'By Unit Type' },
   { id: 'tables',   label: 'Quarter Table' },
-  { id: 'leasing',  label: 'Length of Stay & Digital Leasing' },
+  { id: 'leasing',  label: 'Length of Stay' },
   { id: 'expense',  label: 'Operating Expenses by Province' },
 ];
 
@@ -67,8 +67,6 @@ export const CENTRE_CHARTS = [
   { id: 'vacancy', group: 'total', metric: 'vacancy', title: 'Apartment Vacancy Rate' },
   { id: 'turnover', group: 'total', metric: 'turnover', title: 'Annual Tenant Turnover' },
   { id: 'stay', group: 'leasing', metric: 'stay', title: 'Average Resident Length of Stay', subtitle: 'Months' },
-  { id: 'digital_conv', group: 'leasing', metric: 'digital_conv', title: 'Digital Prospect Conversion' },
-  { id: 'digital_per100', group: 'leasing', metric: 'digital_per100', title: 'Digital Prospects per 100 Units per Month' },
 ];
 
 /** Per-centre bedroom charts: one line per bedroom type. */

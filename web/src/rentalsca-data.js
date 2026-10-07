@@ -25,12 +25,13 @@ export const SEGMENTS = {
   ac: 'Apartments & condos',
 };
 
+// Bedroom types first, All units last, as the CMHC charts order them.
 export const UNITS = [
-  { id: 'total', label: 'All units' },
   { id: '0br', label: 'Studio' },
   { id: '1br', label: '1-Bedroom' },
   { id: '2br', label: '2-Bedroom' },
   { id: '3br', label: '3-Bedroom' },
+  { id: 'total', label: 'All units' },
 ];
 export const UNIT_LABEL = Object.fromEntries(UNITS.map(u => [u.id, u.label]));
 

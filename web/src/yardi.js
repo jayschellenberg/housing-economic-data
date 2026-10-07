@@ -19,7 +19,7 @@
 
 import * as Plot from '@observablehq/plot';
 import { buildIndicatorCard, readOpenPanels } from './indicator-chart.js';
-import { themed, PALETTE, gridMarks, frameMark, plotWidth, plotHeight, fitPlotWidth } from './plot-theme.js';
+import { themed, PALETTE, gridMarks, frameMark, plotWidth, plotHeight, fitPlotWidth, unitLineStyle } from './plot-theme.js';
 import { downloadCardPng, setExportRedraw, setExportCropHeight, EXPORT_W, EXPORT_H, EXPORT_DPI } from './png-export.js';
 import { escapeHtml } from './escape.js';
 import { getPref, setPref } from './prefs.js';
@@ -266,8 +266,9 @@ function renderCentrePicker() {
   ui.$centre.value = selectedCentre();
 }
 
-/** Unit types: All units + the four bedroom types. */
-const UNIT_TYPES = [{ id: 'total', label: 'All units' }, ...SEGMENTS];
+/** Unit types: the four bedroom types + All units. */
+// Bedroom types first, All units last, as the CMHC charts order them.
+const UNIT_TYPES = [...SEGMENTS, { id: 'total', label: 'All units' }];
 
 function selectedUnits() {
   const saved = ui.prefs.units;
@@ -379,7 +380,8 @@ function renderCharts() {
 
   // Every Yardi chart's Y axis starts at 0 (or below, if a series dips
   // negative) — Jason, 2026-10-07.
-  const lineCard = ($cards, id, { title, subtitle = '', lines, zeroBased = true, nameInSubtitle = true }) => {
+  // byUnit: a unit-type breakdown, coloured and dashed as on the CMHC tabs.
+  const lineCard = ($cards, id, { title, subtitle = '', lines, zeroBased = true, nameInSubtitle = true, byUnit = false }) => {
     // Lines join across a missing edition (Q3 2024, Q1 2026): the gap is a
     // report the firm lacks, not a quarter Yardi left out. The About note says so.
     const input = toCardInput(id, ui.index, lines, { ...range, bridge: true });
@@ -392,8 +394,11 @@ function renderCharts() {
       // subscriber figures (as on Johnson Report and Cap Rates).
       sourceInCaption: true, signed: false, captionPt: 10,
     });
+    const unitOf = new Map(lines.map(l => [`${id}:${l.label}`, l.seg]));
+    const style = byUnit ? unitLineStyle(input.seriesMeta, (sid) => unitOf.get(sid)) : { dashedIds: [] };
     card.render(input.records, input.seriesMeta, {
-      rangeSubtitle: 'quarter', subtitle, singleSeriesInSubtitle: nameInSubtitle, dashedIds: [],
+      rangeSubtitle: 'quarter', subtitle, singleSeriesInSubtitle: nameInSubtitle, ...style,
+      quarterTicks: true,  // x labels "Q3 2023", not "Jul 2023" (Jason, 2026-10-07)
     });
     card.setOpenPanels(open.get(id) || []);
     ui.cards.set(id, { card: card.card });
@@ -424,7 +429,7 @@ function renderCharts() {
       for (const ch of BEDROOM_CHARTS) {
         const lines = sel.units.map(u => ({ label: u.label, geo: sel.centre, seg: u.id, metric: ch.metric }));
         if (lineCard($cards, `yardi_bed_${ch.id}_${slug(sel.centre)}`, {
-          title: `${sel.centre} ${ch.title}`, lines,
+          title: `${sel.centre} ${ch.title}`, lines, byUnit: true,
         })) drawn++;
       }
     } else if (g.id === 'tables') {
@@ -508,9 +513,11 @@ const COL_HEAD = {
  * One table for the centre and quarter: a row per ticked unit type (Jason,
  * 2026-10-07 — it replaced an all-units table plus four one-row bedroom
  * tables). Columns a quarter never published (renewal %, quarterly turnover)
- * drop out; length of stay and digital leasing exist for All units only.
+ * drop out.
  */
-const TABLE_METRICS = ['rent', 'rent_yoy', 'lol', 'vacancy', 'turnover', 'turnover_q', 'renewal', 'stay', 'digital_conv', 'digital_per100'];
+// Length of stay and digital leasing are left out (Jason, 2026-10-07): they
+// exist for All units only and have their own chart (stay) or none.
+const TABLE_METRICS = ['rent', 'rent_yoy', 'lol', 'vacancy', 'turnover', 'turnover_q', 'renewal'];
 
 function quarterTables($cards, sel, source) {
   const cell = (seg, m) => {
@@ -543,7 +550,7 @@ function buildTableCard(container, { id, title, subtitle, table, highlight, sour
   card.innerHTML = `
     <header class="chart-title">${escapeHtml(title)}</header>
     <p class="chart-sub">${escapeHtml(subtitle)}</p>
-    <div class="cmhc-chart-table-scroll" data-role="plot" style="max-height:none">
+    <div class="cmhc-chart-table-scroll" data-role="plot" style="max-height:none;min-height:0">
       <table class="cmhc-table cmhc-table-compact"><thead><tr><th>${escapeHtml(rowHead)}</th>${head}</tr></thead>
       <tbody>${body}</tbody></table>
     </div>

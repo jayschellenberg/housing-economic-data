@@ -16,6 +16,7 @@
  */
 
 import { buildIndicatorCard, readOpenPanels } from './indicator-chart.js';
+import { unitLineStyle } from './plot-theme.js';
 import { downloadCardPng, setExportRedraw, setExportCropHeight, EXPORT_W, EXPORT_H, EXPORT_DPI } from './png-export.js';
 import { escapeHtml } from './escape.js';
 import { getPref, setPref } from './prefs.js';
@@ -386,7 +387,8 @@ function renderCharts() {
   const drawnSections = [];
   const derived = [];
 
-  const lineCard = ($cards, id, { title, subtitle = '', lines, units }) => {
+  // byUnit: a unit-type breakdown, coloured and dashed as on the CMHC tabs.
+  const lineCard = ($cards, id, { title, subtitle = '', lines, units, byUnit = false }) => {
     const input = toCardInput(id, ui.index, lines.map(l => ({ ...l, units })), range);
     if (!input.records.length) return false;
     for (const d of input.derived) derived.push(...d.months);
@@ -396,8 +398,10 @@ function renderCharts() {
       zeroBased: true, mirrorY: false,
       sourceInCaption: true, signed: false, captionPt: 10,
     });
+    const unitOf = new Map(lines.map(l => [`${id}:${l.label}`, l.unit]));
+    const style = byUnit ? unitLineStyle(input.seriesMeta, (sid) => unitOf.get(sid)) : { dashedIds: [] };
     card.render(input.records, input.seriesMeta, {
-      rangeSubtitle: 'month', subtitle, singleSeriesInSubtitle: true, dashedIds: [],
+      rangeSubtitle: 'month', subtitle, singleSeriesInSubtitle: true, ...style,
     });
     card.setOpenPanels(open.get(id) || []);
     ui.cards.set(id, { card: card.card });
@@ -421,7 +425,7 @@ function renderCharts() {
                                                 ['yoy', 'yoy', 'Asking Rent Change, Year over Year', 'percent']]) {
         const lines = cityUnits.map(u => ({ label: u.label, ...centreSource(sel.centre, sel.seg), unit: u.id, metric }));
         if (lineCard($cards, `rentalsca_${id}_${sel.seg}_${slug(sel.centre)}`, {
-          title: `${sel.centre} ${title}`, subtitle: SEGMENTS[sel.seg], lines, units,
+          title: `${sel.centre} ${title}`, subtitle: SEGMENTS[sel.seg], lines, units, byUnit: true,
         })) drawn++;
       }
     } else if (g.id === 'province' && sel.province) {
@@ -430,7 +434,7 @@ function renderCharts() {
                                                 ['yoy', 'yoy', 'Asking Rent Change, Year over Year', 'percent']]) {
         const lines = sel.units.map(u => ({ label: u.label, level: 'province', geo: sel.province, seg: 'ac', unit: u.id, metric }));
         if (lineCard($cards, `rentalsca_prov_${id}_${slug(sel.province)}`, {
-          title: `${sel.province} ${title}`, subtitle: SEGMENTS.ac, lines, units,
+          title: `${sel.province} ${title}`, subtitle: SEGMENTS.ac, lines, units, byUnit: true,
         })) drawn++;
       }
     } else if (g.id === 'national') {
@@ -480,30 +484,41 @@ const fmtMoney = (p) => (p ? `$${Math.round(p.v).toLocaleString('en-CA')}${p.src
 const fmtPct = (p) => (p ? `${p.v.toFixed(1)}%` : MISSING);
 
 /**
- * One table for the centre and month (Jason, 2026-10-07): a row per ticked
- * unit type — the centre's asking rent with M/M and Y/Y (for the chosen
- * property types), then its province's apartments & condos rent and Y/Y.
+ * One table for the centre and month, laid out as Jason asked (2026-10-07):
+ * a row for the centre (the chosen property types) and a row for its
+ * province (apartments & condos); a column group per ticked unit type —
+ * 1-BR, 2-BR … with All units last — each with the rent and its Y/Y change.
+ * M/M is left out: Rentals.ca publishes it for cities only.
  */
 function monthTables($cards, sel, source) {
   const m = sel.month;
-  const city = (unit, metric) => (CITY_UNITS.has(unit) ? valueAt(ui.index, { ...centreSource(sel.centre, sel.seg), unit, metric }, m) : null);
-  const prov = (unit, metric) => (sel.province ? valueAt(ui.index, { level: 'province', geo: sel.province, seg: 'ac', unit, metric }, m) : null);
-  const rows = sel.units.map(u => [u.label,
-    fmtMoney(city(u.id, 'rent')), fmtPct(city(u.id, 'mom')), fmtPct(city(u.id, 'yoy')),
-    fmtMoney(prov(u.id, 'rent')), fmtPct(prov(u.id, 'yoy'))]).filter(r => r.slice(1).some(x => x !== MISSING));
-  if (!rows.length) return 0;
-  const provHead = sel.province === CANADA ? 'Canada' : sel.province;
+  const units = [...sel.units.filter(u => u.id !== 'total'), ...sel.units.filter(u => u.id === 'total')];
+  const places = [{ label: sel.centre, spec: centreSource(sel.centre, sel.seg), cityOnly: true }];
+  // Canada's centre row already is the national figure; a second Canada row
+  // (apartments & condos) only adds something when the segment differs.
+  if (sel.province && !(sel.province === CANADA && sel.seg === 'ac')) {
+    places.push({ label: sel.province === CANADA && sel.centre === CANADA ? `${CANADA} (apartments & condos)` : sel.province,
+      spec: { level: 'province', geo: sel.province, seg: 'ac' } });
+  }
+  const at = (pl, unit, metric) => (pl.cityOnly && !CITY_UNITS.has(unit) ? null : valueAt(ui.index, { ...pl.spec, unit, metric }, m));
+  const rows = places.map(pl => [pl.label, ...units.flatMap(u => [fmtMoney(at(pl, u.id, 'rent')), fmtPct(at(pl, u.id, 'yoy'))])])
+    .filter(r => r.slice(1).some(x => x !== MISSING));
+  const cols = units.map((u, i) => ({ u, i })).filter(({ i }) => rows.some(r => r[1 + 2 * i] !== MISSING || r[2 + 2 * i] !== MISSING));
+  if (!rows.length || !cols.length) return 0;
+  const keep = (r) => [r[0], ...cols.flatMap(({ i }) => [r[1 + 2 * i], r[2 + 2 * i]])];
+  const short = (u) => u.label.replace('-Bedroom', '-BR');
   buildTableCard($cards, {
     id: `rentalsca_table_${slug(sel.centre)}`,
     title: `${sel.centre} Average Asking Rents — ${mLabel(m)}`,
-    subtitle: `${SEGMENTS[sel.seg]}; ${provHead ? `${provHead}: ${SEGMENTS.ac.toLowerCase()}` : ''}`.replace(/; $/, ''),
-    head: ['Unit type', 'Rent', 'M/M', 'Y/Y', ...(provHead ? [`${provHead} Rent`, `${provHead} Y/Y`] : [])],
-    rows: provHead ? rows : rows.map(r => r.slice(0, 4)), source, wide: true,
+    subtitle: places.length > 1 ? `${sel.centre}: ${SEGMENTS[sel.seg].toLowerCase()}; ${places[1].label}: ${SEGMENTS.ac.toLowerCase()}` : SEGMENTS[sel.seg],
+    groups: cols.map(({ u }) => short(u)),
+    head: ['', ...cols.flatMap(() => ['Rent', 'Y/Y'])],
+    rows: rows.map(keep), source, wide: true,
   });
   return 1;
 }
 
-function buildTableCard(container, { id, title, subtitle, head, rows, source, wide = false }) {
+function buildTableCard(container, { id, title, subtitle, head, rows, source, wide = false, groups = null }) {
   const card = document.createElement('section');
   card.className = `chart-card cmhc-indicator-card${wide ? ' md:col-span-2' : ''}`;
   card.dataset.chartId = id;
@@ -511,8 +526,11 @@ function buildTableCard(container, { id, title, subtitle, head, rows, source, wi
   card.innerHTML = `
     <header class="chart-title">${escapeHtml(title)}</header>
     <p class="chart-sub">${escapeHtml(subtitle)}${estimated ? '; * estimated' : ''}</p>
-    <div class="cmhc-chart-table-scroll" data-role="plot" style="max-height:none">
-      <table class="cmhc-table cmhc-table-compact"><thead><tr>${head.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>
+    <div class="cmhc-chart-table-scroll" data-role="plot" style="max-height:none;min-height:0">
+      <table class="cmhc-table cmhc-table-compact"><thead>${groups
+        // A column group per unit type over its Rent / Y/Y pair.
+        ? `<tr><th rowspan="2"></th>${groups.map(g => `<th colspan="2">${escapeHtml(g)}</th>`).join('')}</tr><tr>${head.slice(1).map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr>`
+        : `<tr>${head.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr>`}</thead>
       <tbody>${rows.map(r => `<tr>${r.map(x => `<td>${escapeHtml(String(x))}</td>`).join('')}</tr>`).join('')}</tbody></table>
     </div>
     <div class="chart-caption chart-caption-sourced"><span class="chart-source" data-role="source"></span></div>
@@ -562,7 +580,9 @@ function buildTableCard(container, { id, title, subtitle, head, rows, source, wi
     $scroll.style.setProperty('overflow', 'visible');
     fit();
   });
-  const tsv = [head, ...rows].map(r => r.join('\t')).join('\n');
+  // Copied headers name the group too: "1-BR Rent", "1-BR Y/Y".
+  const flatHead = groups ? [head[0], ...head.slice(1).map((h, i) => `${groups[Math.floor(i / 2)]} ${h}`)] : head;
+  const tsv = [flatHead, ...rows].map(r => r.join('\t')).join('\n');
   const $copy = card.querySelector('[data-role="copy"]');
   $copy.addEventListener('click', async () => {
     try { await navigator.clipboard.writeText(tsv); $copy.textContent = 'Copied'; setTimeout(() => { $copy.textContent = 'Copy table'; }, 1500); }
