@@ -130,6 +130,10 @@
         class="cmhc-tab" data-tab="yardi" aria-selected="false">
         Yardi Rental
       </button>
+      <button type="button" role="tab" id="tab-btn-rentalsca"
+        class="cmhc-tab" data-tab="rentalsca" aria-selected="false">
+        Rentals.ca
+      </button>
       <button type="button" role="tab" id="tab-btn-rental"
         class="cmhc-tab" data-tab="rental" aria-selected="false">
         Rental Dashboard
@@ -1251,6 +1255,140 @@
         <footer class="text-xs text-neutral-500 pt-4 border-t border-neutral-200">
           Source: Yardi Canadian National Multifamily Report (Yardi Systems, LLC), quarterly.
           The report is copyrighted; figures shown here are read from the viewer's own locally held copy and are not redistributed by this site.
+        </footer>
+      </main>
+    </div>
+
+    <!-- ============================================================
+         Rentals.ca tab — monthly average asking rents by city, province
+         and property type from the Rentals.ca & Urbanation National Rent
+         Report. NO DATA SHIPS WITH THE SITE: RentalsCa/ingest/run.bat
+         publishes rentalsca.json to SharedInfo\AppMarketData\RentalData;
+         see rentalsca.js / rentalsca-store.js.
+         ============================================================ -->
+    <div id="tab-panel-rentalsca" class="grid md:grid-cols-[320px_1fr] min-h-[calc(100vh-110px)]" role="tabpanel" aria-labelledby="tab-btn-rentalsca" hidden>
+      <aside class="bg-white border-r border-neutral-200 p-4 space-y-4 overflow-y-auto" aria-label="Rentals.ca filters">
+        <section>
+          <div class="flex items-center justify-between mb-2">
+            <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Data folder</h2>
+            <button id="rc-folder-toggle" type="button" class="text-xs underline text-neutral-600" aria-controls="rc-folder-body" aria-expanded="true" hidden>Hide</button>
+          </div>
+          <p id="rc-folder-status" class="text-xs text-neutral-600 mb-2"></p>
+          <p id="rc-folder-error" class="text-xs text-red-700 mb-2" hidden></p>
+          <div id="rc-folder-body">
+          <div class="space-y-2">
+            <button id="rc-pick-folder" type="button"
+              class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+              Choose folder
+            </button>
+            <input id="rc-pick-fallback" type="file" webkitdirectory multiple hidden
+              class="block w-full text-xs file:mr-2 file:rounded file:border file:border-neutral-300 file:bg-white file:px-2 file:py-1 file:text-xs" />
+            <div class="flex gap-3 text-xs">
+              <button id="rc-rescan" type="button" class="underline text-neutral-600">Reload folder</button>
+              <button id="rc-clear" type="button" class="underline text-neutral-600" hidden>Disconnect</button>
+            </div>
+          </div>
+          <p class="text-xs text-neutral-500 mt-2">Pick the firm's shared <code>AppMarketData</code> folder or its <code>RentalData</code> subfolder. Read locally, never uploaded.</p>
+          </div>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Month</h2>
+          <select id="rc-month" class="w-full border border-neutral-300 rounded px-2 py-1 text-sm" disabled></select>
+          <p class="text-xs text-neutral-500 mt-1">The data month: each report comes out the month after (the October 2026 report holds September 2026 data). Sets the tables' month and the end of the charts.</p>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Charts from</h2>
+          <input id="rc-year-from" type="number" min="2000" max="2100" placeholder="year" class="w-24 border border-neutral-300 rounded px-2 py-1 text-sm" />
+          <p class="text-xs text-neutral-500 mt-1">Leave blank for all history (January 2024 on).</p>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Centres</h2>
+          <details id="rc-centre-menu" class="relative">
+            <summary class="list-none cursor-pointer w-full border border-neutral-300 rounded px-2 py-1 text-sm bg-white flex items-center justify-between">
+              <span id="rc-centre-summary-text">No data</span><span aria-hidden="true" class="text-neutral-500">&#9662;</span>
+            </summary>
+            <div class="absolute left-0 right-0 z-20 mt-1 bg-white border border-neutral-300 rounded shadow-lg p-2">
+              <div class="flex gap-3 text-xs mb-1 pb-1 border-b border-neutral-200">
+                <button id="rc-centres-all" type="button" class="underline text-neutral-600">All</button>
+                <button id="rc-centres-none" type="button" class="underline text-neutral-600">None</button>
+              </div>
+              <div id="rc-centres" class="grid gap-1 max-h-80 overflow-y-auto"></div>
+            </div>
+          </details>
+          <p class="text-xs text-neutral-500 mt-1">Lines on the centre charts and rows in the tables. Each city's province (Winnipeg → Manitoba) is added to the province charts.</p>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">City figures for</h2>
+          <div id="rc-segment" class="grid gap-1 text-sm">
+            <label class="flex items-center gap-2"><input type="radio" name="rc-segment" value="all" checked /> All property types</label>
+            <label class="flex items-center gap-2"><input type="radio" name="rc-segment" value="ac" /> Apartments &amp; condos</label>
+          </div>
+          <p class="text-xs text-neutral-500 mt-1">All property types runs from January 2024. Rentals.ca began publishing an apartments-and-condos city table in July 2025. The province charts are always apartments &amp; condos.</p>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Sections</h2>
+          <details id="rc-section-menu" class="relative">
+            <summary class="list-none cursor-pointer w-full border border-neutral-300 rounded px-2 py-1 text-sm bg-white flex items-center justify-between">
+              <span id="rc-section-summary-text">All sections</span><span aria-hidden="true" class="text-neutral-500">&#9662;</span>
+            </summary>
+            <div class="absolute left-0 right-0 z-20 mt-1 bg-white border border-neutral-300 rounded shadow-lg p-2">
+              <div class="flex gap-3 text-xs mb-1 pb-1 border-b border-neutral-200">
+                <button id="rc-sections-all" type="button" class="underline text-neutral-600">All</button>
+                <button id="rc-sections-none" type="button" class="underline text-neutral-600">None</button>
+              </div>
+              <div id="rc-section-toggles" class="grid gap-1 text-sm max-h-80 overflow-y-auto"></div>
+            </div>
+          </details>
+        </section>
+
+        <section class="pt-2 border-t border-neutral-200 space-y-2">
+          <button id="rc-download-xlsx" type="button"
+            class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+            Download Excel (data)
+          </button>
+          <p class="text-xs text-neutral-500">Every figure to the selected month, each marked report table or estimated.</p>
+          <button id="rc-download-docx-charts" type="button"
+            class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+            Download Word (charts)
+          </button>
+          <button id="rc-download-xlsx-charts" type="button"
+            class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+            Download Excel (charts)
+          </button>
+          <p class="text-xs text-neutral-500">Every visible chart and table as an image — one per page / worksheet.</p>
+        </section>
+      </aside>
+
+      <main class="p-4 space-y-4 overflow-x-hidden">
+        <p id="rc-empty" class="text-sm text-neutral-600 max-w-2xl">
+          No Rentals.ca data is loaded. This site publishes none of it: choose the firm's shared
+          <code>AppMarketData</code> folder or its <code>RentalData</code> subfolder (published by <code>ingest\run.bat</code> in the
+          RentalsCa project). The charts render from that folder in this browser only.
+        </p>
+        <section id="rc-chart-grid" class="space-y-6"></section>
+        <section id="rc-about" class="max-w-4xl space-y-2 text-sm text-neutral-700" hidden>
+          <h2 class="cmhc-mi-section-title">About these charts</h2>
+          <p>
+            Average <strong>asking</strong> rents for units listed for rent on Rentals.ca's network in the month,
+            as published in the Rentals.ca &amp; Urbanation National Rent Report. They describe the rents being
+            asked of new tenants, not the rents sitting tenants pay (for those, see the Yardi Rental tab's in-place
+            rents or CMHC's Rental Market Survey). "All property types" includes purpose-built apartments, condo
+            apartments, houses and townhouses. The city table covers about 40 to 60 of the largest markets.
+          </p>
+          <p>
+            The reports come from the Internet Archive's copies of the monthly report page, because Rentals.ca keeps
+            only the current month online. Tables are as published. "**" means no figure.
+          </p>
+          <div id="rc-about-estimates" class="space-y-2"></div>
+        </section>
+        <footer class="text-xs text-neutral-500 pt-4 border-t border-neutral-200">
+          Source: Rentals.ca &amp; Urbanation, National Rent Report (monthly).
+          Figures shown here are read from the viewer's own locally held copy and are not redistributed by this site.
         </footer>
       </main>
     </div>
