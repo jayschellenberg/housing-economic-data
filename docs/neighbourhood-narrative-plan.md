@@ -97,7 +97,7 @@ On-screen render + Download Word via `exportNarrativeToWord`, with the numbers t
 ### Phase 2 — Rural backbone additions (new data)
 
 - ✅ 2026-10-08: `r/26_census_industry.R` → `census_industry.json` (20 NAICS sectors, 2021 + 2016, PR/CMA/CD for 4 provinces + all MB CSDs; Winnipeg virtual geos opt-in via `CENSUS_INDUSTRY_WPG=1`). Narrative "Employment by industry" paragraph: top-3 sectors + sectors with location quotient ≥ 1.5 (and share ≥ 4%) vs the province; industry table beneath. `LQ_MIN` / `LQ_SHARE_MIN` in census-narrative.js.
-- Provincial highway network GeoJSON → highways intersecting or within N km of the CSD polygon. Needs a small polygon-to-line distance helper; promote `shapeFilter.js` point-in-ring to a shared module.
+- ✅ 2026-10-08: `r/27_build_csd_highways.R` → `mb_csd_highways.json` (Manitoba Road Network 2023, PTH + PR dissolved by number; through / within 15 km with distance + compass direction / boundary distance + direction from Winnipeg, precomputed in R with sf — no client geometry). Narrative "Access and roadways" paragraph replaces the stub for municipalities.
 - Service-tier rubric: define as a config table first (grocery, K-12, medical clinic, hospital, municipal office, bank, pharmacy) with a manual checklist UI; auto-fill from POI data later only if worth it.
 
 ### Phase 3 — Winnipeg mode
