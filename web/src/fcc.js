@@ -352,13 +352,20 @@ function renderCharts() {
         input: changeCardInput(`fcc_change_${sel.prov}`, ui.cIdx, lines, { from: sel.from ?? tenBack, to: sel.year }),
       })) drawn++;
       // Each region's published change (annual tables, 2017 on), capped at 10 years.
+      // Pastureland the same way (published from 2022).
       if (sel.prov !== CANADA) {
-        const id = `fcc_region_change_${sel.prov}`;
-        if (lineCard($cards, id, {
-          title: `${sel.name} Annual % Change in Cultivated Farmland Values by Region`,
-          input: regionChangeCardInput(id, ui.rIdx, [...regs.cultivated, ...regs.irrigated],
-            { from: Math.max(sel.from ?? tenBack, tenBack), to: sel.year }),
-        })) drawn++;
+        const range = { from: Math.max(sel.from ?? tenBack, tenBack), to: sel.year };
+        for (const [key, list, what] of [
+          ['region_change', [...regs.cultivated, ...regs.irrigated], 'Cultivated Farmland Values'],
+          ['pasture_change', regs.pasture, 'Pastureland Values'],
+        ]) {
+          if (!list.length) continue;
+          const id = `fcc_${key}_${sel.prov}`;
+          if (lineCard($cards, id, {
+            title: `${sel.name} Annual % Change in ${what} by Region`,
+            input: regionChangeCardInput(id, ui.rIdx, list, range),
+          })) drawn++;
+        }
       }
       drawn += provincialTable($cards, sel);
     } else if (g.id === 'regions' && sel.prov !== CANADA) {
