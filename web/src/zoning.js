@@ -233,7 +233,8 @@ function renderMuniPicker() {
 
 function renderZonePicker() {
   const m = currentMuni();
-  const zones = m?.zones || [];
+  // alphabetical by code; numeric parts compare as numbers (RG, RG-1, RG-2; M1, M2)
+  const zones = [...(m?.zones || [])].sort((a, b) => a.code.localeCompare(b.code, 'en', { numeric: true }));
   ui.$zone.innerHTML = zones.map(z => `<option value="${escapeHtml(z.code)}">${escapeHtml(`${z.code} – ${z.name}`)}</option>`).join('');
   ui.$zone.disabled = !zones.length;
   if (zones.some(z => z.code === ui.prefs.zone)) ui.$zone.value = ui.prefs.zone;
