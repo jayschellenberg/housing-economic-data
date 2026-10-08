@@ -61,6 +61,7 @@ export const growthWord  = (pct)   => GROWTH_CLASSES.find(g => pct >= g.min).wor
 
 const fPct1s = (v) => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1)}%`;   // signed, typographic minus
 const fPct0  = (v) => `${Math.round(v)}%`;
+const fPct1  = (v) => `${v.toFixed(1)}%`;
 
 // The income reference year is the census year minus one.
 const incomeYear = (period) => ({ '2021': '2020', '2016': '2015', '2011': '2010' }[period] || period);
@@ -208,16 +209,65 @@ function stockPara(s) {
   return parts.length ? parts.join(' ') : null;
 }
 
+// ---- industry (census_industry.json, r/26) -----------------------------------
+// Location quotient = subject share ÷ benchmark share. A sector counts as
+// "over-represented" when it is both concentrated (LQ ≥ LQ_MIN) and material
+// (share ≥ LQ_SHARE_MIN %), so a 1%-of-labour-force sector never headlines.
+export const LQ_MIN = 1.5;
+export const LQ_SHARE_MIN = 4;
+
+// Labour-force shares by sector for one region at the selected census, or
+// null when the file lacks that region/year (the paragraph is then omitted —
+// no substituting 2021 for a 2016 read).
+export function industryStats(industry, uid, period) {
+  const r = industry?.regions?.find(x => x.uid === uid);
+  const d = r?.data?.[period];
+  const lf = pos(d?.labourForce);
+  if (!d || !lf || !Array.isArray(d.counts)) return null;
+  const shares = industry.sectors.map((sec, i) => ({
+    code: sec.code, label: sec.label, count: num(d.counts[i]) ?? 0,
+    share: (num(d.counts[i]) ?? 0) / lf * 100,
+  }));
+  return { year: period, labourForce: lf, shares, byCode: new Map(shares.map(x => [x.code, x])) };
+}
+
+const sectorProse = (label) => label.charAt(0).toLowerCase() + label.slice(1);
+
+function industryPara(s, ind, benchmarks) {
+  if (!ind) return null;
+  const top = ind.shares.slice().sort((a, b) => b.share - a.share).slice(0, 3);
+  let text = `In ${ind.year} the largest employment sectors for ${s.name}'s labour force of ${fInt(ind.labourForce)} were ` +
+    joinAnd(top.map(x => `${sectorProse(x.label)} (${fPct0(x.share)})`)) + '.';
+  // Over-representation is read against the provincial benchmark only — the
+  // province is the natural reference for an economic-base call.
+  const prov = benchmarks.find(b => b.level === 'PR' && b.industry);
+  if (prov) {
+    const over = ind.shares
+      .map(x => ({ ...x, lq: prov.industry.byCode.get(x.code)?.share > 0 ? x.share / prov.industry.byCode.get(x.code).share : null }))
+      .filter(x => x.lq != null && x.lq >= LQ_MIN && x.share >= LQ_SHARE_MIN)
+      .sort((a, b) => b.lq - a.lq).slice(0, 3);
+    if (over.length) {
+      text += ` Relative to the province, ${joinAnd(over.map(x => `${sectorProse(x.label)} (${x.lq.toFixed(1)}× the provincial share)`))} ` +
+        `${over.length > 1 ? 'are' : 'is'} notably over-represented, which points to the community's economic base.`;
+    } else {
+      text += ' No sector is markedly over-represented relative to the province; the employment mix is broadly diversified.';
+    }
+  }
+  return text;
+}
+
 // ---- public API ----------------------------------------------------------------
 // subject/benchmarks are census_profile regions; `years` the censusYears array;
-// `period` the selected demographics census. Returns { blocks, table }.
-export function buildCensusNarrative({ subject, benchmarks = [], years, period }) {
+// `period` the selected demographics census; `industry` the (optional) parsed
+// census_industry.json. Returns { blocks, table, industryTable, stats }.
+export function buildCensusNarrative({ subject, benchmarks = [], years, period, industry = null }) {
   const s = regionStats(subject, { years, period });
+  const sInd = industryStats(industry, subject?.uid, period);
   const bm = benchmarks.filter(Boolean).map(r => {
     const stats = regionStats(r, { years, period });
     // "Manitoba" reads as "the provincial figure"; everything else by name + possessive.
     const label = r.level === 'PR' ? 'the provincial figure' : `${stats.name}'s`;
-    return { stats, label, name: stats.name };
+    return { stats, label, name: stats.name, level: r.level, industry: industryStats(industry, r.uid, period) };
   });
 
   const blocks = [
@@ -230,12 +280,15 @@ export function buildCensusNarrative({ subject, benchmarks = [], years, period }
   push('Income', incomePara(s, bm, period));
   push('Dwelling values', valuePara(s, bm, period));
   push('Housing stock', stockPara(s));
+  push('Employment by industry', industryPara(s, sInd, bm));
 
   // Enrichment stubs — the judgement layer the tool deliberately leaves to the
   // appraiser (see the plan's tiered-layers principle).
   blocks.push({ type: 'heading', text: 'Appraiser notes (to complete)' });
   for (const stub of [
-    'Economic base and major employers: [agriculture / manufacturing / tourism / services — name the principal employers]',
+    sInd
+      ? 'Major employers: [name the principal employers behind the sector mix above]'
+      : 'Economic base and major employers: [agriculture / manufacturing / tourism / services — name the principal employers]',
     'Services and amenities: [full-service / limited-service — grocery, K–12 schools, medical, municipal office]',
     'Access and roadways: [provincial highways serving the community; distance and direction to Winnipeg]',
   ]) blocks.push({ type: 'bullet', text: stub });
@@ -260,5 +313,24 @@ export function buildCensusNarrative({ subject, benchmarks = [], years, period }
       row('Dwellings built after 2000', c => pct0(c.post2000)),
     ],
   };
-  return { blocks, table, stats: s };
+
+  // Labour force by sector, subject vs benchmarks, sorted by the subject's
+  // share — only when the subject has industry data for this period.
+  let industryTable = null;
+  if (sInd) {
+    const icols = [{ name: s.name, ind: sInd }, ...bm.map(b => ({ name: b.name, ind: b.industry }))];
+    const order = sInd.shares.slice().sort((a, b) => b.share - a.share).map(x => x.code);
+    industryTable = {
+      title: `Labour force by industry (${period}) — ${icols.map(c => c.name).join(' vs ')}`,
+      columns: icols.map(c => c.name),
+      rows: [
+        { area: 'Labour force aged 15+', values: icols.map(c => fInt(c.ind?.labourForce)) },
+        ...order.map(code => ({
+          area: `${code} ${sInd.byCode.get(code).label}`,
+          values: icols.map(c => { const x = c.ind?.byCode.get(code); return x ? fPct1(x.share) : '**'; }),
+        })),
+      ],
+    };
+  }
+  return { blocks, table, industryTable, stats: s };
 }

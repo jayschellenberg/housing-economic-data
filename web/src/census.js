@@ -24,6 +24,7 @@ import { PROV_LABEL, PROV_ORDER, provOfUid, cleanName } from './geography.js';
 import { loadCensusProfile } from './census-profile.js';
 import { loadPopulationEstimates } from './population-estimates.js';
 import { buildCensusNarrative } from './census-narrative.js';
+import { loadCensusIndustry } from './census-industry.js';
 
 // Geography levels, in dropdown group order.
 const LEVEL_GROUPS = [
@@ -184,9 +185,10 @@ export async function initCensus() {
   const $tables   = document.getElementById('census-tables');
   if (!$area[0] || !$tables) return;
 
-  // popEst is optional garnish (annual-estimates chart) — census profile data
-  // is the hard requirement, so a missing estimates file must not block init.
-  const [data, popEst] = await Promise.all([loadCensusProfile(), loadPopulationEstimates()]);
+  // popEst (annual-estimates chart) and industry (narrative's employment
+  // paragraph) are optional garnish — census profile data is the hard
+  // requirement, so a missing file for either must not block init.
+  const [data, popEst, industry] = await Promise.all([loadCensusProfile(), loadPopulationEstimates(), loadCensusIndustry()]);
   if (!data || !Array.isArray(data.regions)) {
     $tables.innerHTML = '<p class="text-sm text-red-700">Census profile data not found. Run r/12_census_profile.R.</p>';
     return;
@@ -356,7 +358,7 @@ export async function initCensus() {
   function renderNarrative(subject, others, period) {
     if (!$narr) return;
     const benchmarks = others.slice().sort((a, b) => (b.level === 'PR') - (a.level === 'PR'));
-    const nar = buildCensusNarrative({ subject, benchmarks, years, period });
+    const nar = buildCensusNarrative({ subject, benchmarks, years, period, industry });
     lastNarrative = nar;
 
     let body = '', inList = false;
@@ -372,11 +374,12 @@ export async function initCensus() {
     }
     if (inList) body += '</ul>';
 
-    const tbl = nar.table;
-    const tableHtml = `<table class="cmhc-table mt-3">
+    const tableHtml = [nar.table, nar.industryTable].filter(Boolean).map(tbl => `
+      <div class="cmhc-table-title mt-3">${escapeHtml(tbl.title)}</div>
+      <table class="cmhc-table">
         <thead><tr><th></th>${tbl.columns.map(c => `<th>${escapeHtml(c)}</th>`).join('')}</tr></thead>
         <tbody>${tbl.rows.map(r => `<tr><td>${escapeHtml(r.area)}</td>${r.values.map(v => `<td>${escapeHtml(v)}</td>`).join('')}</tr>`).join('')}</tbody>
-      </table>`;
+      </table>`).join('');
 
     $narr.innerHTML = `
       <section class="cmhc-table-block">
@@ -387,7 +390,8 @@ export async function initCensus() {
         </div>
         <div class="text-sm text-neutral-800 leading-relaxed mt-2 max-w-3xl">${body}</div>
         ${tableHtml}
-        <p class="text-xs text-neutral-500 mt-2">Auto-written from the census figures above; Areas 2 and 3 serve as the benchmarks. Growth, income and value wording follows fixed ratio bands so it reads the same across reports — edit freely after download. The appraiser-notes bullets are left for local knowledge.</p>
+        <p class="text-xs text-neutral-500 mt-2">Auto-written from the census figures above; Areas 2 and 3 serve as the benchmarks.${
+          nar.industryTable ? ' Industry shares are of the labour force aged 15+ (NAICS sectors); "× the provincial share" is a location quotient.' : ''} Growth, income and value wording follows fixed ratio bands so it reads the same across reports — edit freely after download. The appraiser-notes bullets are left for local knowledge.</p>
       </section>`;
 
     $narr.querySelector('#census-narrative-docx')?.addEventListener('click', async () => {
@@ -397,6 +401,8 @@ export async function initCensus() {
       // survive in Word (same workaround as rtb.js).
       const wblocks = lastNarrative.blocks.map(b => b.type === 'bullet' ? { type: 'para', text: `•  ${b.text}` } : b);
       wblocks.push({ type: 'heading', text: 'Supporting figures' }, { type: 'table', table: lastNarrative.table });
+      if (lastNarrative.industryTable)
+        wblocks.push({ type: 'heading', text: 'Labour force by industry' }, { type: 'table', table: lastNarrative.industryTable });
       const slug = subject.name.replace(/[^A-Za-z0-9]+/g, '_').replace(/^_|_$/g, '');
       await exportNarrativeToWord(wblocks, {
         filename: `Community_Profile_${slug}_${period}.docx`,
