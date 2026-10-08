@@ -51,6 +51,12 @@ describe('narrativeParagraphs', () => {
     expect(p[0]).toMatch(/^This zoning/);
     expect(p[2]).toMatch(/^The minimum lot area/);
   });
+  it('adds the parking paragraph last when the zone has one', () => {
+    const z = { ...zone, narrative: { ...zone.narrative, parking: 'Off-street parking requirements are 1 space per 200 square feet.' } };
+    const p = narrativeParagraphs(z, ['Hotel / Motel']);
+    expect(p).toHaveLength(4);
+    expect(p[3]).toMatch(/^Off-street parking/);
+  });
 });
 
 describe('formatValue', () => {
