@@ -43,7 +43,7 @@ export function usesSentence(zone, selected) {
 /** Full narrative as paragraphs: intent, uses, bulk. */
 export function narrativeParagraphs(zone, selected) {
   const n = zone?.narrative || {};
-  return [n.intent, usesSentence(zone, selected), n.bulk].filter(Boolean);
+  return [n.intent, usesSentence(zone, selected), n.bulk, n.parking].filter(Boolean);
 }
 
 // --- bulk table ---------------------------------------------------------------
@@ -63,6 +63,8 @@ export const ATTRIBUTE_LABELS = {
   far: 'Maximum floor area ratio',
   animal_units: 'Animal units',
   development_standard: 'Additional standard',
+  parking_requirement: 'Off-street parking',
+  parking_note: 'Parking note',
 };
 
 const IMPERIAL = new Set(['ft', 'sq ft', 'ac']);
