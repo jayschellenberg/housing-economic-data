@@ -35,6 +35,24 @@ function pickFormatter(units, values) {
 
 const MONTH_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+/** Dots + value text for each defined point (see `opts.valueLabels`). */
+function valueLabelMarks(points, format) {
+  const pts = points.filter(p => p.value != null && Number.isFinite(p.value));
+  // Alternate series put their labels below the point, so two close lines
+  // (a province and Canada) don't print on top of each other.
+  const order = [...new Set(pts.map(p => p.label))];
+  const below = new Set(order.filter((_, i) => i % 2 === 1));
+  const text = (data, dy) => Plot.text(data, {
+    x: 'date', y: 'value', text: (d) => format(d.value), fill: 'label', dy,
+    fontSize: 10, fontWeight: 600, stroke: 'white', strokeWidth: 3, paintOrder: 'stroke',
+  });
+  return [
+    Plot.dot(pts, { x: 'date', y: 'value', fill: 'label', r: 2.5 }),
+    text(pts.filter(p => !below.has(p.label)), -9),
+    text(pts.filter(p => below.has(p.label)), 13),
+  ];
+}
+
 // Reference band / line colour (BoC inflation-control range). Deliberately not
 // from PALETTE — it must read as annotation, never as another data series.
 const REF_COLOUR = '#0f766e';
@@ -749,7 +767,8 @@ export function buildIndicatorCard(container, {
         tickFormat: yTickFormat,
         domain: yDomain,
         nice: true,
-        insetTop: 10,
+        // Room over the highest point for its value label (opts.valueLabels).
+        insetTop: opts.valueLabels ? 22 : 10,
       },
       color: { domain: colorDomain, range: seriesColours, legend: false, label: null },
       marks: [
@@ -776,6 +795,10 @@ export function buildIndicatorCard(container, {
             ...(dash ? { strokeDasharray: dash } : {}),
             defined: (d) => d.value != null,
           })),
+        // `opts.valueLabels` ({ format? }): a dot and the value over every
+        // point, in the series colour (FCC Farmland's "Show values" toggle).
+        // Meant for one or two lines; off everywhere else.
+        ...(opts.valueLabels ? valueLabelMarks(filtered, opts.valueLabels.format || yFormatter) : []),
         ...(mirrorY
           ? mirrorYMarks(yTickFormat, { ticks: yTicks })
           : [Plot.axisY({ anchor: 'left', tickFormat: yTickFormat, tickSize: 3, label: null, ...(yTicks ? { ticks: yTicks } : {}) })]),

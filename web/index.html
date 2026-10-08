@@ -1316,6 +1316,23 @@
           <p class="text-xs text-neutral-500 mt-1">The % change chart compares it with Canada; the region charts, region tables and narrative are for this province.</p>
         </section>
 
+        <section id="fc-region-section" hidden>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Regions</h2>
+          <details id="fc-region-menu" class="relative">
+            <summary class="list-none cursor-pointer w-full border border-neutral-300 rounded px-2 py-1 text-sm bg-white flex items-center justify-between">
+              <span id="fc-region-summary-text">All regions</span><span aria-hidden="true" class="text-neutral-500">&#9662;</span>
+            </summary>
+            <div class="absolute left-0 right-0 z-20 mt-1 bg-white border border-neutral-300 rounded shadow-lg p-2">
+              <div class="flex gap-3 text-xs mb-1 pb-1 border-b border-neutral-200">
+                <button id="fc-regions-all" type="button" class="underline text-neutral-600">All</button>
+                <button id="fc-regions-none" type="button" class="underline text-neutral-600">None</button>
+              </div>
+              <div id="fc-region-toggles" class="grid gap-1 text-sm max-h-80 overflow-y-auto"></div>
+            </div>
+          </details>
+          <p class="text-xs text-neutral-500 mt-1">Lines on the region charts and rows in the region tables. A name covers its cultivated and pastureland figures.</p>
+        </section>
+
         <section>
           <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Report year</h2>
           <select id="fc-year" class="w-full border border-neutral-300 rounded px-2 py-1 text-sm" disabled></select>
@@ -1326,6 +1343,12 @@
           <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Charts from</h2>
           <input id="fc-year-from" type="number" min="1985" max="2100" placeholder="year" class="w-24 border border-neutral-300 rounded px-2 py-1 text-sm" />
           <p class="text-xs text-neutral-500 mt-1">Leave blank for the last 10 years on the % change charts and all history on the $/acre charts (from 1996). The regional % change charts (cultivated from 2017, pastureland from 2022) never show more than 10 years; the province table shows the last 15 years when blank.</p>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Chart labels</h2>
+          <label class="flex items-center gap-2 text-sm"><input id="fc-value-labels" type="checkbox" /> Show each year's value on the charts</label>
+          <p class="text-xs text-neutral-500 mt-1">Easiest to read with one or two lines: untick regions above to narrow a region chart. The 5-year table under the % change charts gives the same figures for every region.</p>
         </section>
 
         <section>
