@@ -19,7 +19,7 @@ import { escapeHtml } from './escape.js';
 import { getPref, setPref } from './prefs.js';
 import {
   nameableUses, narrativeParagraphs, bulkRows, formatValue, ATTRIBUTE_LABELS,
-  currencyVerdict, currencyMessage, currencyQueryUrl,
+  currencyVerdict, currencyMessage, currencyQueryUrl, zoneShortName, zoneDescription,
 } from './zoning-data.js';
 import {
   storeAvailable, fsAccessSupported, pickDirectory, getSavedDirectory, directoryPermission,
@@ -269,6 +269,21 @@ function renderZone() {
       <p class="chart-sub">${escapeHtml(`'${z.code}' ${z.name}`)}${m.consolidated_to ? ` · consolidated to ${escapeHtml(m.consolidated_to)}` : ''}</p>
       <p class="text-sm" data-role="currency-text"></p>
     </section>
+    <section class="chart-card cmhc-indicator-card" data-role="designation">
+      <header class="chart-title">Zoning designation</header>
+      <p class="chart-sub">Short name and description from the by-law's intent clause. Edit before copying if needed.</p>
+      <label class="block text-xs font-semibold text-neutral-500 uppercase tracking-wider mt-2 mb-1" for="zn-short-name">Zoning short name</label>
+      <div class="flex gap-2 items-start">
+        <input id="zn-short-name" type="text" data-role="short" class="flex-1 border border-neutral-300 rounded px-2 py-1 text-sm font-serif" value="${escapeHtml(zoneShortName(z))}">
+        <button type="button" data-copy="short" class="text-xs border border-neutral-300 rounded px-2 py-1 bg-white hover:bg-neutral-50">Copy</button>
+      </div>
+      <label class="block text-xs font-semibold text-neutral-500 uppercase tracking-wider mt-3 mb-1" for="zn-description">Zoning description</label>
+      <div class="flex gap-2 items-start">
+        <textarea id="zn-description" rows="3" data-role="desc" class="flex-1 border border-neutral-300 rounded px-2 py-1 text-sm leading-relaxed font-serif">${escapeHtml(zoneDescription(z))}</textarea>
+        <button type="button" data-copy="desc" class="text-xs border border-neutral-300 rounded px-2 py-1 bg-white hover:bg-neutral-50">Copy</button>
+      </div>
+      <p class="text-xs text-neutral-400 mt-1">Intent clause: PDF page ${z.intent_page ?? '—'}.</p>
+    </section>
     <section class="chart-card cmhc-indicator-card" data-role="narrative">
       <header class="chart-title">Zoning narrative</header>
       <p class="chart-sub">Ticking uses in the sidebar rewrites the permitted-uses sentence. Edit freely before copying.</p>
@@ -281,11 +296,21 @@ function renderZone() {
     </section>
     <section class="chart-card cmhc-indicator-card" data-role="uses"></section>
     <section class="chart-card cmhc-indicator-card" data-role="bulk"></section>`;
+  wireDesignation();
   wireNarrative();
   renderNarrative();
   renderUseTables(z);
   renderBulkTable(z);
   renderCurrency(m);
+}
+
+function wireDesignation() {
+  const $card = ui.$main.querySelector('[data-role="designation"]');
+  $card.querySelectorAll('[data-copy]').forEach(btn => btn.addEventListener('click', async () => {
+    const $field = $card.querySelector(`[data-role="${btn.dataset.copy}"]`);
+    try { await navigator.clipboard.writeText($field.value.trim()); btn.textContent = 'Copied'; setTimeout(() => { btn.textContent = 'Copy'; }, 1500); }
+    catch { btn.textContent = 'Copy failed'; }
+  }));
 }
 
 function wireNarrative() {
@@ -334,7 +359,6 @@ function renderUseTables(z) {
 function renderBulkTable(z) {
   const rows = bulkRows(z);
   const body = rows.map(r => `<tr>
-      <td>${escapeHtml(r.building || '')}</td>
       <td>${escapeHtml(r.qualifier || 'all listed uses')}</td>
       <td>${escapeHtml(ATTRIBUTE_LABELS[r.attribute] || r.attribute)}</td>
       <td>${escapeHtml(formatValue(r))}</td>
@@ -343,15 +367,15 @@ function renderBulkTable(z) {
   const $card = ui.$main.querySelector('[data-role="bulk"]');
   $card.innerHTML = `
     <header class="chart-title">Bulk requirements</header>
-    <p class="chart-sub">Figures as printed in the by-law (imperial first), with notes and the PDF page.</p>
+    <p class="chart-sub">Principal building. Figures as printed in the by-law (imperial first), with notes and the PDF page.</p>
     <div class="cmhc-chart-table-scroll">
       <table class="cmhc-table cmhc-table-compact"><thead><tr>
-        <th>Building</th><th>Applies to</th><th>Requirement</th><th>Value</th><th>Note</th><th>Page</th>
-      </tr></thead><tbody>${body || '<tr><td colspan="6">No bulk requirements recorded.</td></tr>'}</tbody></table>
+        <th>Applies to</th><th>Requirement</th><th>Value</th><th>Note</th><th>Page</th>
+      </tr></thead><tbody>${body || '<tr><td colspan="5">No bulk requirements recorded.</td></tr>'}</tbody></table>
     </div>
     <div class="chart-actions"><button type="button" data-role="copy">Copy table</button></div>`;
-  const tsv = [['Building', 'Applies to', 'Requirement', 'Value', 'Note', 'Page'].join('\t'),
-    ...rows.map(r => [r.building || '', r.qualifier || 'all listed uses', ATTRIBUTE_LABELS[r.attribute] || r.attribute,
+  const tsv = [['Applies to', 'Requirement', 'Value', 'Note', 'Page'].join('\t'),
+    ...rows.map(r => [r.qualifier || 'all listed uses', ATTRIBUTE_LABELS[r.attribute] || r.attribute,
       formatValue(r), r.note || '', r.page ?? ''].join('\t'))].join('\n');
   const $copy = $card.querySelector('[data-role="copy"]');
   $copy.addEventListener('click', async () => {

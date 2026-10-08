@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   oxford, usesSentence, narrativeParagraphs, formatValue, bulkRows,
-  currencyVerdict, currencyMessage, currencyQueryUrl, normBylaw,
+  currencyVerdict, currencyMessage, currencyQueryUrl, normBylaw, zoneShortName, zoneDescription,
 } from '../src/zoning-data.js';
 
 const zone = {
@@ -65,8 +65,11 @@ describe('formatValue', () => {
 });
 
 describe('bulkRows', () => {
-  it('orders principal before accessory and site area first', () => {
-    expect(bulkRows(zone).map(r => r.attribute)).toEqual(['min_site_area', 'max_height', 'setback_rear']);
+  it('shows the principal building only, site area first', () => {
+    expect(bulkRows(zone).map(r => r.attribute)).toEqual(['min_site_area', 'max_height']);
+  });
+  it('can include accessory rows after the principal ones', () => {
+    expect(bulkRows(zone, { includeAccessory: true }).map(r => r.attribute)).toEqual(['min_site_area', 'max_height', 'setback_rear']);
   });
 });
 
@@ -88,5 +91,19 @@ describe('currency', () => {
     const u = currencyQueryUrl('https://example.test/FeatureServer/0/query', 146);
     expect(u).toContain('where=MUNI_NO+%3D+146');
     expect(u).toContain('f=json');
+  });
+});
+
+describe('zoning designation', () => {
+  it('uses the by-law name, adding "Zone" when missing', () => {
+    expect(zoneShortName({ name: 'Central Commercial Zone' })).toBe('Central Commercial Zone');
+    expect(zoneShortName({ name: 'Commercial Highway' })).toBe('Commercial Highway Zone');
+  });
+  it('builds the description from the intent clause', () => {
+    expect(zoneDescription({ name: 'Central Commercial Zone', intent: 'provides for compact mixed-use development along Park Avenue.' }))
+      .toBe('The Central Commercial Zone provides for compact mixed-use development along Park Avenue.');
+    expect(zoneDescription({ name: 'Agricultural Limited Zone', intent: 'is intended to provide for limited agricultural uses' }))
+      .toBe('The Agricultural Limited Zone is intended to provide for limited agricultural uses.');
+    expect(zoneDescription({ name: 'X', intent: '' })).toBe('');
   });
 });

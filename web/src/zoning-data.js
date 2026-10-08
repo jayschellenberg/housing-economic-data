@@ -85,11 +85,14 @@ export function formatValue(row) {
   return s;
 }
 
-/** Bulk rows ordered principal → accessory, by use type, then by a fixed attribute order. */
-export function bulkRows(zone) {
+/**
+ * Bulk rows for the principal building (accessory-building rows are left out
+ * unless asked for), ordered by use type, then by a fixed attribute order.
+ */
+export function bulkRows(zone, { includeAccessory = false } = {}) {
   const order = Object.keys(ATTRIBUTE_LABELS);
   const rank = (a) => { const i = order.indexOf(a); return i < 0 ? 99 : i; };
-  return [...(zone?.bulk || [])].sort((x, y) =>
+  return (zone?.bulk || []).filter(r => includeAccessory || r.building !== 'accessory').sort((x, y) =>
     (x.building === 'accessory') - (y.building === 'accessory') ||
     String(x.qualifier || '').localeCompare(String(y.qualifier || '')) ||
     rank(x.attribute) - rank(y.attribute));
@@ -138,4 +141,21 @@ export function currencyQueryUrl(service, muniNo) {
     returnDistinctValues: 'true', returnGeometry: 'false', f: 'json',
   });
   return `${service}?${p}`;
+}
+
+// --- zoning designation (short name + description) ----------------------------
+
+/** "Central Commercial Zone": the zone's name, with "Zone" added when the by-law's name lacks it. */
+export function zoneShortName(zone) {
+  const name = String(zone?.name || '').trim();
+  return /\b(zone|district)$/i.test(name) ? name : `${name} Zone`;
+}
+
+/** "The Central Commercial Zone provides for ..." from the by-law's intent clause. */
+export function zoneDescription(zone) {
+  let intent = String(zone?.intent || '').trim();
+  if (!intent) return '';
+  intent = intent.replace(/^(this zone|the zone)\s+/i, '');
+  if (!/[.!?]$/.test(intent)) intent += '.';
+  return `The ${zoneShortName(zone)} ${intent}`;
 }
