@@ -239,6 +239,15 @@ routes within 15 km (distance + compass direction), and the boundary distance
 and direction from Winnipeg. No key; run-once (`npm --prefix web run
 data:highways`); re-run only if the road network or CSD boundaries change.
 
+Its "Services and amenities" paragraph is the one manual input: a **Services
+checklist** under the narrative (municipalities only) where the appraiser ticks
+what the community has; the rubric in `web/src/service-tier.js` (amenity list +
+tier rules: full-service regional centre / full-service / limited-service /
+minimal-service) makes the call and writes the sentence, naming the nearest
+larger centre for whatever is missing. Ticks are saved per municipality in the
+browser (localStorage) only — nothing is published. Rural POI data is too patchy
+to automate this; the definitions are the asset.
+
 Separately from the run-once census build, `r/23_scrape_population_estimates.R`
 (part of `data:all` and the monthly refresh) pulls StatsCan's **annual July-1
 population estimates** (table 17-10-0155, 2001–present, 2021 boundaries) for

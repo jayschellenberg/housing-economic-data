@@ -98,7 +98,18 @@ On-screen render + Download Word via `exportNarrativeToWord`, with the numbers t
 
 - ✅ 2026-10-08: `r/26_census_industry.R` → `census_industry.json` (20 NAICS sectors, 2021 + 2016, PR/CMA/CD for 4 provinces + all MB CSDs; Winnipeg virtual geos opt-in via `CENSUS_INDUSTRY_WPG=1`). Narrative "Employment by industry" paragraph: top-3 sectors + sectors with location quotient ≥ 1.5 (and share ≥ 4%) vs the province; industry table beneath. `LQ_MIN` / `LQ_SHARE_MIN` in census-narrative.js.
 - ✅ 2026-10-08: `r/27_build_csd_highways.R` → `mb_csd_highways.json` (Manitoba Road Network 2023, PTH + PR dissolved by number; through / within 15 km with distance + compass direction / boundary distance + direction from Winnipeg, precomputed in R with sf — no client geometry). Narrative "Access and roadways" paragraph replaces the stub for municipalities.
-- Service-tier rubric: define as a config table first (grocery, K-12, medical clinic, hospital, municipal office, bank, pharmacy) with a manual checklist UI; auto-fill from POI data later only if worth it.
+- ✅ 2026-10-08 (DRAFT rubric, awaiting Jay's corrections): `web/src/service-tier.js` holds the amenity list and tier rules; a Services checklist under the narrative (CSD subjects, saved per municipality in the browser) applies them and writes the "Services and amenities" paragraph.
+
+  Draft tiers — a community takes the first tier whose every requirement it meets:
+
+  | Tier | Requires (all of) |
+  |---|---|
+  | Full-service regional centre | full-line grocery; pharmacy; bank/credit union; K–8 school; high school; medical clinic; hospital/ER; municipal office; RCMP; hardware/farm supply *or* big-box; hotel *or* restaurant |
+  | Full-service community | full-line grocery; pharmacy *or* bank; K–8 school; high school; medical clinic; municipal office; fire hall |
+  | Limited-service community | grocery *or* convenience/general store; K–8 school; municipal office *or* clinic *or* post office |
+  | Minimal-service community | anything less (hamlet / bedroom community) |
+
+  The paragraph names the services present, and for anything below regional adds "Residents look to <nearest centre> (about N km away) for high-school / hospital / full grocery services" based on what is unticked.
 
 ### Phase 3 — Winnipeg mode
 
