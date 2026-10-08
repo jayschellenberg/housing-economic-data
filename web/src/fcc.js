@@ -18,8 +18,8 @@ import { escapeHtml } from './escape.js';
 import { getPref, setPref } from './prefs.js';
 import { buildJumpBar } from './jump-bar.js';
 import {
-  SOURCE, CANADA, DEFAULT_PROV, GROUPS, LAND_LABEL, periodLabel, provName, changeIndex, regionIndex, provRegions,
-  years, changeCardInput, regionCardInput, regionTableRows, changeTable, narrativesFor, narrativeYears,
+  SOURCE, CANADA, DEFAULT_PROV, CHANGE_YEARS, GROUPS, LAND_LABEL, periodLabel, provName, changeIndex, regionIndex, provRegions,
+  years, changeCardInput, regionCardInput, regionChangeCardInput, regionTableRows, changeTable, narrativesFor, narrativeYears,
   markRegions, fmtMoney, fmtPct, fmtRange,
 } from './fcc-data.js';
 import {
@@ -345,10 +345,21 @@ function renderCharts() {
     if (g.id === 'change') {
       const lines = [{ prov: sel.prov, label: sel.name }];
       if (sel.prov !== CANADA) lines.push({ prov: CANADA, label: 'Canada' });
+      // Last 10 years unless "Charts from" says otherwise.
+      const tenBack = sel.year - CHANGE_YEARS + 1;
       if (lineCard($cards, `fcc_change_${sel.prov}`, {
         title: `${sel.name} Annual % Change in Cultivated Farmland Values`,
-        input: changeCardInput(`fcc_change_${sel.prov}`, ui.cIdx, lines, sel.range),
+        input: changeCardInput(`fcc_change_${sel.prov}`, ui.cIdx, lines, { from: sel.from ?? tenBack, to: sel.year }),
       })) drawn++;
+      // Each region's published change (annual tables, 2017 on), capped at 10 years.
+      if (sel.prov !== CANADA) {
+        const id = `fcc_region_change_${sel.prov}`;
+        if (lineCard($cards, id, {
+          title: `${sel.name} Annual % Change in Cultivated Farmland Values by Region`,
+          input: regionChangeCardInput(id, ui.rIdx, [...regs.cultivated, ...regs.irrigated],
+            { from: Math.max(sel.from ?? tenBack, tenBack), to: sel.year }),
+        })) drawn++;
+      }
       drawn += provincialTable($cards, sel);
     } else if (g.id === 'regions' && sel.prov !== CANADA) {
       for (const [key, what] of [['cultivated', 'Cultivated Farmland Value by Region'],
