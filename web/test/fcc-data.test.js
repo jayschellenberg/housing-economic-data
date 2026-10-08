@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  periodLabel, changeIndex, regionIndex, provRegions, years, tableYears, changeCardInput, regionCardInput,
+  periodLabel, changeIndex, regionIndex, provRegions, years, tableYears, changeCardInput, regionCardInput, regionChangeCardInput,
   regionTableRows, changeTable, narrativesFor, narrativeYears, markRegions, fmtMoney, fmtPct, fmtRange,
 } from '../src/fcc-data.js';
 
@@ -66,6 +66,12 @@ describe('fcc-data', () => {
     const { records } = regionCardInput('v', rIdx, regs);
     expect(records.map(r => [r.date.slice(0, 4), r.value])).toEqual([
       ['2016', 2174], ['2017', null], ['2019', 2711], ['2020', null], ['2021', 3100], ['2022', null], ['2025', 4700]]);
+  });
+
+  it('charts each region published % change within the range', () => {
+    const { records, seriesMeta } = regionChangeCardInput('c', rIdx, [data.regions[0]], { from: 2020, to: 2025 });
+    expect(records.map(r => [r.date.slice(0, 4), r.value])).toEqual([['2021', 12.2], ['2022', null], ['2025', 15.1]]);
+    expect(seriesMeta[0]).toMatchObject({ chartLabel: 'Westman', units: 'percent' });
   });
 
   it('reads one year of the region table', () => {

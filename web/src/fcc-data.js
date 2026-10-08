@@ -17,6 +17,9 @@
 export const SOURCE = 'Farm Credit Canada, FCC Farmland Values Report';
 export const CANADA = 'CA';
 export const DEFAULT_PROV = 'MB';
+// The % change charts show this many years back from the report year by
+// default; the regional % change chart never shows more (Jason, 2026-10-08).
+export const CHANGE_YEARS = 10;
 
 export const GROUPS = [
   { id: 'change', label: 'Annual % Change' },
@@ -132,6 +135,26 @@ export function regionCardInput(chartId, rIdx, regions, range = {}) {
       records.push({ id, date: yDate(o.year), value: o.value });
     });
     seriesMeta.push({ id, chartLabel: r.name, units: 'dollar', provider: 'local', frequency: 'annual' });
+  }
+  return { records, seriesMeta };
+}
+
+/**
+ * Card input for each region's published annual % change (annual report
+ * tables, 2017 on). Same gap rule as regionCardInput.
+ */
+export function regionChangeCardInput(chartId, rIdx, regions, range = {}) {
+  const records = [];
+  const seriesMeta = [];
+  for (const r of regions) {
+    const id = `${chartId}:${r.id}`;
+    const pts = (rIdx.get(r.id) || []).filter(o => o.pct != null && inRange(o.year, range));
+    if (!pts.length) continue;
+    pts.forEach((o, i) => {
+      if (i && o.year - pts[i - 1].year > 1) records.push({ id, date: yDate(pts[i - 1].year + 1), value: null });
+      records.push({ id, date: yDate(o.year), value: o.pct });
+    });
+    seriesMeta.push({ id, chartLabel: r.name, units: 'percent', provider: 'local', frequency: 'annual' });
   }
   return { records, seriesMeta };
 }
