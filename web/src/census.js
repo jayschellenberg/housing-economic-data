@@ -25,6 +25,7 @@ import { loadCensusProfile } from './census-profile.js';
 import { loadPopulationEstimates } from './population-estimates.js';
 import { buildCensusNarrative } from './census-narrative.js';
 import { loadCensusIndustry } from './census-industry.js';
+import { loadCsdHighways } from './csd-highways.js';
 
 // Geography levels, in dropdown group order.
 const LEVEL_GROUPS = [
@@ -185,10 +186,11 @@ export async function initCensus() {
   const $tables   = document.getElementById('census-tables');
   if (!$area[0] || !$tables) return;
 
-  // popEst (annual-estimates chart) and industry (narrative's employment
-  // paragraph) are optional garnish — census profile data is the hard
-  // requirement, so a missing file for either must not block init.
-  const [data, popEst, industry] = await Promise.all([loadCensusProfile(), loadPopulationEstimates(), loadCensusIndustry()]);
+  // popEst (annual-estimates chart), industry and highways (narrative
+  // paragraphs) are optional garnish — census profile data is the hard
+  // requirement, so a missing file for any of them must not block init.
+  const [data, popEst, industry, highways] = await Promise.all([
+    loadCensusProfile(), loadPopulationEstimates(), loadCensusIndustry(), loadCsdHighways()]);
   if (!data || !Array.isArray(data.regions)) {
     $tables.innerHTML = '<p class="text-sm text-red-700">Census profile data not found. Run r/12_census_profile.R.</p>';
     return;
@@ -358,7 +360,7 @@ export async function initCensus() {
   function renderNarrative(subject, others, period) {
     if (!$narr) return;
     const benchmarks = others.slice().sort((a, b) => (b.level === 'PR') - (a.level === 'PR'));
-    const nar = buildCensusNarrative({ subject, benchmarks, years, period, industry });
+    const nar = buildCensusNarrative({ subject, benchmarks, years, period, industry, highways });
     lastNarrative = nar;
 
     let body = '', inList = false;
@@ -391,7 +393,8 @@ export async function initCensus() {
         <div class="text-sm text-neutral-800 leading-relaxed mt-2 max-w-3xl">${body}</div>
         ${tableHtml}
         <p class="text-xs text-neutral-500 mt-2">Auto-written from the census figures above; Areas 2 and 3 serve as the benchmarks.${
-          nar.industryTable ? ' Industry shares are of the labour force aged 15+ (NAICS sectors); "× the provincial share" is a location quotient.' : ''} Growth, income and value wording follows fixed ratio bands so it reads the same across reports — edit freely after download. The appraiser-notes bullets are left for local knowledge.</p>
+          nar.industryTable ? ' Industry shares are of the labour force aged 15+ (NAICS sectors); "× the provincial share" is a location quotient.' : ''}${
+          highways && subject.level === 'CSD' ? ` Highways: Manitoba Road Network 2023 — "nearby" is a closest approach within ${escapeHtml(String(highways.nearbyKm))} km; the Winnipeg distance is boundary to boundary, not driving distance.` : ''} Growth, income and value wording follows fixed ratio bands so it reads the same across reports — edit freely after download. The appraiser-notes bullets are left for local knowledge.</p>
       </section>`;
 
     $narr.querySelector('#census-narrative-docx')?.addEventListener('click', async () => {

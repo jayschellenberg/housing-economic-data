@@ -143,6 +143,41 @@ describe('buildCensusNarrative', () => {
     });
   });
 
+  describe('highways (mb_csd_highways.json)', () => {
+    const highways = { nearbyKm: 15, csd: {
+      '4602044': { through: ['PTH 12', 'PTH 52'], nearby: [{ route: 'PR 311', km: 0.8, dir: 'north' }, { route: 'PR 303', km: 2.5, dir: 'south' },
+        { route: 'PR 206', km: 6.3, dir: 'west' }, { route: 'PR 210', km: 7.1, dir: 'northeast' }], wpgKm: 34, wpgDir: 'southeast' },
+    } };
+    const run = (hw, subj = steinbach) => paras(buildCensusNarrative({ subject: subj, benchmarks: [manitoba], years: YEARS, period: '2021', highways: hw }).blocks);
+
+    it('lists through routes, the three nearest others and the Winnipeg distance', () => {
+      expect(run(highways)).toContain('Steinbach is served by PTH 12 and PTH 52, which pass through the municipality. ' +
+        'PR 311 (under 1 km north), PR 303 (about 3 km south) and PR 206 (about 6 km west) are also within easy reach. ' +
+        'The community lies about 34 km southeast of the Winnipeg city limits.');
+    });
+    it('drops the roadways stub when the data is present, keeps it otherwise', () => {
+      const withHw = buildCensusNarrative({ subject: steinbach, benchmarks: [], years: YEARS, period: '2021', highways }).blocks;
+      expect(withHw.filter(b => b.type === 'bullet').map(b => b.text).join()).not.toMatch(/Access and roadways/);
+      const without = buildCensusNarrative({ subject: steinbach, benchmarks: [], years: YEARS, period: '2021', highways: null }).blocks;
+      expect(without.filter(b => b.type === 'bullet').map(b => b.text).join()).toMatch(/Access and roadways/);
+    });
+    it('collapses long through lists to PTHs plus a provincial-road count', () => {
+      const big = { csd: { '4602044': { through: ['PTH 1', 'PTH 12', 'PR 206', 'PR 207', 'PR 212', 'PR 213', 'PR 215'], nearby: [], wpgKm: 0, wpgDir: 'east' } } };
+      const t = run(big);
+      expect(t).toContain('is served by PTH 1 and PTH 12 and 5 provincial roads, which pass through the municipality.');
+      expect(t).toContain('The municipality adjoins the City of Winnipeg, lying to its east.');
+    });
+    it('handles no-through and no-road municipalities', () => {
+      expect(run({ csd: { '4602044': { through: [], nearby: [{ route: 'PTH 59', km: 1.1, dir: 'west' }], wpgKm: 58, wpgDir: 'southeast' } } }))
+        .toContain('No provincial highway passes through Steinbach; the nearest is PTH 59 (about 1 km west).');
+      expect(run({ csd: { '4602044': { through: [], nearby: [], wpgKm: 400, wpgDir: 'north' } } }))
+        .toContain('access is by air, water or winter road');
+    });
+    it('ignores highways for non-CSD subjects', () => {
+      expect(run({ csd: { '46': { through: ['PTH 1'], nearby: [] } } }, manitoba)).not.toContain('is served by');
+    });
+  });
+
   it('still writes a sentence when only one census is available', () => {
     const r = { name: 'Newtown', level: 'CSD', trends: { '2021': trend(900) }, demo: {} };
     const { blocks: b } = buildCensusNarrative({ subject: r, benchmarks: [manitoba], years: YEARS, period: '2021' });

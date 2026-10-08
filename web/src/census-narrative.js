@@ -256,13 +256,52 @@ function industryPara(s, ind, benchmarks) {
   return text;
 }
 
+// ---- highways (mb_csd_highways.json, r/27) -----------------------------------
+// Municipalities (CSD level) only — the file is keyed by CSDUID. Lists every
+// route through the municipality (PTHs in full; provincial roads collapsed to a
+// count past THROUGH_MAX) and the nearest NEARBY_MAX others, then the
+// boundary distance and direction from Winnipeg.
+export const THROUGH_MAX = 6;
+export const NEARBY_MAX = 3;
+
+const kmPhrase = (km) => km < 1 ? 'under 1 km' : `about ${Math.round(km)} km`;
+
+function highwaysPara(s, hw) {
+  if (!hw) return null;
+  const through = hw.through || [], nearby = hw.nearby || [];
+  const parts = [];
+  if (through.length) {
+    const pth = through.filter(r => r.startsWith('PTH'));
+    const listed = through.length <= THROUGH_MAX ? through : pth.slice(0, THROUGH_MAX);
+    const rest = through.length - listed.length;
+    let t = `${s.name} is served by ${joinAnd(listed)}`;
+    if (rest > 0) t += ` and ${rest} provincial road${rest > 1 ? 's' : ''}`;
+    t += `, which pass${listed.length + rest === 1 ? 'es' : ''} through the municipality`;
+    parts.push(t + '.');
+    if (nearby.length) parts.push(`${joinAnd(nearby.slice(0, NEARBY_MAX).map(n => `${n.route} (${kmPhrase(n.km)} ${n.dir})`))} ${nearby.length > 1 ? 'are' : 'is'} also within easy reach.`);
+  } else if (nearby.length) {
+    parts.push(`No provincial highway passes through ${s.name}; the nearest ${nearby.length > 1 ? 'are' : 'is'} ` +
+      joinAnd(nearby.slice(0, NEARBY_MAX).map(n => `${n.route} (${kmPhrase(n.km)} ${n.dir})`)) + '.');
+  } else {
+    parts.push(`No provincial trunk highway or provincial road reaches ${s.name}; access is by air, water or winter road.`);
+  }
+  if (hw.wpgKm != null) {
+    parts.push(hw.wpgKm === 0
+      ? `The municipality adjoins the City of Winnipeg, lying to its ${hw.wpgDir}.`
+      : `The community lies about ${hw.wpgKm} km ${hw.wpgDir} of the Winnipeg city limits.`);
+  }
+  return parts.join(' ');
+}
+
 // ---- public API ----------------------------------------------------------------
 // subject/benchmarks are census_profile regions; `years` the censusYears array;
-// `period` the selected demographics census; `industry` the (optional) parsed
-// census_industry.json. Returns { blocks, table, industryTable, stats }.
-export function buildCensusNarrative({ subject, benchmarks = [], years, period, industry = null }) {
+// `period` the selected demographics census; `industry` / `highways` the
+// (optional) parsed census_industry.json / mb_csd_highways.json.
+// Returns { blocks, table, industryTable, stats }.
+export function buildCensusNarrative({ subject, benchmarks = [], years, period, industry = null, highways = null }) {
   const s = regionStats(subject, { years, period });
   const sInd = industryStats(industry, subject?.uid, period);
+  const sHw = subject?.level === 'CSD' ? (highways?.csd?.[subject.uid] ?? null) : null;
   const bm = benchmarks.filter(Boolean).map(r => {
     const stats = regionStats(r, { years, period });
     // "Manitoba" reads as "the provincial figure"; everything else by name + possessive.
@@ -281,17 +320,19 @@ export function buildCensusNarrative({ subject, benchmarks = [], years, period, 
   push('Dwelling values', valuePara(s, bm, period));
   push('Housing stock', stockPara(s));
   push('Employment by industry', industryPara(s, sInd, bm));
+  push('Access and roadways', highwaysPara(s, sHw));
 
   // Enrichment stubs — the judgement layer the tool deliberately leaves to the
-  // appraiser (see the plan's tiered-layers principle).
+  // appraiser (see the plan's tiered-layers principle). A stub drops out once
+  // data covers it.
   blocks.push({ type: 'heading', text: 'Appraiser notes (to complete)' });
   for (const stub of [
     sInd
       ? 'Major employers: [name the principal employers behind the sector mix above]'
       : 'Economic base and major employers: [agriculture / manufacturing / tourism / services — name the principal employers]',
     'Services and amenities: [full-service / limited-service — grocery, K–12 schools, medical, municipal office]',
-    'Access and roadways: [provincial highways serving the community; distance and direction to Winnipeg]',
-  ]) blocks.push({ type: 'bullet', text: stub });
+    sHw ? null : 'Access and roadways: [provincial highways serving the community; distance and direction to Winnipeg]',
+  ].filter(Boolean)) blocks.push({ type: 'bullet', text: stub });
 
   // Supporting figures — the table the prose interprets.
   const cols = [s, ...bm.map(b => b.stats)];

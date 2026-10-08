@@ -32,7 +32,7 @@ other tab is Housing.
 | Secondary Rental | CMHC Srms (condo / secondary) for surveyed centres | `r/06` |
 | Housing Starts | CMHC Scss starts / completions | `r/05` |
 | Housing Stock | Census dwelling type / age / condition + choropleth map | `r/07`–`r/10`, `r/12b`, `r/20` |
-| Census Profile | Population & dwelling trends + annual estimates + demographics + community-profile narrative + choropleth map | `r/12`, `r/12b`, `r/20`, `r/26` (run-once); `r/23` (monthly) |
+| Census Profile | Population & dwelling trends + annual estimates + demographics + community-profile narrative + choropleth map | `r/12`, `r/12b`, `r/20`, `r/26`, `r/27` (run-once); `r/23` (monthly) |
 | Affordability | Royal-LePage-style affordability factor + choropleth map | `r/16`, `r/18`, census, `r/20` |
 | Current Snapshot / Market Indicators | BoC / StatsCan / OSB economic indicators, incl. CPI inflation (headline, core, shelter, annual average), (Cap vs Interest moved to its own Local Data tab) | `r/10`,`r/11`,`r/13`,`r/14`,`r/17` |
 | Cap Rates vs Interest | The Cap vs Interest chart — BoC overnight target and GoC yields with Winnipeg cap-rate overlays from the Cap Rates tab's local data (Local Data group) | BoC shard + `Cap-Rates` project |
@@ -228,6 +228,16 @@ CSD. Same CensusMapper key and run-once rules as `r/12`; it is in
 Community Areas / Clusters / Neighbourhoods from the 1,130 City DAs (2021 only —
 most of a free-tier daily quota, resumable through the shared cache). The
 narrative simply omits the paragraph for any area/period the file lacks.
+
+Its "Access and roadways" paragraph (municipalities only) comes from
+`r/27_build_csd_highways.R` → `web/public/data/geo/mb_csd_highways.json`:
+the **Manitoba Road Network 2023** (Manitoba Transportation and Infrastructure
+via the Manitoba GeoPortal, Manitoba Open Data Licence; cached under
+`r/lib/cache/geo/`) filtered to PTH + PR routes, dissolved by signed number and
+intersected with the shipped `mb_csd.geojson` — routes through each CSD,
+routes within 15 km (distance + compass direction), and the boundary distance
+and direction from Winnipeg. No key; run-once (`npm --prefix web run
+data:highways`); re-run only if the road network or CSD boundaries change.
 
 Separately from the run-once census build, `r/23_scrape_population_estimates.R`
 (part of `data:all` and the monthly refresh) pulls StatsCan's **annual July-1

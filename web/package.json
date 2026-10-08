@@ -30,6 +30,7 @@
     "data:economic": "Rscript ../r/16_scrape_mls.R && Rscript ../r/15_build_economic_update.R",
     "data:rtb": "Rscript ../r/19_scrape_rtb.R",
     "data:geo": "Rscript ../r/20_build_boundaries.R",
+    "data:highways": "Rscript ../r/27_build_csd_highways.R",
     "data:wpgaddr": "Rscript ../r/25_build_wpg_address_index.R",
     "data:farmmap": "Rscript ../r/24_build_farm_structure_map.R",
     "data:population": "Rscript ../r/23_scrape_population_estimates.R",
