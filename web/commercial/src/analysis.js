@@ -37,6 +37,11 @@ const bandColor = (b) => BAND_COLORS[b] || BAND_COLORS.unknown;
 const presentBands = (rows) => ALL_BANDS.filter((b) => rows.some((r) => r.band === b));
 const legendFor = (bands) => bands.map((b) => ({ label: b, color: bandColor(b) }));
 const colorFor = (bands) => ({ domain: bands, range: bands.map(bandColor) });
+// Latest-value readout: each type's value in its last period.
+const latestFor = (rows, bands, fmt) => bands.map((b) => {
+  const lastRow = rows.filter((r) => r.band === b).reduce((a, r) => (!a || r.bucket > a.bucket ? r : a), null);
+  return lastRow && { label: b, color: bandColor(b), value: fmt(lastRow.value), asof: lastRow.bucket };
+}).filter(Boolean);
 
 export function initAnalysis({ getContext } = {}) {
   let open = false;
@@ -44,17 +49,21 @@ export function initAnalysis({ getContext } = {}) {
   let cards = null;
   let rendering = Promise.resolve();
 
-  // Built once, on the first render, into #an-charts.
+  // Built once, on the first render, into the two headed groups of
+  // #an-charts (Market trend, Asking rates & sizes).
   function ensureCards() {
     if (cards) return cards;
-    const host = $('an-charts');
     // `id` is what the sidebar jump list scrolls to.
-    const make = (key, title, fileStem) => kit.buildPlotCard(host, { id: `an-card-${key}`, title, fileStem });
+    const make = (host, key, title, fileStem, explainer) => kit.buildPlotCard($(host), { id: `an-card-${key}`, title, fileStem, explainer });
     cards = {
-      rate: make('rate', 'Median asking rate', 'commercial_median_rate'),
-      count: make('count', 'Listings on the market', 'commercial_listings_on_market'),
-      dist: make('dist', 'Distribution of asking rates', 'commercial_rate_distribution'),
-      scatter: make('scatter', 'Rate against size', 'commercial_rate_vs_size'),
+      rate: make('an-charts-trend', 'rate', 'Median asking rate', 'commercial_median_rate',
+        'The middle asking lease rate ($ per square foot per year) of the listings on the market in each period, one line per property type. Half asked more and half less, so one trophy building does not drag it around. Asking rates are a landlord’s opening position; signed deals usually come in lower and carry incentives these listings do not show.'),
+      count: make('an-charts-trend', 'count', 'Listings on the market', 'commercial_listings_on_market',
+        'How many of these listings were on the market in each period, stacked by property type. More listings can mean rising availability, but the tracked brokerages have grown over time, so part of any rise is wider coverage rather than more space for lease or sale.'),
+      dist: make('an-charts-rates', 'dist', 'Distribution of asking rates', 'commercial_rate_distribution',
+        'How the selection’s lease rates spread out. A tight peak means most space asks a similar rate; a wide or two-humped shape usually means the selection mixes building classes or property types worth looking at separately.'),
+      scatter: make('an-charts-rates', 'scatter', 'Rate against size', 'commercial_rate_vs_size',
+        'Each dot is one lease listing with both a size and a rate. Size is on a log scale so small bays and large blocks both fit. Smaller spaces usually ask more per square foot; a subject well off the cloud for its size and type deserves a second look.'),
     };
     return cards;
   }
@@ -116,6 +125,7 @@ export function initAnalysis({ getContext } = {}) {
     const rateBands = presentBands(rateRows);
     c.rate.render({
       subtitle: `${scope} • ${per} median asking rate by type`, source, legend: legendFor(rateBands),
+      latest: latestFor(rateRows, rateBands, (v) => `$${v.toFixed(2)}/sf/yr`),
       empty: rateRows.length ? '' : 'No asking rates in this selection to trend.',
       spec: () => ({
         marginBottom: 56,
@@ -136,6 +146,7 @@ export function initAnalysis({ getContext } = {}) {
     const coverage = coverageNote(series);
     c.count.render({
       subtitle: `${scope} • ${per} count by type`, source, legend: legendFor(countBands),
+      latest: latestFor(countRows, countBands, (v) => v.toLocaleString('en-CA')),
       note: coverage
         ? `Coverage grew from ${coverage.fromCount} brokerage${coverage.fromCount === 1 ? '' : 's'} `
           + `in ${coverage.from} to ${coverage.toCount} in ${coverage.to}. Part of the rise in `

@@ -14,6 +14,7 @@
  */
 
 import { miss, fInt, fUsd } from './format.js';
+import { servicesPara } from './service-tier.js';
 
 // Subject ÷ benchmark ratio → phrase. Ordered high → low; first match wins.
 export const RATIO_LADDER = [
@@ -298,7 +299,7 @@ function highwaysPara(s, hw) {
 // `period` the selected demographics census; `industry` / `highways` the
 // (optional) parsed census_industry.json / mb_csd_highways.json.
 // Returns { blocks, table, industryTable, stats }.
-export function buildCensusNarrative({ subject, benchmarks = [], years, period, industry = null, highways = null }) {
+export function buildCensusNarrative({ subject, benchmarks = [], years, period, industry = null, highways = null, services = null }) {
   const s = regionStats(subject, { years, period });
   const sInd = industryStats(industry, subject?.uid, period);
   const sHw = subject?.level === 'CSD' ? (highways?.csd?.[subject.uid] ?? null) : null;
@@ -321,6 +322,9 @@ export function buildCensusNarrative({ subject, benchmarks = [], years, period, 
   push('Housing stock', stockPara(s));
   push('Employment by industry', industryPara(s, sInd, bm));
   push('Access and roadways', highwaysPara(s, sHw));
+  // Services come from the appraiser's checklist (service-tier.js rubric), not data.
+  const svcText = services?.checked?.length ? servicesPara(s.name, services.checked, services.nearest) : null;
+  push('Services and amenities', svcText);
 
   // Enrichment stubs — the judgement layer the tool deliberately leaves to the
   // appraiser (see the plan's tiered-layers principle). A stub drops out once
@@ -330,7 +334,7 @@ export function buildCensusNarrative({ subject, benchmarks = [], years, period, 
     sInd
       ? 'Major employers: [name the principal employers behind the sector mix above]'
       : 'Economic base and major employers: [agriculture / manufacturing / tourism / services — name the principal employers]',
-    'Services and amenities: [full-service / limited-service — grocery, K–12 schools, medical, municipal office]',
+    svcText ? null : 'Services and amenities: [full-service / limited-service — tick the services checklist below to fill this in]',
     sHw ? null : 'Access and roadways: [provincial highways serving the community; distance and direction to Winnipeg]',
   ].filter(Boolean)) blocks.push({ type: 'bullet', text: stub });
 

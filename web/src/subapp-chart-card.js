@@ -44,14 +44,18 @@ window.addEventListener('storage', (e) => {
  * @param {string} opts.fileStem   PNG filename stem
  * @param {string} [opts.id]       element id (a jump-list target)
  * @param {number} [opts.height]   on-screen plot height
+ * @param {string} [opts.explainer] plain-language "What does this mean?"
+ *   text, folded under the card as on Market Indicators (left out of the PNG)
  * @returns {{ card: Element, render: Function }}
- *   render({ subtitle, source, legend, note, empty, spec }):
+ *   render({ subtitle, source, legend, latest, note, empty, spec }):
  *     spec(width) → Plot options (marks, x, y, …) — merged into the site
  *     theme; the card sets width and height. Pass `empty` (a message)
  *     instead of `spec` when there is nothing to plot. `legend` is
  *     [{ label, color }], drawn under the plot as on the site's cards.
+ *     `latest` is [{ label, color, value, asof }]: the latest-value readout
+ *     under the legend, as on Market Indicators (left out of the PNG).
  */
-export function buildPlotCard(host, { title, fileStem, id, height = 280 }) {
+export function buildPlotCard(host, { title, fileStem, id, height = 280, explainer = '' }) {
   const card = document.createElement('section');
   card.className = 'chart-card';
   if (id) card.id = id;
@@ -61,6 +65,7 @@ export function buildPlotCard(host, { title, fileStem, id, height = 280 }) {
     <div data-role="plot"></div>
     <p class="chart-empty" data-role="empty" hidden></p>
     <div class="cmhc-plot-legend" data-role="legend" hidden></div>
+    <div class="cmhc-latest-row" data-role="latest"></div>
     <p class="chart-note" data-role="note" hidden></p>
     <div class="chart-caption">
       <span data-role="firm"></span>
@@ -68,8 +73,13 @@ export function buildPlotCard(host, { title, fileStem, id, height = 280 }) {
     </div>
     <div class="chart-actions">
       <button type="button" data-role="png">Download PNG</button>
-    </div>`;
+    </div>
+    ${explainer ? `<details class="cmhc-explainer">
+      <summary>What does this mean?</summary>
+      <p data-role="explainer"></p>
+    </details>` : ''}`;
   card.querySelector('.chart-title').textContent = title;
+  if (explainer) card.querySelector('[data-role="explainer"]').textContent = explainer;
   host.appendChild(card);
 
   const $ = (role) => card.querySelector(`[data-role="${role}"]`);
@@ -113,12 +123,12 @@ export function buildPlotCard(host, { title, fileStem, id, height = 280 }) {
     const date = new Date().toISOString().slice(0, 10);
     try {
       await downloadCardPng(card, `${fileStem}_${date}.png`, {
-        filter: (n) => !(n.classList && (n.classList.contains('chart-actions') || n.classList.contains('chart-note'))),
+        filter: (n) => !(n.classList && ['chart-actions', 'chart-note', 'cmhc-latest-row', 'cmhc-explainer'].some((c) => n.classList.contains(c))),
       });
     } catch (err) { console.error('[chart card export]', err); }
   });
 
-  function render({ subtitle = '', source = '', legend = [], note = '', empty = '', spec: next = null } = {}) {
+  function render({ subtitle = '', source = '', legend = [], latest = [], note = '', empty = '', spec: next = null } = {}) {
     $('sub').textContent = subtitle;
     $('source').textContent = source ? `Source: ${source}` : '';
     const $empty = $('empty');
@@ -137,6 +147,27 @@ export function buildPlotCard(host, { title, fileStem, id, height = 280 }) {
       return item;
     }));
     $legend.hidden = !legend.length || !next;
+    // Latest-value chips, as Market Indicators' cards: "■ 1 BR: $1,360 (as of 2026-10)".
+    $('latest').replaceChildren(...(empty ? [] : latest).map(({ label, color, value, asof }) => {
+      const chip = document.createElement('span');
+      chip.className = 'cmhc-latest-chip';
+      const sw = document.createElement('span');
+      sw.className = 'cmhc-latest-swatch';
+      sw.style.background = color;
+      const name = document.createElement('span');
+      name.className = 'cmhc-latest-label';
+      name.textContent = label;
+      const val = document.createElement('strong');
+      val.textContent = value;
+      chip.append(sw, name, ': ', val);
+      if (asof) {
+        const when = document.createElement('span');
+        when.className = 'cmhc-latest-asof';
+        when.textContent = ` (as of ${asof})`;
+        chip.append(' ', when);
+      }
+      return chip;
+    }));
     const $note = $('note');
     $note.textContent = note;
     $note.hidden = !note;

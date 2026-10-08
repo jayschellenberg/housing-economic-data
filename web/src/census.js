@@ -26,6 +26,7 @@ import { loadPopulationEstimates } from './population-estimates.js';
 import { buildCensusNarrative } from './census-narrative.js';
 import { loadCensusIndustry } from './census-industry.js';
 import { loadCsdHighways } from './csd-highways.js';
+import { AMENITY_GROUPS, classifyServices } from './service-tier.js';
 
 // Geography levels, in dropdown group order.
 const LEVEL_GROUPS = [
@@ -322,6 +323,7 @@ export async function initCensus() {
 
     renderHeadline(subject, period);
     renderNarrative(subject, cols.slice(1), period);
+    renderServices(subject);
     renderCharts(subject, cols, period);
     lastTrendTables = renderTrends(cols);
     lastDemoTable   = renderDemographics(cols, period);
@@ -357,10 +359,13 @@ export async function initCensus() {
   // render on screen and go unchanged to the Word export, RTB-style; the
   // supporting-figures table sits beneath the prose it interprets.
   let lastNarrative = null;
+  let lastNarrativeArgs = null;
   function renderNarrative(subject, others, period) {
     if (!$narr) return;
     const benchmarks = others.slice().sort((a, b) => (b.level === 'PR') - (a.level === 'PR'));
-    const nar = buildCensusNarrative({ subject, benchmarks, years, period, industry, highways });
+    lastNarrativeArgs = { subject, others, period };
+    const nar = buildCensusNarrative({ subject, benchmarks, years, period, industry, highways,
+                                       services: subject.level === 'CSD' ? loadServices(subject.uid) : null });
     lastNarrative = nar;
 
     let body = '', inList = false;
@@ -411,6 +416,72 @@ export async function initCensus() {
         filename: `Community_Profile_${slug}_${period}.docx`,
         description: `${subject.name} — community profile (Census ${period})`,
       });
+    });
+  }
+
+  // ---- Services checklist (service-tier.js rubric) -----------------------
+  // Manual input for the narrative's "Services and amenities" paragraph —
+  // rural POI data is too patchy to automate, so the appraiser ticks what the
+  // municipality has and the rubric makes the full/limited-service call.
+  // Stored per municipality in this browser only (localStorage).
+  const $svc = document.getElementById('census-services');
+  const SVC_KEY = (uid) => `censusServices:${uid}`;
+  function loadServices(uid) {
+    try { return JSON.parse(localStorage.getItem(SVC_KEY(uid))) || { checked: [], nearest: null }; }
+    catch { return { checked: [], nearest: null }; }
+  }
+  function saveServices(uid, v) {
+    try { localStorage.setItem(SVC_KEY(uid), JSON.stringify(v)); } catch { /* private mode etc. */ }
+  }
+
+  function renderServices(subject) {
+    if (!$svc) return;
+    if (subject.level !== 'CSD') { $svc.innerHTML = ''; return; }
+    const st = loadServices(subject.uid);
+    const checked = new Set(st.checked);
+    const { tier, missing } = classifyServices(checked);
+    const groups = AMENITY_GROUPS.map(g => `
+      <fieldset class="min-w-0"><legend class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-1">${escapeHtml(g.group)}</legend>
+        ${g.items.map(a => `<label class="flex items-center gap-1.5 text-sm"><input type="checkbox" data-key="${escapeHtml(a.key)}" ${checked.has(a.key) ? 'checked' : ''}/> ${escapeHtml(a.label)}</label>`).join('')}
+      </fieldset>`).join('');
+    $svc.innerHTML = `
+      <section class="cmhc-table-block">
+        <div class="cmhc-table-title">Services checklist — ${escapeHtml(subject.name)}</div>
+        <p class="text-xs text-neutral-500 mt-1 mb-2">Tick what the municipality has; the rubric classes it and writes the "Services and amenities" paragraph above. Saved in this browser per municipality.</p>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2">${groups}</div>
+        <div class="flex flex-wrap items-center gap-2 mt-3 text-sm">
+          <label>Nearest larger centre: <input id="census-svc-nearest" type="text" value="${escapeHtml(st.nearest?.name || '')}" placeholder="e.g. Steinbach" class="border border-neutral-300 rounded px-2 py-0.5 w-40"/></label>
+          <label>km: <input id="census-svc-km" type="number" min="0" step="1" value="${st.nearest?.km ?? ''}" class="border border-neutral-300 rounded px-2 py-0.5 w-20"/></label>
+          <button id="census-svc-clear" type="button" class="text-accent-600 hover:underline">Clear</button>
+        </div>
+        <p class="text-sm mt-2"><strong>Rubric call:</strong> ${escapeHtml(tier.label)}${
+          missing.length ? ` <span class="text-neutral-500">— next tier needs ${escapeHtml(missing.join('; '))}</span>` : ''}</p>
+      </section>`;
+
+    const persist = () => {
+      const v = {
+        checked: [...$svc.querySelectorAll('input[type=checkbox]:checked')].map(el => el.dataset.key),
+        nearest: (() => {
+          const name = $svc.querySelector('#census-svc-nearest').value.trim();
+          const km = Number($svc.querySelector('#census-svc-km').value);
+          return name ? { name, km: Number.isFinite(km) && km > 0 ? km : null } : null;
+        })(),
+      };
+      saveServices(subject.uid, v);
+      // Re-render the narrative only; the checklist keeps its own DOM/focus
+      // except for the rubric-call line, which needs the new classification.
+      if (lastNarrativeArgs) renderNarrative(lastNarrativeArgs.subject, lastNarrativeArgs.others, lastNarrativeArgs.period);
+      const { tier: t2, missing: m2 } = classifyServices(v.checked);
+      $svc.querySelector('p.text-sm.mt-2').innerHTML = `<strong>Rubric call:</strong> ${escapeHtml(t2.label)}${
+        m2.length ? ` <span class="text-neutral-500">— next tier needs ${escapeHtml(m2.join('; '))}</span>` : ''}`;
+    };
+    $svc.querySelectorAll('input[type=checkbox]').forEach(el => el.addEventListener('change', persist));
+    $svc.querySelector('#census-svc-nearest').addEventListener('change', persist);
+    $svc.querySelector('#census-svc-km').addEventListener('change', persist);
+    $svc.querySelector('#census-svc-clear').addEventListener('click', () => {
+      saveServices(subject.uid, { checked: [], nearest: null });
+      renderServices(subject);
+      if (lastNarrativeArgs) renderNarrative(lastNarrativeArgs.subject, lastNarrativeArgs.others, lastNarrativeArgs.period);
     });
   }
 

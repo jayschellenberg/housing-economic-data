@@ -178,6 +178,13 @@ describe('buildCensusNarrative', () => {
     });
   });
 
+  it('services checklist fills the paragraph and drops the stub', () => {
+    const svc = { checked: ['grocery', 'school_k8', 'munioffice'], nearest: { name: 'Steinbach', km: 20 } };
+    const { blocks: b } = buildCensusNarrative({ subject: steinbach, benchmarks: [], years: YEARS, period: '2021', services: svc });
+    expect(paras(b)).toContain('Steinbach is a limited-service community');
+    expect(b.filter(x => x.type === 'bullet').map(x => x.text).join()).not.toMatch(/Services and amenities/);
+  });
+
   it('still writes a sentence when only one census is available', () => {
     const r = { name: 'Newtown', level: 'CSD', trends: { '2021': trend(900) }, demo: {} };
     const { blocks: b } = buildCensusNarrative({ subject: r, benchmarks: [manitoba], years: YEARS, period: '2021' });
