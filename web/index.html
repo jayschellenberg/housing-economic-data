@@ -138,6 +138,10 @@
         class="cmhc-tab" data-tab="rentcompare" aria-selected="false">
         Rent Comparison
       </button>
+      <button type="button" role="tab" id="tab-btn-zoning"
+        class="cmhc-tab" data-tab="zoning" aria-selected="false">
+        Zoning
+      </button>
       <button type="button" role="tab" id="tab-btn-rental"
         class="cmhc-tab" data-tab="rental" aria-selected="false">
         Rental Dashboard
@@ -1586,6 +1590,75 @@
         <footer class="text-xs text-neutral-500 pt-4 border-t border-neutral-200">
           Source: Colliers, CBRE and Cushman &amp; Wakefield published quarterly cap-rate surveys, Winnipeg, as compiled in the firm's Cap Rate Tables workbook.
           Figures shown here are read from the viewer's own locally held copy and are not redistributed by this site.
+        </footer>
+      </main>
+    </div>
+
+    <!-- ============================================================
+         Zoning tab — appraisal zoning narratives from Manitoba by-laws parsed
+         into structured tables (zoning-narrative project). NO DATA SHIPS WITH
+         THE SITE: the user picks the SharedInfo\AppMarketData\Zoning folder,
+         shared only with chosen users; see zoning.js.
+         ============================================================ -->
+    <div id="tab-panel-zoning" class="grid md:grid-cols-[320px_1fr] min-h-[calc(100vh-110px)]" role="tabpanel" aria-labelledby="tab-btn-zoning" hidden>
+      <aside class="bg-white border-r border-neutral-200 p-4 space-y-4 overflow-y-auto" aria-label="Zoning filters">
+        <section>
+          <div class="flex items-center justify-between mb-2">
+            <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Data folder</h2>
+            <button id="zn-folder-toggle" type="button" class="text-xs underline text-neutral-600" aria-controls="zn-folder-body" aria-expanded="true" hidden>Hide</button>
+          </div>
+          <p id="zn-folder-status" class="text-xs text-neutral-600 mb-2"></p>
+          <p id="zn-folder-error" class="text-xs text-red-700 mb-2" hidden></p>
+          <div id="zn-folder-body">
+          <div class="space-y-2">
+            <button id="zn-pick-folder" type="button"
+              class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+              Choose folder
+            </button>
+            <input id="zn-pick-fallback" type="file" webkitdirectory multiple hidden
+              class="block w-full text-xs file:mr-2 file:rounded file:border file:border-neutral-300 file:bg-white file:px-2 file:py-1 file:text-xs" />
+            <div class="flex gap-3 text-xs">
+              <button id="zn-rescan" type="button" class="underline text-neutral-600">Reload folder</button>
+              <button id="zn-clear" type="button" class="underline text-neutral-600" hidden>Disconnect</button>
+            </div>
+          </div>
+          <p class="text-xs text-neutral-500 mt-2">Pick the shared <code>AppMarketData</code> folder or its <code>Zoning</code> subfolder. Read locally, never uploaded.</p>
+          </div>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Municipality</h2>
+          <select id="zn-muni" class="w-full border border-neutral-300 rounded px-2 py-1 text-sm" disabled></select>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Zone</h2>
+          <select id="zn-zone" class="w-full border border-neutral-300 rounded px-2 py-1 text-sm" disabled></select>
+        </section>
+
+        <section>
+          <div class="flex items-center justify-between mb-2">
+            <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Uses to name</h2>
+            <span id="zn-use-count" class="text-xs text-neutral-500"></span>
+          </div>
+          <div class="flex gap-3 text-xs mb-1">
+            <button id="zn-use-default" type="button" class="underline text-neutral-600">Most common</button>
+            <button id="zn-use-none" type="button" class="underline text-neutral-600">None</button>
+          </div>
+          <div id="zn-use-toggles" class="grid gap-1 text-sm max-h-96 overflow-y-auto border border-neutral-200 rounded p-2"></div>
+          <p class="text-xs text-neutral-500 mt-1">Permitted principal uses. "Most common" picks the twelve listed in the most zones across the parsed by-laws; "among others" is added when any are left out.</p>
+        </section>
+      </aside>
+
+      <main class="p-4 space-y-4 overflow-x-hidden">
+        <p id="zn-empty" class="text-sm text-neutral-600 max-w-2xl">
+          No zoning data is loaded. This site publishes none of it: choose the shared <code>AppMarketData</code>
+          folder or its <code>Zoning</code> subfolder. The narratives render from that folder in this browser only.
+        </p>
+        <div id="zn-content" class="space-y-6"></div>
+        <footer class="text-xs text-neutral-500 pt-4 border-t border-neutral-200">
+          Source: municipal zoning by-laws as published by each municipality, parsed into tables and reviewed against the by-law; by-law currency checked against
+          Manitoba Zoning By-Laws open data (Government of Manitoba, OpenMB licence). Confirm against the by-law before relying on any figure.
         </footer>
       </main>
     </div>
