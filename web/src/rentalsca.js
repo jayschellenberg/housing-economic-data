@@ -47,6 +47,11 @@ function savePrefs(patch) {
 
 // --- Init --------------------------------------------------------------------
 
+/** Re-read the store when the tab is shown again (the Rent Comparison tab can load it too). */
+export function refreshRentalsCa() {
+  if (ui) loadFromStore().catch(err => console.error('[rentalsca refresh]', err));
+}
+
 export async function initRentalsCa() {
   const $status = document.getElementById('rc-folder-status');
   const $grid = document.getElementById('rc-chart-grid');

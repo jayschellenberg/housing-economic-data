@@ -369,3 +369,29 @@ a.hs-link { display: inline-flex; align-items: center; gap: 4px; }
 .subject-suggest li[aria-selected="true"], .subject-suggest li:hover { background: #eef3f8; }
 .subject-suggest .where { color: var(--hs-neutral-500); font-size: 12px; white-space: nowrap; }
 .subject-suggest li.empty { cursor: default; color: var(--hs-neutral-500); }
+
+/* --- Stats tables: the site's appraisal-workbook style -----------------------
+   A copy of .cmhc-table in tailwind.css (maroon header, bordered cells, light
+   zebra, bold left-aligned first column, centred values), for the dashboards'
+   summary / analysis tables (Jason, 2026-10-07). The listings grid keeps its
+   own style. If .cmhc-table changes, mirror it here. */
+table.hs-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.hs-table thead th {
+  background: var(--hs-brand-red);
+  color: #fff;
+  font-weight: 600;
+  padding: 6px 10px;
+  text-align: center;
+  border: 1px solid var(--hs-brand-red);
+  white-space: nowrap;
+}
+table.hs-table tbody td {
+  padding: 5px 10px;
+  border: 1px solid #e5e5e5;
+  text-align: center;
+  white-space: nowrap;
+}
+table.hs-table thead th:first-child { text-align: left; }
+table.hs-table tbody td:first-child { text-align: left; font-weight: 600; color: #171717; }
+table.hs-table tbody tr:nth-child(odd) td { background: #fafafa; }
+table.hs-table tbody td.suppressed { color: #a3a3a3; font-style: italic; font-weight: 400; }

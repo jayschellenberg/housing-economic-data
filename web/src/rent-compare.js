@@ -20,6 +20,7 @@ import { escapeHtml } from './escape.js';
 import { getPref, setPref } from './prefs.js';
 import {
   CENTRES, UNITS, DEFAULT_UNITS, SOURCES, rentalsCaPoints, yardiPoints, cmhcPoints, since, asOfLabel,
+  reportParagraphs, latestBySource,
 } from './rent-compare-data.js';
 import * as rcStore from './rentalsca-store.js';
 import * as ydStore from './yardi-store.js';
@@ -43,6 +44,14 @@ function savePrefs(patch) {
   return next;
 }
 
+/**
+ * Re-read both stores each time the tab is shown: the folder may have been
+ * loaded (or updated) on the Yardi Rental or Rentals.ca tab since.
+ */
+export function refreshRentCompare() {
+  if (ui) loadFromStores().catch(err => console.error('[rent-compare refresh]', err));
+}
+
 export async function initRentCompare({ loadShard }) {
   const $grid = document.getElementById('rx-chart-grid');
   if (!$grid) return;
@@ -58,6 +67,7 @@ export async function initRentCompare({ loadShard }) {
     $segment: document.getElementById('rx-segment'),
     $yearFrom: document.getElementById('rx-year-from'),
     $xlsx: document.getElementById('rx-download-xlsx'),
+    $report: document.getElementById('rx-download-report'),
     $empty: document.getElementById('rx-empty'),
     $about: document.getElementById('rx-about'),
     rc: null, yd: null, shards: new Map(),
@@ -127,6 +137,10 @@ function wireControls() {
     ui.prefs = savePrefs({ segment: e.target.value });
     renderCharts();
   });
+  ui.$report?.addEventListener('click', () => exportReport().catch(err => {
+    console.error('[rent-compare report]', err);
+    showError('Word export failed: ' + (err?.message || err));
+  }).finally(() => { ui.$report.disabled = false; ui.$report.textContent = 'Download Word (report section)'; }));
   ui.$xlsx?.addEventListener('click', () => exportData().catch(err => {
     console.error('[rent-compare excel]', err);
     showError('Excel export failed: ' + (err?.message || err));
@@ -362,4 +376,53 @@ async function exportData() {
   a.download = `RentComparison_${centre.id.replace(/[^A-Za-z]+/g, '')}_${new Date().toISOString().slice(0, 10)}.xlsx`;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+// --- Word (report section) ------------------------------------------------------
+// A ready-to-paste rental-market section for an appraisal report: a paragraph
+// per unit type comparing the three sources, the latest-figures table, and
+// the unit charts as images (Jason, 2026-10-07).
+
+async function exportReport() {
+  const centre = selectedCentre();
+  const units = selectedUnits();
+  const shard = await cmhcShard(centre);
+  ui.$report.disabled = true; ui.$report.textContent = 'Preparing…';
+  const byUnit = Object.fromEntries(units.map(u => [u.id, sourcePoints(centre, u, shard)]));
+  const latest = latestBySource(byUnit);
+  const segLabel = segment() === 'ac' ? 'apartments and condos' : 'all property types';
+  const paras = reportParagraphs({ centre, units, latest, segLabel });
+  if (!paras.length) { showError(`No rents for ${centre.id} to report.`); return; }
+
+  const blocks = [
+    { type: 'title', text: `${centre.id} Rental Market: Asking, In-Place and Survey Rents` },
+    { type: 'meta', text: `Prepared ${new Date().toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' })}. Sources: Rentals.ca & Urbanation National Rent Report; Yardi Canadian National Multifamily Report; CMHC Rental Market Survey.` },
+  ];
+  for (const p of paras) blocks.push({ type: 'para', text: p.text });
+  blocks.push({ type: 'para', text: 'Asking rents are what landlords ask for units listed that month, the price a new tenant faces. In-place rents are what sitting tenants pay in professionally managed apartments. CMHC’s October survey covers the whole purpose-built apartment stock, including long-held tenancies, so it is usually the lowest of the three.' });
+
+  // The latest-figures table as a real Word table (the comparison-table style).
+  const rows = SOURCES.map(s => {
+    const cells = units.map(u => latest[u.id]?.[s.id] || null);
+    const dates = cells.filter(Boolean).map(p => p.date).sort();
+    return { area: s.label, values: [dates.length ? asOfLabel(s.id, dates[dates.length - 1]) : null,
+      ...cells.map(p => (p ? `$${Math.round(p.value).toLocaleString('en-CA')}${p.src !== 't' ? '*' : ''}` : null))] };
+  }).filter(r => r.values.slice(1).some(v => v != null));
+  blocks.push({ type: 'heading', text: `${centre.id} Latest Rents by Source` });
+  blocks.push({ type: 'table', table: { columns: ['As of', ...units.map(u => u.label.replace('-Bedroom', '-BR'))], rows } });
+  if (rows.some(r => r.values.some(v => typeof v === 'string' && /\*$/.test(v)))) {
+    blocks.push({ type: 'meta', text: '* Approximate: read off the Yardi report chart, or a Rentals.ca month estimated from a neighbouring report.' });
+  }
+
+  // The unit charts on screen, captured as images.
+  const nodes = units.map(u => ui.$grid.querySelector(`.chart-card[data-chart-id="rentcompare_${u.id}"]`)).filter(Boolean);
+  if (nodes.length) {
+    const { captureNodes } = await import('./doc-image-export.js');
+    for (const cap of await captureNodes(nodes)) blocks.push({ type: 'image', capture: cap });
+  }
+  const { exportNarrativeToWord } = await import('./word-export.js');
+  await exportNarrativeToWord(blocks, {
+    filename: `RentComparison_${centre.id.replace(/[^A-Za-z]+/g, '')}_${new Date().toISOString().slice(0, 10)}.docx`,
+    description: `${centre.id} rental market: asking, in-place and survey rents`,
+  });
 }

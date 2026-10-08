@@ -24,9 +24,9 @@ import { initRtb } from './rtb.js';
 import { initAgriculture } from './agriculture.js';
 import { initJohnson } from './johnson.js';
 import { initCapRates } from './cap-rates.js';
-import { initYardi } from './yardi.js';
-import { initRentalsCa } from './rentalsca.js';
-import { initRentCompare } from './rent-compare.js';
+import { initYardi, refreshYardi } from './yardi.js';
+import { initRentalsCa, refreshRentalsCa } from './rentalsca.js';
+import { initRentCompare, refreshRentCompare } from './rent-compare.js';
 import { initCapVsInterestTab } from './cap-vs-interest-tab.js';
 import { wireChartDocExports } from './doc-image-export.js';
 import { getFirm, setFirm, onFirmChange } from './firm.js';
@@ -378,7 +378,16 @@ async function bootstrap() {
     commercial:    once(() => loadSubapp('subapp-commercial', subappView.commercial)),
   };
   // Trigger the initial tab's init (charts → no-op); wiring runs it on click too.
-  setupTabs(initialTab, (name) => tabInit[name]?.());
+  // The three rental tabs share the RentalData stores: re-read them on every
+  // visit after the first (the init covers that one), so a folder loaded on
+  // one tab shows on the others without a page reload.
+  const tabRefresh = { yardi: refreshYardi, rentalsca: refreshRentalsCa, rentcompare: refreshRentCompare };
+  const seen = new Set();
+  setupTabs(initialTab, (name) => {
+    if (seen.has(name)) tabRefresh[name]?.();
+    seen.add(name);
+    tabInit[name]?.();
+  });
 
   // Per-tab "Download Word/Excel (charts)" exports — every rendered chart in
   // the active tab captured as a PNG and embedded one per page / worksheet.

@@ -91,3 +91,54 @@ export function asOfLabel(sourceId, date) {
   if (sourceId === 'yardi') return `Q${Math.floor((m - 1) / 3) + 1} ${y}`;
   return new Date(Date.UTC(y, m - 1, 1)).toLocaleString('en-CA', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 }
+
+// --- Report section ------------------------------------------------------------
+
+const UNIT_PHRASE = { '0br': 'studio units', '1br': '1-bedroom units', '2br': '2-bedroom units', '3br': '3-bedroom units', total: 'all units' };
+const money = (v) => `$${Math.round(v).toLocaleString('en-CA')}`;
+const pctGap = (a, b) => {
+  const g = (a / b - 1) * 100;
+  return `${Math.abs(g).toFixed(1)}% ${g >= 0 ? 'above' : 'below'}`;
+};
+
+/**
+ * Appraisal-report paragraphs for a centre: one per unit type, from the
+ * latest figure each source has. `latest` = { [unitId]: { rc, yardi, cmhc } }
+ * with each entry { value, date, src } or null. Approximate figures (a Yardi
+ * chart reading, a Rentals.ca estimate) are worded "approximately".
+ */
+export function reportParagraphs({ centre, units, latest, segLabel }) {
+  const out = [];
+  for (const u of units) {
+    const l = latest[u.id] || {};
+    const { rc, yardi, cmhc } = l;
+    if (!rc && !yardi && !cmhc) continue;
+    const approx = (p) => (p && p.src !== 't' ? 'approximately ' : '');
+    const where = centre.id === 'Canada' ? 'Canada' : centre.id;
+    const parts = [];
+    if (rc) {
+      parts.push(`In ${asOfLabel('rc', rc.date)}, the average asking rent for ${UNIT_PHRASE[u.id]} listed for rent in ${where} on Rentals.ca (${segLabel}) was ${approx(rc)}${money(rc.value)}.`);
+    }
+    const others = [];
+    if (yardi) others.push(`Yardi reported an average in-place rent of ${approx(yardi)}${money(yardi.value)} for professionally managed apartments in ${asOfLabel('yardi', yardi.date)}`);
+    if (cmhc) others.push(`CMHC's ${asOfLabel('cmhc', cmhc.date)} Rental Market Survey an average of ${money(cmhc.value)} for purpose-built apartments`);
+    if (others.length) {
+      const lead = rc ? '' : `For ${UNIT_PHRASE[u.id]} in ${where}, `;
+      const text = others.join(', and ');
+      parts.push(`${lead}${lead ? text : text.charAt(0).toUpperCase() + text.slice(1)}.`);
+    }
+    const gaps = [];
+    if (rc && yardi) gaps.push(`${pctGap(rc.value, yardi.value)} in-place rents`);
+    if (rc && cmhc) gaps.push(`${pctGap(rc.value, cmhc.value)} the CMHC average`);
+    if (gaps.length) parts.push(`Asking rents were ${gaps.join(' and ')}.`);
+    else if (yardi && cmhc) parts.push(`In-place rents were ${pctGap(yardi.value, cmhc.value)} the CMHC average.`);
+    out.push({ unit: u, text: parts.join(' ') });
+  }
+  return out;
+}
+
+/** The latest point of each source per unit, for reportParagraphs / the table. */
+export function latestBySource(pointsByUnit) {
+  const last = (pts) => (pts && pts.length ? pts[pts.length - 1] : null);
+  return Object.fromEntries(Object.entries(pointsByUnit).map(([unit, p]) => [unit, { rc: last(p.rc), yardi: last(p.yardi), cmhc: last(p.cmhc) }]));
+}
