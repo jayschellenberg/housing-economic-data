@@ -10,14 +10,14 @@ A multi-tab static website of Canadian housing & economic data, built for a comm
 
 The header carries two top-level groups, each with its own tab bar:
 **Housing & Economic Data** (the public CMHC / StatsCan tabs, Market Indicators
-included, and the landing view) and **Local Data** (Cap Rates, Cap Rates vs Interest, Johnson Report,
-Rental Dashboard and Commercial Dashboard — tabs whose data comes from folders
+included, and the landing view) and **Local Data** (Cap Rates, Cap Rates vs Interest, Johnson Report, Yardi Rental,
+Rentals.ca, Rent Comparison, Zoning, Rental Dashboard and Commercial Dashboard — tabs whose data comes from folders
 on the viewer's disk).
 
 The Local Data folders all live in one Dropbox folder shared with colleagues,
 **AppMarketData** (Jason's copy: `D:\Dropbox\SharedInfo\AppMarketData`), holding
-`CapRates`, `CommercialAvailability`, `JohnsonReport`, `RentalDashboard` and
-`SalesData` (the last read by the two parcel-search sites). Each tab accepts
+`CapRates`, `CommercialAvailability`, `JohnsonReport`, `RentalData`, `RentalDashboard`,
+`Zoning` and `SalesData` (the last read by the two parcel-search sites). Each tab accepts
 its own subfolder or `AppMarketData` itself: `web/src/app-market-data.js`
 (`resolveAppFolder`) steps down to the tab's subfolder before the handle is
 saved, and `filterAppFiles` does the same for the folder-`<input>` fallback.
@@ -42,6 +42,7 @@ other tab is Housing.
 | RTB (MB) | Manitoba rent-increase guideline history + CPI overlay | `r/19` |
 | Johnson Report | Winnipeg commercial vacancy, lease rates and sales summaries from The Johnson Report, read from a folder on the user's own disk (nothing published) | `Johnson-Report/ingest/parse_johnson.py` (separate project) |
 | Cap Rates | Winnipeg cap-rate ranges by property type and class (Colliers, CBRE, Cushman & Wakefield), quarterly, read from a folder on the user's own disk | `Cap-Rates/ingest/parse_cap_rates.py` (separate project) |
+| Zoning | Appraisal zoning narratives per municipality and zone (intent, permitted uses chosen by the appraiser, bulk requirements) with the full use lists and bulk table cited to PDF pages, a live by-law currency check against Manitoba Zoning By-Laws open data, Copy / Word export; read from `SharedInfo\AppMarketData\Zoning` on the user's own disk (shared only with chosen users; nothing published) | `zoning-narrative/R/export.R` (separate project) |
 | MB Economic Update | Auto narrative report (economy + HPI + outlook) — **parked, hidden from the nav** (see Parked features) | `r/15`, `r/16` |
 
 The Tables tab generates appraisal-ready comparison tables (vacancy / median rent by bedroom type, rent range, year built) with copy-to-clipboard (rich HTML for pasting into Word), Word (.docx), and Excel (.xlsx) export — this replaces the retired CMHC-VacancyMedianRents Shiny tool. It is **province-scoped** (pick a province — always the first row, default Manitoba — then the second–fourth areas are centres within it; no cross-province comparison), and each table has a grouped-bar chart card beside it (same chrome as the Rental Charts cards — title, subtitle, right-side legend, Download PNG). The **Compare Areas** tab is the multi-area counterpart to Rental Charts: it overlays several areas *within one province* as time-series lines for a fixed breakdown category (e.g. pre-1960 stock across MB centres), with a matching areas × years table beside each chart — one chart+table pair per metric (median rent, average rent, vacancy, avg rent change). The pipeline also pulls the Secondary Rental Market Survey (Srms — condo rental data) into `web/public/data/secondary.json`, replacing the retired "CMHC Rental Data Scrape" project. Both retired projects are archived under `$Projects in Progress\old projects maybe`.

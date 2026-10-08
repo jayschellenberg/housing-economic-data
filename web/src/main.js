@@ -28,6 +28,7 @@ import { initYardi, refreshYardi } from './yardi.js';
 import { initRentalsCa, refreshRentalsCa } from './rentalsca.js';
 import { initRentCompare, refreshRentCompare } from './rent-compare.js';
 import { initCapVsInterestTab } from './cap-vs-interest-tab.js';
+import { initZoning } from './zoning.js';
 import { wireChartDocExports } from './doc-image-export.js';
 import { getFirm, setFirm, onFirmChange } from './firm.js';
 
@@ -174,6 +175,7 @@ function setupTabs(initial, onActivate) {
     rentalsca:  { btn: document.getElementById('tab-btn-rentalsca'),  panel: document.getElementById('tab-panel-rentalsca') },
     rentcompare:{ btn: document.getElementById('tab-btn-rentcompare'), panel: document.getElementById('tab-panel-rentcompare') },
     capvsint:   { btn: document.getElementById('tab-btn-capvsint'),   panel: document.getElementById('tab-panel-capvsint') },
+    zoning:     { btn: document.getElementById('tab-btn-zoning'),     panel: document.getElementById('tab-panel-zoning') },
     rental:     { btn: document.getElementById('tab-btn-rental'),     panel: document.getElementById('tab-panel-rental') },
     commercial: { btn: document.getElementById('tab-btn-commercial'), panel: document.getElementById('tab-panel-commercial') },
   };
@@ -181,7 +183,7 @@ function setupTabs(initial, onActivate) {
   // Which top-level group each tab belongs to. The header shows one group
   // link as active and one tab bar (#nav-housing / #nav-local) at a time;
   // everything not listed here is Housing & Economic Data.
-  const TAB_GROUP = { johnson: 'local', yardi: 'local', rentalsca: 'local', rentcompare: 'local', caprates: 'local', capvsint: 'local', rental: 'local', commercial: 'local' };
+  const TAB_GROUP = { johnson: 'local', yardi: 'local', rentalsca: 'local', rentcompare: 'local', caprates: 'local', capvsint: 'local', zoning: 'local', rental: 'local', commercial: 'local' };
   const groupOf = (name) => TAB_GROUP[name] || 'housing';
 
   function showGroup(group) {
@@ -334,7 +336,7 @@ async function bootstrap() {
   const rawHash = hashTab in SUBAPP_TABS && SUBVIEW_RE.test(hashView || '') ? hashTab : fullHash;
   if (rawHash === hashTab && hashView) subappView[hashTab] = hashView;
   let initialTab = 'charts';
-  if (['charts', 'tables', 'compare', 'starts', 'secondary', 'housing', 'census', 'affordability', 'rtb', 'johnson', 'yardi', 'rentalsca', 'rentcompare', 'caprates', 'capvsint', 'rental', 'commercial', 'snapshot', 'indicators', 'agriculture', 'economic'].includes(rawHash)) {
+  if (['charts', 'tables', 'compare', 'starts', 'secondary', 'housing', 'census', 'affordability', 'rtb', 'johnson', 'yardi', 'rentalsca', 'rentcompare', 'caprates', 'capvsint', 'zoning', 'rental', 'commercial', 'snapshot', 'indicators', 'agriculture', 'economic'].includes(rawHash)) {
     initialTab = rawHash;
   } else if (rawHash.startsWith('mi-section-')) {
     initialTab = 'indicators';
@@ -372,6 +374,7 @@ async function bootstrap() {
     rentalsca:     once(() => initRentalsCa().catch(err => console.error('[rentalsca bootstrap]', err))),
     rentcompare:   once(() => initRentCompare({ loadShard }).catch(err => console.error('[rent-compare bootstrap]', err))),
     capvsint:      once(() => initCapVsInterestTab().catch(err => console.error('[cap-vs-interest bootstrap]', err))),
+    zoning:        once(() => initZoning().catch(err => console.error('[zoning bootstrap]', err))),
     // The two sub-app tabs are same-origin pages in a frame; loading the
     // frame is the whole init, deferred to the first visit.
     rental:        once(() => loadSubapp('subapp-rental', subappView.rental)),
