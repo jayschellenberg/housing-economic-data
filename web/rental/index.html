@@ -388,15 +388,31 @@
              The charts are the site's chart cards, built by analysis.js into
              #an-charts. -->
         <div id="tab-analysis" role="tabpanel" class="tabpanel" hidden>
+          <section class="hs-view-section">
+          <h2 class="hs-view-section-title">Summary</h2>
           <section class="card" id="an-summary-card">
             <p class="muted" id="an-summary"></p>
             <div class="cmhc-snapshot-grid" id="an-kpis"></div>
             <p class="hint">Median rent per bedroom count for the scope; beneath it the mean, the median rent per square foot, and the same figure for the other scope. Rents inside the display band only; suppressed below the minimum count.</p>
           </section>
+          </section>
 
-          <p class="hint" id="an-trend-note"></p>
-          <div class="hs-chart-grid" id="an-charts"></div>
+          <!-- Two headed groups of chart cards, as Market Indicators' sections;
+               #an-charts wraps both (the Word / Excel export reads it). -->
+          <div class="hs-view-sections" id="an-charts">
+            <section class="hs-view-section">
+              <h2 class="hs-view-section-title">Rent trends</h2>
+              <p class="hint" id="an-trend-note"></p>
+              <div class="hs-chart-grid" id="an-charts-trend"></div>
+            </section>
+            <section class="hs-view-section">
+              <h2 class="hs-view-section-title">Listings &amp; distribution</h2>
+              <div class="hs-chart-grid" id="an-charts-supply"></div>
+            </section>
+          </div>
 
+          <section class="hs-view-section">
+          <h2 class="hs-view-section-title">Tables</h2>
           <section class="card" id="an-band-card">
             <div class="results-head">
               <h2>Rent by bedroom count</h2>
@@ -426,6 +442,7 @@
             <p class="hint">Days observed = first to last scrape the listing appeared in (a lower bound on time on market). Rent changed = listings whose asking rent moved between scrapes; median change is first rent to last. Amenity shares are of listings that state the field. ** = no value.</p>
             <h3>Source mix</h3>
             <div class="table-scroll"><table id="an-sources" class="stats narrow hs-table"></table></div>
+          </section>
           </section>
         </div>
         <footer class="hs-footer">

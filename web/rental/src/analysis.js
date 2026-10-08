@@ -168,19 +168,24 @@ export function initAnalysis({ getPolicy, getContext, setStatus } = {}) {
   // ---- charts -------------------------------------------------------------------
   // The site's chart cards (src/subapp-chart-card.js): maroon title, subtitle,
   // legend under the plot, Company caption, Download PNG at 1950 × 1050. Built
-  // once, on the first render, into #an-charts; redrawn in place after that.
+  // once, on the first render, into the two headed groups of #an-charts
+  // (Rent trends, Listings & distribution); redrawn in place after that.
   let cards = null;
   function ensureCards() {
     if (cards) return cards;
-    const host = $('an-charts');
     // `id` is what the sidebar jump list scrolls to.
-    const make = (key, title, fileStem) => kit.buildPlotCard(host, { id: `an-card-${key}`, title, fileStem });
+    const make = (host, key, title, fileStem, explainer) => kit.buildPlotCard($(host), { id: `an-card-${key}`, title, fileStem, explainer });
     cards = {
-      rent: make('rent', 'Median rent by bedroom count', 'rental_median_rent'),
-      psf: make('psf', 'Median rent per square foot', 'rental_median_rent_psf'),
-      inv: make('inv', 'Listings observed', 'rental_listings_observed'),
-      hist: make('hist', 'Rent distribution', 'rental_rent_distribution'),
-      scatter: make('scatter', 'Rent by size', 'rental_rent_by_size'),
+      rent: make('an-charts-trend', 'rent', 'Median rent by bedroom count', 'rental_median_rent',
+        'The middle asking rent of the listings seen in each period, one line per bedroom count. Half the listings asked more and half less, so a few luxury units do not pull it up the way they would an average. These are asking rents on advertised vacancies, which usually run ahead of what sitting tenants pay (CMHC’s survey rents). The latest period is still filling in, so read its last point as provisional.'),
+      psf: make('an-charts-trend', 'psf', 'Median rent per square foot', 'rental_median_rent_psf',
+        'Monthly asking rent divided by the stated size, the middle value per bedroom count. It puts small and large units on one scale; smaller units usually rent for more per square foot. Only listings that state a size count, roughly half of them, so the lines are thinner and jumpier than the rent chart.'),
+      inv: make('an-charts-supply', 'inv', 'Listings observed', 'rental_listings_observed',
+        'How many distinct listings the weekly scrape saw in each period, stacked by bedroom count. A rising count can mean more vacancies coming to market, slower lease-up, or more sites being scraped; it is a rough supply signal, not a vacancy rate.'),
+      hist: make('an-charts-supply', 'hist', 'Rent distribution', 'rental_rent_distribution',
+        'How the current selection’s asking rents spread out, in $100 steps, coloured by bedroom count. A tall, narrow peak means rents cluster tightly; a long right tail means a premium segment. Rents outside the display band are left out.'),
+      scatter: make('an-charts-supply', 'scatter', 'Rent by size', 'rental_rent_by_size',
+        'Each dot is one listing that states both a rent and a size. The straight lines show the typical rent for a given size within each bedroom count; a steeper line means each extra square foot adds more to the rent. Use it to check whether a subject’s rent is in line for its size.'),
     };
     return cards;
   }
@@ -188,6 +193,12 @@ export function initAnalysis({ getPolicy, getContext, setStatus } = {}) {
   const legendFor = (keys) => keys.map((k) => ({ label: BAND_LABELS[k], color: SERIES_COLORS[k] }));
   const colorFor = (keys) => ({ domain: keys.map((k) => BAND_LABELS[k]), range: keys.map((k) => SERIES_COLORS[k]) });
   const present = (pts, keys) => keys.filter((k) => pts.some((p) => p.band === k));
+  // Latest-value readout: each series' value in its last period.
+  const latestFor = (pts, keys, field, fmt) => keys.map((k) => {
+    const mine = pts.filter((p) => p.band === k);
+    const lastPt = mine.reduce((a, p) => (!a || p.date > a.date ? p : a), null);
+    return lastPt && { label: BAND_LABELS[k], color: SERIES_COLORS[k], value: fmt(lastPt[field]), asof: lastPt.period };
+  }).filter(Boolean);
 
   function renderCharts() {
     if (!kit) return;
@@ -216,6 +227,7 @@ export function initAnalysis({ getPolicy, getContext, setStatus } = {}) {
     const rentKeys = present(rentPts, SERIES);
     c.rent.render({
       subtitle: `${scopeLabel()} • ${per}, ${span}`, source, legend: legendFor(rentKeys),
+      latest: latestFor(rentPts, rentKeys, 'median', (v) => `$${Math.round(v).toLocaleString('en-CA')}`),
       empty: rentPts.length ? '' : 'No rents to trend for this selection.',
       spec: () => ({
         x: timeX, y: { label: 'Median rent ($/mo)', tickFormat: money }, color: colorFor(rentKeys),
@@ -228,6 +240,7 @@ export function initAnalysis({ getPolicy, getContext, setStatus } = {}) {
     const psfKeys = present(psfPts, SERIES);
     c.psf.render({
       subtitle: `${scopeLabel()} • ${per}, ${span}`, source, legend: legendFor(psfKeys),
+      latest: latestFor(psfPts, psfKeys, 'median', (v) => `$${v.toFixed(2)}/sf`),
       empty: psfPts.length ? '' : 'No stated sizes to trend for this selection.',
       spec: () => ({
         x: timeX, y: { label: 'Median rent ($/sf/mo)', tickFormat: (v) => `$${v.toFixed(2)}` }, color: colorFor(psfKeys),
@@ -240,6 +253,7 @@ export function initAnalysis({ getPolicy, getContext, setStatus } = {}) {
     const invKeys = present(invPts, BAND_ORDER);
     c.inv.render({
       subtitle: `${scopeLabel()} • listings observed per ${gran}, ${span}`, source, legend: legendFor(invKeys),
+      latest: latestFor(invPts, invKeys, 'n', (v) => v.toLocaleString('en-CA')),
       empty: invPts.length ? '' : 'No history for this selection.',
       spec: () => ({
         x: timeX, y: { label: 'Listings', tickFormat: (v) => v.toLocaleString('en-CA') }, color: colorFor(invKeys),

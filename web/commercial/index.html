@@ -358,9 +358,14 @@
       </section>
 
       <section id="panel-summary" class="tabpanel" role="tabpanel" aria-labelledby="tab-summary" hidden>
-    <section id="overview" hidden>
-      <ul id="tiles" class="cmhc-snapshot-grid"></ul>
+    <section id="overview" class="hs-view-sections" hidden>
+      <section class="hs-view-section">
+        <h2 class="hs-view-section-title">Market snapshot</h2>
+        <ul id="tiles" class="cmhc-snapshot-grid"></ul>
+      </section>
 
+      <section class="hs-view-section">
+      <h2 class="hs-view-section-title">Tables</h2>
       <div class="card">
         <h2>On the market</h2>
         <p id="overview-asof" class="muted small"></p>
@@ -414,6 +419,8 @@
         </div>
       </div>
 
+      </section>
+
       <p id="restricted-notice" class="notice restricted" hidden></p>
     </section>
       </section>
@@ -421,13 +428,29 @@
       <!-- The charts are the site's chart cards, built by analysis.js into
            #an-charts. -->
       <section id="analysis" class="tabpanel" role="tabpanel" aria-labelledby="tab-analysis" hidden>
-        <div class="card" id="an-summary-card">
-          <ul id="an-tiles" class="cmhc-snapshot-grid"></ul>
-          <p id="an-note" class="muted small"></p>
+        <section class="hs-view-section">
+          <h2 class="hs-view-section-title">Summary</h2>
+          <div class="card" id="an-summary-card">
+            <ul id="an-tiles" class="cmhc-snapshot-grid"></ul>
+            <p id="an-note" class="muted small"></p>
+          </div>
+        </section>
+
+        <!-- Two headed groups of chart cards, as Market Indicators' sections;
+             #an-charts wraps both (the Word / Excel export reads it). -->
+        <div class="hs-view-sections" id="an-charts">
+          <section class="hs-view-section">
+            <h2 class="hs-view-section-title">Market trend</h2>
+            <div class="hs-chart-grid" id="an-charts-trend"></div>
+          </section>
+          <section class="hs-view-section">
+            <h2 class="hs-view-section-title">Asking rates &amp; sizes</h2>
+            <div class="hs-chart-grid" id="an-charts-rates"></div>
+          </section>
         </div>
 
-        <div class="hs-chart-grid" id="an-charts"></div>
-
+        <section class="hs-view-section">
+        <h2 class="hs-view-section-title">Tables</h2>
         <div class="card" id="an-market-card">
           <h2>By market</h2>
           <div class="table-scroll">
@@ -448,6 +471,7 @@
           </div>
           <p class="muted small">Largest 25 markets. ** = no value.</p>
         </div>
+        </section>
       </section>
       <footer class="hs-footer">
         <p>

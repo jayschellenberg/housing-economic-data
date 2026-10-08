@@ -8,8 +8,13 @@
   --line: #e4e4e7;
   --bg: #fafafa;
   --card: #ffffff;
-  --accent: #2563eb;
+  /* A selected toggle / pill / map tool is the site header's navy; blue is
+     kept for primary actions (Choose folder), as on the site's own buttons;
+     text links are the brand red of its jump lists (lib/subapp-house.css). */
+  --accent: #0f172a;
   --accent-ink: #ffffff;
+  --action: #2563eb;
+  --link: #7C1014;
   --notice: #fff8e1;
   --notice-line: #e6cf87;
   --radius: 6px;
@@ -56,7 +61,7 @@ button {
 }
 button:hover { background: #f4f4f5; }
 button:disabled { opacity: 0.5; cursor: default; }
-button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+button.primary { background: var(--action); color: #fff; border-color: var(--action); }
 button.quiet { color: var(--ink-soft); }
 
 .facts {
@@ -99,11 +104,11 @@ tbody tr:last-child td { border-bottom: 0; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .checks { display: flex; flex-wrap: wrap; gap: 4px 12px; }
 .field input[type="number"], .field input[type="search"], .field input[type="month"], .field-input, .field select {
-  font: inherit; font-size: 13px; padding: 4px 6px;
-  border: 1px solid var(--line); border-radius: 4px; background: var(--card);
+  font: inherit; font-size: 14px; padding: 4px 8px;
+  border: 1px solid #d4d4d8; border-radius: 4px; background: var(--card);
   min-width: 0; width: 100%;
 }
-.inline { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 13px; }
+.inline { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 14px; }
 .inline.block { display: flex; }
 .more-filters { border-top: 1px solid var(--line); padding-top: 6px; display: flex; flex-direction: column; gap: 8px; }
 .hs-section-title label { cursor: pointer; }
@@ -112,8 +117,8 @@ tbody tr:last-child td { border-bottom: 0; }
 /* ---- multiselect (copied with the module) ------------------------------ */
 .multiselect { position: relative; }
 .multiselect > summary {
-  list-style: none; cursor: pointer; font-size: 0.9rem; padding: 0.3rem 1.4rem 0.3rem 0.4rem;
-  border: 1px solid var(--line); border-radius: 4px; background: var(--card);
+  list-style: none; cursor: pointer; font-size: 14px; padding: 4px 24px 4px 8px;
+  border: 1px solid #d4d4d8; border-radius: 4px; background: var(--card);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; position: relative;
 }
 .multiselect > summary::-webkit-details-marker { display: none; }
@@ -126,20 +131,20 @@ tbody tr:last-child td { border-bottom: 0; }
   display: flex; flex-direction: column; gap: 0.25rem;
 }
 .multiselect-search {
-  font: inherit; font-size: 0.85rem; padding: 0.25rem 0.4rem;
+  font: inherit; font-size: 14px; padding: 4px 6px;
   border: 1px solid var(--line); border-radius: 4px;
 }
 .multiselect-tools { display: flex; justify-content: flex-end; gap: 0.5rem; }
-.multiselect-tools button { font: inherit; font-size: 0.75rem; background: none; border: 0; color: var(--accent); cursor: pointer; padding: 0; }
+.multiselect-tools button { font: inherit; font-size: 12px; background: none; border: 0; color: var(--link); cursor: pointer; padding: 0; }
 .multiselect-list { overflow-y: auto; display: flex; flex-direction: column; }
 .multiselect-item {
   display: grid; grid-template-columns: auto 1fr auto; gap: 0.4rem;
-  align-items: center; font-size: 0.85rem; padding: 0.1rem 0.25rem; cursor: pointer;
+  align-items: center; font-size: 14px; padding: 2px 4px; cursor: pointer;
 }
 .multiselect-item:hover { background: var(--bg); }
 .multiselect-item span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.multiselect-count { color: var(--ink-soft); font-size: 0.72rem; font-variant-numeric: tabular-nums; }
-.multiselect-empty { margin: 0.25rem; color: var(--ink-soft); font-size: 0.8rem; }
+.multiselect-count { color: var(--ink-soft); font-size: 11px; font-variant-numeric: tabular-nums; }
+.multiselect-empty { margin: 4px; color: var(--ink-soft); font-size: 12px; }
 
 /* ---- results ----------------------------------------------------------- */
 .results-head {
@@ -150,14 +155,14 @@ tbody tr:last-child td { border-bottom: 0; }
 .median-line { margin: 0.15rem 0 0; }
 .chips { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.5rem; }
 .chip {
-  font-size: 0.75rem; background: var(--bg); border: 1px solid var(--line);
+  font-size: 12px; background: var(--bg); border: 1px solid var(--line);
   border-radius: 999px; padding: 0.1rem 0.55rem; color: var(--ink-soft);
 }
 .chip-sticky { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 
 table.results th.sortable { padding: 0; }
 .th-btn {
-  font: inherit; font-size: 0.8rem; font-weight: 600; color: var(--ink-soft);
+  font: inherit; font-size: 12px; font-weight: 600; color: var(--ink);
   background: none; border: 0; padding: 0.35rem 0.6rem; cursor: pointer;
   width: 100%; text-align: inherit; white-space: nowrap;
 }
@@ -176,8 +181,8 @@ table.results .col-status { min-width: 110px; }
 table.results .col-asking, table.results .col-rate { min-width: 90px; }
 table.results tbody tr:hover { background: var(--bg); }
 .link-btn {
-  font: inherit; font-size: 0.8rem; background: none; border: 0;
-  color: var(--accent); cursor: pointer; padding: 0; text-decoration: underline;
+  font: inherit; font-size: 12.5px; background: none; border: 0;
+  color: var(--link); cursor: pointer; padding: 0; text-decoration: underline;
 }
 table.results .col-links { white-space: nowrap; }
 table.results td.col-links .link-btn + .link-btn { margin-left: 0.55rem; }
@@ -192,7 +197,7 @@ table.results td.col-links .link-btn + .link-btn { margin-left: 0.55rem; }
 .map { width: 100%; height: 460px; border-radius: 6px; overflow: hidden; background: #e9eef3; }
 .map-toolbar {
   display: flex; flex-wrap: wrap; gap: 0.5rem 1.4rem;
-  align-items: center; margin-bottom: 0.5rem; font-size: 0.85rem;
+  align-items: center; margin-bottom: 0.5rem; font-size: 13px;
 }
 .map-overlays, .map-mode, .map-draw, .map-subject {
   display: flex; flex-wrap: wrap; gap: 0.3rem 0.6rem; align-items: center;
@@ -207,12 +212,12 @@ table.results td.col-links .link-btn + .link-btn { margin-left: 0.55rem; }
   background: var(--accent); border-color: var(--accent); color: var(--accent-ink);
 }
 .map-subject input[type="number"] {
-  width: 4.5rem; font: inherit; font-size: 0.8rem; padding: 0.15rem 0.3rem;
+  width: 4.5rem; font: inherit; font-size: 13px; padding: 2px 4px;
   border: 1px solid var(--line); border-radius: 4px;
 }
 .map-legend {
   display: flex; flex-wrap: wrap; gap: 0.3rem 1rem;
-  margin-top: 0.5rem; font-size: 0.8rem; color: var(--ink-soft);
+  margin-top: 0.5rem; font-size: 12px; color: var(--ink-soft);
 }
 .legend-item { display: inline-flex; align-items: center; gap: 0.3rem; }
 .legend-swatch {
@@ -259,7 +264,6 @@ td.suppressed { color: var(--ink-soft); font-style: italic; }
 .flyer-dialog:has(.snapshot-picks:not([hidden])) .flyer-image-wrap { height: calc(100% - 6.2rem); }
 
 /* Spacing under the headline tiles (Current Snapshot's KPI cards). */
-#tiles { margin-bottom: 16px; }
 #an-tiles { margin-bottom: 10px; }
 
 /* ---- Hide / Expand map, click-to-select pill (as on the Rental map) ---- */
@@ -272,6 +276,14 @@ td.suppressed { color: var(--ink-soft); font-style: italic; }
 .view-bar button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 .map-card.expanded .map { height: calc(100vh - 150px); }
 .pill-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.pill { display: inline-flex; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
-.map-toolbar .pill button { font-size: 11px; padding: 2px 9px; border: 0; border-radius: 0; background: #fff; color: var(--ink-soft); }
+.pill { display: inline-flex; border: 1px solid #d4d4d8; border-radius: 12px; overflow: hidden; }
+.map-toolbar .pill button { font-size: 12px; padding: 3px 10px; border: 0; border-radius: 0; background: #fff; color: var(--ink-soft); }
 .map-toolbar .pill button.active { background: var(--accent); color: var(--accent-ink); }
+
+/* ---- listings grid: the site's light table header ----------------------
+   The grid keeps its density (Jason, 2026-10-08: "light touch") but takes
+   the site's header and link colours: a light header row on a brand-red
+   rule, and brand-red links. */
+table.results { font-size: 13px; }
+table.results thead th { background: #f4f4f5; color: var(--ink); border-bottom: 2px solid #7C1014; }
+table.results a { color: var(--link); }

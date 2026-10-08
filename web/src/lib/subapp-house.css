@@ -14,6 +14,12 @@
  *     and the Observable Plot text styles, for subapp-chart-card.js
  *   - the KPI card of the Current Snapshot tab, for the dashboards'
  *     headline tiles (lib/kpi-tile.js)
+ *   - Market Indicators' latest-value readout, "What does this mean?"
+ *     explainer and maroon section headings
+ *   - the site's control sizes (14 px selects / inputs / options, 12 px
+ *     field labels) and its colours for a selected toggle: navy, as the
+ *     header; blue stays for primary actions only (Choose folder, Find,
+ *     Download Word), as on the site
  *
  * The values are copied from tailwind.css (@theme, .cmhc-tab, .chart-card,
  * .cmhc-plot, .cmhc-plot-legend, .cmhc-snapshot-grid, .cmhc-kpi*). If one
@@ -262,9 +268,62 @@ a.hs-link { display: inline-flex; align-items: center; gap: 4px; }
 }
 .chart-card .chart-actions button:hover { background: var(--hs-neutral-100); }
 
+/* Latest-value readout under the legend (Market Indicators' .cmhc-latest-row). */
+.cmhc-latest-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-top: 6px;
+  font-size: 11.5px;
+  color: var(--hs-neutral-700);
+}
+.cmhc-latest-row:empty { display: none; }
+.cmhc-latest-chip { display: inline-flex; align-items: center; gap: 4px; }
+.cmhc-latest-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 2px; }
+.cmhc-latest-label { color: var(--hs-neutral-800); }
+.cmhc-latest-asof { color: var(--hs-neutral-500); }
+
+/* "What does this mean?" under each chart (Market Indicators' .cmhc-explainer). */
+.cmhc-explainer {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: var(--hs-neutral-50);
+  border: 1px solid var(--hs-neutral-200);
+  border-radius: 4px;
+  font-size: 12.5px;
+  color: var(--hs-neutral-700);
+  line-height: 1.45;
+}
+.cmhc-explainer summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--hs-brand-red);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  list-style: none;
+}
+.cmhc-explainer summary::-webkit-details-marker { display: none; }
+.cmhc-explainer summary::before { content: "▸ "; display: inline-block; transition: transform 0.15s; }
+.cmhc-explainer[open] summary::before { transform: rotate(90deg); }
+.cmhc-explainer p { margin: 6px 0 0; }
+
+/* Section heading over a group of cards (Market Indicators'
+   .cmhc-mi-section-title: "Mortgage Market", "Credit Conditions"). */
+.hs-view-section { display: flex; flex-direction: column; gap: 16px; scroll-margin-top: 8px; }
+.hs-view-section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--hs-brand-red);
+  margin: 4px 0 -8px;
+  letter-spacing: -0.005em;
+}
+
 /* During a PNG capture (png-export.js adds .cmhc-exporting) — the same
    rules the site's cards get, so the image matches theirs. */
 .cmhc-exporting .chart-actions,
+.cmhc-exporting .cmhc-latest-row,
+.cmhc-exporting .cmhc-explainer,
 .cmhc-exporting .chart-note { display: none !important; }
 .cmhc-exporting { align-self: start !important; height: max-content !important; }
 .cmhc-exporting [data-role="plot"] { min-height: 0 !important; }
@@ -395,3 +454,6 @@ table.hs-table thead th:first-child { text-align: left; }
 table.hs-table tbody td:first-child { text-align: left; font-weight: 600; color: #171717; }
 table.hs-table tbody tr:nth-child(odd) td { background: #fafafa; }
 table.hs-table tbody td.suppressed { color: #a3a3a3; font-style: italic; font-weight: 400; }
+
+/* A view's headed groups, stacked with the tab panel's spacing. */
+.hs-view-sections { display: flex; flex-direction: column; gap: 16px; }
