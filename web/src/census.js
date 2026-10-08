@@ -23,6 +23,7 @@ import { fInt, fUsd, fDec1, fPctFrac0, fPctFrac1, fPctInt } from './format.js';
 import { PROV_LABEL, PROV_ORDER, provOfUid, cleanName } from './geography.js';
 import { loadCensusProfile } from './census-profile.js';
 import { loadPopulationEstimates } from './population-estimates.js';
+import { buildCensusNarrative } from './census-narrative.js';
 
 // Geography levels, in dropdown group order.
 const LEVEL_GROUPS = [
@@ -178,6 +179,7 @@ export async function initCensus() {
   const $prov    = [1, 2, 3].map(i => document.getElementById(`census-prov${i}`));
   const $period  = document.getElementById('census-period');
   const $headline = document.getElementById('census-headline');
+  const $narr     = document.getElementById('census-narrative');
   const $charts   = document.getElementById('census-chart-grid');
   const $tables   = document.getElementById('census-tables');
   if (!$area[0] || !$tables) return;
@@ -315,6 +317,7 @@ export async function initCensus() {
     const subject = cols[0];
 
     renderHeadline(subject, period);
+    renderNarrative(subject, cols.slice(1), period);
     renderCharts(subject, cols, period);
     lastTrendTables = renderTrends(cols);
     lastDemoTable   = renderDemographics(cols, period);
@@ -342,6 +345,64 @@ export async function initCensus() {
         <span><strong>${pop == null ? '—' : pop.toLocaleString()}</strong> population (${popYear || '—'})${chg}</span>
         <span><strong>${fInt(demo?.households)}</strong> private dwellings (${escapeHtml(period)})</span>
       </div>`;
+  }
+
+  // ---- Community-profile narrative ----------------------------------------
+  // Area 1 read against Areas 2/3 as benchmarks (province first, so the prose
+  // runs "…below the provincial figure and well under Winnipeg's"). The blocks
+  // render on screen and go unchanged to the Word export, RTB-style; the
+  // supporting-figures table sits beneath the prose it interprets.
+  let lastNarrative = null;
+  function renderNarrative(subject, others, period) {
+    if (!$narr) return;
+    const benchmarks = others.slice().sort((a, b) => (b.level === 'PR') - (a.level === 'PR'));
+    const nar = buildCensusNarrative({ subject, benchmarks, years, period });
+    lastNarrative = nar;
+
+    let body = '', inList = false;
+    for (const b of nar.blocks) {
+      if (b.type === 'bullet') {
+        if (!inList) { body += '<ul class="list-disc pl-6 mb-2 space-y-0.5">'; inList = true; }
+        body += `<li>${escapeHtml(b.text)}</li>`;
+        continue;
+      }
+      if (inList) { body += '</ul>'; inList = false; }
+      if (b.type === 'heading') body += `<h4 class="font-semibold mt-3 mb-1">${escapeHtml(b.text)}</h4>`;
+      else if (b.type === 'para') body += `<p class="mb-2">${escapeHtml(b.text)}</p>`;
+    }
+    if (inList) body += '</ul>';
+
+    const tbl = nar.table;
+    const tableHtml = `<table class="cmhc-table mt-3">
+        <thead><tr><th></th>${tbl.columns.map(c => `<th>${escapeHtml(c)}</th>`).join('')}</tr></thead>
+        <tbody>${tbl.rows.map(r => `<tr><td>${escapeHtml(r.area)}</td>${r.values.map(v => `<td>${escapeHtml(v)}</td>`).join('')}</tr>`).join('')}</tbody>
+      </table>`;
+
+    $narr.innerHTML = `
+      <section class="cmhc-table-block">
+        <div class="flex flex-wrap items-baseline justify-between gap-2">
+          <div class="cmhc-table-title">Community profile — narrative (${escapeHtml(subject.name)})</div>
+          <button id="census-narrative-docx" type="button"
+            class="text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">Download Word (narrative)</button>
+        </div>
+        <div class="text-sm text-neutral-800 leading-relaxed mt-2 max-w-3xl">${body}</div>
+        ${tableHtml}
+        <p class="text-xs text-neutral-500 mt-2">Auto-written from the census figures above; Areas 2 and 3 serve as the benchmarks. Growth, income and value wording follows fixed ratio bands so it reads the same across reports — edit freely after download. The appraiser-notes bullets are left for local knowledge.</p>
+      </section>`;
+
+    $narr.querySelector('#census-narrative-docx')?.addEventListener('click', async () => {
+      if (!lastNarrative) return;
+      const { exportNarrativeToWord } = await import('./word-export.js');
+      // exportNarrativeToWord has no bullet type — "•"-prefixed paragraphs
+      // survive in Word (same workaround as rtb.js).
+      const wblocks = lastNarrative.blocks.map(b => b.type === 'bullet' ? { type: 'para', text: `•  ${b.text}` } : b);
+      wblocks.push({ type: 'heading', text: 'Supporting figures' }, { type: 'table', table: lastNarrative.table });
+      const slug = subject.name.replace(/[^A-Za-z0-9]+/g, '_').replace(/^_|_$/g, '');
+      await exportNarrativeToWord(wblocks, {
+        filename: `Community_Profile_${slug}_${period}.docx`,
+        description: `${subject.name} — community profile (Census ${period})`,
+      });
+    });
   }
 
   // ---- Trends tables (one per area, all stacked) --------------------------
