@@ -31,7 +31,7 @@
              title="Rental, housing, census and economic data">Housing &amp; Economic Data</a>
           <a id="group-link-local" href="#caprates" data-group="local"
              class="cmhc-group-link"
-             title="Cap Rates, Cap Rates vs Interest, Johnson Report, Rental Dashboard, Commercial Dashboard">Local Data</a>
+             title="Cap Rates, Cap Rates vs Interest, Johnson Report, Rentals, FCC Farmland, Zoning, Rental Dashboard, Commercial Dashboard">Local Data</a>
         </nav>
         <!-- Signs every indicator chart's caption, and so every PNG exported from
              one (see firm.js). The only place it is set; saved per browser once
@@ -137,6 +137,10 @@
       <button type="button" role="tab" id="tab-btn-rentcompare"
         class="cmhc-tab" data-tab="rentcompare" aria-selected="false">
         Rent Comparison
+      </button>
+      <button type="button" role="tab" id="tab-btn-fcc"
+        class="cmhc-tab" data-tab="fcc" aria-selected="false">
+        FCC Farmland
       </button>
       <button type="button" role="tab" id="tab-btn-zoning"
         class="cmhc-tab" data-tab="zoning" aria-selected="false">
@@ -1266,6 +1270,128 @@
         <footer class="text-xs text-neutral-500 pt-4 border-t border-neutral-200">
           Source: Yardi Canadian National Multifamily Report (Yardi Systems, LLC), quarterly.
           The report is copyrighted; figures shown here are read from the viewer's own locally held copy and are not redistributed by this site.
+        </footer>
+      </main>
+    </div>
+
+    <!-- ============================================================
+         FCC Farmland tab — Farm Credit Canada farmland values: provincial
+         % change (1986 on), $/acre by region (1997 on), value ranges and
+         pastureland, and each report's narrative by province. NO DATA SHIPS
+         WITH THE SITE: FCC-Farmland/ingest/run.bat publishes fcc_farmland.json
+         to SharedInfo\AppMarketData\FCCFarmland; see fcc.js / fcc-store.js.
+         ============================================================ -->
+    <div id="tab-panel-fcc" class="grid md:grid-cols-[320px_1fr] min-h-[calc(100vh-110px)]" role="tabpanel" aria-labelledby="tab-btn-fcc" hidden>
+      <aside class="bg-white border-r border-neutral-200 p-4 space-y-4 overflow-y-auto" aria-label="FCC Farmland filters">
+        <section>
+          <div class="flex items-center justify-between mb-2">
+            <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Data folder</h2>
+            <button id="fc-folder-toggle" type="button" class="text-xs underline text-neutral-600" aria-controls="fc-folder-body" aria-expanded="true" hidden>Hide</button>
+          </div>
+          <p id="fc-folder-status" class="text-xs text-neutral-600 mb-2"></p>
+          <p id="fc-folder-error" class="text-xs text-red-700 mb-2" hidden></p>
+          <div id="fc-folder-body">
+          <div class="space-y-2">
+            <button id="fc-pick-folder" type="button"
+              class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+              Choose folder
+            </button>
+            <input id="fc-pick-fallback" type="file" webkitdirectory multiple hidden
+              class="block w-full text-xs file:mr-2 file:rounded file:border file:border-neutral-300 file:bg-white file:px-2 file:py-1 file:text-xs" />
+            <div class="flex gap-3 text-xs">
+              <button id="fc-rescan" type="button" class="underline text-neutral-600">Reload folder</button>
+              <button id="fc-clear" type="button" class="underline text-neutral-600" hidden>Disconnect</button>
+            </div>
+          </div>
+          <p class="text-xs text-neutral-500 mt-2">Pick the firm's shared <code>AppMarketData</code> folder or its <code>FCCFarmland</code> subfolder. Read locally, never uploaded.</p>
+          </div>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Province</h2>
+          <select id="fc-prov" class="w-full border border-neutral-300 rounded px-2 py-1 text-sm" disabled></select>
+          <p class="text-xs text-neutral-500 mt-1">The % change chart compares it with Canada; the region charts, region table and narrative are for this province.</p>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Report year</h2>
+          <select id="fc-year" class="w-full border border-neutral-300 rounded px-2 py-1 text-sm" disabled></select>
+          <p class="text-xs text-neutral-500 mt-1">Sets the region table, the narrative and the end of the charts. Value ranges and % change by region are published from 2017; pastureland from 2022.</p>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Charts from</h2>
+          <input id="fc-year-from" type="number" min="1985" max="2100" placeholder="year" class="w-24 border border-neutral-300 rounded px-2 py-1 text-sm" />
+          <p class="text-xs text-neutral-500 mt-1">Leave blank for all history (% change from 1985, $/acre by region from 1996). The province table shows the last 15 years when blank.</p>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Narrative</h2>
+          <label class="flex items-center gap-2 text-sm"><input id="fc-all-narratives" type="checkbox" /> Every year to the report year</label>
+          <p class="text-xs text-neutral-500 mt-1">Narratives run from 2007 (spring and fall reports to 2012, annual since 2013, plus FCC's mid-year updates).</p>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Sections</h2>
+          <details id="fc-section-menu" class="relative">
+            <summary class="list-none cursor-pointer w-full border border-neutral-300 rounded px-2 py-1 text-sm bg-white flex items-center justify-between">
+              <span id="fc-section-summary-text">All sections</span><span aria-hidden="true" class="text-neutral-500">&#9662;</span>
+            </summary>
+            <div class="absolute left-0 right-0 z-20 mt-1 bg-white border border-neutral-300 rounded shadow-lg p-2">
+              <div class="flex gap-3 text-xs mb-1 pb-1 border-b border-neutral-200">
+                <button id="fc-sections-all" type="button" class="underline text-neutral-600">All</button>
+                <button id="fc-sections-none" type="button" class="underline text-neutral-600">None</button>
+              </div>
+              <div id="fc-section-toggles" class="grid gap-1 text-sm max-h-80 overflow-y-auto"></div>
+            </div>
+          </details>
+        </section>
+
+        <section class="pt-2 border-t border-neutral-200 space-y-2">
+          <button id="fc-download-xlsx" type="button"
+            class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+            Download Excel (data)
+          </button>
+          <p class="text-xs text-neutral-500">Every province's % change, every region-year and every narrative.</p>
+          <button id="fc-download-docx-charts" type="button"
+            class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+            Download Word (charts)
+          </button>
+          <button id="fc-download-xlsx-charts" type="button"
+            class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+            Download Excel (charts)
+          </button>
+          <p class="text-xs text-neutral-500">Every visible chart and table as an image — one per page / worksheet.</p>
+        </section>
+      </aside>
+
+      <main class="p-4 space-y-4 overflow-x-hidden">
+        <p id="fc-empty" class="text-sm text-neutral-600 max-w-2xl">
+          No FCC farmland data is loaded. Choose the firm's shared <code>AppMarketData</code> folder or its
+          <code>FCCFarmland</code> subfolder (published by <code>ingest\run.bat</code> in the FCC-Farmland project).
+          The charts render from that folder in this browser only.
+        </p>
+        <section id="fc-chart-grid" class="space-y-6"></section>
+        <section id="fc-about" class="max-w-4xl space-y-2 text-sm text-neutral-700" hidden>
+          <h2 class="cmhc-mi-section-title">About these charts</h2>
+          <p>
+            Farm Credit Canada's appraisers value a set of benchmark farm properties in each region every year from
+            arm's-length sales. The <strong>% change</strong> is the average change in cultivated land values over the
+            calendar year. The <strong>value per acre</strong> is FCC's reference value for the region, from the Historic
+            FCC Farmland Values Report, which FCC restates when it redraws a region; the region table shows the figure as
+            printed in that year's report. The <strong>value range</strong> covers 90% of the sales FCC collected in the
+            region that year (the top and bottom 5% are left out). Irrigated land is shown on its own chart because its
+            values sit far above dryland.
+          </p>
+          <p>
+            Before 2013 FCC reported twice a year: the spring report looked back at July to December of the year before,
+            the fall report at January to June. FCC has published no figures for Newfoundland and Labrador since 2016
+            (too few sales). "**" means no figure.
+          </p>
+        </section>
+        <footer class="text-xs text-neutral-500 pt-4 border-t border-neutral-200">
+          Source: Farm Credit Canada, FCC Farmland Values Report (annual) and Historic FCC Farmland Values Report.
+          Figures shown here are read from the viewer's own locally held copy.
         </footer>
       </main>
     </div>
