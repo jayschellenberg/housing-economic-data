@@ -6,6 +6,7 @@
  * fcc_farmland.json (FCC-Farmland/ingest/parse_fcc.py):
  *   provinces:   [{ code, name }]                  CA first
  *   prov_change: [[year, prov, pct]]               annual % change, cultivated land
+ *   pasture_change: [[year, prov, pct]]            provincial average % change, pastureland (2022 on)
  *   regions:     [{ id, prov, name, land }]        land = cultivated | pasture
  *   region_obs:  [[year, regionId, value, pct, lo, hi, pub]]
  *                value = restated $/acre (historic report), pub = as printed that year,
@@ -24,7 +25,7 @@ export const CHANGE_YEARS = 10;
 export const GROUPS = [
   { id: 'change', label: 'Annual % Change' },
   { id: 'regions', label: 'Value by Region' },
-  { id: 'table', label: 'Region Table' },
+  { id: 'table', label: 'Region Tables' },
   { id: 'narrative', label: 'Report Narrative' },
 ];
 
@@ -47,10 +48,10 @@ export function provName(data, code) {
   return (data?.provinces || []).find(p => p.code === code)?.name || code;
 }
 
-/** prov → Map(year → pct). */
-export function changeIndex(data) {
+/** prov → Map(year → pct); `key` 'pasture_change' for the pastureland averages. */
+export function changeIndex(data, key = 'prov_change') {
   const idx = new Map();
-  for (const [y, p, v] of data?.prov_change || []) {
+  for (const [y, p, v] of data?.[key] || []) {
     if (!idx.has(p)) idx.set(p, new Map());
     idx.get(p).set(y, v);
   }

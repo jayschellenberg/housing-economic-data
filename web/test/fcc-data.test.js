@@ -82,6 +82,12 @@ describe('fcc-data', () => {
     ]);
   });
 
+  it('indexes the pastureland provincial averages under their own key', () => {
+    const p = changeIndex({ pasture_change: [[2025, 'MB', 4.3]] }, 'pasture_change');
+    expect(p.get('MB').get(2025)).toBe(4.3);
+    expect(changeIndex({ prov_change: [] }, 'pasture_change').size).toBe(0);
+  });
+
   it('tabulates provinces by year, latest first', () => {
     expect(changeTable(cIdx, ['CA', 'MB'])).toEqual([
       { year: 2025, values: [9.3, 12.2] }, { year: 2024, values: [9.3, 6.5] }]);
