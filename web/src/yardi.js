@@ -51,6 +51,11 @@ function savePrefs(patch) {
 
 // --- Init --------------------------------------------------------------------
 
+/** Re-read the store when the tab is shown again (the Rent Comparison tab can load it too). */
+export function refreshYardi() {
+  if (ui) loadFromStore().catch(err => console.error('[yardi refresh]', err));
+}
+
 export async function initYardi() {
   const $status = document.getElementById('yr-folder-status');
   const $grid = document.getElementById('yr-chart-grid');
@@ -494,6 +499,8 @@ function renderApproxNote(approx) {
 // --- Quarter tables -------------------------------------------------------------
 
 const fmtCell = (units, v) => {
+  // { v, approx } — a chart reading in a table of published figures: starred.
+  if (v && typeof v === 'object') return `${fmtCell(units, v.v)}*`;
   if (v == null || !Number.isFinite(v)) return MISSING;
   if (units === 'percent') return `${v.toFixed(1)}%`;
   if (units === 'dollar') return `$${Math.round(v).toLocaleString('en-CA')}`;
@@ -520,9 +527,17 @@ const COL_HEAD = {
 const TABLE_METRICS = ['rent', 'rent_yoy', 'lol', 'vacancy', 'turnover', 'turnover_q', 'renewal'];
 
 function quarterTables($cards, sel, source) {
+  // Table figures as published; the one exception is the all-units in-place
+  // rent, which Yardi only charts — shown read off the chart and starred
+  // (Jason, 2026-10-07), so the rent column has an All units figure.
+  let approx = false;
   const cell = (seg, m) => {
-    const p = (ui.index.get(`${sel.centre}|${seg}|${m}`) || []).find(x => x.q === sel.q && x.src === 't');
-    return p && Number.isFinite(p.v) ? p.v : null;
+    const pts = ui.index.get(`${sel.centre}|${seg}|${m}`) || [];
+    const p = pts.find(x => x.q === sel.q && x.src === 't');
+    if (p && Number.isFinite(p.v)) return p.v;
+    const c = seg === 'total' && m === 'rent' ? pts.find(x => x.q === sel.q && x.src === 'c') : null;
+    if (c && Number.isFinite(c.v)) { approx = true; return { v: c.v, approx: true }; }
+    return null;
   };
   // Short row labels: "1-Bedroom" wrapped in the nine-column PNG.
   const rows = sel.units.map(u => ({ geo: u.label.replace('-Bedroom', '-Bed'), values: TABLE_METRICS.map(m => cell(u.id, m)) }));
@@ -534,7 +549,8 @@ function quarterTables($cards, sel, source) {
   if (!t.rows.length) return 0;
   buildTableCard($cards, {
     id: `yardi_table_${slug(sel.centre)}`, title: `${sel.centre} Rent, Vacancy and Turnover — ${qLabel(sel.q)}`,
-    subtitle: 'As published', table: t, highlight: new Set(), source, wide: true, rowHead: 'Unit type',
+    subtitle: approx ? 'As published; * all-units rent read off the report\u2019s chart (approximate)' : 'As published',
+    table: t, highlight: new Set(), source, wide: true, rowHead: 'Unit type',
   });
   return 1;
 }

@@ -137,7 +137,7 @@ export async function exportChartsToWord(captures, { filename }) {
  * @param {Array<{type:'title'|'meta'|'heading'|'para'|'image', text?:string, capture?:{dataUrl,width,height}}>} blocks
  * @param {Object} opts  { filename }
  */
-export async function exportNarrativeToWord(blocks, { filename }) {
+export async function exportNarrativeToWord(blocks, { filename, description = 'Province of Manitoba — Overview and Economic Outlook' }) {
   const PAGE_W = 624;   // 6.5in printable width @ 96dpi
   const children = [];
   for (const b of blocks) {
@@ -153,6 +153,10 @@ export async function exportNarrativeToWord(blocks, { filename }) {
     } else if (b.type === 'para') {
       children.push(new Paragraph({ spacing: { after: 120 },
         children: [run(b.text)] }));
+    } else if (b.type === 'table' && b.table) {
+      // { columns: [...], rows: [{ area, values: [...] }] } — the comparison-table style.
+      children.push(buildDocxTable(b.table));
+      children.push(new Paragraph({ spacing: { after: 120 }, children: [] }));
     } else if (b.type === 'image' && b.capture) {
       const c = b.capture;
       const scale = Math.min(1, PAGE_W / c.width);
@@ -166,7 +170,7 @@ export async function exportNarrativeToWord(blocks, { filename }) {
 
   const doc = new Document({
     creator: 'Housing & Economic Data',
-    description: 'Province of Manitoba — Overview and Economic Outlook',
+    description,
     sections: [{ children }],
   });
   const blob = await Packer.toBlob(doc);
