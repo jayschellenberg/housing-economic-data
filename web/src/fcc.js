@@ -419,27 +419,28 @@ function provincialTable($cards, sel) {
 
 /** The selected year's region table: % change, $/acre and 90% value range. */
 function regionTable($cards, sel, regs) {
-  const parts = [
-    ['Cultivated land', [...regs.cultivated, ...regs.irrigated]],
-    ['Pastureland', regs.pasture],
-  ];
-  const rows = [];
-  for (const [label, list] of parts) {
+  // One card per land type, so each exports as its own PNG; pastureland
+  // tables start in 2022.
+  const pastureAvg = changeIndex(ui.data, 'pasture_change');
+  let drawn = 0;
+  for (const [key, list, what, avg] of [
+    ['regions', [...regs.cultivated, ...regs.irrigated], 'Cultivated Farmland Values', ui.cIdx],
+    ['pasture', regs.pasture, 'Pastureland Values', pastureAvg],
+  ]) {
     const rs = regionTableRows(ui.rIdx, list, sel.year);
     if (!rs.length) continue;
-    rows.push({ section: label });
-    for (const r of rs) rows.push([r.region.name, fmtPct(r.pct), fmtMoney(r.value), fmtRange(r.lo, r.hi)]);
+    const provPct = avg.get(sel.prov)?.get(sel.year);
+    buildTableCard($cards, {
+      id: `fcc_${key}_${sel.prov}_${sel.year}`,
+      title: `${sel.name} ${what} by Region — ${sel.year}`,
+      subtitle: `Provincial average change: ${fmtPct(provPct)}. Value range = 90% of sales (top and bottom 5% excluded)`,
+      head: ['Region', '% change', 'Value $/acre', 'Value range'],
+      rows: rs.map(r => [r.region.name, fmtPct(r.pct), fmtMoney(r.value), fmtRange(r.lo, r.hi)]),
+      source: sourceFor(sel.year),
+    });
+    drawn++;
   }
-  if (!rows.length) return 0;
-  const provPct = ui.cIdx.get(sel.prov)?.get(sel.year);
-  buildTableCard($cards, {
-    id: `fcc_regions_${sel.prov}_${sel.year}`,
-    title: `${sel.name} Farmland Values by Region — ${sel.year}`,
-    subtitle: `Provincial average change, cultivated land: ${fmtPct(provPct)}. Value range = 90% of sales (top and bottom 5% excluded)`,
-    head: ['Region', '% change', 'Value $/acre', 'Value range'],
-    rows, source: sourceFor(sel.year),
-  });
-  return 1;
+  return drawn;
 }
 
 function buildTableCard(container, { id, title, subtitle, head, rows, source, wide = false, highlightCol = -1 }) {
@@ -607,6 +608,18 @@ async function exportData() {
   for (const r of changeTable(ui.cIdx, provs).reverse()) ws1.addRow([r.year, ...r.values.map(v => (v == null ? null : v / 100))]);
   ws1.getColumn(1).width = 8;
   for (let i = 2; i <= provs.length + 1; i++) { ws1.getColumn(i).width = 12; ws1.getColumn(i).numFmt = '0.0%'; }
+
+  const pIdx = changeIndex(d, 'pasture_change');
+  const pProvs = provs.filter(p => pIdx.has(p));
+  if (pProvs.length) {
+    const wsP = wb.addWorksheet('Pastureland % change');
+    wsP.addRow([`${SOURCE} — provincial average % change in pastureland values`]).font = { bold: true };
+    wsP.addRow([]);
+    wsP.addRow(['Year', ...pProvs.map(p => pName[p])]).font = { bold: true };
+    for (const r of changeTable(pIdx, pProvs).reverse()) wsP.addRow([r.year, ...r.values.map(v => (v == null ? null : v / 100))]);
+    wsP.getColumn(1).width = 8;
+    for (let i = 2; i <= pProvs.length + 1; i++) { wsP.getColumn(i).width = 16; wsP.getColumn(i).numFmt = '0.0%'; }
+  }
 
   const ws2 = wb.addWorksheet('Regions');
   ws2.addRow(['FCC reference value $/acre by region. "Value" is FCC\'s restated series (Historic report); "As published" is the figure printed in that year\'s report; % change and the 90% value range are from that year\'s report.']);
