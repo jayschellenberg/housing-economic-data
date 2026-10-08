@@ -107,6 +107,42 @@ describe('buildCensusNarrative', () => {
     expect(t16).not.toContain('**');
     expect(t16).not.toContain('Median household income');     // subject has no 2016 demo at all
   });
+  describe('industry (census_industry.json)', () => {
+    // 4 sectors is enough to exercise top-3 + location quotients.
+    const sectors = [{ code: '11', label: 'Agriculture, forestry, fishing and hunting' }, { code: '31-33', label: 'Manufacturing' },
+      { code: '44-45', label: 'Retail trade' }, { code: '62', label: 'Health care and social assistance' }];
+    const industry = { years: ['2021', '2016'], sectors, regions: [
+      { uid: '4602044', name: 'Steinbach (CY)', level: 'CSD', data: { 2021: { labourForce: 1000, notApplicable: 10, counts: [50, 300, 250, 400] } } },
+      { uid: '46', name: 'Manitoba', level: 'PR', data: { 2021: { labourForce: 10000, notApplicable: 100, counts: [400, 1500, 3100, 5000] } } },
+    ] };
+    const { blocks: b, industryTable } = buildCensusNarrative({ subject: steinbach, benchmarks: [manitoba, wpgCma], years: YEARS, period: '2021', industry });
+    const t = paras(b);
+
+    it('names the top three sectors and the over-represented ones vs the province', () => {
+      expect(t).toContain('In 2021 the largest employment sectors for Steinbach\'s labour force of 1,000 were health care and social assistance (40%), manufacturing (30%) and retail trade (25%).');
+      // manufacturing LQ = 30/15 = 2.0 (over); health 40/50 = 0.8; retail 25/31 = 0.8; agriculture 5/4 = 1.25 (under LQ_MIN)
+      expect(t).toContain('Relative to the province, manufacturing (2.0× the provincial share) is notably over-represented');
+    });
+    it('builds the industry table sorted by subject share, ** for benchmarks without data', () => {
+      expect(industryTable.columns).toEqual(['Steinbach', 'Manitoba', 'Winnipeg CMA']);
+      expect(industryTable.rows[0]).toEqual({ area: 'Labour force aged 15+', values: ['1,000', '10,000', '**'] });
+      expect(industryTable.rows[1]).toEqual({ area: '62 Health care and social assistance', values: ['40.0%', '50.0%', '**'] });
+    });
+    it('swaps the economic-base stub for a major-employers stub', () => {
+      expect(b.find(x => x.type === 'bullet').text).toMatch(/^Major employers/);
+    });
+    it('omits the paragraph and table when the period has no industry data', () => {
+      const r = buildCensusNarrative({ subject: steinbach, benchmarks: [manitoba], years: YEARS, period: '2016', industry });
+      expect(paras(r.blocks)).not.toContain('employment sectors');
+      expect(r.industryTable).toBeNull();
+    });
+    it('says diversified when nothing clears the LQ bar', () => {
+      const flat = { ...industry, regions: [{ ...industry.regions[0], data: { 2021: { labourForce: 1000, counts: [40, 150, 310, 500] } } }, industry.regions[1]] };
+      expect(paras(buildCensusNarrative({ subject: steinbach, benchmarks: [manitoba], years: YEARS, period: '2021', industry: flat }).blocks))
+        .toContain('broadly diversified');
+    });
+  });
+
   it('still writes a sentence when only one census is available', () => {
     const r = { name: 'Newtown', level: 'CSD', trends: { '2021': trend(900) }, demo: {} };
     const { blocks: b } = buildCensusNarrative({ subject: r, benchmarks: [manitoba], years: YEARS, period: '2021' });

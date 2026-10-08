@@ -82,7 +82,7 @@ Grounded in a survey of the repo as of main `75668b8`.
 
 ## Phases
 
-### Phase 1 — Rural town narrative from census only (no new data)
+### Phase 1 — Rural town narrative from census only (no new data) — ✅ shipped PR #162 (2026-10-08)
 
 Picker: province = MB → CSD (reuse Census Profile cascade). Output blocks:
 
@@ -96,7 +96,7 @@ On-screen render + Download Word via `exportNarrativeToWord`, with the numbers t
 
 ### Phase 2 — Rural backbone additions (new data)
 
-- r/ step: census labour force by industry (NAICS sectors) by CSD, 2021 (+2016) → `census_industry.json`. Narrative adds largest sectors with location quotients vs Manitoba — the honest quantitative hint for economic base.
+- ✅ 2026-10-08: `r/26_census_industry.R` → `census_industry.json` (20 NAICS sectors, 2021 + 2016, PR/CMA/CD for 4 provinces + all MB CSDs; Winnipeg virtual geos opt-in via `CENSUS_INDUSTRY_WPG=1`). Narrative "Employment by industry" paragraph: top-3 sectors + sectors with location quotient ≥ 1.5 (and share ≥ 4%) vs the province; industry table beneath. `LQ_MIN` / `LQ_SHARE_MIN` in census-narrative.js.
 - Provincial highway network GeoJSON → highways intersecting or within N km of the CSD polygon. Needs a small polygon-to-line distance helper; promote `shapeFilter.js` point-in-ring to a shared module.
 - Service-tier rubric: define as a config table first (grocery, K-12, medical clinic, hospital, municipal office, bank, pharmacy) with a manual checklist UI; auto-fill from POI data later only if worth it.
 
