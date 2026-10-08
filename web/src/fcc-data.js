@@ -27,7 +27,11 @@ export const GROUPS = [
   { id: 'regions', label: 'Value by Region' },
   { id: 'table', label: 'Region Tables' },
   { id: 'narrative', label: 'Report Narrative' },
+  // Every province side by side, at the foot of the page (Jason, 2026-10-08).
+  { id: 'provtable', label: 'Provincial Comparison' },
 ];
+// Years in the "% change by region" summary table.
+export const SUMMARY_YEARS = 5;
 
 export const LAND_LABEL = { cultivated: 'Cultivated land', pasture: 'Pastureland' };
 
@@ -158,6 +162,40 @@ export function regionChangeCardInput(chartId, rIdx, regions, range = {}) {
     seriesMeta.push({ id, chartLabel: r.name, units: 'percent', provider: 'local', frequency: 'annual' });
   }
   return { records, seriesMeta };
+}
+
+/**
+ * The province's regions minus the ones the viewer unticked (by name, so a
+ * name covers its cultivated and pastureland series alike).
+ */
+export function filterRegions(regs, off) {
+  const hide = new Set(off || []);
+  const keep = (list) => list.filter(r => !hide.has(r.name));
+  return { cultivated: keep(regs.cultivated), irrigated: keep(regs.irrigated), pasture: keep(regs.pasture) };
+}
+
+/** Region names for the picker: dryland first, then irrigated, then pasture-only names. */
+export function regionNames(regs) {
+  return [...new Set([...regs.cultivated, ...regs.irrigated, ...regs.pasture].map(r => r.name))];
+}
+
+/**
+ * The "% change by region" summary: a section per land type, the province's
+ * average first then each region, one value per year (null = no figure).
+ */
+export function summaryRows({ cIdx, pIdx, rIdx, regs, prov, provLabel, years: ys }) {
+  const out = [];
+  const regionRow = (r) => ({ label: r.name, values: ys.map(y => (rIdx.get(r.id) || []).find(o => o.year === y)?.pct ?? null) });
+  const avgRow = (idx) => ({ label: `${provLabel} (provincial average)`, values: ys.map(y => idx.get(prov)?.get(y) ?? null), average: true });
+  for (const [label, list, idx] of [
+    ['Cultivated land', [...regs.cultivated, ...regs.irrigated], cIdx],
+    ['Pastureland', regs.pasture, pIdx],
+  ]) {
+    const rows = [avgRow(idx), ...list.map(regionRow)];
+    if (!rows.some(r => r.values.some(v => v != null))) continue;
+    out.push({ section: label }, ...rows.filter(r => r.average || r.values.some(v => v != null)));
+  }
+  return out;
 }
 
 /** Rows of the annual region table for one province and year. */

@@ -18,9 +18,9 @@ import { escapeHtml } from './escape.js';
 import { getPref, setPref } from './prefs.js';
 import { buildJumpBar } from './jump-bar.js';
 import {
-  SOURCE, CANADA, DEFAULT_PROV, CHANGE_YEARS, GROUPS, LAND_LABEL, periodLabel, provName, changeIndex, regionIndex, provRegions,
+  SOURCE, CANADA, DEFAULT_PROV, CHANGE_YEARS, SUMMARY_YEARS, GROUPS, LAND_LABEL, periodLabel, provName, changeIndex, regionIndex, provRegions,
   years, changeCardInput, regionCardInput, regionChangeCardInput, regionTableRows, changeTable, narrativesFor, narrativeYears,
-  markRegions, fmtMoney, fmtPct, fmtRange,
+  markRegions, fmtMoney, fmtPct, fmtRange, filterRegions, regionNames, summaryRows,
 } from './fcc-data.js';
 import {
   storeAvailable, fsAccessSupported, pickDirectory, getSavedDirectory, directoryPermission,
@@ -64,6 +64,11 @@ export async function initFcc() {
     $year: document.getElementById('fc-year'),
     $yearFrom: document.getElementById('fc-year-from'),
     $allNarr: document.getElementById('fc-all-narratives'),
+    $labels: document.getElementById('fc-value-labels'),
+    $regionSection: document.getElementById('fc-region-section'),
+    $regionMenu: document.getElementById('fc-region-menu'),
+    $regionToggles: document.getElementById('fc-region-toggles'),
+    $regionSummary: document.getElementById('fc-region-summary-text'),
     $sectionMenu: document.getElementById('fc-section-menu'),
     $sections: document.getElementById('fc-section-toggles'),
     $sectionSummary: document.getElementById('fc-section-summary-text'),
@@ -135,15 +140,19 @@ function wireControls() {
     ui.prefs = savePrefs({ folderCollapsed: !ui.prefs.folderCollapsed });
     renderFolderBody();
   });
-  ui.$prov.addEventListener('change', () => { ui.prefs = savePrefs({ prov: ui.$prov.value }); renderCharts(); });
-  ui.$year.addEventListener('change', () => { ui.prefs = savePrefs({ year: Number(ui.$year.value) || null }); renderCharts(); });
+  ui.$prov.addEventListener('change', () => { ui.prefs = savePrefs({ prov: ui.$prov.value }); renderRegionToggles(); renderCharts(); });
+  ui.$year.addEventListener('change', () => { ui.prefs = savePrefs({ year: Number(ui.$year.value) || null }); renderRegionToggles(); renderCharts(); });
   ui.$yearFrom.addEventListener('change', () => { ui.prefs = savePrefs({ yearFrom: Number(ui.$yearFrom.value) || null }); renderCharts(); });
   ui.$allNarr.addEventListener('change', () => { ui.prefs = savePrefs({ allNarratives: ui.$allNarr.checked }); renderCharts(); });
+  ui.$labels.addEventListener('change', () => { ui.prefs = savePrefs({ valueLabels: ui.$labels.checked }); renderCharts(); });
+  document.getElementById('fc-regions-all').addEventListener('click', () => setRegionsOff([]));
+  document.getElementById('fc-regions-none').addEventListener('click', () => setRegionsOff(allRegionNames()));
   document.getElementById('fc-sections-all').addEventListener('click', () => setGroups(GROUPS.map(g => g.id)));
   document.getElementById('fc-sections-none').addEventListener('click', () => setGroups([]));
-  const $menu = ui.$sectionMenu;
-  document.addEventListener('click', (e) => { if ($menu.open && !$menu.contains(e.target)) $menu.open = false; });
-  $menu.addEventListener('keydown', (e) => { if (e.key === 'Escape') { $menu.open = false; $menu.querySelector('summary').focus(); } });
+  for (const $menu of [ui.$sectionMenu, ui.$regionMenu]) {
+    document.addEventListener('click', (e) => { if ($menu.open && !$menu.contains(e.target)) $menu.open = false; });
+    $menu.addEventListener('keydown', (e) => { if (e.key === 'Escape') { $menu.open = false; $menu.querySelector('summary').focus(); } });
+  }
   ui.$xlsx?.addEventListener('click', () => exportData().catch(err => {
     console.error('[fcc excel]', err);
     showError('Excel export failed: ' + (err?.message || err));
@@ -209,6 +218,7 @@ function renderAll() {
   renderFolderBody();
   renderProvPicker();
   renderYearPickers();
+  renderRegionToggles();
   renderSectionToggles();
   renderCharts();
 }
@@ -252,16 +262,69 @@ function renderYearPickers() {
   ui.$yearFrom.value = ui.prefs.yearFrom || '';
   ui.$yearFrom.placeholder = ys.length ? String(ys[ys.length - 1]) : 'year';
   ui.$allNarr.checked = !!ui.prefs.allNarratives;
+  ui.$labels.checked = !!ui.prefs.valueLabels;
+}
+
+// --- Regions ---------------------------------------------------------------------
+
+/** The selected province's current regions (retired ones dropped), unfiltered. */
+function currentRegions() {
+  const sel = selection();
+  return provRegions(ui.data, ui.rIdx, sel.prov, { activeSince: sel.year - 3 });
+}
+const allRegionNames = () => (ui.data ? regionNames(currentRegions()) : []);
+
+/** Unticked region names for the province, kept per province. */
+function regionsOff() {
+  const off = ui.prefs.regionsOff?.[selectedProv()];
+  return Array.isArray(off) ? off : [];
+}
+
+function setRegionsOff(names) {
+  ui.prefs = savePrefs({ regionsOff: { ...(ui.prefs.regionsOff || {}), [selectedProv()]: names } });
+  renderRegionToggles();
+  renderCharts();
+}
+
+function renderRegionToggles() {
+  const names = allRegionNames();
+  ui.$regionSection.hidden = !ui.data || selectedProv() === CANADA || !names.length;
+  ui.$regionToggles.replaceChildren();
+  const off = new Set(regionsOff());
+  const shown = names.filter(n => !off.has(n));
+  ui.$regionSummary.textContent = shown.length === names.length ? `All regions (${names.length})`
+    : shown.length === 0 ? 'None selected'
+    : shown.length <= 2 ? shown.join(', ')
+    : `${shown.length} of ${names.length} regions`;
+  for (const n of names) {
+    const label = document.createElement('label');
+    label.className = 'flex items-center gap-1 text-sm';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.checked = !off.has(n);
+    cb.addEventListener('change', () => {
+      const next = new Set(regionsOff());
+      if (cb.checked) next.delete(n); else next.add(n);
+      setRegionsOff(names.filter(x => next.has(x)));
+    });
+    const text = document.createElement('span'); text.textContent = n;
+    label.append(cb, text);
+    ui.$regionToggles.appendChild(label);
+  }
 }
 
 function enabledGroups() {
   const saved = ui.prefs.groups;
-  return new Set(Array.isArray(saved) ? saved : GROUPS.map(g => g.id));
+  if (!Array.isArray(saved)) return new Set(GROUPS.map(g => g.id));
+  const on = new Set(saved);
+  // The province table used to sit in "Annual % Change": a section choice
+  // saved before it moved keeps it with that section.
+  if (!ui.prefs.groupsV2 && on.has('change')) on.add('provtable');
+  return on;
 }
 
 function setGroups(ids) {
   const next = new Set(ids);
-  ui.prefs = savePrefs({ groups: GROUPS.map(g => g.id).filter(id => next.has(id)) });
+  ui.prefs = savePrefs({ groups: GROUPS.map(g => g.id).filter(id => next.has(id)), groupsV2: true });
   renderSectionToggles();
   renderCharts();
 }
@@ -317,7 +380,9 @@ function renderCharts() {
   const drawnSections = [];
   // Retired regions (FCC's pre-2020 Ontario regions, Newfoundland's) drop off
   // once they stop reporting; their figures stay in the Excel download.
-  const regs = provRegions(ui.data, ui.rIdx, sel.prov, { activeSince: sel.year - 3 });
+  const allRegs = provRegions(ui.data, ui.rIdx, sel.prov, { activeSince: sel.year - 3 });
+  const regs = filterRegions(allRegs, regionsOff());
+  const labels = !!ui.prefs.valueLabels;
 
   const lineCard = ($cards, id, { title, subtitle = '', input }) => {
     if (!input.records.length) return false;
@@ -326,7 +391,11 @@ function renderCharts() {
       zeroBased: input.seriesMeta.every(s => s.units === 'dollar'), mirrorY: false,
       sourceInCaption: true, signed: false, captionPt: 10,
     });
-    card.render(input.records, input.seriesMeta, { rangeSubtitle: 'year', subtitle, singleSeriesInSubtitle: true });
+    const pct = input.seriesMeta.every(s => s.units === 'percent');
+    card.render(input.records, input.seriesMeta, {
+      rangeSubtitle: 'year', subtitle, singleSeriesInSubtitle: true,
+      valueLabels: labels ? { format: pct ? fmtPct : fmtMoney } : null,
+    });
     card.setOpenPanels(open.get(id) || []);
     ui.cards.set(id, { card: card.card });
     return true;
@@ -338,7 +407,7 @@ function renderCharts() {
     s.className = 'cmhc-mi-section';
     s.id = `fc-section-${g.id}`;
     s.innerHTML = `<h2 class="cmhc-mi-section-title"></h2><div class="grid md:grid-cols-2 gap-4 items-start" data-role="cards"></div>`;
-    s.querySelector('h2').textContent = g.id === 'change' ? g.label : `${g.label} — ${sel.name}`;
+    s.querySelector('h2').textContent = g.id === 'change' || g.id === 'provtable' ? g.label : `${g.label} — ${sel.name}`;
     const $cards = s.querySelector('[data-role="cards"]');
     let drawn = 0;
 
@@ -348,25 +417,27 @@ function renderCharts() {
       // Last 10 years unless "Charts from" says otherwise.
       const tenBack = sel.year - CHANGE_YEARS + 1;
       if (lineCard($cards, `fcc_change_${sel.prov}`, {
-        title: `${sel.name} Annual % Change in Cultivated Farmland Values`,
+        title: `${sel.name} Annual % Change in Farmland Values`, subtitle: 'Cultivated land',
         input: changeCardInput(`fcc_change_${sel.prov}`, ui.cIdx, lines, { from: sel.from ?? tenBack, to: sel.year }),
       })) drawn++;
       // Each region's published change (annual tables, 2017 on), capped at 10 years.
       // Pastureland the same way (published from 2022).
       if (sel.prov !== CANADA) {
         const range = { from: Math.max(sel.from ?? tenBack, tenBack), to: sel.year };
-        for (const [key, list, what] of [
-          ['region_change', [...regs.cultivated, ...regs.irrigated], 'Cultivated Farmland Values'],
-          ['pasture_change', regs.pasture, 'Pastureland Values'],
+        for (const [key, list, title, subtitle] of [
+          ['region_change', [...regs.cultivated, ...regs.irrigated], 'Annual % Change in Farmland Values by Region', 'Cultivated land'],
+          ['pasture_change', regs.pasture, 'Annual % Change in Pastureland Values', 'Pastureland by region'],
         ]) {
           if (!list.length) continue;
           const id = `fcc_${key}_${sel.prov}`;
           if (lineCard($cards, id, {
-            title: `${sel.name} Annual % Change in ${what} by Region`,
+            title: `${sel.name} ${title}`, subtitle,
             input: regionChangeCardInput(id, ui.rIdx, list, range),
           })) drawn++;
         }
       }
+      if (sel.prov !== CANADA) drawn += summaryTable($cards, sel, regs);
+    } else if (g.id === 'provtable') {
       drawn += provincialTable($cards, sel);
     } else if (g.id === 'regions' && sel.prov !== CANADA) {
       for (const [key, what] of [['cultivated', 'Cultivated Farmland Value by Region'],
@@ -382,7 +453,7 @@ function renderCharts() {
     } else if (g.id === 'table' && sel.prov !== CANADA) {
       drawn += regionTable($cards, sel, regs);
     } else if (g.id === 'narrative') {
-      drawn += narrativeCard($cards, sel, regs);
+      drawn += narrativeCard($cards, sel, allRegs);
     }
     if (drawn) { $grid.appendChild(s); drawnSections.push({ id: s.id, label: g.label }); }
   }
@@ -396,6 +467,25 @@ function renderCharts() {
 }
 
 // --- Tables ------------------------------------------------------------------
+
+/** The province and each region's % change for the last five years to the report year. */
+function summaryTable($cards, sel, regs) {
+  const ys = Array.from({ length: SUMMARY_YEARS }, (_, i) => sel.year - SUMMARY_YEARS + 1 + i);
+  const rows = summaryRows({
+    cIdx: ui.cIdx, pIdx: changeIndex(ui.data, 'pasture_change'), rIdx: ui.rIdx,
+    regs, prov: sel.prov, provLabel: sel.name, years: ys,
+  });
+  if (!rows.length) return 0;
+  buildTableCard($cards, {
+    id: `fcc_summary_${sel.prov}_${sel.year}`,
+    title: `${sel.name} Annual % Change in Farmland Values by Region, ${ys[0]}–${ys[ys.length - 1]}`,
+    subtitle: 'Cultivated land and pastureland (pastureland published from 2022)',
+    head: ['Region', ...ys.map(String)],
+    rows: rows.map(r => (r.section ? r : [r.label, ...r.values.map(fmtPct)])),
+    source: sourceFor(sel.year), wide: true,
+  });
+  return 1;
+}
 
 /** Every province's % change, a row per year, latest first. */
 function provincialTable($cards, sel) {

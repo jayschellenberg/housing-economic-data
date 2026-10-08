@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   periodLabel, changeIndex, regionIndex, provRegions, years, tableYears, changeCardInput, regionCardInput, regionChangeCardInput,
   regionTableRows, changeTable, narrativesFor, narrativeYears, markRegions, fmtMoney, fmtPct, fmtRange,
+  filterRegions, regionNames, summaryRows,
 } from '../src/fcc-data.js';
 
 const data = {
@@ -103,6 +104,30 @@ describe('fcc-data', () => {
       ['Westman', 'Westman and Central Plains-Pembina Valley (irrigated)']);
     expect(runs.filter(r => r.region).map(r => r.text)).toEqual(['Westman and Central Plains–Pembina Valley', 'Westman']);
     expect(runs.map(r => r.text).join('')).toBe('Westman and Central Plains–Pembina Valley held; Westman rose.');
+  });
+
+  it('filters regions by name across land types and lists names', () => {
+    const regs = provRegions(data, rIdx, 'MB', { activeSince: 2022 });
+    expect(regionNames(regs)).toEqual(['Westman', 'Westman and Central Plains-Pembina Valley (irrigated)']);
+    const f = filterRegions(regs, ['Westman']);
+    expect(f.cultivated).toEqual([]);
+    expect(f.pasture).toEqual([]);
+    expect(f.irrigated).toHaveLength(1);
+  });
+
+  it('builds the 5-year summary: province average first, then regions', () => {
+    const regs = provRegions(data, rIdx, 'MB', { activeSince: 2022 });
+    const pIdx = changeIndex({ pasture_change: [[2025, 'MB', 4.3]] }, 'pasture_change');
+    const rows = summaryRows({ cIdx, pIdx, rIdx, regs, prov: 'MB', provLabel: 'Manitoba', years: [2024, 2025] });
+    expect(rows.map(r => r.section || `${r.label}:${r.values.join('|')}`)).toEqual([
+      'Cultivated land',
+      'Manitoba (provincial average):6.5|12.2',
+      'Westman:|15.1',
+      'Westman and Central Plains-Pembina Valley (irrigated):|0',
+      'Pastureland',
+      'Manitoba (provincial average):|4.3',
+      'Westman:|4',
+    ]);
   });
 
   it('formats with the ** missing mark', () => {
