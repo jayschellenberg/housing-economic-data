@@ -11,7 +11,7 @@
  *                     'approx_map' | 'forecast|edition=YYYYQn' (a | joins several)
  *   metrics:     { metric: { label, unit } }        unit pct | sf | psf | cad | count
  *   definitions: { publisher: text }
- *   missing:     [{ publisher, sector, period }]
+ *   missing:     [{ publisher, sector, period, reason }]   reason 'no file' | 'not published'
  *   qc:          [{ publisher, sector, period, file, note }]
  */
 
@@ -211,14 +211,14 @@ export function coverage(data) {
   for (const s of data?.sources || []) {
     for (const sec of String(s.sector).split('+')) {
       const k = `${s.publisher}|${sec}`;
-      if (!by.has(k)) by.set(k, { publisher: s.publisher, sector: sec, periods: new Set(), missing: [] });
+      if (!by.has(k)) by.set(k, { publisher: s.publisher, sector: sec, periods: new Set(), missing: [], unpublished: [] });
       by.get(k).periods.add(s.period);
     }
   }
   for (const m of data?.missing || []) {
     const k = `${m.publisher}|${m.sector}`;
-    if (!by.has(k)) by.set(k, { publisher: m.publisher, sector: m.sector, periods: new Set(), missing: [] });
-    by.get(k).missing.push(m.period);
+    if (!by.has(k)) by.set(k, { publisher: m.publisher, sector: m.sector, periods: new Set(), missing: [], unpublished: [] });
+    by.get(k)[m.reason === 'not published' ? 'unpublished' : 'missing'].push(m.period);
   }
   return [...by.values()].map(r => ({
     publisher: r.publisher, sector: r.sector,
@@ -226,6 +226,8 @@ export function coverage(data) {
     first: [...r.periods].sort()[0] || '',
     last: [...r.periods].sort().slice(-1)[0] || '',
     missing: r.missing.sort(),
+    // quarters the publisher never posted (checked on its website)
+    unpublished: r.unpublished.sort(),
   })).sort((a, b) => a.sector.localeCompare(b.sector) || rank(a.publisher) - rank(b.publisher));
 }
 

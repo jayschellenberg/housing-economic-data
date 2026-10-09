@@ -509,9 +509,10 @@ function coverageSection() {
   buildTableCard(s.querySelector('[data-role="cards"]'), {
     id: 'bk_coverage',
     title: `${SECTORS.find(x => x.id === selectedSector())?.label} reports read`,
-    subtitle: `Quarters with no PDF between a series' first edition and the sector's latest are listed as missing. ${qc.length} parser note(s) in qc_flags.csv.`,
-    head: ['Publisher', 'Editions', 'First', 'Latest', 'Missing'],
-    rows: rows.map(r => [r.publisher, String(r.editions), periodLabel(r.first), periodLabel(r.last), r.missing.map(periodLabel).join(', ') || '—']),
+    subtitle: `Quarters with no PDF between a series' first edition and the sector's latest are listed as missing; "never published" quarters were checked on the publisher's website. ${qc.length} parser note(s) in qc_flags.csv.`,
+    head: ['Publisher', 'Editions', 'First', 'Latest', 'Missing', 'Never published'],
+    rows: rows.map(r => [r.publisher, String(r.editions), periodLabel(r.first), periodLabel(r.last),
+      r.missing.map(periodLabel).join(', ') || '—', r.unpublished.map(periodLabel).join(', ') || '—']),
     source: 'Brokerage-Reports/ingest/parse_brokerage.py', wide: true,
   });
   return s;

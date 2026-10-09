@@ -29,7 +29,8 @@ const data = {
   ],
   metrics: { vacancy_rate: { label: 'Vacancy rate', unit: 'pct' } },
   definitions: { CBRE: 'availability' },
-  missing: [{ publisher: 'CBRE', sector: 'industrial', period: '2026Q2' }],
+  missing: [{ publisher: 'CBRE', sector: 'industrial', period: '2026Q2', reason: 'no file' },
+            { publisher: 'CBRE', sector: 'industrial', period: '2026Q3', reason: 'not published' }],
   qc: [],
 };
 
@@ -100,6 +101,7 @@ describe('brokerage-data', () => {
     const cg = c.find(r => r.publisher === 'Capital Group');
     expect(cg).toMatchObject({ sector: 'industrial', editions: 2, first: '2026Q1', last: '2026Q2', missing: [] });
     expect(c.find(r => r.publisher === 'CBRE').missing).toEqual(['2026Q2']);
+    expect(c.find(r => r.publisher === 'CBRE').unpublished).toEqual(['2026Q3']);
     expect(c.filter(r => r.publisher === 'Colliers (national snapshot)').map(r => r.sector).sort()).toEqual(['industrial', 'office']);
   });
 
