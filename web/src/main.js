@@ -27,6 +27,7 @@ import { initCapRates } from './cap-rates.js';
 import { initYardi, refreshYardi } from './yardi.js';
 import { initRentalsCa, refreshRentalsCa } from './rentalsca.js';
 import { initFcc } from './fcc.js';
+import { initBrokerage } from './brokerage.js';
 import { initRentCompare, refreshRentCompare } from './rent-compare.js';
 import { initCapVsInterestTab } from './cap-vs-interest-tab.js';
 import { initZoning } from './zoning.js';
@@ -175,6 +176,7 @@ function setupTabs(initial, onActivate) {
     yardi:      { btn: document.getElementById('tab-btn-yardi'),      panel: document.getElementById('tab-panel-yardi') },
     rentalsca:  { btn: document.getElementById('tab-btn-rentalsca'),  panel: document.getElementById('tab-panel-rentalsca') },
     fcc:        { btn: document.getElementById('tab-btn-fcc'),        panel: document.getElementById('tab-panel-fcc') },
+    brokerage:  { btn: document.getElementById('tab-btn-brokerage'),  panel: document.getElementById('tab-panel-brokerage') },
     rentcompare:{ btn: document.getElementById('tab-btn-rentcompare'), panel: document.getElementById('tab-panel-rentcompare') },
     capvsint:   { btn: document.getElementById('tab-btn-capvsint'),   panel: document.getElementById('tab-panel-capvsint') },
     zoning:     { btn: document.getElementById('tab-btn-zoning'),     panel: document.getElementById('tab-panel-zoning') },
@@ -185,7 +187,7 @@ function setupTabs(initial, onActivate) {
   // Which top-level group each tab belongs to. The header shows one group
   // link as active and one tab bar (#nav-housing / #nav-local) at a time;
   // everything not listed here is Housing & Economic Data.
-  const TAB_GROUP = { johnson: 'local', yardi: 'local', rentalsca: 'local', rentcompare: 'local', fcc: 'local', caprates: 'local', capvsint: 'local', zoning: 'local', rental: 'local', commercial: 'local' };
+  const TAB_GROUP = { johnson: 'local', yardi: 'local', rentalsca: 'local', rentcompare: 'local', fcc: 'local', brokerage: 'local', caprates: 'local', capvsint: 'local', zoning: 'local', rental: 'local', commercial: 'local' };
   const groupOf = (name) => TAB_GROUP[name] || 'housing';
 
   function showGroup(group) {
@@ -338,7 +340,7 @@ async function bootstrap() {
   const rawHash = hashTab in SUBAPP_TABS && SUBVIEW_RE.test(hashView || '') ? hashTab : fullHash;
   if (rawHash === hashTab && hashView) subappView[hashTab] = hashView;
   let initialTab = 'charts';
-  if (['charts', 'tables', 'compare', 'starts', 'secondary', 'housing', 'census', 'affordability', 'rtb', 'johnson', 'yardi', 'rentalsca', 'rentcompare', 'fcc', 'caprates', 'capvsint', 'zoning', 'rental', 'commercial', 'snapshot', 'indicators', 'agriculture', 'economic'].includes(rawHash)) {
+  if (['charts', 'tables', 'compare', 'starts', 'secondary', 'housing', 'census', 'affordability', 'rtb', 'johnson', 'yardi', 'rentalsca', 'rentcompare', 'fcc', 'brokerage', 'caprates', 'capvsint', 'zoning', 'rental', 'commercial', 'snapshot', 'indicators', 'agriculture', 'economic'].includes(rawHash)) {
     initialTab = rawHash;
   } else if (rawHash.startsWith('mi-section-')) {
     initialTab = 'indicators';
@@ -375,6 +377,7 @@ async function bootstrap() {
     yardi:         once(() => initYardi().catch(err => console.error('[yardi bootstrap]', err))),
     rentalsca:     once(() => initRentalsCa().catch(err => console.error('[rentalsca bootstrap]', err))),
     fcc:           once(() => initFcc().catch(err => console.error('[fcc bootstrap]', err))),
+    brokerage:     once(() => initBrokerage().catch(err => console.error('[brokerage bootstrap]', err))),
     rentcompare:   once(() => initRentCompare({ loadShard }).catch(err => console.error('[rent-compare bootstrap]', err))),
     capvsint:      once(() => initCapVsInterestTab().catch(err => console.error('[cap-vs-interest bootstrap]', err))),
     zoning:        once(() => initZoning().catch(err => console.error('[zoning bootstrap]', err))),
@@ -471,6 +474,12 @@ async function bootstrap() {
     xlsxBtnId: 'fc-download-xlsx-charts',
     baseName:  'FCCFarmland',
     getNodes:  () => [...document.querySelectorAll('#fc-chart-grid .chart-card')].filter(hasPlot),
+  });
+  wireChartDocExports({
+    docxBtnId: 'bk-download-docx-charts',
+    xlsxBtnId: 'bk-download-xlsx-charts',
+    baseName:  'BrokerageReports',
+    getNodes:  () => [...document.querySelectorAll('#bk-chart-grid .chart-card')].filter(hasPlot),
   });
   wireChartDocExports({
     docxBtnId: 'rx-download-docx-charts',
