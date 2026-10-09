@@ -14,7 +14,7 @@ const data = {
     { id: 's1', publisher: 'Capital Group', sector: 'industrial', period: '2026Q1', file: 'a.pdf', folder: 'x' },
     { id: 's2', publisher: 'Capital Group', sector: 'industrial', period: '2026Q2', file: 'b.pdf', folder: 'x' },
     { id: 's3', publisher: 'CBRE', sector: 'industrial', period: '2026Q1', file: 'c.pdf', folder: 'y' },
-    { id: 's4', publisher: 'Colliers (national snapshot)', sector: 'office+industrial', period: '2026Q2', file: 'n.pdf', folder: 'z' },
+    { id: 's4', publisher: 'Colliers', sector: 'office+industrial', period: '2026Q2', file: 'n.pdf', folder: 'z' },
   ],
   obs: [
     obs('Capital Group', 'industrial', '2026Q1', 'Winnipeg', '', 'vacancy_rate', 4.5),
@@ -102,7 +102,7 @@ describe('brokerage-data', () => {
     expect(cg).toMatchObject({ sector: 'industrial', editions: 2, first: '2026Q1', last: '2026Q2', missing: [] });
     expect(c.find(r => r.publisher === 'CBRE').missing).toEqual(['2026Q2']);
     expect(c.find(r => r.publisher === 'CBRE').unpublished).toEqual(['2026Q3']);
-    expect(c.filter(r => r.publisher === 'Colliers (national snapshot)').map(r => r.sector).sort()).toEqual(['industrial', 'office']);
+    expect(c.filter(r => r.publisher === 'Colliers').map(r => r.sector).sort()).toEqual(['industrial', 'office']);
   });
 
   it('labels periods and units', () => {

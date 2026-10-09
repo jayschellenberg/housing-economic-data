@@ -47,7 +47,7 @@ export const TOTAL_SEGMENT = { industrial: '', office: 'All', retail: '', hotel:
 export const TOTAL_GEO = 'Winnipeg';
 
 /** Publishers in a fixed display order; anything new goes after. */
-export const PUBLISHER_ORDER = ['Capital Group', 'Colliers', 'Colliers (national snapshot)', 'CBRE', 'CBRE Hotels', 'Avison Young'];
+export const PUBLISHER_ORDER = ['Capital Group', 'Colliers', 'CBRE', 'CBRE Hotels', 'Avison Young'];
 
 const FLAG_SKIP = new Set(['prev_q', 'prev_y']);
 

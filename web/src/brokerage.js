@@ -446,6 +446,9 @@ function renderCharts() {
     const id = `bk_${sector}_${metric}_${viewDetail() ? 'detail' : 'totals'}`;
     const input = cardInput(id, ui.idx, sector, metric, lines, range, { forecasts: sector === 'hotel' && ui.prefs.forecasts !== false });
     if (!input.records.length) continue;
+    // Office and industrial compare publishers: a statistic only one firm
+    // prints has nothing to compare and is left out (Jason, 2026-10-09).
+    if (!viewDetail() && (sector === 'office' || sector === 'industrial') && new Set(input.seriesMeta.map(s => s.id.split(':')[1])).size < 2) continue;
     const s = document.createElement('section');
     s.className = 'cmhc-mi-section';
     s.id = `bk-section-${metric}`;
@@ -456,7 +459,8 @@ function renderCharts() {
     const card = buildIndicatorCard($cards, {
       chartId: id, fileStem: id, title: `Winnipeg ${sectorLabel} ${metricLabel(ui.data, metric)}`,
       sourceLabel: sourceFor(lines), table: true,
-      zeroBased: unit === 'psf' || unit === 'cad', mirrorY: false, sourceInCaption: true, signed: false, captionPt: 10,
+      // every rate and dollar axis starts at 0 (Jason, 2026-10-09: all % charts, every project)
+      zeroBased: unit === 'pct' || unit === 'psf' || unit === 'cad', mirrorY: false, sourceInCaption: true, signed: false, captionPt: 10,
     });
     const caveats = input.flags.filter(f => CAVEAT[f]).map(f => CAVEAT[f]);
     const subtitle = viewDetail() ? `${selectedPublisher()}, as published` : 'As published by each firm — definitions differ, see below';
