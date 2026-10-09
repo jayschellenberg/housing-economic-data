@@ -694,7 +694,11 @@ export function buildIndicatorCard(container, {
 
     const vals = filtered.map(p => p.value);
     const balanceOfOpinion = seriesMeta.some(s => s.units === 'balance_of_opinion');
-    const yDomain = yDomainFor(vals, { balanceOfOpinion, zeroBased, refBand, refLine });
+    // Every percent axis starts at 0 (Jason, 2026-10-09, all projects): a rate
+    // axis floating to the data's range exaggerates movement. A series that
+    // goes negative still extends below 0 (yDomainFor).
+    const percentAxis = seriesMeta.length > 0 && seriesMeta.every(s => s.units === 'percent');
+    const yDomain = yDomainFor(vals, { balanceOfOpinion, zeroBased: zeroBased || percentAxis, refBand, refLine });
     // Draw the zero rule whenever the axis can show negatives — always for a
     // balance of opinion, and for a rate series that actually dips below zero.
     const allowsNegative = balanceOfOpinion || yDomain[0] < 0;
