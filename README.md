@@ -10,13 +10,13 @@ A multi-tab static website of Canadian housing & economic data, built for a comm
 
 The header carries two top-level groups, each with its own tab bar:
 **Housing & Economic Data** (the public CMHC / StatsCan tabs, Market Indicators
-included, and the landing view) and **Local Data** (Cap Rates, Cap Rates vs Interest, Johnson Report, Yardi Rental,
+included, and the landing view) and **Local Data** (Cap Rates, Cap Rates vs Interest, Johnson Report, Brokerage Reports, Yardi Rental,
 Rentals.ca, Rent Comparison, Zoning, Rental Dashboard and Commercial Dashboard — tabs whose data comes from folders
 on the viewer's disk).
 
 The Local Data folders all live in one Dropbox folder shared with colleagues,
 **AppMarketData** (Jason's copy: `D:\Dropbox\SharedInfo\AppMarketData`), holding
-`CapRates`, `CommercialAvailability`, `JohnsonReport`, `RentalData`, `RentalDashboard`,
+`BrokerageReports`, `CapRates`, `CommercialAvailability`, `JohnsonReport`, `RentalData`, `RentalDashboard`,
 `Zoning` and `SalesData` (the last read by the two parcel-search sites). Each tab accepts
 its own subfolder or `AppMarketData` itself: `web/src/app-market-data.js`
 (`resolveAppFolder`) steps down to the tab's subfolder before the handle is
@@ -41,6 +41,7 @@ other tab is Housing.
 | Agriculture | Farm cash / farmland value / crop, livestock & supply-managed prices / input costs / farm structure (consolidation) + within-province CCS choropleth; sidebar checks any mix of MB/SK/AB/BC plus Canada (on by default; every chart follows) and sets the year range | catalog + `r/11`,`r/14`; `r/20`,`r/24` (run-once map) |
 | RTB (MB) | Manitoba rent-increase guideline history + CPI overlay | `r/19` |
 | Johnson Report | Winnipeg commercial vacancy, lease rates and sales summaries from The Johnson Report, read from a folder on the user's own disk (nothing published) | `Johnson-Report/ingest/parse_johnson.py` (separate project) |
+| Brokerage Reports | Winnipeg office, industrial, retail and hotel figures (vacancy / availability, asking rents, absorption, supply, construction; hotel occupancy, ADR, RevPAR) as published in Capital Group, Colliers, CBRE, CBRE Hotels and Avison Young market reports, one line per publisher, never averaged; read from a folder on the user's own disk | `Brokerage-Reports/ingest/parse_brokerage.py` (separate project) |
 | Cap Rates | Winnipeg cap-rate ranges by property type and class (Colliers, CBRE, Cushman & Wakefield), quarterly, read from a folder on the user's own disk | `Cap-Rates/ingest/parse_cap_rates.py` (separate project) |
 | Zoning | Appraisal zoning narratives per municipality and zone (intent, permitted uses chosen by the appraiser, bulk requirements) with the full use lists and bulk table cited to PDF pages, a live by-law currency check against Manitoba Zoning By-Laws open data, Copy / Word export; read from `SharedInfo\AppMarketData\Zoning` on the user's own disk (shared only with chosen users; nothing published) | `zoning-narrative/R/export.R` (separate project) |
 | MB Economic Update | Auto narrative report (economy + HPI + outlook) — **parked, hidden from the nav** (see Parked features) | `r/15`, `r/16` |
