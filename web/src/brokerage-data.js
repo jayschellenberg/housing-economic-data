@@ -192,6 +192,7 @@ export function latestTable(idx, sector, metric, lines, n = 6) {
   const rows = series.map(({ ln, s }) => {
     const byP = new Map(s.points.map(p => [p.period, p]));
     return {
+      publisher: ln.publisher,
       label: ln.label || `${ln.publisher} — ${areaLabel(ln.geo, ln.segment)}`,
       values: periods.map(p => byP.get(p)?.value ?? null),
       flags: periods.map(p => flagParts(byP.get(p)?.flag).filter(f => f !== 'headline')),
