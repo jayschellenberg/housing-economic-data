@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   seriesIndex, publishersFor, areasFor, totalLines, cardInput, latestTable, periodLabel, coverage, years,
   unitOfMetric, fmtValue, areaLabel, isForecast,
+  investmentGeos, investmentSegments, investmentLines, overallCapLines, momentumGroups, segmentShort,
 } from '../src/brokerage-data.js';
 
 const obs = (publisher, sector, period, geo, segment, metric, value, flag = '') => ({
@@ -111,5 +112,63 @@ describe('brokerage-data', () => {
     expect(unitOfMetric('asking_net_rent_psf')).toBe('psf');
     expect(unitOfMetric('absorption_sf')).toBe('sf');
     expect(years(idx)).toEqual([2025, 2026]);
+  });
+});
+
+describe('brokerage-data: Newmark investment rates', () => {
+  const nm = (period, geo, segment, metric, value, flag = '') => ({ ...obs('Newmark', 'investment', period, geo, segment, metric, value, flag) });
+  const idx = seriesIndex({
+    obs: [
+      nm('2025Q1', 'Calgary', 'Office CBD Class A', 'cap_rate', 7.25),
+      nm('2025Q1', 'Calgary', 'Office Suburban Class B', 'cap_rate', 8.5),
+      nm('2025Q1', 'Canada', 'Office CBD Class A', 'cap_rate', 6.9),
+      nm('2025Q1', 'Toronto', 'Office CBD Class A', 'cap_rate', 6.5),
+      nm('2025Q1', 'Toronto', 'Industrial Class A', 'cap_rate', 5.25),
+      nm('2025Q1', 'Canada', 'Office CBD Class A', 'terminal_cap_rate', 7.4, 'derived'),
+      nm('2026Q1', 'Canada', 'BoC 10-year benchmark bond', 'overall_cap_rate', 3.47, 'edition=2026Q1'),
+      nm('2026Q1', 'Canada', 'Single Tenant Industrial', 'overall_cap_rate', 6.0, 'edition=2026Q1'),
+      nm('2026Q1', 'Canada', 'Four-class average', 'overall_cap_rate', 5.98, 'edition=2026Q1'),
+      nm('2026Q1', 'Halifax', 'All products', 'momentum_ratio', 2.4, 'approx_chart|chart=location'),
+      nm('2026Q1', 'Ottawa', 'All products', 'momentum_ratio', -1.4, 'approx_chart|chart=location'),
+      nm('2026Q1', 'Canada', 'Hotel', 'momentum_ratio', 1.7, 'approx_chart|chart=type'),
+      nm('2026Q1', 'Toronto', 'Food Anchored Retail Strip', 'momentum_ratio', 15, 'approx_chart|chart=combo'),
+    ],
+  });
+
+  it('lists the Canada average first, then the cities, and a type\'s classes', () => {
+    expect(investmentGeos(idx)).toEqual(['Canada', 'Calgary', 'Toronto']);
+    expect(investmentSegments(idx, 'Office')).toEqual(['Office CBD Class A', 'Office Suburban Class B']);
+    expect(investmentSegments(idx, 'Office', 'Toronto')).toEqual(['Office CBD Class A']);
+    expect(segmentShort('Office CBD Class A', 'Office')).toBe('CBD Class A');
+  });
+
+  it('draws one city\'s classes, or one class across the cities', () => {
+    expect(investmentLines(idx, { mode: 'city', geo: 'Calgary', type: 'Office' }).map(l => l.label))
+      .toEqual(['CBD Class A', 'Suburban Class B']);
+    expect(investmentLines(idx, { mode: 'compare', segment: 'Office CBD Class A' }).map(l => l.label))
+      .toEqual(['Canada (average)', 'Calgary', 'Toronto']);
+  });
+
+  it('orders the overall cap rate lines with the average and the bond last', () => {
+    expect(overallCapLines(idx).map(l => l.segment)).toEqual(['Single Tenant Industrial', 'Four-class average', 'BoC 10-year benchmark bond']);
+  });
+
+  it('splits the momentum ratios by chart, highest first', () => {
+    const g = momentumGroups(idx);
+    expect(g.location.map(l => l.label)).toEqual(['Halifax', 'Ottawa']);
+    expect(g.type.map(l => l.label)).toEqual(['Hotel']);
+    expect(g.combo.map(l => l.label)).toEqual(['Toronto — Food Anchored Retail Strip']);
+  });
+
+  it('daggers only figures read off a chart, and formats the new units', () => {
+    const t = latestTable(idx, 'investment', 'momentum_ratio', momentumGroups(idx).location, 4);
+    expect(t.rows[0].flags).toEqual([['approx_chart']]);
+    const d = latestTable(idx, 'investment', 'terminal_cap_rate', [{ publisher: 'Newmark', geo: 'Canada', segment: 'Office CBD Class A' }], 4);
+    expect(d.rows[0].flags).toEqual([[]]);
+    expect(fmtValue(5.25, 'pct')).toBe('5.25%');
+    expect(fmtValue(50, 'bps')).toBe('50 bps');
+    expect(fmtValue(-1.4, 'ratio')).toBe('-1.4');
+    expect(fmtValue(53.2, 'cad_bn')).toBe('$53.2B');
+    expect(unitOfMetric('reversion_spread_bps')).toBe('bps');
   });
 });

@@ -96,6 +96,10 @@ export const INDICATOR_FMT = {
   dollar_psf:         (v) => v == null ? '—' : `$${Number(v).toFixed(2)}`,
   sf:                 (v) => v == null ? '—' : `${Math.round(Number(v)).toLocaleString()} sf`,
   balance_of_opinion: (v) => v == null ? '—' : `${Number(v).toFixed(0)}`,
+  // Newmark's reversion spread (basis points over the going-in cap rate) and
+  // national investment volume ($ billions as printed).
+  bps:                (v) => v == null ? '—' : `${Math.round(Number(v))} bps`,
+  dollar_billions:    (v) => v == null ? '—' : `$${Number(v).toFixed(1)}B`,
 };
 
 // Formatter for a series' `units`, defaulting to a plain string cast.

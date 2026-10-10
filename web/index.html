@@ -1464,10 +1464,27 @@
         <section>
           <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Sector</h2>
           <select id="bk-sector" class="w-full border border-neutral-300 rounded px-2 py-1 text-sm" disabled></select>
-          <p class="text-xs text-neutral-500 mt-1">Industrial, office and retail from the quarterly Winnipeg reports; hotels from the national hotel outlooks' Winnipeg figures.</p>
+          <p class="text-xs text-neutral-500 mt-1">Industrial, office and retail from the quarterly Winnipeg reports; hotels from the national hotel outlooks' Winnipeg figures. Investment rates are Newmark's Canadian cities (Newmark does not cover Winnipeg).</p>
         </section>
 
-        <section>
+        <section id="bk-inv-section" hidden>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Survey rates</h2>
+          <label class="flex items-center gap-2 text-sm"><input id="bk-inv-by-city" type="radio" name="bk-inv-mode" checked /> One city, every class</label>
+          <label class="flex items-center gap-2 text-sm mt-1"><input id="bk-inv-compare" type="radio" name="bk-inv-mode" /> One class, every city</label>
+          <label class="block text-xs text-neutral-600 mt-2" for="bk-inv-type">Property type</label>
+          <select id="bk-inv-type" class="w-full border border-neutral-300 rounded px-2 py-1 text-sm"></select>
+          <div id="bk-inv-city-wrap">
+            <label class="block text-xs text-neutral-600 mt-2" for="bk-inv-city">City</label>
+            <select id="bk-inv-city" class="w-full border border-neutral-300 rounded px-2 py-1 text-sm"></select>
+          </div>
+          <div id="bk-inv-segment-wrap" hidden>
+            <label class="block text-xs text-neutral-600 mt-2" for="bk-inv-segment">Class</label>
+            <select id="bk-inv-segment" class="w-full border border-neutral-300 rounded px-2 py-1 text-sm"></select>
+          </div>
+          <p class="text-xs text-neutral-500 mt-1">Newmark V&amp;A North American Market Survey, 1Q and Mid-Year editions, 2021 to mid-2025. Canada dropped out of that survey in 2026; the Investment Trends Survey charts below carry on from there.</p>
+        </section>
+
+        <section id="bk-view-section">
           <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">View</h2>
           <label class="flex items-center gap-2 text-sm"><input id="bk-view-totals" type="radio" name="bk-view" checked /> Compare publishers (market totals)</label>
           <label class="flex items-center gap-2 text-sm mt-1"><input id="bk-view-detail" type="radio" name="bk-view" /> One publisher's submarkets and classes</label>
@@ -1504,7 +1521,7 @@
         <section>
           <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Charts from</h2>
           <input id="bk-year-from" type="number" min="2000" max="2100" placeholder="year" class="w-24 border border-neutral-300 rounded px-2 py-1 text-sm" />
-          <p class="text-xs text-neutral-500 mt-1">Leave blank for the last six years (hotels: every year published). Reports run from 2020.</p>
+          <p class="text-xs text-neutral-500 mt-1">Leave blank for the last six years (hotels and investment rates: every period published). Reports run from 2020; Newmark's overall cap rate chart from 2006.</p>
         </section>
 
         <section>
@@ -1560,14 +1577,14 @@
             Every figure here is exactly as printed in a brokerage's own report; nothing is averaged across firms.
             Their databases, boundaries and definitions differ, so the same quarter can carry different vacancy
             rates — that spread is itself information. Figures marked <strong>†</strong> were read by OCR from an
-            image-only PDF or off a snapshot's map; check them against the report before quoting one. The Johnson
+            image-only PDF, off a snapshot's map or off a chart; check them against the report before quoting one. The Johnson
             Report tab carries the same market from a fourth source.
           </p>
           <dl id="bk-definitions"></dl>
         </section>
         <footer class="text-xs text-neutral-500 pt-4 border-t border-neutral-200">
-          Source: Capital Commercial Real Estate Services Inc., Colliers (Pratt McGarry Inc.), CBRE Research, CBRE Hotels and
-          Avison Young market reports. Figures shown here are read from the viewer's own locally held copy.
+          Source: Capital Commercial Real Estate Services Inc., Colliers (Pratt McGarry Inc.), CBRE Research, CBRE Hotels,
+          Avison Young market reports and Newmark Valuation &amp; Advisory surveys. Figures shown here are read from the viewer's own locally held copy.
         </footer>
       </main>
     </div>
