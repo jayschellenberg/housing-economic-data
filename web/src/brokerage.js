@@ -443,6 +443,9 @@ function renderCharts() {
   const labels = !!ui.prefs.valueLabels;
   const off = new Set(metricsOff());
   const drawn = [];
+  // Vacancy and availability rate share one section, charts beside each
+  // other on the first row and their tables on the second (Jason, 2026-10-10).
+  let rateSection = null;
 
   for (const metric of availableMetrics()) {
     if (off.has(metric)) continue;
@@ -455,11 +458,16 @@ function renderCharts() {
     // counterpart to it, joined by any firm that also prints one (2026-10-10).
     if (!viewDetail() && (sector === 'office' || sector === 'industrial') && metric !== 'availability_rate'
         && new Set(input.seriesMeta.map(s => s.id.split(':')[1])).size < 2) continue;
-    const s = document.createElement('section');
-    s.className = 'cmhc-mi-section';
-    s.id = `bk-section-${metric}`;
-    s.innerHTML = `<h2 class="cmhc-mi-section-title"></h2><div class="grid md:grid-cols-2 gap-4 items-start" data-role="cards"></div>`;
-    s.querySelector('h2').textContent = `${sectorLabel} — ${metricLabel(ui.data, metric)}`;
+    const joinRates = metric === 'availability_rate' && rateSection;
+    const s = joinRates ? rateSection.section : document.createElement('section');
+    if (!joinRates) {
+      s.className = 'cmhc-mi-section';
+      s.id = `bk-section-${metric}`;
+      s.innerHTML = `<h2 class="cmhc-mi-section-title"></h2><div class="grid md:grid-cols-2 gap-4 items-start" data-role="cards"></div>`;
+      s.querySelector('h2').textContent = `${sectorLabel} — ${metricLabel(ui.data, metric)}`;
+    } else {
+      s.querySelector('h2').textContent += ` / ${metricLabel(ui.data, metric)}`;
+    }
     const $cards = s.querySelector('[data-role="cards"]');
     const unit = unitOfMetric(metric);
     const card = buildIndicatorCard($cards, {
@@ -477,7 +485,14 @@ function renderCharts() {
     });
     card.setOpenPanels(open.get(id) || []);
     ui.cards.set(id, { card: card.card });
-    latestCard($cards, sector, metric, lines, unit);
+    const $table = latestCard($cards, sector, metric, lines, unit);
+    if (joinRates) {
+      // chart row first: move this chart ahead of the vacancy table
+      if (rateSection.table) $cards.insertBefore(card.card, rateSection.table);
+      drawn[drawn.length - 1].label += ` / ${metricLabel(ui.data, metric)}`;
+      continue;
+    }
+    if (metric === 'vacancy_rate') rateSection = { section: s, table: $table };
     $grid.appendChild(s);
     drawn.push({ id: s.id, label: metricLabel(ui.data, metric) });
   }
@@ -492,18 +507,18 @@ function renderCharts() {
   }
 }
 
-/** The last six periods of each drawn line, as published. */
+/** The last six periods of each drawn line, as published. Returns the card element. */
 function latestCard($cards, sector, metric, lines, unit) {
   const t = latestTable(ui.idx, sector, metric, lines, 6);
-  if (!t.rows.length || !t.periods.length) return;
+  if (!t.rows.length || !t.periods.length) return null;
   const flagged = t.rows.some(r => r.flags.some(f => f.length));
-  buildTableCard($cards, {
+  return buildTableCard($cards, {
     id: `bk_${sector}_${metric}_latest`,
     title: `${metricLabel(ui.data, metric)} — latest published figures`,
     subtitle: `${SECTORS.find(s => s.id === sector)?.label || sector}; ** = not published for that period` + (flagged ? '; † read by OCR or off a map' : ''),
     head: ['Series', ...t.periods.map(periodLabel)],
     rows: t.rows.map(r => [r.label, ...r.values.map((v, i) => fmtValue(v, unit) + (r.flags[i].length ? ' †' : ''))]),
-    source: sourceFor(t.rows.map(r => r.publisher)), wide: true,
+    source: sourceFor(t.rows.map(r => r.publisher)),
   });
 }
 
@@ -514,7 +529,7 @@ function coverageSection() {
   const s = document.createElement('section');
   s.className = 'cmhc-mi-section';
   s.id = 'bk-section-coverage';
-  s.innerHTML = '<h2 class="cmhc-mi-section-title">Reports on disk</h2><div class="grid gap-4 items-start" data-role="cards"></div>';
+  s.innerHTML = '<h2 class="cmhc-mi-section-title">Reports on disk</h2><div class="grid md:grid-cols-2 gap-4 items-start" data-role="cards"></div>';
   const qc = (ui.data.qc || []).filter(q => q.sector === selectedSector() || q.sector === 'office+industrial');
   buildTableCard(s.querySelector('[data-role="cards"]'), {
     id: 'bk_coverage',
@@ -523,7 +538,7 @@ function coverageSection() {
     head: ['Publisher', 'Editions', 'First', 'Latest', 'Missing', 'Never published'],
     rows: rows.map(r => [r.publisher, String(r.editions), periodLabel(r.first), periodLabel(r.last),
       r.missing.map(periodLabel).join(', ') || '—', r.unpublished.map(periodLabel).join(', ') || '—']),
-    source: 'Brokerage-Reports/ingest/parse_brokerage.py', wide: true,
+    source: 'Brokerage-Reports/ingest/parse_brokerage.py',
   });
   return s;
 }
@@ -609,6 +624,7 @@ function buildTableCard(container, { id, title, subtitle, head, rows, source, wi
     filter: (n) => !(n.classList && n.classList.contains('chart-actions')),
   }).catch(err => console.error('[brokerage png]', err));
   ui.cards.set(id, { card });
+  return card;
 }
 
 // --- Excel (data) ----------------------------------------------------------------
