@@ -1464,25 +1464,9 @@
         <section>
           <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Sector</h2>
           <select id="bk-sector" class="w-full border border-neutral-300 rounded px-2 py-1 text-sm" disabled></select>
-          <p class="text-xs text-neutral-500 mt-1">Industrial, office and retail from the quarterly Winnipeg reports; hotels from the national hotel outlooks' Winnipeg figures. Investment rates are Newmark's Canadian cities (Newmark does not cover Winnipeg).</p>
+          <p class="text-xs text-neutral-500 mt-1">Industrial, office and retail from the quarterly Winnipeg reports; hotels from the national hotel outlooks' Winnipeg figures. Industrial, office and retail also carry Newmark's investment rates for Canadian cities (no Winnipeg), multifamily has Newmark's only, and "Canada — investment trends" holds its national cap rate, demand and commentary.</p>
         </section>
 
-        <section id="bk-inv-section" hidden>
-          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Survey rates</h2>
-          <label class="flex items-center gap-2 text-sm"><input id="bk-inv-by-city" type="radio" name="bk-inv-mode" checked /> One city, every class</label>
-          <label class="flex items-center gap-2 text-sm mt-1"><input id="bk-inv-compare" type="radio" name="bk-inv-mode" /> One class, every city</label>
-          <label class="block text-xs text-neutral-600 mt-2" for="bk-inv-type">Property type</label>
-          <select id="bk-inv-type" class="w-full border border-neutral-300 rounded px-2 py-1 text-sm"></select>
-          <div id="bk-inv-city-wrap">
-            <label class="block text-xs text-neutral-600 mt-2" for="bk-inv-city">City</label>
-            <select id="bk-inv-city" class="w-full border border-neutral-300 rounded px-2 py-1 text-sm"></select>
-          </div>
-          <div id="bk-inv-segment-wrap" hidden>
-            <label class="block text-xs text-neutral-600 mt-2" for="bk-inv-segment">Class</label>
-            <select id="bk-inv-segment" class="w-full border border-neutral-300 rounded px-2 py-1 text-sm"></select>
-          </div>
-          <p class="text-xs text-neutral-500 mt-1">Newmark V&amp;A North American Market Survey, 1Q and Mid-Year editions, 2021 to mid-2025. Canada dropped out of that survey in 2026; the Investment Trends Survey charts below carry on from there.</p>
-        </section>
 
         <section id="bk-view-section">
           <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">View</h2>
@@ -1516,6 +1500,21 @@
             </div>
           </details>
           <p class="text-xs text-neutral-500 mt-1">The publisher's own submarkets (industrial), classes within downtown and suburban (office), centre types, malls and nodes (retail). Up to eight are ticked by default.</p>
+        </section>
+
+        <section id="bk-inv-section" hidden>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Newmark — Canadian cities</h2>
+          <label class="flex items-center gap-2 text-sm"><input id="bk-inv-by-city" type="radio" name="bk-inv-mode" checked /> One city, every class</label>
+          <label class="flex items-center gap-2 text-sm mt-1"><input id="bk-inv-compare" type="radio" name="bk-inv-mode" /> One class, every city</label>
+          <div id="bk-inv-city-wrap">
+            <label class="block text-xs text-neutral-600 mt-2" for="bk-inv-city">City</label>
+            <select id="bk-inv-city" class="w-full border border-neutral-300 rounded px-2 py-1 text-sm"></select>
+          </div>
+          <div id="bk-inv-segment-wrap" hidden>
+            <label class="block text-xs text-neutral-600 mt-2" for="bk-inv-segment">Class</label>
+            <select id="bk-inv-segment" class="w-full border border-neutral-300 rounded px-2 py-1 text-sm"></select>
+          </div>
+          <p class="text-xs text-neutral-500 mt-1">Newmark V&amp;A's going-in cap, terminal cap and discount rates for this property type (North American Market Survey, 2021 to mid-2025). Newmark does not survey Winnipeg; its charts follow the Winnipeg ones.</p>
         </section>
 
         <section>

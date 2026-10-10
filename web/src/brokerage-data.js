@@ -27,8 +27,14 @@ export const SECTORS = [
   { id: 'office', label: 'Office' },
   { id: 'retail', label: 'Retail' },
   { id: 'hotel', label: 'Hotels' },
-  { id: 'investment', label: 'Investment rates — Canada (Newmark)' },
+  { id: 'multifamily', label: 'Multifamily (Newmark, Canadian cities)' },
+  { id: 'investment', label: 'Canada — investment trends (Newmark)' },
 ];
+
+/** Sectors that carry Newmark's survey rates, and the property type each shows.
+ *  Newmark's figures are stored under sector 'investment' (they are Canadian
+ *  cities, not Winnipeg) and drawn inside these sectors (Jason, 2026-10-10). */
+export const NEWMARK_TYPE = { industrial: 'Industrial', office: 'Office', retail: 'Retail', multifamily: 'Multifamily' };
 
 /** Newmark's survey columns, charted per city / class. Discount rate (IRR) and
  *  the reversion / terminal cap lead: they are what Newmark adds over the
@@ -41,13 +47,14 @@ export const INVESTMENT_SURVEY_METRICS = ['discount_rate', 'terminal_cap_rate', 
 export const SECTOR_METRICS = {
   industrial: ['vacancy_rate', 'availability_rate', 'asking_net_rent_psf', 'absorption_sf', 'absorption_ytd_sf',
                'new_supply_sf', 'under_construction_sf', 'inventory_sf', 'vacant_sf', 'available_sf',
-               'sublease_vacant_sf', 'additional_rent_psf', 'asking_price_psf', 'asking_gross_rent_psf'],
+               'sublease_vacant_sf', 'additional_rent_psf', 'asking_price_psf', 'asking_gross_rent_psf', 'newmark'],
   office: ['vacancy_rate', 'asking_net_rent_psf', 'absorption_sf', 'absorption_ytd_sf', 'new_supply_sf',
            'under_construction_sf', 'inventory_sf', 'vacant_sf', 'direct_vacant_sf', 'sublease_vacant_sf',
-           'additional_rent_psf', 'asking_gross_rent_psf', 'buildings'],
-  retail: ['vacancy_rate', 'asking_net_rent_psf', 'additional_rent_psf', 'inventory_sf', 'gla_sf', 'sales_psf'],
+           'additional_rent_psf', 'asking_gross_rent_psf', 'buildings', 'newmark'],
+  retail: ['vacancy_rate', 'asking_net_rent_psf', 'additional_rent_psf', 'inventory_sf', 'gla_sf', 'sales_psf', 'newmark'],
   hotel: ['occupancy', 'adr', 'revpar', 'occupancy_yoy', 'adr_yoy', 'revpar_yoy'],
-  investment: ['rate_comparison', ...INVESTMENT_SURVEY_METRICS, 'overall_cap_rate', 'momentum_ratio', 'investment_volume'],
+  multifamily: ['rate_comparison', ...INVESTMENT_SURVEY_METRICS],
+  investment: ['overall_cap_rate', 'momentum_ratio', 'investment_volume'],
 };
 
 // brokerage.json unit -> indicator-chart formatter name (format.js INDICATOR_FMT).
@@ -57,7 +64,7 @@ export const UNIT_FMT = { pct: 'percent', psf: 'dollar_psf', sf: 'sf', cad: 'dol
 // Which obs are the publisher's market total for a sector — the default
 // "compare publishers" lines. Office totals are the "All" class row where the
 // publisher prints classes.
-export const TOTAL_SEGMENT = { industrial: '', office: 'All', retail: '', hotel: '', investment: '' };
+export const TOTAL_SEGMENT = { industrial: '', office: 'All', retail: '', hotel: '', multifamily: '', investment: '' };
 export const TOTAL_GEO = 'Winnipeg';
 
 /** Publishers in a fixed display order; anything new goes after. */
@@ -189,7 +196,10 @@ const UNITS = {
 export const unitOfMetric = (m) => UNITS[m] || 'sf';
 
 // Sections that combine several statistics on one chart (not a metric in brokerage.json).
-const SECTION_LABELS = { rate_comparison: 'Going-in cap vs terminal cap vs discount rate' };
+const SECTION_LABELS = {
+  rate_comparison: 'Going-in cap vs terminal cap vs discount rate',
+  newmark: 'Newmark — Canadian cities (investment rates)',
+};
 
 export function metricLabel(data, metric) {
   return data?.metrics?.[metric]?.label || SECTION_LABELS[metric] || metric;
@@ -372,4 +382,46 @@ export function rateComparisonInput(chartId, idx, { geo, segment }, range = {}) 
     if (r.dashed) dashedIds.push(id);
   }
   return { records, seriesMeta, dashedIds };
+}
+
+/**
+ * 'Class A' + 'Class B' -> 'Class A & B'; 'CBD Class A' + 'CBD Class B' ->
+ * 'CBD Class A & B'; anything else joined with ' & '.
+ */
+export function combineLabels(labels) {
+  const words = labels.map(l => String(l).split(' '));
+  const n = words[0].length;
+  const samePrefix = words.every(w => w.length === n && w.slice(0, -1).join(' ') === words[0].slice(0, -1).join(' '));
+  if (n > 1 && samePrefix) return `${words[0].slice(0, -1).join(' ')} ${words.map(w => w[n - 1]).join(' & ')}`;
+  return labels.join(' & ');
+}
+
+/**
+ * Series that are identical at every point (same dates, same values, same
+ * dash) become one line labelled 'Class A & B (same)', instead of the later
+ * one hiding the earlier. Takes and returns a cardInput-shaped object.
+ */
+export function mergeIdenticalSeries(input) {
+  const pts = new Map();
+  for (const r of input.records) {
+    if (!pts.has(r.id)) pts.set(r.id, []);
+    pts.get(r.id).push(`${r.date}=${r.value}`);
+  }
+  const sig = (id) => (pts.get(id) || []).slice().sort().join('|');
+  const dashed = new Set(input.dashedIds || []);
+  const groups = [];
+  for (const m of input.seriesMeta) {
+    const key = `${dashed.has(m.id)}|${sig(m.id)}`;
+    const g = groups.find(x => x.key === key);
+    if (g) g.members.push(m); else groups.push({ key, members: [m] });
+  }
+  const keep = new Set(groups.map(g => g.members[0].id));
+  const seriesMeta = groups.map(g => (g.members.length === 1 ? g.members[0]
+    : { ...g.members[0], chartLabel: `${combineLabels(g.members.map(m => m.chartLabel))} (same)` }));
+  return {
+    ...input,
+    records: input.records.filter(r => keep.has(r.id)),
+    seriesMeta,
+    dashedIds: (input.dashedIds || []).filter(id => keep.has(id)),
+  };
 }

@@ -36,6 +36,28 @@ function pickFormatter(units, values) {
 const MONTH_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 /** Dots + value text for each defined point (see `opts.valueLabels`). */
+/**
+ * `opts.layered`: each solid series is its own line, the first drawn widest
+ * and each later one narrower on top, plus a dot at every point. Where two
+ * series coincide, the later one shows as a thin core inside the earlier
+ * one's band instead of hiding it (Newmark's Class A / Class B, which often
+ * share a figure for some editions but not all).
+ */
+function layeredLineMarks(points, order, lineWidth) {
+  const step = 1.8;
+  const labels = order.filter(l => points.some(p => p.label === l));
+  return [
+    ...labels.map((lab, i) => Plot.lineY(points.filter(p => p.label === lab), {
+      x: 'date', y: 'value', stroke: 'label',
+      strokeWidth: lineWidth + step * (labels.length - 1 - i),
+      defined: (d) => d.value != null,
+    })),
+    Plot.dot(points.filter(p => p.value != null && Number.isFinite(p.value)), {
+      x: 'date', y: 'value', fill: 'label', r: 2.6, stroke: 'white', strokeWidth: 0.8,
+    }),
+  ];
+}
+
 function valueLabelMarks(points, format) {
   const pts = points.filter(p => p.value != null && Number.isFinite(p.value));
   // Alternate series put their labels below the point, so two close lines
@@ -789,7 +811,8 @@ export function buildIndicatorCard(container, {
         // drawn dashed (the reference chart dashes cap rates to set them
         // apart from the interest rates). Both read `stroke: 'label'` off the
         // same colour scale, so a series keeps its colour either way.
-        ...[[solidPoints, null], [dashedPoints, '7 4']]
+        ...(opts.layered && solidPoints.length ? layeredLineMarks(solidPoints, colorDomain, lineWidth) : []),
+        ...[[opts.layered ? [] : solidPoints, null], [dashedPoints, '7 4']]
           .filter(([pts]) => pts.length)
           .map(([pts, dash]) => Plot.lineY(pts, {
             x: 'date',
