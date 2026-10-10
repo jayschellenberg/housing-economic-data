@@ -450,8 +450,11 @@ function renderCharts() {
     const input = cardInput(id, ui.idx, sector, metric, lines, range, { forecasts: sector === 'hotel' && ui.prefs.forecasts !== false });
     if (!input.records.length) continue;
     // Office and industrial compare publishers: a statistic only one firm
-    // prints has nothing to compare and is left out (Jason, 2026-10-09).
-    if (!viewDetail() && (sector === 'office' || sector === 'industrial') && new Set(input.seriesMeta.map(s => s.id.split(':')[1])).size < 2) continue;
+    // prints has nothing to compare and is left out (Jason, 2026-10-09) —
+    // except availability rate, which stands beside vacancy rate as CBRE's
+    // counterpart to it, joined by any firm that also prints one (2026-10-10).
+    if (!viewDetail() && (sector === 'office' || sector === 'industrial') && metric !== 'availability_rate'
+        && new Set(input.seriesMeta.map(s => s.id.split(':')[1])).size < 2) continue;
     const s = document.createElement('section');
     s.className = 'cmhc-mi-section';
     s.id = `bk-section-${metric}`;
