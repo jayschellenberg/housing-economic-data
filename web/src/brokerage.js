@@ -21,7 +21,7 @@ import {
   SOURCE, SECTORS, SECTOR_METRICS, PUBLISHER_ORDER, seriesIndex, publishersFor, areasFor, totalLines, cardInput, latestTable,
   periodLabel, coverage, years, metricLabel, unitOfMetric, fmtValue, areaLabel,
   INVESTMENT_TYPES, investmentGeos, investmentSegments, investmentLines, investmentGeoLabel,
-  overallCapLines, momentumGroups, segmentShort,
+  overallCapLines, momentumGroups, segmentShort, rateComparisonInput,
 } from './brokerage-data.js';
 import {
   storeAvailable, fsAccessSupported, pickDirectory, getSavedDirectory, directoryPermission,
@@ -432,6 +432,7 @@ function availableMetrics() {
   const sector = selectedSector();
   const have = new Set();
   for (const s of ui.idx.values()) if (s.sector === sector && s.points.length) have.add(s.metric);
+  if (have.has('cap_rate')) have.add('rate_comparison');
   return sectorMetrics().filter(m => have.has(m));
 }
 
@@ -498,7 +499,7 @@ const CAVEAT = {
 };
 
 // Investment-rate sections drawn apart from the per-statistic loop.
-const INVESTMENT_EXTRAS = new Set(['overall_cap_rate', 'momentum_ratio', 'investment_volume']);
+const INVESTMENT_EXTRAS = new Set(['rate_comparison', 'overall_cap_rate', 'momentum_ratio', 'investment_volume']);
 
 function cardTitle(sector, sectorLabel, metric) {
   const m = metricLabel(ui.data, metric);
@@ -541,6 +542,7 @@ function renderCharts() {
 
   const inv = sector === 'investment';
   const view = inv ? `${investmentSelection().mode}` : viewDetail() ? 'detail' : 'totals';
+  if (inv && !off.has('rate_comparison')) renderRateComparison(lines, range, labels, open, drawn);
   for (const metric of availableMetrics()) {
     if (off.has(metric) || (inv && INVESTMENT_EXTRAS.has(metric))) continue;
     const id = `bk_${sector}_${metric}_${view}`;
@@ -602,6 +604,46 @@ function renderCharts() {
     p.textContent = 'Nothing to show for this selection.';
     $grid.appendChild(p);
   }
+}
+
+/**
+ * Going-in cap, terminal cap and discount rate on one chart per survey line:
+ * one card per class for a city, or per city for a class. Two to a row, like
+ * the faceted charts of Jason's old R notebook (Newmark Knight Frank\R,
+ * retired 2026-10-10).
+ */
+function renderRateComparison(lines, range, labels, open, drawn) {
+  if (!lines.length) return;
+  const sel = investmentSelection();
+  const s = document.createElement('section');
+  s.className = 'cmhc-mi-section';
+  s.id = 'bk-section-rate_comparison';
+  const what = sel.mode === 'compare' ? `${sel.segment}, by city` : `${investmentGeoLabel(sel.geo)} ${sel.type}, by class`;
+  s.innerHTML = '<h2 class="cmhc-mi-section-title"></h2><div class="grid md:grid-cols-2 gap-4 items-start" data-role="cards"></div>';
+  s.querySelector('h2').textContent = `${what} — going-in cap vs terminal cap vs discount rate`;
+  const $cards = s.querySelector('[data-role="cards"]');
+  for (const ln of lines) {
+    const id = `bk_investment_ratecmp_${ln.geo}_${ln.segment}`.replace(/[^\w]+/g, '_');
+    const input = rateComparisonInput(id, ui.idx, ln, range);
+    if (!input.records.length) continue;
+    const name = `${investmentGeoLabel(ln.geo)} ${ln.segment}`;
+    const card = buildIndicatorCard($cards, {
+      chartId: id, fileStem: id, title: `${name} — going-in cap, terminal cap and discount rate`,
+      sourceLabel: NEWMARK_SOURCE.survey, table: true,
+      zeroBased: true, mirrorY: false, sourceInCaption: true, signed: false, captionPt: 10,
+    });
+    card.render(input.records, input.seriesMeta, {
+      rangeSubtitle: 'quarter',
+      subtitle: 'Newmark V&A survey; Q1 = 1Q edition, Q3 = Mid-Year Update. Terminal cap = going-in + reversion spread',
+      singleSeriesInSubtitle: false, dashedIds: input.dashedIds,
+      valueLabels: labels ? { format: (v) => fmtValue(v, 'pct') } : null,
+    });
+    card.setOpenPanels(open.get(id) || []);
+    ui.cards.set(id, { card: card.card });
+  }
+  if (!$cards.childElementCount) return;
+  ui.$grid.appendChild(s);
+  drawn.push({ id: s.id, label: 'Cap vs discount rate' });
 }
 
 /**

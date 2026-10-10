@@ -3,6 +3,7 @@ import {
   seriesIndex, publishersFor, areasFor, totalLines, cardInput, latestTable, periodLabel, coverage, years,
   unitOfMetric, fmtValue, areaLabel, isForecast,
   investmentGeos, investmentSegments, investmentLines, overallCapLines, momentumGroups, segmentShort,
+  rateComparisonInput, metricLabel,
 } from '../src/brokerage-data.js';
 
 const obs = (publisher, sector, period, geo, segment, metric, value, flag = '') => ({
@@ -147,6 +148,15 @@ describe('brokerage-data: Newmark investment rates', () => {
       .toEqual(['CBD Class A', 'Suburban Class B']);
     expect(investmentLines(idx, { mode: 'compare', segment: 'Office CBD Class A' }).map(l => l.label))
       .toEqual(['Canada (average)', 'Calgary', 'Toronto']);
+  });
+
+  it('draws one class\'s going-in cap, terminal cap and discount rate together', () => {
+    const v = rateComparisonInput('rc', idx, { geo: 'Canada', segment: 'Office CBD Class A' });
+    expect(v.seriesMeta.map(s => s.chartLabel)).toEqual(['Going-in cap rate', 'Terminal cap rate']);
+    expect(v.dashedIds).toEqual(['rc:terminal_cap_rate']);
+    expect(v.records.map(r => r.value)).toEqual([6.9, 7.4]);
+    expect(rateComparisonInput('rc', idx, { geo: 'Canada', segment: 'Office CBD Class A' }, { from: 2026 }).records).toHaveLength(0);
+    expect(metricLabel({ metrics: {} }, 'rate_comparison')).toBe('Going-in cap vs terminal cap vs discount rate');
   });
 
   it('orders the overall cap rate lines with the average and the bond last', () => {

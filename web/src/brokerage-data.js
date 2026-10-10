@@ -47,7 +47,7 @@ export const SECTOR_METRICS = {
            'additional_rent_psf', 'asking_gross_rent_psf', 'buildings'],
   retail: ['vacancy_rate', 'asking_net_rent_psf', 'additional_rent_psf', 'inventory_sf', 'gla_sf', 'sales_psf'],
   hotel: ['occupancy', 'adr', 'revpar', 'occupancy_yoy', 'adr_yoy', 'revpar_yoy'],
-  investment: [...INVESTMENT_SURVEY_METRICS, 'overall_cap_rate', 'momentum_ratio', 'investment_volume'],
+  investment: ['rate_comparison', ...INVESTMENT_SURVEY_METRICS, 'overall_cap_rate', 'momentum_ratio', 'investment_volume'],
 };
 
 // brokerage.json unit -> indicator-chart formatter name (format.js INDICATOR_FMT).
@@ -188,8 +188,11 @@ const UNITS = {
 };
 export const unitOfMetric = (m) => UNITS[m] || 'sf';
 
+// Sections that combine several statistics on one chart (not a metric in brokerage.json).
+const SECTION_LABELS = { rate_comparison: 'Going-in cap vs terminal cap vs discount rate' };
+
 export function metricLabel(data, metric) {
-  return data?.metrics?.[metric]?.label || metric;
+  return data?.metrics?.[metric]?.label || SECTION_LABELS[metric] || metric;
 }
 
 /** The periods a set of series spans, newest first. */
@@ -341,4 +344,32 @@ export function momentumGroups(idx) {
     groups[k].sort((a, b) => b.latest.period.localeCompare(a.latest.period) || b.latest.value - a.latest.value);
   }
   return groups;
+}
+
+/** The rates drawn together on one cap-vs-discount chart, in legend order. */
+export const RATE_COMPARISON = [
+  { metric: 'cap_rate', label: 'Going-in cap rate' },
+  { metric: 'terminal_cap_rate', label: 'Terminal cap rate', dashed: true },
+  { metric: 'discount_rate', label: 'Discount rate (IRR)' },
+];
+
+/**
+ * One survey line (geo + segment) as a chart of its going-in cap, terminal
+ * cap and discount rate: Jason's old R "cap vs discount" facet, one card per
+ * class. Returns { records, seriesMeta, dashedIds }.
+ */
+export function rateComparisonInput(chartId, idx, { geo, segment }, range = {}) {
+  const records = [];
+  const seriesMeta = [];
+  const dashedIds = [];
+  for (const r of RATE_COMPARISON) {
+    const s = idx.get(seriesKey({ publisher: INVESTMENT_PUBLISHER, sector: 'investment', geo, segment, metric: r.metric }, ''));
+    const pts = (s?.points || []).filter(p => p.value != null && inRange(p.period, range));
+    if (!pts.length) continue;
+    const id = `${chartId}:${r.metric}`;
+    for (const p of pts) records.push({ id, date: p.date, value: p.value });
+    seriesMeta.push({ id, chartLabel: r.label, units: 'percent', provider: 'local', frequency: 'quarterly', geo });
+    if (r.dashed) dashedIds.push(id);
+  }
+  return { records, seriesMeta, dashedIds };
 }
