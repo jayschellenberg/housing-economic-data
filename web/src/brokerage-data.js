@@ -9,10 +9,15 @@
  *                   value, unit, src, page, flag }]
  *                flag '' | 'prev_q' | 'prev_y' | 'headline' | 'ocr' |
  *                     'approx_map' | 'forecast|edition=YYYYQn' (a | joins several)
- *   metrics:     { metric: { label, unit } }        unit pct | sf | psf | cad | count
+ *                Newmark (sector 'investment', Canadian cities): 'derived' (terminal
+ *                cap = going-in + reversion) | 'approx_chart' (read off a chart) |
+ *                'text' (quoted in the report's prose) | 'edition=YYYYQn' | 'chart=...'
+ *   metrics:     { metric: { label, unit } }        unit pct | sf | psf | cad | count |
+ *                                                    bps | ratio | cad_bn | trend
  *   definitions: { publisher: text }
  *   missing:     [{ publisher, sector, period, reason }]   reason 'no file' | 'not published'
  *   qc:          [{ publisher, sector, period, file, note }]
+ *   commentary:  [{ publisher, period, src, page, title, heading, text }]
  */
 
 export const SOURCE = 'Brokerage market reports (Capital Group, Colliers, CBRE, Avison Young)';
@@ -22,7 +27,14 @@ export const SECTORS = [
   { id: 'office', label: 'Office' },
   { id: 'retail', label: 'Retail' },
   { id: 'hotel', label: 'Hotels' },
+  { id: 'investment', label: 'Investment rates — Canada (Newmark)' },
 ];
+
+/** Newmark's survey columns, charted per city / class. Discount rate (IRR) and
+ *  the reversion / terminal cap lead: they are what Newmark adds over the
+ *  cap-rate surveys (Jason, 2026-10-10). */
+export const INVESTMENT_SURVEY_METRICS = ['discount_rate', 'terminal_cap_rate', 'reversion_spread_bps', 'cap_rate',
+  'rent_growth', 'expense_growth', 'reserves_psf', 'reserves_unit'];
 
 // Cards per sector, in page order. A metric no publisher printed for the
 // selection draws nothing.
@@ -35,19 +47,21 @@ export const SECTOR_METRICS = {
            'additional_rent_psf', 'asking_gross_rent_psf', 'buildings'],
   retail: ['vacancy_rate', 'asking_net_rent_psf', 'additional_rent_psf', 'inventory_sf', 'gla_sf', 'sales_psf'],
   hotel: ['occupancy', 'adr', 'revpar', 'occupancy_yoy', 'adr_yoy', 'revpar_yoy'],
+  investment: [...INVESTMENT_SURVEY_METRICS, 'overall_cap_rate', 'momentum_ratio', 'investment_volume'],
 };
 
 // brokerage.json unit -> indicator-chart formatter name (format.js INDICATOR_FMT).
-export const UNIT_FMT = { pct: 'percent', psf: 'dollar_psf', sf: 'sf', cad: 'dollar', count: 'units' };
+export const UNIT_FMT = { pct: 'percent', psf: 'dollar_psf', sf: 'sf', cad: 'dollar', count: 'units',
+  bps: 'bps', ratio: 'ratio', cad_bn: 'dollar_billions', trend: 'index' };
 
 // Which obs are the publisher's market total for a sector — the default
 // "compare publishers" lines. Office totals are the "All" class row where the
 // publisher prints classes.
-export const TOTAL_SEGMENT = { industrial: '', office: 'All', retail: '', hotel: '' };
+export const TOTAL_SEGMENT = { industrial: '', office: 'All', retail: '', hotel: '', investment: '' };
 export const TOTAL_GEO = 'Winnipeg';
 
 /** Publishers in a fixed display order; anything new goes after. */
-export const PUBLISHER_ORDER = ['Capital Group', 'Colliers', 'CBRE', 'CBRE Hotels', 'Avison Young'];
+export const PUBLISHER_ORDER = ['Capital Group', 'Colliers', 'CBRE', 'CBRE Hotels', 'Avison Young', 'Newmark'];
 
 const FLAG_SKIP = new Set(['prev_q', 'prev_y']);
 
@@ -168,6 +182,9 @@ const UNITS = {
   vacancy_rate: 'pct', availability_rate: 'pct', occupancy: 'pct', occupancy_yoy: 'pct', adr_yoy: 'pct', revpar_yoy: 'pct',
   asking_net_rent_psf: 'psf', asking_gross_rent_psf: 'psf', additional_rent_psf: 'psf', asking_price_psf: 'psf', sales_psf: 'psf',
   adr: 'cad', revpar: 'cad', buildings: 'count',
+  discount_rate: 'pct', terminal_cap_rate: 'pct', cap_rate: 'pct', rent_growth: 'pct', expense_growth: 'pct',
+  overall_cap_rate: 'pct', reversion_spread_bps: 'bps', reserves_psf: 'psf', reserves_unit: 'cad',
+  momentum_ratio: 'ratio', investment_volume: 'cad_bn', expected_trend: 'trend', leasing_sf: 'sf',
 };
 export const unitOfMetric = (m) => UNITS[m] || 'sf';
 
@@ -182,6 +199,9 @@ export function periodsOf(seriesList) {
   return [...ps].sort().reverse();
 }
 
+// Caveats a table marks with a dagger: the figure was read, not printed as a number.
+const DAGGER_FLAGS = new Set(['ocr', 'approx_map', 'approx_chart']);
+
 /**
  * Rows for a "latest figures" table: one per line, the last `n` periods any
  * of the lines has. Cells are the published values (null = not published).
@@ -195,7 +215,7 @@ export function latestTable(idx, sector, metric, lines, n = 6) {
       publisher: ln.publisher,
       label: ln.label || `${ln.publisher} — ${areaLabel(ln.geo, ln.segment)}`,
       values: periods.map(p => byP.get(p)?.value ?? null),
-      flags: periods.map(p => flagParts(byP.get(p)?.flag).filter(f => f !== 'headline')),
+      flags: periods.map(p => flagParts(byP.get(p)?.flag).filter(f => DAGGER_FLAGS.has(f))),
     };
   });
   return { periods, rows };
@@ -240,9 +260,85 @@ export function years(idx) {
 
 export const fmtValue = (v, unit) => {
   if (v == null || !Number.isFinite(v)) return '**';
-  if (unit === 'pct') return `${v.toFixed(1)}%`;
+  // a quarter-point rate (5.25%) keeps both decimals; a vacancy rate prints one
+  if (unit === 'pct') return `${Math.abs(v * 10 - Math.round(v * 10)) > 1e-6 ? v.toFixed(2) : v.toFixed(1)}%`;
+  if (unit === 'bps') return `${Math.round(v)} bps`;
+  if (unit === 'ratio') return v.toFixed(1);
+  if (unit === 'cad_bn') return `$${v.toFixed(1)}B`;
+  if (unit === 'trend') return v > 0 ? '↑' : v < 0 ? '↓' : '↔';
   if (unit === 'psf') return `$${v.toFixed(2)}`;
   if (unit === 'cad') return `$${Math.round(v).toLocaleString()}`;
   if (unit === 'count') return Math.round(v).toLocaleString();
   return Math.round(v).toLocaleString();
 };
+
+// --- Newmark investment rates (sector 'investment') ----------------------------
+
+export const INVESTMENT_PUBLISHER = 'Newmark';
+export const INVESTMENT_TYPES = ['Industrial', 'Multifamily', 'Office', 'Retail'];
+
+/** 'Canada' is Newmark's Canadian average row. */
+export const investmentGeoLabel = (geo) => (geo === 'Canada' ? 'Canada (average)' : geo);
+
+/** Cities (and the Canada average, first) that have survey rates. */
+export function investmentGeos(idx) {
+  const set = new Set();
+  for (const s of idx.values()) if (s.sector === 'investment' && s.metric === 'cap_rate' && s.points.length) set.add(s.geo);
+  return [...set].sort((a, b) => (b === 'Canada') - (a === 'Canada') || a.localeCompare(b));
+}
+
+/** Survey segments of one property type ('Industrial Class A', ...), optionally for one geo. */
+export function investmentSegments(idx, type, geo = null) {
+  const set = new Set();
+  for (const s of idx.values()) {
+    if (s.sector === 'investment' && s.metric === 'cap_rate' && s.segment.startsWith(`${type} `) && (geo == null || s.geo === geo)) set.add(s.segment);
+  }
+  return [...set].sort();
+}
+
+/** 'Office CBD Class A' -> 'CBD Class A'. */
+export const segmentShort = (segment, type) => (segment.startsWith(`${type} `) ? segment.slice(type.length + 1) : segment);
+
+/**
+ * Lines for the survey-rate cards: one city's classes of a property type
+ * (mode 'city'), or one class across the cities (mode 'compare').
+ */
+export function investmentLines(idx, { mode, geo, type, segment }) {
+  if (mode === 'compare') {
+    return investmentGeos(idx)
+      .filter(g => idx.has(seriesKey({ publisher: INVESTMENT_PUBLISHER, sector: 'investment', geo: g, segment, metric: 'cap_rate' })))
+      .map(g => ({ publisher: INVESTMENT_PUBLISHER, geo: g, segment, label: investmentGeoLabel(g) }));
+  }
+  return investmentSegments(idx, type, geo)
+    .map(seg => ({ publisher: INVESTMENT_PUBLISHER, geo, segment: seg, label: segmentShort(seg, type) }));
+}
+
+/** The overall-cap-rate chart's lines (four classes, their average, the BoC bond), in legend order. */
+export function overallCapLines(idx) {
+  const segs = [];
+  for (const s of idx.values()) {
+    if (s.sector === 'investment' && s.metric === 'overall_cap_rate' && !segs.includes(s.segment)) segs.push(s.segment);
+  }
+  const tail = ['Four-class average', 'BoC 10-year benchmark bond'];
+  segs.sort((a, b) => tail.indexOf(a) - tail.indexOf(b));
+  return segs.map(seg => ({ publisher: INVESTMENT_PUBLISHER, geo: 'Canada', segment: seg, label: seg }));
+}
+
+/**
+ * Momentum-ratio lines in three groups: by city (segment 'All products'), by
+ * property type (geo 'Canada') and city x product (the top / bottom 15).
+ * Each group is ordered by its latest value, highest first.
+ */
+export function momentumGroups(idx) {
+  const groups = { location: [], type: [], combo: [] };
+  for (const s of idx.values()) {
+    if (s.sector !== 'investment' || s.metric !== 'momentum_ratio' || !s.points.length) continue;
+    const g = s.segment === 'All products' ? 'location' : s.geo === 'Canada' ? 'type' : 'combo';
+    const label = g === 'location' ? s.geo : g === 'type' ? s.segment : `${s.geo} — ${s.segment}`;
+    groups[g].push({ publisher: s.publisher, geo: s.geo, segment: s.segment, label, latest: s.points[s.points.length - 1] });
+  }
+  for (const k of Object.keys(groups)) {
+    groups[k].sort((a, b) => b.latest.period.localeCompare(a.latest.period) || b.latest.value - a.latest.value);
+  }
+  return groups;
+}

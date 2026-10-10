@@ -20,6 +20,8 @@ import { buildJumpBar } from './jump-bar.js';
 import {
   SOURCE, SECTORS, SECTOR_METRICS, PUBLISHER_ORDER, seriesIndex, publishersFor, areasFor, totalLines, cardInput, latestTable,
   periodLabel, coverage, years, metricLabel, unitOfMetric, fmtValue, areaLabel,
+  INVESTMENT_TYPES, investmentGeos, investmentSegments, investmentLines, investmentGeoLabel,
+  overallCapLines, momentumGroups, segmentShort,
 } from './brokerage-data.js';
 import {
   storeAvailable, fsAccessSupported, pickDirectory, getSavedDirectory, directoryPermission,
@@ -57,6 +59,15 @@ export async function initBrokerage() {
     $folderToggle: document.getElementById('bk-folder-toggle'),
     $folderBody: document.getElementById('bk-folder-body'),
     $sector: document.getElementById('bk-sector'),
+    $viewSection: document.getElementById('bk-view-section'),
+    $invSection: document.getElementById('bk-inv-section'),
+    $invByCity: document.getElementById('bk-inv-by-city'),
+    $invCompare: document.getElementById('bk-inv-compare'),
+    $invType: document.getElementById('bk-inv-type'),
+    $invCity: document.getElementById('bk-inv-city'),
+    $invCityWrap: document.getElementById('bk-inv-city-wrap'),
+    $invSegment: document.getElementById('bk-inv-segment'),
+    $invSegmentWrap: document.getElementById('bk-inv-segment-wrap'),
     $viewTotals: document.getElementById('bk-view-totals'),
     $viewDetail: document.getElementById('bk-view-detail'),
     $publisher: document.getElementById('bk-publisher'),
@@ -148,6 +159,12 @@ function wireControls() {
   ui.$yearFrom.addEventListener('change', () => { ui.prefs = savePrefs({ yearFrom: Number(ui.$yearFrom.value) || null }); renderCharts(); });
   ui.$labels.addEventListener('change', () => { ui.prefs = savePrefs({ valueLabels: ui.$labels.checked }); renderCharts(); });
   ui.$forecasts.addEventListener('change', () => { ui.prefs = savePrefs({ forecasts: ui.$forecasts.checked }); renderCharts(); });
+  const setInv = (patch) => { ui.prefs = savePrefs({ inv: { ...(ui.prefs.inv || {}), ...patch } }); renderInvestmentPickers(); renderCharts(); };
+  ui.$invByCity.addEventListener('change', () => setInv({ mode: 'city' }));
+  ui.$invCompare.addEventListener('change', () => setInv({ mode: 'compare' }));
+  ui.$invType.addEventListener('change', () => setInv({ type: ui.$invType.value, segment: null }));
+  ui.$invCity.addEventListener('change', () => setInv({ geo: ui.$invCity.value }));
+  ui.$invSegment.addEventListener('change', () => setInv({ segment: ui.$invSegment.value }));
   document.getElementById('bk-areas-all').addEventListener('click', () => setAreasOff([]));
   document.getElementById('bk-areas-none').addEventListener('click', () => setAreasOff(currentAreas().map(a => areaKey(a))));
   document.getElementById('bk-sections-all').addEventListener('click', () => setMetricsOff([]));
@@ -264,6 +281,19 @@ function selectedPublisher() {
 function renderPickers() {
   const sector = selectedSector();
   const pubs = publishersFor(ui.idx, sector);
+  // Newmark's investment rates have one publisher and their own city / class pickers
+  const inv = sector === 'investment';
+  ui.$invSection.hidden = !ui.data || !inv;
+  ui.$viewSection.hidden = inv;
+  if (inv) {
+    ui.$publisherSection.hidden = true;
+    ui.$pubSection.hidden = true;
+    ui.$areaSection.hidden = true;
+    ui.$forecasts.parentElement.hidden = true;
+    renderInvestmentPickers();
+    renderSectionToggles();
+    return;
+  }
   // one publisher's submarkets / classes
   ui.$publisherSection.hidden = !ui.data || !viewDetail();
   ui.$publisher.replaceChildren();
@@ -296,6 +326,43 @@ function renderPickers() {
   ui.$forecasts.parentElement.hidden = sector !== 'hotel';
   renderAreaToggles();
   renderSectionToggles();
+}
+
+// --- Investment rates (Newmark, Canadian cities) ------------------------------------
+
+/** { mode, type, geo, segment } with every field resolved against what the data holds. */
+function investmentSelection() {
+  const p = ui.prefs.inv || {};
+  const mode = p.mode === 'compare' ? 'compare' : 'city';
+  const types = INVESTMENT_TYPES.filter(t => investmentSegments(ui.idx, t).length);
+  const type = types.includes(p.type) ? p.type : (types[0] || INVESTMENT_TYPES[0]);
+  const geos = investmentGeos(ui.idx);
+  const geo = geos.includes(p.geo) ? p.geo : (geos[0] || 'Canada');
+  const segs = investmentSegments(ui.idx, type);
+  const segment = segs.includes(p.segment) ? p.segment : (segs[0] || '');
+  return { mode, type, geo, segment, types, geos, segs };
+}
+
+function fillSelect($sel, options, value) {
+  $sel.replaceChildren();
+  for (const [v, label] of options) {
+    const opt = document.createElement('option');
+    opt.value = v; opt.textContent = label;
+    $sel.appendChild(opt);
+  }
+  if (options.length) $sel.value = value;
+  $sel.disabled = !options.length;
+}
+
+function renderInvestmentPickers() {
+  const sel = investmentSelection();
+  ui.$invByCity.checked = sel.mode === 'city';
+  ui.$invCompare.checked = sel.mode === 'compare';
+  fillSelect(ui.$invType, sel.types.map(t => [t, t]), sel.type);
+  fillSelect(ui.$invCity, sel.geos.map(g => [g, investmentGeoLabel(g)]), sel.geo);
+  fillSelect(ui.$invSegment, sel.segs.map(s => [s, segmentShort(s, sel.type)]), sel.segment);
+  ui.$invCityWrap.hidden = sel.mode !== 'city';
+  ui.$invSegmentWrap.hidden = sel.mode !== 'compare';
 }
 
 function pubsOff() {
@@ -398,6 +465,7 @@ function renderSectionToggles() {
 /** The lines to draw: publishers' totals, or one publisher's selected areas. */
 function selectedLines() {
   const sector = selectedSector();
+  if (sector === 'investment') return investmentLines(ui.idx, investmentSelection());
   if (!viewDetail()) {
     const off = new Set(pubsOff());
     return totalLines(ui.idx, sector).filter(l => !off.has(l.publisher)).map(l => ({ ...l, label: l.publisher }));
@@ -412,15 +480,38 @@ function selectedLines() {
  *  industrial availability, not vacancy, so it must not be cited there). */
 function sourceFor(publishers) {
   const pubs = [...new Set(publishers)].sort((a, b) => pubRank(a) - pubRank(b) || a.localeCompare(b));
+  if (pubs.length === 1 && pubs[0] === 'Newmark') return NEWMARK_SOURCE.survey;
   return pubs.length ? `${pubs.join(', ')} market reports` : SOURCE;
 }
+const NEWMARK_SOURCE = {
+  survey: 'Newmark Valuation & Advisory, North American Market Survey (1Q and Mid-Year editions)',
+  trends: 'Newmark Valuation & Advisory, Canadian Investment Trends Survey',
+};
 const pubRank = (p) => { const i = PUBLISHER_ORDER.indexOf(p); return i < 0 ? 99 : i; };
 
 const CAVEAT = {
   ocr: 'some figures were read by OCR from an image-only PDF (CBRE 2024 Q3–Q4) — check them against the report before quoting',
   approx_map: 'node figures are read off the snapshot\'s map by position',
   headline: 'from the report\'s headline panel (rounded)',
+  approx_chart: 'read off the report\'s chart (only the latest quarter is printed as a number)',
+  derived: 'terminal cap rate = going-in cap rate + Newmark\'s reversion spread',
 };
+
+// Investment-rate sections drawn apart from the per-statistic loop.
+const INVESTMENT_EXTRAS = new Set(['overall_cap_rate', 'momentum_ratio', 'investment_volume']);
+
+function cardTitle(sector, sectorLabel, metric) {
+  const m = metricLabel(ui.data, metric);
+  if (sector !== 'investment') return `Winnipeg ${sectorLabel} ${m}`;
+  const sel = investmentSelection();
+  return sel.mode === 'compare' ? `${sel.segment} — ${m}, by city` : `${investmentGeoLabel(sel.geo)} ${sel.type} — ${m}`;
+}
+function sectionTitle(sector, sectorLabel, metric) {
+  if (sector !== 'investment') return `${sectorLabel} — ${metricLabel(ui.data, metric)}`;
+  const sel = investmentSelection();
+  const what = sel.mode === 'compare' ? sel.segment : `${investmentGeoLabel(sel.geo)} ${sel.type}`;
+  return `${what} — ${metricLabel(ui.data, metric)}`;
+}
 
 function renderCharts() {
   const { $grid } = ui;
@@ -438,7 +529,7 @@ function renderCharts() {
   const lines = selectedLines();
   const ys = years(ui.idx);
   const lastYear = ys[ys.length - 1] || new Date().getUTCFullYear();
-  const from = ui.prefs.yearFrom || (sector === 'hotel' ? null : lastYear - DEFAULT_FROM_YEARS + 1);
+  const from = ui.prefs.yearFrom || (sector === 'hotel' || sector === 'investment' ? null : lastYear - DEFAULT_FROM_YEARS + 1);
   const range = { from, to: null };
   const labels = !!ui.prefs.valueLabels;
   const off = new Set(metricsOff());
@@ -448,9 +539,11 @@ function renderCharts() {
   // industrial's first pair is vacancy rate / CBRE's availability rate).
   let openPair = null;
 
+  const inv = sector === 'investment';
+  const view = inv ? `${investmentSelection().mode}` : viewDetail() ? 'detail' : 'totals';
   for (const metric of availableMetrics()) {
-    if (off.has(metric)) continue;
-    const id = `bk_${sector}_${metric}_${viewDetail() ? 'detail' : 'totals'}`;
+    if (off.has(metric) || (inv && INVESTMENT_EXTRAS.has(metric))) continue;
+    const id = `bk_${sector}_${metric}_${view}`;
     const input = cardInput(id, ui.idx, sector, metric, lines, range, { forecasts: sector === 'hotel' && ui.prefs.forecasts !== false });
     if (!input.records.length) continue;
     // Office and industrial compare publishers: a statistic only one firm
@@ -465,20 +558,21 @@ function renderCharts() {
       s.className = 'cmhc-mi-section';
       s.id = `bk-section-${metric}`;
       s.innerHTML = `<h2 class="cmhc-mi-section-title"></h2><div class="grid md:grid-cols-2 gap-4 items-start" data-role="cards"></div>`;
-      s.querySelector('h2').textContent = `${sectorLabel} — ${metricLabel(ui.data, metric)}`;
+      s.querySelector('h2').textContent = sectionTitle(sector, sectorLabel, metric);
     } else {
       s.querySelector('h2').textContent += ` / ${metricLabel(ui.data, metric)}`;
     }
     const $cards = s.querySelector('[data-role="cards"]');
     const unit = unitOfMetric(metric);
     const card = buildIndicatorCard($cards, {
-      chartId: id, fileStem: id, title: `Winnipeg ${sectorLabel} ${metricLabel(ui.data, metric)}`,
+      chartId: id, fileStem: id, title: cardTitle(sector, sectorLabel, metric),
       sourceLabel: sourceFor(input.seriesMeta.map(m => m.id.split(':')[1])), table: true,
       // every rate and dollar axis starts at 0 (Jason, 2026-10-09: all % charts, every project)
-      zeroBased: unit === 'pct' || unit === 'psf' || unit === 'cad', mirrorY: false, sourceInCaption: true, signed: false, captionPt: 10,
+      zeroBased: unit === 'pct' || unit === 'psf' || unit === 'cad' || unit === 'bps', mirrorY: false, sourceInCaption: true, signed: false, captionPt: 10,
     });
     const caveats = input.flags.filter(f => CAVEAT[f]).map(f => CAVEAT[f]);
-    const subtitle = viewDetail() ? `${selectedPublisher()}, as published` : 'As published by each firm — definitions differ, see below';
+    const subtitle = inv ? 'Newmark V&A survey; Q1 = 1Q edition, Q3 = Mid-Year Update'
+      : viewDetail() ? `${selectedPublisher()}, as published` : 'As published by each firm — definitions differ, see below';
     card.render(input.records, input.seriesMeta, {
       rangeSubtitle: sector === 'hotel' ? 'year' : 'quarter', subtitle: caveats.length ? `${subtitle}. Note: ${caveats.join('; ')}` : subtitle,
       singleSeriesInSubtitle: true, dashedIds: input.dashedIds,
@@ -498,6 +592,7 @@ function renderCharts() {
     $grid.appendChild(s);
     drawn.push({ id: s.id, label: metricLabel(ui.data, metric) });
   }
+  if (inv) renderInvestmentExtras(off, labels, open, drawn);
   const cov = coverageSection();
   if (cov) { $grid.appendChild(cov); drawn.push({ id: cov.id, label: 'Reports on disk' }); }
   if (drawn.length > 1) $grid.prepend(buildJumpBar(drawn));
@@ -509,18 +604,146 @@ function renderCharts() {
   }
 }
 
+/**
+ * Newmark's Canadian Investment Trends Survey: the overall cap rate chart
+ * (2006 on, read off the report's chart), the momentum-ratio barometers, the
+ * national figures its text quotes, and its commentary.
+ */
+function renderInvestmentExtras(off, labels, open, drawn) {
+  const { $grid } = ui;
+  const newSection = (id, title) => {
+    const s = document.createElement('section');
+    s.className = 'cmhc-mi-section';
+    s.id = id;
+    s.innerHTML = '<h2 class="cmhc-mi-section-title"></h2><div class="grid md:grid-cols-2 gap-4 items-start" data-role="cards"></div>';
+    s.querySelector('h2').textContent = title;
+    $grid.appendChild(s);
+    drawn.push({ id, label: title });
+    return s.querySelector('[data-role="cards"]');
+  };
+
+  if (!off.has('overall_cap_rate')) {
+    const lines = overallCapLines(ui.idx);
+    const id = 'bk_investment_overall_cap_rate';
+    const input = cardInput(id, ui.idx, 'investment', 'overall_cap_rate', lines, { from: ui.prefs.yearFrom || null, to: null });
+    if (input.records.length) {
+      const $cards = newSection('bk-section-overall_cap_rate', 'Canada — overall cap rates, four benchmark asset classes');
+      const card = buildIndicatorCard($cards, {
+        chartId: id, fileStem: id, title: 'Canada — overall cap rate (OCR), four benchmark asset classes and the BoC 10-year bond',
+        sourceLabel: NEWMARK_SOURCE.trends, table: true,
+        zeroBased: true, mirrorY: false, sourceInCaption: true, signed: false, captionPt: 10,
+      });
+      const latest = ui.idx.get(`Newmark|investment|Canada|${lines[0].segment}|overall_cap_rate|`)?.points.slice(-1)[0]?.period || '';
+      card.render(input.records, input.seriesMeta, {
+        rangeSubtitle: 'quarter',
+        subtitle: `Quarterly, read off the report's chart; the latest quarter (${periodLabel(latest)}) is the value it prints`,
+        singleSeriesInSubtitle: true, dashedIds: input.seriesMeta.filter(m => /average/i.test(m.chartLabel)).map(m => m.id),
+        valueLabels: labels ? { format: (v) => fmtValue(v, 'pct') } : null,
+      });
+      card.setOpenPanels(open.get(id) || []);
+      ui.cards.set(id, { card: card.card });
+      latestCard($cards, 'investment', 'overall_cap_rate', lines, 'pct', NEWMARK_SOURCE.trends);
+    }
+  }
+
+  if (!off.has('momentum_ratio')) {
+    const g = momentumGroups(ui.idx);
+    if (g.location.length || g.type.length || g.combo.length) {
+      const $cards = newSection('bk-section-momentum_ratio', 'Investor demand — momentum ratio (buy % / sell %)');
+      const sub = 'Newmark\'s ratio of surveyed investors buying to those selling; positive = more buyers than sellers. Read off the report\'s bar charts; ** = not in that edition';
+      for (const [key, title] of [['location', 'Momentum ratio by city, all products'], ['type', 'Momentum ratio by property type, Canada'],
+        ['combo', 'Momentum ratio — top and bottom 15 city / product combinations']]) {
+        if (!g[key].length) continue;
+        const t = latestTable(ui.idx, 'investment', 'momentum_ratio', g[key], 4);
+        buildTableCard($cards, {
+          id: `bk_investment_momentum_${key}`, title, subtitle: sub,
+          head: [key === 'location' ? 'City' : key === 'type' ? 'Property type' : 'City — product', ...t.periods.map(periodLabel)],
+          rows: t.rows.map(r => [r.label, ...r.values.map(v => fmtValue(v, 'ratio'))]),
+          source: NEWMARK_SOURCE.trends, wide: key === 'combo',
+        });
+      }
+    }
+  }
+
+  if (!off.has('investment_volume')) {
+    const rows = [];
+    const want = ['investment_volume', 'availability_rate', 'leasing_sf'];
+    const pts = (ui.data.obs || []).filter(o => o.publisher === 'Newmark' && want.includes(o.metric));
+    if (pts.length) {
+      const $cards = newSection('bk-section-investment_volume', 'Canada — national figures quoted in the report');
+      const periods = [...new Set(pts.map(o => o.period))].sort().reverse();
+      const keyOf = (o) => `${o.metric}|${o.segment}`;
+      const series = [...new Set(pts.map(keyOf))].sort((a, b) => want.indexOf(a.split('|')[0]) - want.indexOf(b.split('|')[0]) || a.localeCompare(b));
+      for (const k of series) {
+        const [metric, segment] = k.split('|');
+        const by = new Map(pts.filter(o => keyOf(o) === k).map(o => [o.period, o]));
+        rows.push([`${metricLabel(ui.data, metric)} — ${segment}`, ...periods.map(p => (by.has(p) ? fmtValue(by.get(p).value, unitOfMetric(metric)) : ''))]);
+      }
+      buildTableCard($cards, {
+        id: 'bk_investment_national', title: 'Investment volume, availability and leasing — Canada',
+        subtitle: 'As quoted in the Investment Trends Survey\'s text (volumes by calendar year; a "year ago" figure is the one the text compares with)',
+        head: ['Figure', ...periods.map(periodLabel)], rows, source: NEWMARK_SOURCE.trends, wide: true,
+      });
+    }
+  }
+
+  const notes = (ui.data.commentary || []).filter(c => c.publisher === 'Newmark');
+  if (notes.length) {
+    const s = document.createElement('section');
+    s.className = 'cmhc-mi-section';
+    s.id = 'bk-section-commentary';
+    s.innerHTML = '<h2 class="cmhc-mi-section-title">Newmark commentary — Canadian Investment Trends Survey</h2>';
+    const editions = [...new Set(notes.map(c => c.period))].sort().reverse();
+    editions.forEach((ed, i) => {
+      const wrap = document.createElement('details');
+      wrap.className = 'chart-card cmhc-indicator-card mb-3';
+      wrap.open = i === 0;
+      const summary = document.createElement('summary');
+      summary.className = 'chart-title cursor-pointer';
+      summary.textContent = `${periodLabel(ed)} edition`;
+      wrap.appendChild(summary);
+      let lastTitle = null;
+      for (const c of notes.filter(n => n.period === ed)) {
+        if (c.title && c.title !== lastTitle) {
+          const h = document.createElement('h3');
+          h.className = 'font-semibold text-neutral-800 mt-3';
+          h.textContent = c.title;
+          wrap.appendChild(h);
+          lastTitle = c.title;
+        }
+        const para = document.createElement('p');
+        para.className = 'text-sm text-neutral-700 mt-1';
+        if (c.heading) {
+          const b = document.createElement('strong');
+          b.textContent = `${c.heading}. `;
+          para.appendChild(b);
+        }
+        para.appendChild(document.createTextNode(c.text));
+        wrap.appendChild(para);
+      }
+      const src = document.createElement('p');
+      src.className = 'text-xs text-neutral-500 mt-2';
+      src.textContent = `Source: ${NEWMARK_SOURCE.trends}, ${periodLabel(ed)} — quoted verbatim.`;
+      wrap.appendChild(src);
+      s.appendChild(wrap);
+    });
+    $grid.appendChild(s);
+    drawn.push({ id: s.id, label: 'Commentary' });
+  }
+}
+
 /** The last six periods of each drawn line, as published. Returns the card element. */
-function latestCard($cards, sector, metric, lines, unit) {
+function latestCard($cards, sector, metric, lines, unit, source = null) {
   const t = latestTable(ui.idx, sector, metric, lines, 6);
   if (!t.rows.length || !t.periods.length) return null;
   const flagged = t.rows.some(r => r.flags.some(f => f.length));
   return buildTableCard($cards, {
     id: `bk_${sector}_${metric}_latest`,
     title: `${metricLabel(ui.data, metric)} — latest published figures`,
-    subtitle: `${SECTORS.find(s => s.id === sector)?.label || sector}; ** = not published for that period` + (flagged ? '; † read by OCR or off a map' : ''),
+    subtitle: `${SECTORS.find(s => s.id === sector)?.label || sector}; ** = not published for that period` + (flagged ? '; † read by OCR, off a map or off a chart' : ''),
     head: ['Series', ...t.periods.map(periodLabel)],
     rows: t.rows.map(r => [r.label, ...r.values.map((v, i) => fmtValue(v, unit) + (r.flags[i].length ? ' †' : ''))]),
-    source: sourceFor(t.rows.map(r => r.publisher)),
+    source: source || sourceFor(t.rows.map(r => r.publisher)),
   });
 }
 
@@ -639,7 +862,7 @@ async function exportData() {
   const srcById = new Map((d.sources || []).map(s => [s.id, s]));
 
   const ws = wb.addWorksheet('Figures');
-  ws.addRow([`${SOURCE} — Winnipeg figures as published; one row per printed figure. prev_q = the prior quarter as restated in that edition; ocr = read by OCR; approx_map = read off a map.`]);
+  ws.addRow([`${SOURCE} — Winnipeg figures as published (Newmark: Canadian cities); one row per printed figure. prev_q = the prior quarter as restated in that edition; ocr = read by OCR; approx_map = read off a map; approx_chart = read off a chart; derived = terminal cap rate (going-in + reversion spread).`]);
   ws.addRow([]);
   ws.addRow(['Publisher', 'Sector', 'Period', 'Date', 'Geography', 'Segment', 'Metric', 'Label', 'Value', 'Unit', 'Flag', 'Report file', 'Page']).font = { bold: true };
   for (const o of d.obs || []) {
@@ -662,6 +885,16 @@ async function exportData() {
   wq.addRow(['Publisher', 'Sector', 'Period', 'File', 'Note']).font = { bold: true };
   for (const q of d.qc || []) wq.addRow([q.publisher, q.sector, q.period, q.file, q.note]);
   [26, 14, 9, 50, 90].forEach((w, i) => { wq.getColumn(i + 1).width = w; });
+
+  if ((d.commentary || []).length) {
+    const wc = wb.addWorksheet('Commentary');
+    wc.addRow(['Publisher', 'Edition', 'Page', 'Page title', 'Heading', 'Text (verbatim)', 'Report file']).font = { bold: true };
+    for (const c of d.commentary) {
+      const r = wc.addRow([c.publisher, c.period, c.page, c.title, c.heading, c.text, srcById.get(c.src)?.file || c.src]);
+      r.getCell(6).alignment = { wrapText: true, vertical: 'top' };
+    }
+    [12, 9, 6, 40, 14, 110, 50].forEach((w, i) => { wc.getColumn(i + 1).width = w; });
+  }
 
   const wd = wb.addWorksheet('Definitions');
   wd.addRow(['Publisher', 'How it measures']).font = { bold: true };
