@@ -18,7 +18,7 @@ import { escapeHtml } from './escape.js';
 import { getPref, setPref } from './prefs.js';
 import { buildJumpBar } from './jump-bar.js';
 import {
-  SOURCE, SECTORS, SECTOR_METRICS, seriesIndex, publishersFor, areasFor, totalLines, cardInput, latestTable,
+  SOURCE, SECTORS, SECTOR_METRICS, PUBLISHER_ORDER, seriesIndex, publishersFor, areasFor, totalLines, cardInput, latestTable,
   periodLabel, coverage, years, metricLabel, unitOfMetric, fmtValue, areaLabel,
 } from './brokerage-data.js';
 import {
@@ -408,10 +408,13 @@ function selectedLines() {
   return areas.filter(a => !off.has(areaKey(a))).map(a => ({ publisher: pub, geo: a.geo, segment: a.segment, label: a.label }));
 }
 
-function sourceFor(lines) {
-  const pubs = [...new Set(lines.map(l => l.publisher))];
+/** Caption naming only the publishers with a line on this card (CBRE prints
+ *  industrial availability, not vacancy, so it must not be cited there). */
+function sourceFor(publishers) {
+  const pubs = [...new Set(publishers)].sort((a, b) => pubRank(a) - pubRank(b) || a.localeCompare(b));
   return pubs.length ? `${pubs.join(', ')} market reports` : SOURCE;
 }
+const pubRank = (p) => { const i = PUBLISHER_ORDER.indexOf(p); return i < 0 ? 99 : i; };
 
 const CAVEAT = {
   ocr: 'some figures were read by OCR from an image-only PDF (CBRE 2024 Q3–Q4) — check them against the report before quoting',
@@ -458,7 +461,7 @@ function renderCharts() {
     const unit = unitOfMetric(metric);
     const card = buildIndicatorCard($cards, {
       chartId: id, fileStem: id, title: `Winnipeg ${sectorLabel} ${metricLabel(ui.data, metric)}`,
-      sourceLabel: sourceFor(lines), table: true,
+      sourceLabel: sourceFor(input.seriesMeta.map(m => m.id.split(':')[1])), table: true,
       // every rate and dollar axis starts at 0 (Jason, 2026-10-09: all % charts, every project)
       zeroBased: unit === 'pct' || unit === 'psf' || unit === 'cad', mirrorY: false, sourceInCaption: true, signed: false, captionPt: 10,
     });
@@ -497,7 +500,7 @@ function latestCard($cards, sector, metric, lines, unit) {
     subtitle: `${SECTORS.find(s => s.id === sector)?.label || sector}; ** = not published for that period` + (flagged ? '; † read by OCR or off a map' : ''),
     head: ['Series', ...t.periods.map(periodLabel)],
     rows: t.rows.map(r => [r.label, ...r.values.map((v, i) => fmtValue(v, unit) + (r.flags[i].length ? ' †' : ''))]),
-    source: sourceFor(lines), wide: true,
+    source: sourceFor(t.rows.map(r => r.publisher)), wide: true,
   });
 }
 
