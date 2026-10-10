@@ -443,9 +443,10 @@ function renderCharts() {
   const labels = !!ui.prefs.valueLabels;
   const off = new Set(metricsOff());
   const drawn = [];
-  // Vacancy and availability rate share one section, charts beside each
-  // other on the first row and their tables on the second (Jason, 2026-10-10).
-  let rateSection = null;
+  // Statistics go two to a section: both charts beside each other on the
+  // first row, their latest-figures tables on the second (Jason, 2026-10-10;
+  // industrial's first pair is vacancy rate / CBRE's availability rate).
+  let openPair = null;
 
   for (const metric of availableMetrics()) {
     if (off.has(metric)) continue;
@@ -458,9 +459,9 @@ function renderCharts() {
     // counterpart to it, joined by any firm that also prints one (2026-10-10).
     if (!viewDetail() && (sector === 'office' || sector === 'industrial') && metric !== 'availability_rate'
         && new Set(input.seriesMeta.map(s => s.id.split(':')[1])).size < 2) continue;
-    const joinRates = metric === 'availability_rate' && rateSection;
-    const s = joinRates ? rateSection.section : document.createElement('section');
-    if (!joinRates) {
+    const join = !!openPair;
+    const s = join ? openPair.section : document.createElement('section');
+    if (!join) {
       s.className = 'cmhc-mi-section';
       s.id = `bk-section-${metric}`;
       s.innerHTML = `<h2 class="cmhc-mi-section-title"></h2><div class="grid md:grid-cols-2 gap-4 items-start" data-role="cards"></div>`;
@@ -486,13 +487,14 @@ function renderCharts() {
     card.setOpenPanels(open.get(id) || []);
     ui.cards.set(id, { card: card.card });
     const $table = latestCard($cards, sector, metric, lines, unit);
-    if (joinRates) {
-      // chart row first: move this chart ahead of the vacancy table
-      if (rateSection.table) $cards.insertBefore(card.card, rateSection.table);
+    if (join) {
+      // chart row first: move this chart ahead of the first statistic's table
+      if (openPair.table) $cards.insertBefore(card.card, openPair.table);
       drawn[drawn.length - 1].label += ` / ${metricLabel(ui.data, metric)}`;
+      openPair = null;
       continue;
     }
-    if (metric === 'vacancy_rate') rateSection = { section: s, table: $table };
+    openPair = { section: s, table: $table };
     $grid.appendChild(s);
     drawn.push({ id: s.id, label: metricLabel(ui.data, metric) });
   }
