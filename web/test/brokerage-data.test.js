@@ -3,7 +3,7 @@ import {
   seriesIndex, publishersFor, areasFor, totalLines, cardInput, latestTable, periodLabel, coverage, years,
   unitOfMetric, fmtValue, areaLabel, isForecast,
   investmentGeos, investmentSegments, investmentLines, overallCapLines, momentumGroups, segmentShort,
-  rateComparisonInput, metricLabel,
+  rateComparisonInput, metricLabel, mergeIdenticalSeries, combineLabels,
 } from '../src/brokerage-data.js';
 
 const obs = (publisher, sector, period, geo, segment, metric, value, flag = '') => ({
@@ -157,6 +157,25 @@ describe('brokerage-data: Newmark investment rates', () => {
     expect(v.records.map(r => r.value)).toEqual([6.9, 7.4]);
     expect(rateComparisonInput('rc', idx, { geo: 'Canada', segment: 'Office CBD Class A' }, { from: 2026 }).records).toHaveLength(0);
     expect(metricLabel({ metrics: {} }, 'rate_comparison')).toBe('Going-in cap vs terminal cap vs discount rate');
+  });
+
+  it('merges classes that are identical at every point into one line', () => {
+    const rec = (id, date, value) => ({ id, date, value });
+    const meta = (id, chartLabel) => ({ id, chartLabel, units: 'percent' });
+    const v = mergeIdenticalSeries({
+      records: [rec('a', '2024-03-31', 2), rec('a', '2024-09-30', 3), rec('b', '2024-03-31', 2), rec('b', '2024-09-30', 3),
+                rec('c', '2024-03-31', 2), rec('c', '2024-09-30', 4)],
+      seriesMeta: [meta('a', 'CBD Class A'), meta('b', 'CBD Class B'), meta('c', 'Suburban Class A')],
+      dashedIds: [], flags: ['x'],
+    });
+    expect(v.seriesMeta.map(m => m.chartLabel)).toEqual(['CBD Class A & B (same)', 'Suburban Class A']);
+    expect(v.records.filter(r => r.id === 'b')).toHaveLength(0);
+    expect(v.flags).toEqual(['x']);
+    // a dashed and a solid series are never merged
+    expect(mergeIdenticalSeries({ records: [rec('a', 'd', 1), rec('b', 'd', 1)], seriesMeta: [meta('a', 'A'), meta('b', 'B')], dashedIds: ['b'] })
+      .seriesMeta).toHaveLength(2);
+    expect(combineLabels(['Class A', 'Class B'])).toBe('Class A & B');
+    expect(combineLabels(['Calgary', 'Toronto', 'Vancouver'])).toBe('Calgary & Toronto & Vancouver');
   });
 
   it('orders the overall cap rate lines with the average and the bond last', () => {

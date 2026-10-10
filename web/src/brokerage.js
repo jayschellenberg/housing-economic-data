@@ -20,8 +20,9 @@ import { buildJumpBar } from './jump-bar.js';
 import {
   SOURCE, SECTORS, SECTOR_METRICS, PUBLISHER_ORDER, seriesIndex, publishersFor, areasFor, totalLines, cardInput, latestTable,
   periodLabel, coverage, years, metricLabel, unitOfMetric, fmtValue, areaLabel,
-  INVESTMENT_TYPES, investmentGeos, investmentSegments, investmentLines, investmentGeoLabel,
-  overallCapLines, momentumGroups, segmentShort, rateComparisonInput,
+  investmentGeos, investmentSegments, investmentLines, investmentGeoLabel,
+  overallCapLines, momentumGroups, segmentShort, rateComparisonInput, mergeIdenticalSeries, NEWMARK_TYPE,
+  INVESTMENT_SURVEY_METRICS,
 } from './brokerage-data.js';
 import {
   storeAvailable, fsAccessSupported, pickDirectory, getSavedDirectory, directoryPermission,
@@ -63,7 +64,6 @@ export async function initBrokerage() {
     $invSection: document.getElementById('bk-inv-section'),
     $invByCity: document.getElementById('bk-inv-by-city'),
     $invCompare: document.getElementById('bk-inv-compare'),
-    $invType: document.getElementById('bk-inv-type'),
     $invCity: document.getElementById('bk-inv-city'),
     $invCityWrap: document.getElementById('bk-inv-city-wrap'),
     $invSegment: document.getElementById('bk-inv-segment'),
@@ -162,9 +162,11 @@ function wireControls() {
   const setInv = (patch) => { ui.prefs = savePrefs({ inv: { ...(ui.prefs.inv || {}), ...patch } }); renderInvestmentPickers(); renderCharts(); };
   ui.$invByCity.addEventListener('change', () => setInv({ mode: 'city' }));
   ui.$invCompare.addEventListener('change', () => setInv({ mode: 'compare' }));
-  ui.$invType.addEventListener('change', () => setInv({ type: ui.$invType.value, segment: null }));
   ui.$invCity.addEventListener('change', () => setInv({ geo: ui.$invCity.value }));
-  ui.$invSegment.addEventListener('change', () => setInv({ segment: ui.$invSegment.value }));
+  ui.$invSegment.addEventListener('change', () => {
+    const prev = typeof ui.prefs.inv?.segment === 'object' && ui.prefs.inv.segment ? ui.prefs.inv.segment : {};
+    setInv({ segment: { ...prev, [investmentSelection().type]: ui.$invSegment.value } });
+  });
   document.getElementById('bk-areas-all').addEventListener('click', () => setAreasOff([]));
   document.getElementById('bk-areas-none').addEventListener('click', () => setAreasOff(currentAreas().map(a => areaKey(a))));
   document.getElementById('bk-sections-all').addEventListener('click', () => setMetricsOff([]));
@@ -248,8 +250,23 @@ function renderFolderBody() {
   ui.$folderToggle.setAttribute('aria-expanded', String(!collapsed));
 }
 
+/** Sectors with Winnipeg brokerage reports. */
+const WINNIPEG_SECTORS = new Set(['industrial', 'office', 'retail', 'hotel']);
+
+/** The Newmark property type drawn in a sector, or null when it has no Newmark rates. */
+function newmarkTypeFor(id) {
+  const t = NEWMARK_TYPE[id];
+  return t && investmentSegments(ui.idx, t).length ? t : null;
+}
+const newmarkType = () => newmarkTypeFor(selectedSector());
+
+function sectorHasData(id) {
+  if (id === 'multifamily') return !!newmarkTypeFor(id);
+  return publishersFor(ui.idx, id).length > 0;
+}
+
 function selectedSector() {
-  const ids = SECTORS.map(s => s.id).filter(id => publishersFor(ui.idx, id).length);
+  const ids = SECTORS.map(s => s.id).filter(sectorHasData);
   if (ids.includes(ui.prefs.sector)) return ui.prefs.sector;
   return ids[0] || SECTORS[0].id;
 }
@@ -259,7 +276,7 @@ const viewDetail = () => ui.prefs.view === 'detail';
 function renderSectorPicker() {
   ui.$sector.replaceChildren();
   for (const s of SECTORS) {
-    if (ui.data && !publishersFor(ui.idx, s.id).length) continue;
+    if (ui.data && !sectorHasData(s.id)) continue;
     const opt = document.createElement('option');
     opt.value = s.id; opt.textContent = s.label;
     ui.$sector.appendChild(opt);
@@ -281,16 +298,19 @@ function selectedPublisher() {
 function renderPickers() {
   const sector = selectedSector();
   const pubs = publishersFor(ui.idx, sector);
-  // Newmark's investment rates have one publisher and their own city / class pickers
-  const inv = sector === 'investment';
-  ui.$invSection.hidden = !ui.data || !inv;
-  ui.$viewSection.hidden = inv;
-  if (inv) {
+  // Newmark's Canadian-city rates have their own city / class pickers; a
+  // sector without Winnipeg reports (multifamily, investment trends) has no
+  // Winnipeg pickers at all.
+  const nmType = newmarkType();
+  ui.$invSection.hidden = !ui.data || !nmType;
+  if (nmType) renderInvestmentPickers();
+  const winnipeg = WINNIPEG_SECTORS.has(sector);
+  ui.$viewSection.hidden = !winnipeg;
+  if (!winnipeg) {
     ui.$publisherSection.hidden = true;
     ui.$pubSection.hidden = true;
     ui.$areaSection.hidden = true;
     ui.$forecasts.parentElement.hidden = true;
-    renderInvestmentPickers();
     renderSectionToggles();
     return;
   }
@@ -330,17 +350,18 @@ function renderPickers() {
 
 // --- Investment rates (Newmark, Canadian cities) ------------------------------------
 
-/** { mode, type, geo, segment } with every field resolved against what the data holds. */
+/** { mode, type, geo, segment } for the sector's Newmark rates, every field
+ *  resolved against what the data holds. The class is remembered per type. */
 function investmentSelection() {
   const p = ui.prefs.inv || {};
   const mode = p.mode === 'compare' ? 'compare' : 'city';
-  const types = INVESTMENT_TYPES.filter(t => investmentSegments(ui.idx, t).length);
-  const type = types.includes(p.type) ? p.type : (types[0] || INVESTMENT_TYPES[0]);
+  const type = NEWMARK_TYPE[selectedSector()] || 'Industrial';
   const geos = investmentGeos(ui.idx);
   const geo = geos.includes(p.geo) ? p.geo : (geos[0] || 'Canada');
   const segs = investmentSegments(ui.idx, type);
-  const segment = segs.includes(p.segment) ? p.segment : (segs[0] || '');
-  return { mode, type, geo, segment, types, geos, segs };
+  const want = typeof p.segment === 'object' && p.segment ? p.segment[type] : null;
+  const segment = segs.includes(want) ? want : (segs[0] || '');
+  return { mode, type, geo, segment, geos, segs };
 }
 
 function fillSelect($sel, options, value) {
@@ -358,7 +379,6 @@ function renderInvestmentPickers() {
   const sel = investmentSelection();
   ui.$invByCity.checked = sel.mode === 'city';
   ui.$invCompare.checked = sel.mode === 'compare';
-  fillSelect(ui.$invType, sel.types.map(t => [t, t]), sel.type);
   fillSelect(ui.$invCity, sel.geos.map(g => [g, investmentGeoLabel(g)]), sel.geo);
   fillSelect(ui.$invSegment, sel.segs.map(s => [s, segmentShort(s, sel.type)]), sel.segment);
   ui.$invCityWrap.hidden = sel.mode !== 'city';
@@ -431,8 +451,12 @@ function setMetricsOff(ids) {
 function availableMetrics() {
   const sector = selectedSector();
   const have = new Set();
-  for (const s of ui.idx.values()) if (s.sector === sector && s.points.length) have.add(s.metric);
-  if (have.has('cap_rate')) have.add('rate_comparison');
+  // Newmark's multifamily rates are stored under sector 'investment'
+  const dataSector = sector === 'multifamily' ? 'investment' : sector;
+  for (const s of ui.idx.values()) {
+    if (s.sector === dataSector && s.points.length && (sector !== 'multifamily' || s.segment.startsWith('Multifamily '))) have.add(s.metric);
+  }
+  if (newmarkType()) { have.add('newmark'); have.add('rate_comparison'); }
   return sectorMetrics().filter(m => have.has(m));
 }
 
@@ -466,7 +490,7 @@ function renderSectionToggles() {
 /** The lines to draw: publishers' totals, or one publisher's selected areas. */
 function selectedLines() {
   const sector = selectedSector();
-  if (sector === 'investment') return investmentLines(ui.idx, investmentSelection());
+  if (!WINNIPEG_SECTORS.has(sector)) return investmentLines(ui.idx, investmentSelection());
   if (!viewDetail()) {
     const off = new Set(pubsOff());
     return totalLines(ui.idx, sector).filter(l => !off.has(l.publisher)).map(l => ({ ...l, label: l.publisher }));
@@ -498,17 +522,14 @@ const CAVEAT = {
   derived: 'terminal cap rate = going-in cap rate + Newmark\'s reversion spread',
 };
 
-// Investment-rate sections drawn apart from the per-statistic loop.
-const INVESTMENT_EXTRAS = new Set(['rate_comparison', 'overall_cap_rate', 'momentum_ratio', 'investment_volume']);
-
-function cardTitle(sector, sectorLabel, metric) {
+function cardTitle(newmark, sectorLabel, metric) {
   const m = metricLabel(ui.data, metric);
-  if (sector !== 'investment') return `Winnipeg ${sectorLabel} ${m}`;
+  if (!newmark) return `Winnipeg ${sectorLabel} ${m}`;
   const sel = investmentSelection();
   return sel.mode === 'compare' ? `${sel.segment} — ${m}, by city` : `${investmentGeoLabel(sel.geo)} ${sel.type} — ${m}`;
 }
-function sectionTitle(sector, sectorLabel, metric) {
-  if (sector !== 'investment') return `${sectorLabel} — ${metricLabel(ui.data, metric)}`;
+function sectionTitle(newmark, sectorLabel, metric) {
+  if (!newmark) return `${sectorLabel} — ${metricLabel(ui.data, metric)}`;
   const sel = investmentSelection();
   const what = sel.mode === 'compare' ? sel.segment : `${investmentGeoLabel(sel.geo)} ${sel.type}`;
   return `${what} — ${metricLabel(ui.data, metric)}`;
@@ -527,74 +548,34 @@ function renderCharts() {
 
   const sector = selectedSector();
   const sectorLabel = SECTORS.find(s => s.id === sector)?.label || sector;
-  const lines = selectedLines();
   const ys = years(ui.idx);
   const lastYear = ys[ys.length - 1] || new Date().getUTCFullYear();
-  const from = ui.prefs.yearFrom || (sector === 'hotel' || sector === 'investment' ? null : lastYear - DEFAULT_FROM_YEARS + 1);
-  const range = { from, to: null };
-  const labels = !!ui.prefs.valueLabels;
-  const off = new Set(metricsOff());
-  const drawn = [];
-  // Statistics go two to a section: both charts beside each other on the
-  // first row, their latest-figures tables on the second (Jason, 2026-10-10;
-  // industrial's first pair is vacancy rate / CBRE's availability rate).
-  let openPair = null;
+  // the last six years for the quarterly Winnipeg reports; everything for the rest
+  const recent = WINNIPEG_SECTORS.has(sector) && sector !== 'hotel';
+  const from = ui.prefs.yearFrom || (recent ? lastYear - DEFAULT_FROM_YEARS + 1 : null);
+  const ctx = { range: { from, to: null }, labels: !!ui.prefs.valueLabels, off: new Set(metricsOff()), open, drawn: [], sector, sectorLabel };
 
-  const inv = sector === 'investment';
-  const view = inv ? `${investmentSelection().mode}` : viewDetail() ? 'detail' : 'totals';
-  if (inv && !off.has('rate_comparison')) renderRateComparison(lines, range, labels, open, drawn);
-  for (const metric of availableMetrics()) {
-    if (off.has(metric) || (inv && INVESTMENT_EXTRAS.has(metric))) continue;
-    const id = `bk_${sector}_${metric}_${view}`;
-    const input = cardInput(id, ui.idx, sector, metric, lines, range, { forecasts: sector === 'hotel' && ui.prefs.forecasts !== false });
-    if (!input.records.length) continue;
-    // Office and industrial compare publishers: a statistic only one firm
-    // prints has nothing to compare and is left out (Jason, 2026-10-09) —
-    // except availability rate, which stands beside vacancy rate as CBRE's
-    // counterpart to it, joined by any firm that also prints one (2026-10-10).
-    if (!viewDetail() && (sector === 'office' || sector === 'industrial') && metric !== 'availability_rate'
-        && new Set(input.seriesMeta.map(s => s.id.split(':')[1])).size < 2) continue;
-    const join = !!openPair;
-    const s = join ? openPair.section : document.createElement('section');
-    if (!join) {
-      s.className = 'cmhc-mi-section';
-      s.id = `bk-section-${metric}`;
-      s.innerHTML = `<h2 class="cmhc-mi-section-title"></h2><div class="grid md:grid-cols-2 gap-4 items-start" data-role="cards"></div>`;
-      s.querySelector('h2').textContent = sectionTitle(sector, sectorLabel, metric);
-    } else {
-      s.querySelector('h2').textContent += ` / ${metricLabel(ui.data, metric)}`;
-    }
-    const $cards = s.querySelector('[data-role="cards"]');
-    const unit = unitOfMetric(metric);
-    const card = buildIndicatorCard($cards, {
-      chartId: id, fileStem: id, title: cardTitle(sector, sectorLabel, metric),
-      sourceLabel: sourceFor(input.seriesMeta.map(m => m.id.split(':')[1])), table: true,
-      // every rate and dollar axis starts at 0 (Jason, 2026-10-09: all % charts, every project)
-      zeroBased: unit === 'pct' || unit === 'psf' || unit === 'cad' || unit === 'bps', mirrorY: false, sourceInCaption: true, signed: false, captionPt: 10,
+  if (WINNIPEG_SECTORS.has(sector)) {
+    const view = viewDetail() ? 'detail' : 'totals';
+    renderPairs(ctx, {
+      dataSector: sector, lines: selectedLines(), newmark: false,
+      metrics: availableMetrics().filter(m => m !== 'newmark'),
+      idOf: (m) => `bk_${sector}_${m}_${view}`,
+      // Office and industrial compare publishers: a statistic only one firm
+      // prints has nothing to compare and is left out (Jason, 2026-10-09) —
+      // except availability rate, which stands beside vacancy rate as CBRE's
+      // counterpart to it, joined by any firm that also prints one (2026-10-10).
+      skip: (metric, input) => !viewDetail() && (sector === 'office' || sector === 'industrial') && metric !== 'availability_rate'
+        && new Set(input.seriesMeta.map(m => m.id.split(':')[1])).size < 2,
+      subtitle: viewDetail() ? `${selectedPublisher()}, as published` : 'As published by each firm — definitions differ, see below',
+      forecasts: sector === 'hotel' && ui.prefs.forecasts !== false,
     });
-    const caveats = input.flags.filter(f => CAVEAT[f]).map(f => CAVEAT[f]);
-    const subtitle = inv ? 'Newmark V&A survey; Q1 = 1Q edition, Q3 = Mid-Year Update'
-      : viewDetail() ? `${selectedPublisher()}, as published` : 'As published by each firm — definitions differ, see below';
-    card.render(input.records, input.seriesMeta, {
-      rangeSubtitle: sector === 'hotel' ? 'year' : 'quarter', subtitle: caveats.length ? `${subtitle}. Note: ${caveats.join('; ')}` : subtitle,
-      singleSeriesInSubtitle: true, dashedIds: input.dashedIds,
-      valueLabels: labels ? { format: (v) => fmtValue(v, unit) } : null,
-    });
-    card.setOpenPanels(open.get(id) || []);
-    ui.cards.set(id, { card: card.card });
-    const $table = latestCard($cards, sector, metric, lines, unit);
-    if (join) {
-      // chart row first: move this chart ahead of the first statistic's table
-      if (openPair.table) $cards.insertBefore(card.card, openPair.table);
-      drawn[drawn.length - 1].label += ` / ${metricLabel(ui.data, metric)}`;
-      openPair = null;
-      continue;
-    }
-    openPair = { section: s, table: $table };
-    $grid.appendChild(s);
-    drawn.push({ id: s.id, label: metricLabel(ui.data, metric) });
   }
-  if (inv) renderInvestmentExtras(off, labels, open, drawn);
+  const nmType = newmarkType();
+  if (nmType && !ctx.off.has('newmark')) renderNewmark(ctx, nmType);
+  if (sector === 'investment') renderInvestmentExtras(ctx.off, ctx.labels, open, ctx.drawn);
+
+  const { drawn } = ctx;
   const cov = coverageSection();
   if (cov) { $grid.appendChild(cov); drawn.push({ id: cov.id, label: 'Reports on disk' }); }
   if (drawn.length > 1) $grid.prepend(buildJumpBar(drawn));
@@ -604,6 +585,96 @@ function renderCharts() {
     p.textContent = 'Nothing to show for this selection.';
     $grid.appendChild(p);
   }
+}
+
+/**
+ * One chart per statistic, two to a section: both charts beside each other on
+ * the first row, their latest-figures tables on the second (Jason, 2026-10-10;
+ * industrial's first pair is vacancy rate / CBRE's availability rate).
+ * Newmark's charts merge identical lines and draw the rest layered, so Class A
+ * and Class B stay visible where they coincide.
+ */
+function renderPairs(ctx, { dataSector, lines, metrics, idOf, newmark, skip = () => false, subtitle, forecasts = false, tableLabel = null }) {
+  const { $grid } = ui;
+  let openPair = null;
+  for (const metric of metrics) {
+    if (ctx.off.has(metric)) continue;
+    const id = idOf(metric);
+    let input = cardInput(id, ui.idx, dataSector, metric, lines, ctx.range, { forecasts });
+    if (!input.records.length || skip(metric, input)) continue;
+    if (newmark) input = mergeIdenticalSeries(input);
+    const join = !!openPair;
+    const s = join ? openPair.section : document.createElement('section');
+    if (!join) {
+      s.className = 'cmhc-mi-section';
+      s.id = `bk-section-${newmark ? 'newmark-' : ''}${metric}`;
+      s.innerHTML = `<h2 class="cmhc-mi-section-title"></h2><div class="grid md:grid-cols-2 gap-4 items-start" data-role="cards"></div>`;
+      s.querySelector('h2').textContent = sectionTitle(newmark, ctx.sectorLabel, metric);
+    } else {
+      s.querySelector('h2').textContent += ` / ${metricLabel(ui.data, metric)}`;
+    }
+    const $cards = s.querySelector('[data-role="cards"]');
+    const unit = unitOfMetric(metric);
+    const card = buildIndicatorCard($cards, {
+      chartId: id, fileStem: id, title: cardTitle(newmark, ctx.sectorLabel, metric),
+      sourceLabel: sourceFor(input.seriesMeta.map(m => m.id.split(':')[1])), table: true,
+      // every rate and dollar axis starts at 0 (Jason, 2026-10-09: all % charts, every project)
+      zeroBased: unit === 'pct' || unit === 'psf' || unit === 'cad' || unit === 'bps', mirrorY: false, sourceInCaption: true, signed: false, captionPt: 10,
+    });
+    const caveats = input.flags.filter(f => CAVEAT[f]).map(f => CAVEAT[f]);
+    card.render(input.records, input.seriesMeta, {
+      rangeSubtitle: ctx.sector === 'hotel' ? 'year' : 'quarter', subtitle: caveats.length ? `${subtitle}. Note: ${caveats.join('; ')}` : subtitle,
+      singleSeriesInSubtitle: true, dashedIds: input.dashedIds, layered: newmark,
+      valueLabels: ctx.labels ? { format: (v) => fmtValue(v, unit) } : null,
+    });
+    card.setOpenPanels(ctx.open.get(id) || []);
+    ui.cards.set(id, { card: card.card });
+    const $table = latestCard($cards, dataSector, metric, lines, unit, null, tableLabel);
+    const jump = `${newmark && WINNIPEG_SECTORS.has(ctx.sector) ? 'Newmark: ' : ''}${metricLabel(ui.data, metric)}`;
+    if (join) {
+      // chart row first: move this chart ahead of the first statistic's table
+      if (openPair.table) $cards.insertBefore(card.card, openPair.table);
+      ctx.drawn[ctx.drawn.length - 1].label += ` / ${metricLabel(ui.data, metric)}`;
+      openPair = null;
+      continue;
+    }
+    openPair = { section: s, table: $table };
+    $grid.appendChild(s);
+    ctx.drawn.push({ id: s.id, label: jump });
+  }
+}
+
+/**
+ * Newmark's survey rates for the sector's property type (Canadian cities —
+ * Newmark does not survey Winnipeg): a heading that says so inside a Winnipeg
+ * sector, the cap-vs-discount charts, then one chart per statistic.
+ */
+function renderNewmark(ctx, type) {
+  const sel = investmentSelection();
+  const lines = investmentLines(ui.idx, sel);
+  if (!lines.length) return;
+  if (WINNIPEG_SECTORS.has(ctx.sector)) {
+    const s = document.createElement('section');
+    s.className = 'cmhc-mi-section';
+    s.id = 'bk-section-newmark';
+    s.innerHTML = '<h2 class="cmhc-mi-section-title"></h2><p class="text-sm text-neutral-600 max-w-3xl"></p>';
+    s.querySelector('h2').textContent = `Newmark — ${type.toLowerCase()} investment rates, Canadian cities`;
+    s.querySelector('p').textContent = 'Newmark Valuation & Advisory does not survey Winnipeg. Below are its going-in cap, terminal cap '
+      + 'and discount rates and growth assumptions for Calgary, Edmonton, Montreal, Toronto, Vancouver and the Canada average; '
+      + 'pick the city or class under "Newmark — Canadian cities" in the sidebar.';
+    ui.$grid.appendChild(s);
+    ctx.drawn.push({ id: s.id, label: 'Newmark (Canadian cities)' });
+  }
+  if (!ctx.off.has('rate_comparison')) renderRateComparison(lines, ctx.range, ctx.labels, ctx.open, ctx.drawn);
+  const have = new Set();
+  for (const x of ui.idx.values()) if (x.sector === 'investment' && x.segment.startsWith(`${type} `) && x.points.length) have.add(x.metric);
+  renderPairs(ctx, {
+    dataSector: 'investment', lines, newmark: true,
+    metrics: INVESTMENT_SURVEY_METRICS.filter(m => have.has(m)),
+    idOf: (m) => `bk_newmark_${type}_${m}_${sel.mode}`,
+    subtitle: 'Newmark V&A survey; Q1 = 1Q edition, Q3 = Mid-Year Update',
+    tableLabel: `Newmark ${type.toLowerCase()}, Canadian cities`,
+  });
 }
 
 /**
@@ -624,7 +695,7 @@ function renderRateComparison(lines, range, labels, open, drawn) {
   const $cards = s.querySelector('[data-role="cards"]');
   for (const ln of lines) {
     const id = `bk_investment_ratecmp_${ln.geo}_${ln.segment}`.replace(/[^\w]+/g, '_');
-    const input = rateComparisonInput(id, ui.idx, ln, range);
+    const input = mergeIdenticalSeries({ ...rateComparisonInput(id, ui.idx, ln, range), flags: [] });
     if (!input.records.length) continue;
     const name = `${investmentGeoLabel(ln.geo)} ${ln.segment}`;
     const card = buildIndicatorCard($cards, {
@@ -635,7 +706,7 @@ function renderRateComparison(lines, range, labels, open, drawn) {
     card.render(input.records, input.seriesMeta, {
       rangeSubtitle: 'quarter',
       subtitle: 'Newmark V&A survey; Q1 = 1Q edition, Q3 = Mid-Year Update. Terminal cap = going-in + reversion spread',
-      singleSeriesInSubtitle: false, dashedIds: input.dashedIds,
+      singleSeriesInSubtitle: false, dashedIds: input.dashedIds, layered: true,
       valueLabels: labels ? { format: (v) => fmtValue(v, 'pct') } : null,
     });
     card.setOpenPanels(open.get(id) || []);
@@ -643,7 +714,7 @@ function renderRateComparison(lines, range, labels, open, drawn) {
   }
   if (!$cards.childElementCount) return;
   ui.$grid.appendChild(s);
-  drawn.push({ id: s.id, label: 'Cap vs discount rate' });
+  drawn.push({ id: s.id, label: WINNIPEG_SECTORS.has(selectedSector()) ? 'Newmark: cap vs discount rate' : 'Cap vs discount rate' });
 }
 
 /**
@@ -775,14 +846,14 @@ function renderInvestmentExtras(off, labels, open, drawn) {
 }
 
 /** The last six periods of each drawn line, as published. Returns the card element. */
-function latestCard($cards, sector, metric, lines, unit, source = null) {
+function latestCard($cards, sector, metric, lines, unit, source = null, what = null) {
   const t = latestTable(ui.idx, sector, metric, lines, 6);
   if (!t.rows.length || !t.periods.length) return null;
   const flagged = t.rows.some(r => r.flags.some(f => f.length));
   return buildTableCard($cards, {
     id: `bk_${sector}_${metric}_latest`,
     title: `${metricLabel(ui.data, metric)} — latest published figures`,
-    subtitle: `${SECTORS.find(s => s.id === sector)?.label || sector}; ** = not published for that period` + (flagged ? '; † read by OCR, off a map or off a chart' : ''),
+    subtitle: `${what || SECTORS.find(s => s.id === sector)?.label || sector}; ** = not published for that period` + (flagged ? '; † read by OCR, off a map or off a chart' : ''),
     head: ['Series', ...t.periods.map(periodLabel)],
     rows: t.rows.map(r => [r.label, ...r.values.map((v, i) => fmtValue(v, unit) + (r.flags[i].length ? ' †' : ''))]),
     source: source || sourceFor(t.rows.map(r => r.publisher)),
@@ -813,7 +884,9 @@ function coverageSection() {
 function renderDefinitions() {
   const defs = ui.data?.definitions || {};
   ui.$defs.replaceChildren();
-  for (const p of publishersFor(ui.idx, selectedSector())) {
+  const pubs = publishersFor(ui.idx, selectedSector());
+  if (newmarkType() && !pubs.includes('Newmark')) pubs.push('Newmark');
+  for (const p of pubs) {
     if (!defs[p]) continue;
     const dt = document.createElement('dt'); dt.className = 'font-semibold text-neutral-700 mt-2'; dt.textContent = p;
     const dd = document.createElement('dd'); dd.className = 'text-neutral-700'; dd.textContent = defs[p];
