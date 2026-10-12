@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "generated": "2026-10-05T11:57:30Z",
-  "dataAsOf": "2026-10-05",
+  "generated": "2026-10-12T12:34:03Z",
+  "dataAsOf": "2026-10-12",
   "intro": {
     "censusYear": 2021,
     "provincePopulation": 1342153,
@@ -78,10 +78,10 @@
       "stale": false
     },
     "employment": {
-      "value": 756100,
-      "changePct": 2.6,
+      "value": 751700,
+      "changePct": 1.7,
       "direction": "up",
-      "period": "August 2026",
+      "period": "September 2026",
       "comparison": "year-over-year",
       "source": "Statistics Canada",
       "stale": false
@@ -97,17 +97,17 @@
     },
     "unemployment_rate": {
       "value": 5,
-      "changePP": -0.8,
-      "period": "August 2026",
+      "changePP": -1.2,
+      "period": "September 2026",
       "comparison": "year-over-year",
       "source": "Statistics Canada (Labour Force Survey)",
       "stale": false
     },
     "exports": {
-      "value": 10750244000,
-      "ytdChangePct": -8.8,
+      "value": 12310543000,
+      "ytdChangePct": -6.8,
       "direction": "down",
-      "period": "year-to-date to July 2026",
+      "period": "year-to-date to August 2026",
       "comparison": "year-to-date change",
       "source": "Statistics Canada (international merchandise trade, table 12-10-0175)",
       "stale": false
@@ -158,7 +158,7 @@
   "mls": {
     "asOf": "August 2026",
     "source": "Winnipeg Regional Real Estate Board (WRREB) — https://www.winnipegregionalrealestatenews.com/market-statistics/market-releases/article/628/august-sees-the-highest-year-to-date-residential-detached-and-condominium-average-prices-on-record",
-    "stale": false,
+    "stale": true,
     "sales": {
       "value": 1326,
       "vsPriorYearPct": -4,
@@ -217,8 +217,8 @@
           "units": "persons_thousands",
           "geo": "MB",
           "frequency": "monthly",
-          "latestDate": "2026-08-01",
-          "latestValue": 756100
+          "latestDate": "2026-09-01",
+          "latestValue": 751700
         }
       ],
       "records": [
@@ -621,6 +621,11 @@
           "id": "statscan.employment.manitoba",
           "date": "2026-08-01",
           "value": 756100
+        },
+        {
+          "id": "statscan.employment.manitoba",
+          "date": "2026-09-01",
+          "value": 751700
         }
       ]
     },
