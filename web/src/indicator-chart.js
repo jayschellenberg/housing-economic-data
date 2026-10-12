@@ -95,6 +95,28 @@ export function periodLabel(d, frequency) {
 }
 
 /**
+ * Compound annual rate of change (CAGR) of one series over the points given:
+ * (last ÷ first)^(1/years) − 1, first and last being the earliest and latest
+ * finite observations. Null when the span is under a year (annualising a few
+ * months overstates it) or either end is not positive.
+ *
+ * @param {Array<{date: Date, value: number}>} points
+ * @returns {{ rate: number, from: Date, to: Date } | null}
+ */
+export function annualizedChange(points) {
+  let first = null, last = null;
+  for (const p of points) {
+    if (!Number.isFinite(p.value)) continue;
+    if (!first || p.date < first.date) first = p;
+    if (!last  || p.date > last.date)  last = p;
+  }
+  if (!first || !(first.value > 0) || !(last.value > 0)) return null;
+  const years = (last.date - first.date) / (365.25 * 86400000);
+  if (years < 0.99) return null;   // a 12-month window measures a hair under 365.25 days
+  return { rate: Math.pow(last.value / first.value, 1 / years) - 1, from: first.date, to: last.date };
+}
+
+/**
  * Which series of a chart draw dashed so its aggregate reads solid — the
  * Market Indicators counterpart of the CMHC charts' "components dashed, Total
  * solid" rule. The aggregate of an indicator chart is, in order:
@@ -846,6 +868,32 @@ export function buildIndicatorCard(container, {
       screenYTicks = d3Ticks(ys.domain[0], ys.domain[1], Math.abs(ys.range[1] - ys.range[0]) / 35);
     }
 
+    // `opts.annualized`: each line's compound annual change over the plotted
+    // window ("+4.1%/yr", "… since Q2 2023" when the line starts later than
+    // the chart). On screen it rides in the latest-value chips; the PNG drops
+    // that row, so the legend (or, for a one-line chart, the subtitle) carries
+    // it in an export-only span instead.
+    const annualById = new Map();
+    if (opts.annualized) {
+      for (const s of seriesMeta) {
+        const ann = annualizedChange(filtered.filter(p => p.id === s.id));
+        if (!ann) continue;
+        const since = ann.from > xMin ? ` since ${periodLabel(ann.from, s.frequency)}` : '';
+        annualById.set(s.id, {
+          text: `${ann.rate >= 0 ? '+' : ''}${(ann.rate * 100).toFixed(1)}%/yr${since}`,
+          tip: `Compound annual change, ${periodLabel(ann.from, s.frequency)} to ${periodLabel(ann.to, s.frequency)}`,
+        });
+      }
+    }
+    const annualByLabel = new Map(seriesMeta
+      .filter(s => annualById.has(s.id)).map(s => [s.chartLabel || s.id, annualById.get(s.id)]));
+    const exportAnnual = (text) => {
+      const el = document.createElement('span');
+      el.className = 'cmhc-export-only';
+      el.textContent = text;
+      return el;
+    };
+
     // Custom vertical legend on the right.
     const legendEl = document.createElement('div');
     legendEl.className = 'cmhc-plot-legend';
@@ -865,7 +913,9 @@ export function buildIndicatorCard(container, {
       item.innerHTML =
         `<span class="${swatchClass}" style="${swatchStyle}"></span>` +
         `<span class="cmhc-plot-legend-text"></span>`;
-      item.querySelector('.cmhc-plot-legend-text').textContent = cat;
+      const $text = item.querySelector('.cmhc-plot-legend-text');
+      $text.textContent = cat;
+      if (annualByLabel.has(cat)) $text.appendChild(exportAnnual(` ${annualByLabel.get(cat).text}`));
       legendEl.appendChild(item);
     });
     // Annotation key for the reference band / line, so the shading is never
@@ -931,13 +981,20 @@ export function buildIndicatorCard(container, {
       $sub.textContent = [range, baseSub, source].filter(Boolean).join('; ');
     } else {
       const yearRange = `${xMin.getUTCFullYear()}–${xMax.getUTCFullYear()}`;
-      $sub.textContent = [baseSub, yearRange, source].filter(Boolean).join(' • ');
+      $sub.textContent = [singleLabel, baseSub, yearRange, source].filter(Boolean).join(' • ');
+    }
+    // A one-line chart has no legend, so its annual change follows its name
+    // at the front of the subtitle in the image ("Winnipeg +3.0%/yr • …").
+    const singleAnnual = singleLabel && annualByLabel.size === 1 ? [...annualByLabel.values()][0] : null;
+    if (singleAnnual && $sub.textContent.startsWith(singleLabel)) {
+      const rest = $sub.textContent.slice(singleLabel.length);
+      $sub.replaceChildren(singleLabel, exportAnnual(` ${singleAnnual.text}`), rest);
     }
     // An empty subtitle takes no room on the card or in the exported image.
     $sub.hidden = !$sub.textContent;
     if (!sourceInCaption) $capLeft.textContent = '';
 
-    // Latest-value row: one chip per series.
+    // Latest-value row: one chip per series, plus its annual change.
     const today = new Date();
     let staleSeries = [];
     seriesMeta.forEach((s, i) => {
@@ -952,6 +1009,14 @@ export function buildIndicatorCard(container, {
       chip.querySelector('.cmhc-latest-label').textContent = s.chartLabel || s.id;
       chip.querySelector('strong').textContent = yFormatter(s.latestValue);
       chip.querySelector('.cmhc-latest-asof').textContent = ` (as of ${s.latestDate})`;
+      const ann = annualById.get(s.id);
+      if (ann) {
+        const el = document.createElement('span');
+        el.className = 'cmhc-latest-annual';
+        el.textContent = ` · ${ann.text}`;
+        el.title = ann.tip;
+        chip.appendChild(el);
+      }
       $latest.appendChild(chip);
 
       const ageDays = (today - new Date(s.latestDate)) / 86400000;

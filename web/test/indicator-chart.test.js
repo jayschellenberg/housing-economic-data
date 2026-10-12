@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { periodLabel, yDomainFor, buildTipRows, renderDataTable, readOpenPanels, aggregateDashedIds, geoQualifiedLabels, freshnessLimitDays } from '../src/indicator-chart.js';
+import { periodLabel, yDomainFor, buildTipRows, renderDataTable, readOpenPanels, aggregateDashedIds, geoQualifiedLabels, freshnessLimitDays, annualizedChange } from '../src/indicator-chart.js';
 
 const utc = (iso) => new Date(iso);
 
@@ -322,5 +322,26 @@ describe('freshnessLimitDays', () => {
         `${chartId} must still catch a missed release`)
         .toBeLessThan(worst + CYCLE_DAYS[chartId]);
     }
+  });
+});
+
+describe('annualizedChange', () => {
+  const pt = (iso, value) => ({ date: utc(iso), value });
+  it('compounds over the window, ignoring point order and gaps', () => {
+    const r = annualizedChange([pt('2026-01-01', 121), pt('2024-01-01', 100), pt('2025-01-01', null)]);
+    expect(r.rate).toBeCloseTo(0.1, 3);
+    expect(r.from).toEqual(utc('2024-01-01'));
+    expect(r.to).toEqual(utc('2026-01-01'));
+  });
+  it('handles declines', () => {
+    expect(annualizedChange([pt('2020-01-01', 100), pt('2022-01-01', 81)]).rate).toBeCloseTo(-0.1, 3);
+  });
+  it('accepts a 12-month monthly window but not less', () => {
+    expect(annualizedChange([pt('2025-01-01', 100), pt('2026-01-01', 105)])).not.toBeNull();
+    expect(annualizedChange([pt('2025-06-01', 100), pt('2026-01-01', 105)])).toBeNull();
+  });
+  it('returns null for non-positive ends or empty input', () => {
+    expect(annualizedChange([])).toBeNull();
+    expect(annualizedChange([pt('2020-01-01', 0), pt('2025-01-01', 5)])).toBeNull();
   });
 });

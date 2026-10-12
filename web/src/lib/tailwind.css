@@ -548,6 +548,11 @@
   word-break: break-word;
 }
 
+/* Shown only in the exported PNG: the annual-change figure the image can't
+   take from the latest-value row, which the export drops. */
+.cmhc-export-only { display: none; }
+.cmhc-exporting .cmhc-export-only { display: inline; }
+
 /* Annotation key under the legend (the BoC inflation-control band). Reads as
    a note, not as another series — no swatch, smaller, muted. */
 .cmhc-plot-legend-note {
