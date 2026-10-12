@@ -362,7 +362,7 @@ export async function initCensus() {
   let lastNarrativeArgs = null;
   function renderNarrative(subject, others, period) {
     if (!$narr) return;
-    const benchmarks = others.slice().sort((a, b) => (b.level === 'PR') - (a.level === 'PR'));
+    const benchmarks = others;   // selection order; the narrative puts the province first in prose only
     lastNarrativeArgs = { subject, others, period };
     const nar = buildCensusNarrative({ subject, benchmarks, years, period, industry, highways,
                                        services: subject.level === 'CSD' ? loadServices(subject.uid) : null });
