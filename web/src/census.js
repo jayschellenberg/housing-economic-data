@@ -354,15 +354,14 @@ export async function initCensus() {
   }
 
   // ---- Community-profile narrative ----------------------------------------
-  // Area 1 read against Areas 2/3 as benchmarks (province first, so the prose
-  // runs "…below the provincial figure and well under Winnipeg's"). The blocks
+  // Area 1 read against Areas 2/3 as benchmarks, in selection order. The blocks
   // render on screen and go unchanged to the Word export, RTB-style; the
   // supporting-figures table sits beneath the prose it interprets.
   let lastNarrative = null;
   let lastNarrativeArgs = null;
   function renderNarrative(subject, others, period) {
     if (!$narr) return;
-    const benchmarks = others;   // selection order; the narrative puts the province first in prose only
+    const benchmarks = others;   // selection order (Area 2, then 3) for prose and tables
     lastNarrativeArgs = { subject, others, period };
     const nar = buildCensusNarrative({ subject, benchmarks, years, period, industry, highways,
                                        services: subject.level === 'CSD' ? loadServices(subject.uid) : null });
