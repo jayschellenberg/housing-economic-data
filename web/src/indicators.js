@@ -683,7 +683,7 @@ function buildChartSections(catalog, shards) {
       const ids = new Set(seriesMeta.map(s => s.id));
       const records = recordsAll.filter(r => ids.has(r.id));
       card.render(records, seriesMeta, {
-        subtitle: subtitleFor(seriesMeta),
+        subtitle: subtitleFor(seriesMeta, chartCfg),
         sources: visibleSources(catalog, chartId, ids),
         monthFrom: state.monthFrom,
         monthTo:   state.monthTo,
@@ -691,6 +691,7 @@ function buildChartSections(catalog, shards) {
         // Decided on the VISIBLE series: with Canada toggled off there is no
         // solid line for a dash to contrast with, so the rest draw solid.
         dashedIds: dashedIdsFor(chartCfg, seriesMeta),
+        ...trendOpts(chartCfg, seriesMeta),
       });
       // Stash the unfiltered set so rerenderCards() can re-apply the filter
       // without having to re-walk the shard each time.
@@ -703,6 +704,19 @@ function buildChartSections(catalog, shards) {
 
     if ($sectionGrid.childElementCount === 0) section.remove();
   });
+}
+
+// Sections whose level charts (indexes, dollar rents) show each line's
+// compound annual change for the window in the latest-value chips, and whose
+// charts drop the legend when one line is drawn (its name moves to the
+// subtitle). Rate charts (YoY %, inflation) get no annualised figure.
+const TREND_GROUPS = new Set(['prices', 'construction_cost', 'commercial_leasing']);
+function trendOpts(chartCfg, seriesMeta) {
+  if (!TREND_GROUPS.has(chartCfg?.displayGroup)) return {};
+  return {
+    singleSeriesInSubtitle: true,
+    annualized: seriesMeta.length > 0 && seriesMeta.every(s => s.units !== 'percent'),
+  };
 }
 
 function uniqueProviderLabel(seriesMeta) {
@@ -727,9 +741,12 @@ function visibleSources(catalog, chartId, ids) {
   return { label: short, items };
 }
 
-function subtitleFor(seriesMeta) {
+function subtitleFor(seriesMeta, chartCfg) {
   const geos = [...new Set(seriesMeta.map(s => s.geo))];
   const freqs = [...new Set(seriesMeta.map(s => s.frequency))];
+  // A one-line chart in a trend section already leads its subtitle with the
+  // line's name ("Winnipeg"), so the geo code ("Winnipeg-CMA") would repeat it.
+  if (TREND_GROUPS.has(chartCfg?.displayGroup) && seriesMeta.length === 1) return freqs.join(' / ');
   // Collapse the geo list once it gets long (population / immigration span
   // every province) so the subtitle stays readable.
   const geoLabel = geos.length > 4 ? `${geos.length} geographies` : geos.join(' + ');
@@ -918,11 +935,12 @@ function rerenderCards() {
     const ids = new Set(seriesMeta.map(s => s.id));
     const records = recordsAll.filter(r => ids.has(r.id));
     card.render(records, seriesMeta, {
-      subtitle: subtitleFor(seriesMeta),
+      subtitle: subtitleFor(seriesMeta, chartCfg),
       sources: visibleSources(lastRender.catalog, chartId, ids),
       monthFrom: state.monthFrom,
       monthTo:   state.monthTo,
       dashedIds: dashedIdsFor(chartCfg, seriesMeta),
+      ...trendOpts(chartCfg, seriesMeta),
     });
   });
   // The Cap vs Interest card isn't catalog-driven, so it isn't in
