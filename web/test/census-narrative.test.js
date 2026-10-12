@@ -101,6 +101,12 @@ describe('buildCensusNarrative', () => {
     expect(table.rows[0].values).toEqual(['17,806', '1,342,153', '834,678']);
     expect(table.rows[3].values[0]).toBe('$72,500');
   });
+  it('keeps table columns in Area 1/2/3 order while the prose leads with the province', () => {
+    const r = buildCensusNarrative({ subject: steinbach, benchmarks: [wpgCma, manitoba], years: YEARS, period: '2021' });
+    expect(r.table.columns).toEqual(['Steinbach', 'Winnipeg CMA', 'Manitoba']);
+    expect(r.table.rows[0].values).toEqual(['17,806', '834,678', '1,342,153']);
+    expect(paras(r.blocks)).toContain('faster than the provincial figure (+5.0%) and faster than Winnipeg CMA\'s (+7.2%)');
+  });
   it('drops benchmark clauses when the benchmark is missing, never printing **', () => {
     const { blocks: b16 } = buildCensusNarrative({ subject: steinbach, benchmarks: [manitoba], years: YEARS, period: '2016' });
     const t16 = paras(b16);
