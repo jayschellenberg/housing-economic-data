@@ -423,7 +423,7 @@ export async function initAgriculture() {
         const records = meta.flatMap((s) => recordsById[s.id] || []);
         if (!records.length) continue;
 
-        // Table numbers in the subtitle, the linked list in the explainer —
+        // Table numbers in the caption, the linked list in the explainer —
         // for just the provinces on this chart (cards rebuild on every change).
         const refs = chartSources(catalog, chartId, new Set(meta.map((s) => s.id)));
         const card = buildIndicatorCard($secGrid, {
@@ -439,6 +439,8 @@ export async function initAgriculture() {
           // to the full history — monthly crop prices back to 1985, farm
           // structure to 1921.
           table: true,
+          // Company name bottom-left, "Source: …" bottom-right (site-wide).
+          sourceInCaption: true, captionPt: 10,
         });
         // Components dashed, aggregate solid (see aggregateDashedIds): farm
         // cash receipts dash crops + livestock under Total, the input index
