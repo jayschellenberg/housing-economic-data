@@ -303,16 +303,14 @@ export function buildCensusNarrative({ subject, benchmarks = [], years, period, 
   const s = regionStats(subject, { years, period });
   const sInd = industryStats(industry, subject?.uid, period);
   const sHw = subject?.level === 'CSD' ? (highways?.csd?.[subject.uid] ?? null) : null;
-  // `benchmarks` arrive in the user's Area 2/3 order, which the tables keep;
-  // the prose reads the province first ("…below the provincial figure and well
-  // under Winnipeg's").
-  const bmCols = benchmarks.filter(Boolean).map(r => {
+  // `benchmarks` arrive in the user's Area 2/3 order, which both the prose and
+  // the tables keep.
+  const bm = benchmarks.filter(Boolean).map(r => {
     const stats = regionStats(r, { years, period });
     // "Manitoba" reads as "the provincial figure"; everything else by name + possessive.
     const label = r.level === 'PR' ? 'the provincial figure' : `${stats.name}'s`;
     return { stats, label, name: stats.name, level: r.level, industry: industryStats(industry, r.uid, period) };
   });
-  const bm = bmCols.slice().sort((a, b) => (b.level === 'PR') - (a.level === 'PR'));
 
   const blocks = [
     { type: 'title', text: `${s.name} — community profile` },
@@ -343,7 +341,7 @@ export function buildCensusNarrative({ subject, benchmarks = [], years, period, 
   ].filter(Boolean)) blocks.push({ type: 'bullet', text: stub });
 
   // Supporting figures — the table the prose interprets.
-  const cols = [s, ...bmCols.map(b => b.stats)];
+  const cols = [s, ...bm.map(b => b.stats)];
   const row = (label, f) => ({ area: label, values: cols.map(c => f(c)) });
   const pct1 = (v) => v == null ? '**' : fPct1s(v);
   const pct0 = (v) => v == null ? '**' : fPct0(v);
@@ -367,7 +365,7 @@ export function buildCensusNarrative({ subject, benchmarks = [], years, period, 
   // share — only when the subject has industry data for this period.
   let industryTable = null;
   if (sInd) {
-    const icols = [{ name: s.name, ind: sInd }, ...bmCols.map(b => ({ name: b.name, ind: b.industry }))];
+    const icols = [{ name: s.name, ind: sInd }, ...bm.map(b => ({ name: b.name, ind: b.industry }))];
     const order = sInd.shares.slice().sort((a, b) => b.share - a.share).map(x => x.code);
     industryTable = {
       title: `Labour force by industry (${period}) — ${icols.map(c => c.name).join(' vs ')}`,
