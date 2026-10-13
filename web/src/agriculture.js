@@ -440,7 +440,10 @@ export async function initAgriculture() {
           // structure to 1921.
           table: true,
           // Company name bottom-left, "Source: …" bottom-right (site-wide).
-          sourceInCaption: true, captionPt: 10,
+          // Statistics Canada data: the source alone signs the card.
+          sourceInCaption: true, signed: false, captionPt: 10,
+          // Left-hand y axis only — no mirrored labels on the right.
+          mirrorY: false,
         });
         // Components dashed, aggregate solid (see aggregateDashedIds): farm
         // cash receipts dash crops + livestock under Total, the input index
@@ -449,6 +452,10 @@ export async function initAgriculture() {
         card.render(records, meta, {
           subtitle: spec.subtitle(prov), monthFrom, monthTo,
           dashedIds: aggregateDashedIds(meta),
+          // Each line's compound annual change over the year range — chips
+          // on screen, legend in the PNG (see buildIndicatorCard). Rate
+          // charts (farmland YoY %) get none.
+          annualized: meta.length > 0 && meta.every((s) => s.units !== 'percent'),
         });
         const shown = records.filter((r) => inRange(r.date));
         if (shown.length) {
