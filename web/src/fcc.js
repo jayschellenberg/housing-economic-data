@@ -12,7 +12,7 @@
  * Rentals.ca tabs do.
  */
 
-import { buildIndicatorCard, readOpenPanels } from './indicator-chart.js';
+import { buildIndicatorCard, readOpenPanels, compoundAvgPct } from './indicator-chart.js';
 import { downloadCardPng, setExportRedraw, setExportCropHeight, EXPORT_W, EXPORT_H, EXPORT_DPI } from './png-export.js';
 import { escapeHtml } from './escape.js';
 import { getPref, setPref } from './prefs.js';
@@ -395,6 +395,10 @@ function renderCharts() {
     card.render(input.records, input.seriesMeta, {
       rangeSubtitle: 'year', subtitle, singleSeriesInSubtitle: true,
       valueLabels: labels ? { format: pct ? fmtPct : fmtMoney } : null,
+      // Each line's annualised change for the years shown — chips on screen,
+      // legend (or the subtitle, for one line) in the PNG. A % change chart
+      // compounds its yearly changes; a $/acre chart compounds first to last.
+      annualized: pct ? 'rates' : true,
     });
     card.setOpenPanels(open.get(id) || []);
     ui.cards.set(id, { card: card.card });
@@ -468,6 +472,18 @@ function renderCharts() {
 
 // --- Tables ------------------------------------------------------------------
 
+/**
+ * Avg/yr for a table row or column: the compound average of its yearly %
+ * changes (oldest first). A series may start late (pastureland from 2022),
+ * but one with a gap or that stops reporting (N.L. after 2016) gets no
+ * average — it would not cover the years the heading names.
+ */
+function avgPerYear(chrono) {
+  const i = chrono.findIndex(v => v != null);
+  const run = i < 0 ? [] : chrono.slice(i);
+  return run.some(v => v == null) ? null : compoundAvgPct(run);
+}
+
 /** The province and each region's % change for the last five years to the report year. */
 function summaryTable($cards, sel, regs) {
   const ys = Array.from({ length: SUMMARY_YEARS }, (_, i) => sel.year - SUMMARY_YEARS + 1 + i);
@@ -479,9 +495,10 @@ function summaryTable($cards, sel, regs) {
   buildTableCard($cards, {
     id: `fcc_summary_${sel.prov}_${sel.year}`,
     title: `${sel.name} Annual % Change in Farmland Values by Region, ${ys[0]}–${ys[ys.length - 1]}`,
-    subtitle: 'Cultivated land and pastureland (pastureland published from 2022)',
-    head: ['Region', ...ys.map(String)],
-    rows: rows.map(r => (r.section ? r : [r.label, ...r.values.map(fmtPct)])),
+    subtitle: 'Cultivated land and pastureland (pastureland published from 2022). ' +
+      'Avg/yr = compound average of the years shown',
+    head: ['Region', ...ys.map(String), 'Avg/yr'],
+    rows: rows.map(r => (r.section ? r : [r.label, ...r.values.map(fmtPct), fmtPct(avgPerYear(r.values))])),
     source: sourceFor(sel.year), wide: true,
   });
   return 1;
@@ -500,7 +517,12 @@ function provincialTable($cards, sel) {
     title: 'Annual % Change in Cultivated Farmland Values by Province',
     subtitle: `${rows[rows.length - 1].year}–${rows[0].year}`,
     head: ['Year', ...provs.map(p => short[p] || p)],
-    rows: rows.map(r => [String(r.year), ...r.values.map(fmtPct)]),
+    rows: [
+      ...rows.map(r => [String(r.year), ...r.values.map(fmtPct)]),
+      // Compound average of each province's yearly changes over the table.
+      { total: [`Avg/yr ${rows[rows.length - 1].year}–${rows[0].year}`,
+        ...provs.map((_, j) => fmtPct(avgPerYear(rows.map(r => r.values[j]).reverse())))] },
+    ],
     highlightCol: provs.indexOf(sel.prov) + 1,
     source: sourceFor(sel.year), wide: true,
   });
@@ -537,10 +559,15 @@ function buildTableCard(container, { id, title, subtitle, head, rows, source, wi
   const card = document.createElement('section');
   card.className = `chart-card cmhc-indicator-card${wide ? ' md:col-span-2' : ''}`;
   card.dataset.chartId = id;
-  const cell = (x, i) => `<td${i === highlightCol ? ' style="font-weight:600"' : ''}>${escapeHtml(String(x))}</td>`;
+  const cell = (x, i, bold = false) =>
+    `<td${bold ? ' style="font-weight:700"' : i === highlightCol ? ' style="font-weight:600"' : ''}>${escapeHtml(String(x))}</td>`;
+  // A row is an array of cells, { section } (a heading spanning the table) or
+  // { total } (a bold summary row under a rule — the Avg/yr row).
   const body = rows.map(r => (Array.isArray(r)
-    ? `<tr>${r.map(cell).join('')}</tr>`
-    : `<tr><th colspan="${head.length}" style="text-align:left">${escapeHtml(r.section)}</th></tr>`)).join('');
+    ? `<tr>${r.map((x, i) => cell(x, i)).join('')}</tr>`
+    : r.total
+      ? `<tr style="border-top:2px solid currentColor">${r.total.map((x, i) => cell(x, i, true)).join('')}</tr>`
+      : `<tr><th colspan="${head.length}" style="text-align:left">${escapeHtml(r.section)}</th></tr>`)).join('');
   card.innerHTML = `
     <header class="chart-title">${escapeHtml(title)}</header>
     <p class="chart-sub">${escapeHtml(subtitle)}</p>
@@ -595,7 +622,7 @@ function buildTableCard(container, { id, title, subtitle, head, rows, source, wi
     $scroll.style.setProperty('overflow', 'visible');
     fit();
   });
-  const tsv = [head, ...rows.map(r => (Array.isArray(r) ? r : [r.section]))].map(r => r.join('\t')).join('\n');
+  const tsv = [head, ...rows.map(r => (Array.isArray(r) ? r : r.total || [r.section]))].map(r => r.join('\t')).join('\n');
   const $copy = card.querySelector('[data-role="copy"]');
   $copy.addEventListener('click', async () => {
     try { await navigator.clipboard.writeText(tsv); $copy.textContent = 'Copied'; setTimeout(() => { $copy.textContent = 'Copy table'; }, 1500); }
