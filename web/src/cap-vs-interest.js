@@ -165,6 +165,18 @@ export function capVsInterestSources(rateMeta, capTypes, firm) {
   return items;
 }
 
+/**
+ * The caption's source line: the BoC series behind the rate lines, then the
+ * brokerage reports behind the cap rates — "Bank of Canada, series V39079,
+ * …; Colliers Winnipeg quarterly cap rate reports".
+ */
+export function capVsInterestCaption(rateMeta, capTypes, firm) {
+  return [
+    seriesSources(rateMeta).short || 'Bank of Canada',
+    capTypes.length ? `${captionPublisher(firm)} quarterly cap rate reports` : '',
+  ].filter(Boolean).join('; ');
+}
+
 /** The cap-rate publisher as the caption names it: "Colliers Winnipeg". */
 function captionPublisher(firm) {
   if (firm === ALL_FIRMS) return 'Colliers Winnipeg, CBRE & Cushman & Wakefield';
@@ -431,18 +443,15 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', 
       title: capTypes.length
         ? 'Canada Overnight, 5/10-Year Bond Yields & Cap Rates'
         : 'Canadian Rate Environment',
-      // "Source: Bank of Canada & Colliers Winnipeg Average Cap Rates" in the
-      // caption, bottom-right; 10 pt in print, as on the other Local Data
-      // tabs (Jason, 2026-09-30).
-      sourceLabel: capTypes.length
-        ? `Bank of Canada & ${captionPublisher($firm.value)} Average Cap Rates`
-        : 'Bank of Canada',
+      // The actual sources in the caption, bottom-right, 10 pt in print, and
+      // no company name — the published data signs the card (Jason, 2026-10-12).
+      sourceLabel: capVsInterestCaption(ui.rateMeta, capTypes, $firm.value),
       sourceInCaption: true,
+      signed: false,
       captionPt: 10,
       table: true,
       zeroBased: true,
-      // The caption keeps the reference chart's wording; the specific series
-      // codes and reports are listed under the explainer instead.
+      // Full citations (links, what each series feeds) under the explainer.
       sources: capVsInterestSources(ui.rateMeta, capTypes, $firm.value),
       description:
         'The BoC overnight target with the 5- and 10-year Government of Canada yields — the ' +

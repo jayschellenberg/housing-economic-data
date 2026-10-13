@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  capSeriesFromRows, orderTypes, monthlyMean, capPublisher, ALL_FIRMS, DEFAULT_FIRM, KNOWN_TYPES, DEFAULT_OFF_TYPES,
+  capSeriesFromRows, capVsInterestCaption, orderTypes, monthlyMean, capPublisher, ALL_FIRMS, DEFAULT_FIRM, KNOWN_TYPES, DEFAULT_OFF_TYPES,
 } from '../src/cap-vs-interest.js';
 
 // Rows in the shape cap_rates.json carries (mid as a fraction), for two
@@ -91,5 +91,20 @@ describe('monthlyMean', () => {
       { date: '2026-01-02', value: null },
       { date: '2026-01-03', value: 2.0 },
     ])).toEqual([{ date: '2026-01-01', value: 2.0 }]);
+  });
+});
+
+describe('capVsInterestCaption', () => {
+  const catalog = require('../public/data/indicators/_catalog.json');
+  const rateMeta = ['boc.policy_target', 'boc.goc_5yr', 'boc.goc_10yr']
+    .map((id) => catalog.series.find((s) => s.id === id));
+  it('names the BoC series, then the cap-rate reports when cap rates are drawn', () => {
+    const rates = capVsInterestCaption(rateMeta, [], 'Colliers');
+    expect(rates).toMatch(/^Bank of Canada/);
+    expect(rates).not.toMatch(/cap rate/);
+    expect(capVsInterestCaption(rateMeta, ['Office'], 'Colliers'))
+      .toBe(`${rates}; Colliers Winnipeg quarterly cap rate reports`);
+    expect(capVsInterestCaption(rateMeta, ['Office'], ALL_FIRMS))
+      .toMatch(/; Colliers Winnipeg, CBRE & Cushman & Wakefield quarterly cap rate reports$/);
   });
 });
