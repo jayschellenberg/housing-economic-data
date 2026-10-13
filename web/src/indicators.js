@@ -654,7 +654,7 @@ function buildChartSections(catalog, shards) {
       const recordsAll = (shard.records || []).filter(r => idsAll.has(r.id));
       if (recordsAll.length === 0) return;
 
-      // Table numbers / series codes in the subtitle when they fit, the full
+      // Table numbers / series codes in the caption when they fit, the full
       // linked list in the explainer either way.
       const refs = chartSources(catalog, chartId);
       const sourceLabel = refs.short || uniqueProviderLabel(seriesMetaAll);
@@ -667,6 +667,9 @@ function buildChartSections(catalog, shards) {
         refBand: chartCfg.refBand,
         refLine: chartCfg.refLine,
         table:   chartCfg.table,
+        // Company name bottom-left, "Source: …" bottom-right, like the rest
+        // of the site's charts (and Cap vs Interest on this tab).
+        sourceInCaption: true, captionPt: 10,
       });
       // Only apply the geo filter on charts that have more than one
       // geography available. Charts where every series is the same geo
