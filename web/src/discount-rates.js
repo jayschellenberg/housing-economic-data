@@ -41,7 +41,9 @@ const GIC_PHRASE = {
   acu: 'Access Credit Union 5-year GIC rate',
 };
 const DEFAULT_YEARS = 5;
-const TITLE = 'Canada — Market Risk-Free Rate, Market Risk Premium & Required Return to Equity';
+// One line on screen and in the PNG; the country leads the subtitle
+// ("Canada — 2022 to 2026").
+const TITLE = 'Market Risk-Free Rate, Premium & Required Return to Equity';
 // The workbook's series, in its order and colours: RF blue (dotted in Excel),
 // MRP orange (dashed), Km green (solid).
 const SERIES = [
@@ -216,7 +218,7 @@ function render() {
     }));
     const records = SERIES.flatMap(s => ui.data.rows.map(r => ({ id: `${id}:${s.key}`, date: `${r.year}-01-01`, value: r[s.key] })));
     card.render(records, seriesMeta, {
-      rangeSubtitle: 'year', monthFrom: `${from}-01`, monthTo: `${to}-12`,
+      subtitle: ui.data.country, rangeSubtitle: 'year', monthFrom: `${from}-01`, monthTo: `${to}-12`,
       dashedIds: [`${id}:rf`, `${id}:mrp`], dots: true,
       seriesColours: Object.fromEntries(SERIES.map(s => [`${id}:${s.key}`, s.colour])),
     });
@@ -227,14 +229,14 @@ function render() {
   {
     const id = 'discount_rates_bars';
     const card = buildStackCard(ui.$grid, { id, title: TITLE, source });
-    card.render(rows, span);
+    card.render(rows, `${ui.data.country} — ${span}`);
     ui.cards.set(id, { card: card.card });
   }
   // 3. The workbook's table.
   {
     const id = 'discount_rates_table';
     const card = buildTableCard(ui.$grid, {
-      id, title: TITLE, subtitle: span, source,
+      id, title: TITLE, subtitle: `${ui.data.country} — ${span}`, source,
       head: ['Country', 'Year', ...SERIES.map(s => s.label)],
       rows: rows.map(r => [ui.data.country, String(r.year), ...SERIES.map(s => fmtPct(r[s.key]))]),
       empty: 'No surveys in the selected years.',
@@ -526,7 +528,7 @@ function buildStackCard(container, { id, title, source }) {
     if (!both.length) { $empty.hidden = false; $png.disabled = true; return; }
     $empty.hidden = true; $png.disabled = false;
     const yearsShown = both.map(r => String(r.year));
-    const data = both.flatMap(r => BAR_SERIES.map(s => ({ year: String(r.year), part: s.label, value: r[s.key], total: r.rf + r.mrp })));
+    const data = both.flatMap(r => BAR_SERIES.map(s => ({ year: String(r.year), part: s.label, value: r[s.key], total: r.ke ?? r.rf + r.mrp })));
     const maxV = Math.max(...both.map(r => r.rf + r.mrp));
     const width = plotWidth($plot);
     const svg = Plot.plot(themed({
@@ -540,8 +542,16 @@ function buildStackCard(container, { id, title, source }) {
         ...gridMarks(),
         Plot.barY(data, Plot.stackY({
           x: 'year', y: 'value', fill: 'part', order: BAR_SERIES.map(s => s.label),
-          title: (d) => `${d.year} · ${d.part}: ${fmtPct(d.value)} (total ${fmtPct(d.total)})`,
+          title: (d) => `${d.year} · ${d.part}: ${fmtPct(d.value)} (required return ${fmtPct(d.total)})`,
         })),
+        // The survey's required return to equity printed above each bar, to
+        // match the table and line chart (Jason, 2026-10-13). It can differ
+        // from the bar's height (RF + MRP) by a few tenths: 2024 is 8.4% on a
+        // 3.5 + 5.2 bar. A year without a Km falls back to the bar's sum.
+        Plot.text(both, {
+          x: (r) => String(r.year), y: (r) => r.rf + r.mrp, text: (r) => fmtPct(r.ke ?? r.rf + r.mrp),
+          dy: -9, fontSize: 12, fontWeight: 600, fill: '#262626',
+        }),
         frameMark(),
       ],
     }));
@@ -641,7 +651,7 @@ async function exportData() {
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('Market Discount Rates');
   const { from, to } = range();
-  ws.addRow([TITLE]).font = { bold: true };
+  ws.addRow([`${ui.data.country} — ${TITLE}`]).font = { bold: true };
   ws.addRow([`Source: ${ui.data.source}`]);
   ws.addRow([]);
   ws.addRow(['Country', 'Year', ...SERIES.map(s => s.label)]).font = { bold: true };
