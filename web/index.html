@@ -31,7 +31,7 @@
              title="Rental, housing, census and economic data">Housing &amp; Economic Data</a>
           <a id="group-link-local" href="#caprates" data-group="local"
              class="cmhc-group-link"
-             title="Cap Rates, Cap Rates vs Interest, Johnson Report, Brokerage Reports, Rentals, FCC Farmland, Zoning, Rental Dashboard, Commercial Dashboard">Local Data</a>
+             title="Cap Rates, Cap Rates vs Interest, Market Discount Rates, Johnson Report, Brokerage Reports, Rentals, FCC Farmland, Zoning, Rental Dashboard, Commercial Dashboard">Local Data</a>
         </nav>
         <!-- Signs every indicator chart's caption, and so every PNG exported from
              one (see firm.js). The only place it is set; saved per browser once
@@ -121,6 +121,10 @@
       <button type="button" role="tab" id="tab-btn-capvsint"
         class="cmhc-tab" data-tab="capvsint" aria-selected="false">
         Cap Rates vs Interest
+      </button>
+      <button type="button" role="tab" id="tab-btn-discount"
+        class="cmhc-tab" data-tab="discount" aria-selected="false">
+        Market Discount Rates
       </button>
       <button type="button" role="tab" id="tab-btn-johnson"
         class="cmhc-tab" data-tab="johnson" aria-selected="false">
@@ -1713,6 +1717,57 @@
         <footer class="text-xs text-neutral-500 pt-4 border-t border-neutral-200">
           Source: Rentals.ca &amp; Urbanation, National Rent Report (monthly).
           Figures shown here are read from the viewer's own locally held copy and are not redistributed by this site.
+        </footer>
+      </main>
+    </div>
+
+    <!-- ============================================================
+         Market Discount Rates tab — Canada's market risk-free rate, market
+         risk premium and required return to equity from Pablo Fernandez's
+         annual surveys. Unlike the other Local Data tabs the figures ship
+         with the site (web/public/data/economy/market_discount_rates.json,
+         built by scripts/market_discount_rates.py); see discount-rates.js.
+         ============================================================ -->
+    <div id="tab-panel-discount" class="grid md:grid-cols-[320px_1fr] min-h-[calc(100vh-110px)]" role="tabpanel" aria-labelledby="tab-btn-discount" hidden>
+      <aside class="bg-white border-r border-neutral-200 p-4 space-y-4 overflow-y-auto" aria-label="Market Discount Rates filters">
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Years</h2>
+          <div class="flex items-center gap-2 text-sm">
+            <select id="dr-year-from" class="border border-neutral-300 rounded px-2 py-1 text-sm" aria-label="From year"></select>
+            <span>to</span>
+            <select id="dr-year-to" class="border border-neutral-300 rounded px-2 py-1 text-sm" aria-label="To year"></select>
+          </div>
+          <div class="flex gap-3 text-xs mt-2">
+            <button id="dr-reset" type="button" class="underline text-neutral-600">Reset</button>
+          </div>
+          <p class="text-xs text-neutral-500 mt-1">Defaults to the last five surveys. The headline figures are the last year in the range.</p>
+        </section>
+
+        <section class="pt-2 border-t border-neutral-200 space-y-2">
+          <button id="dr-download-xlsx" type="button"
+            class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+            Download Excel (data)
+          </button>
+          <p class="text-xs text-neutral-500">The table for the selected years.</p>
+          <button id="dr-download-docx-charts" type="button"
+            class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+            Download Word (charts)
+          </button>
+          <button id="dr-download-xlsx-charts" type="button"
+            class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+            Download Excel (charts)
+          </button>
+          <p class="text-xs text-neutral-500">Every visible chart and table as an image — one per page / worksheet.</p>
+        </section>
+      </aside>
+
+      <main class="p-4 space-y-4 overflow-x-hidden">
+        <p id="dr-error" class="text-sm text-red-700" hidden></p>
+        <section id="dr-kpis" class="cmhc-snapshot-grid" aria-label="Latest figures"></section>
+        <section id="dr-chart-grid" class="grid md:grid-cols-2 gap-4 items-start"></section>
+        <footer class="text-xs text-neutral-500 pt-4 border-t border-neutral-200">
+          Source: Pablo Fernandez et al, annual surveys of the market risk premium and risk-free rate used for Canada (IESE Business School; published on SSRN).
+          Figures are the survey averages. Years before 2017 report the market risk premium only, apart from 2013 and 2015.
         </footer>
       </main>
     </div>

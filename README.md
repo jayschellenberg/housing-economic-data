@@ -10,9 +10,9 @@ A multi-tab static website of Canadian housing & economic data, built for a comm
 
 The header carries two top-level groups, each with its own tab bar:
 **Housing & Economic Data** (the public CMHC / StatsCan tabs, Market Indicators
-included, and the landing view) and **Local Data** (Cap Rates, Cap Rates vs Interest, Johnson Report, Brokerage Reports, Yardi Rental,
+included, and the landing view) and **Local Data** (Cap Rates, Cap Rates vs Interest, Market Discount Rates, Johnson Report, Brokerage Reports, Yardi Rental,
 Rentals.ca, Rent Comparison, Zoning, Rental Dashboard and Commercial Dashboard — tabs whose data comes from folders
-on the viewer's disk).
+on the viewer's disk; Market Discount Rates is the exception — its figures are published, so they ship with the site).
 
 The Local Data folders all live in one Dropbox folder shared with colleagues,
 **AppMarketData** (Jason's copy: `D:\Dropbox\SharedInfo\AppMarketData`), holding
@@ -36,6 +36,7 @@ other tab is Housing.
 | Affordability | Royal-LePage-style affordability factor + choropleth map | `r/16`, `r/18`, census, `r/20` |
 | Current Snapshot / Market Indicators | BoC / StatsCan / OSB economic indicators, incl. CPI inflation (headline, core, shelter, annual average), (Cap vs Interest moved to its own Local Data tab) | `r/10`,`r/11`,`r/13`,`r/14`,`r/17` |
 | Cap Rates vs Interest | The Cap vs Interest chart — BoC overnight target and GoC yields with Winnipeg cap-rate overlays from the Cap Rates tab's local data (Local Data group) | BoC shard + `Cap-Rates` project |
+| Market Discount Rates | Canada's market risk-free rate, market risk premium and required return to equity from Pablo Fernandez's annual surveys (2010 on; RF and Km from 2017, plus 2013 and 2015): headline tiles for the last year in range, the workbook's table, line and stacked-bar charts (Local Data group, but the data ships with the site in `web/public/data/economy/market_discount_rates.json`). After a new survey, add its row to `Market Risk Premium Survey Chart.xlsx` beside the study PDFs and run the script, which cross-checks the newest PDF | `scripts/market_discount_rates.py` |
 | Rental Dashboard | The Manitoba Rental Explorer (weekly rental-listing scrape: filters, map, analysis, exports), reading `SharedInfo\AppMarketData\RentalDashboard` — a same-origin sub-app in `web/rental/` shown in the tab (Local Data group) | `RentalDashboard` project |
 | Commercial Dashboard | The Commercial Availability Explorer (brokerage availability tracker: filters, map, summary, flyers), reading `SharedInfo\AppMarketData\CommercialAvailability` — a same-origin sub-app in `web/commercial/` (Local Data group) | `Commercial-Availability` project |
 | Agriculture | Farm cash / farmland value / crop, livestock & supply-managed prices / input costs / farm structure (consolidation) + within-province CCS choropleth; sidebar checks any mix of MB/SK/AB/BC plus Canada (on by default; every chart follows) and sets the year range | catalog + `r/11`,`r/14`; `r/20`,`r/24` (run-once map) |
