@@ -15,7 +15,7 @@
 
 import * as Plot from '@observablehq/plot';
 import { buildIndicatorCard, readOpenPanels } from './indicator-chart.js';
-import { themed, gridMarks, frameMark, plotWidth, plotHeight, fitPlotWidth } from './plot-theme.js';
+import { themed, PALETTE, gridMarks, frameMark, plotWidth, plotHeight, fitPlotWidth } from './plot-theme.js';
 import { downloadCardPng, setExportRedraw, setExportCropHeight, EXPORT_W, EXPORT_H, EXPORT_DPI } from './png-export.js';
 import { escapeHtml } from './escape.js';
 import { getPref, setPref } from './prefs.js';
@@ -26,13 +26,6 @@ const DATA_URL = './data/economy/market_discount_rates.json';
 // r/28_scrape_investment_context.R.
 const INVEST_URL = './data/economy/investment_context.json';
 const DEFAULT_YEARS_BACK = 5;
-// The Quarto chart's colours: equities dark green, long bonds steel blue,
-// CPI dark red.
-const PERF_SERIES = [
-  { id: 'xic', colour: '#1B7A1B' },
-  { id: 'zfl', colour: '#4F94CD' },
-  { id: 'cpi', colour: '#8B0000' },
-];
 const PERF_SOURCE = 'Yahoo Finance (XIC, ZFL adjusted close) & Statistics Canada (CPI)';
 // Narrative wording per credit union; anything new falls back to its own
 // institution + product names.
@@ -44,12 +37,13 @@ const DEFAULT_YEARS = 5;
 // One line on screen and in the PNG; the country leads the subtitle
 // ("Canada — 2022 to 2026").
 const TITLE = 'Market Risk-Free Rate, Premium & Required Return to Equity';
-// The workbook's series, in its order and colours: RF blue (dotted in Excel),
-// MRP orange (dashed), Km green (solid).
+// The workbook's series, in its order. Colours are the site palette by
+// position (blue, red, green), as on every other chart; the line card picks
+// them itself, the stacked bars read them from here.
 const SERIES = [
-  { key: 'rf',  label: 'Risk Free Rate',             tile: 'Risk-Free Rate',            colour: '#156082' },
-  { key: 'mrp', label: 'Market Risk Premium',        tile: 'Market Risk Premium',       colour: '#E97132' },
-  { key: 'ke',  label: 'Required Return to Equity',  tile: 'Required Return to Equity', colour: '#2E7D32' },
+  { key: 'rf',  label: 'Risk Free Rate',             tile: 'Risk-Free Rate',            colour: PALETTE[0] },
+  { key: 'mrp', label: 'Market Risk Premium',        tile: 'Market Risk Premium',       colour: PALETTE[1] },
+  { key: 'ke',  label: 'Required Return to Equity',  tile: 'Required Return to Equity', colour: PALETTE[2] },
 ];
 const BAR_SERIES = SERIES.slice(0, 2);
 
@@ -220,7 +214,6 @@ function render() {
     card.render(records, seriesMeta, {
       subtitle: ui.data.country, rangeSubtitle: 'year', monthFrom: `${from}-01`, monthTo: `${to}-12`,
       dashedIds: [`${id}:rf`, `${id}:mrp`], dots: true,
-      seriesColours: Object.fromEntries(SERIES.map(s => [`${id}:${s.key}`, s.colour])),
     });
     card.setOpenPanels(open.get(id) || []);
     ui.cards.set(id, { card: card.card });
@@ -343,7 +336,6 @@ function renderPerformance() {
     const records = perf.series.flatMap(s => s.points.map(p => ({ id: `${id}:${s.id}`, date: p.date, value: p.value })));
     card.render(records, seriesMeta, {
       subtitle: 'Growth of $100', rangeSubtitle: 'month', annualized: true,
-      seriesColours: Object.fromEntries(PERF_SERIES.map(s => [`${id}:${s.id}`, s.colour])),
     });
     card.setOpenPanels(open.get(id) || []);
     ui.perfCards.set(id, { card: card.card });
