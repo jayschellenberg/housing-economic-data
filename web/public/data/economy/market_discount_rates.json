@@ -1,0 +1,110 @@
+{
+ "country": "Canada",
+ "source": "Annual Surveys by Pablo Fernandez et al",
+ "statistic": "Average of survey responses (percent)",
+ "built": "2026-10-13",
+ "rows": [
+  {
+   "year": 2010,
+   "rf": null,
+   "mrp": 5.9,
+   "ke": null
+  },
+  {
+   "year": 2011,
+   "rf": null,
+   "mrp": 5.9,
+   "ke": null
+  },
+  {
+   "year": 2012,
+   "rf": null,
+   "mrp": 5.4,
+   "ke": null
+  },
+  {
+   "year": 2013,
+   "rf": 2.0,
+   "mrp": 5.4,
+   "ke": 7.4
+  },
+  {
+   "year": 2014,
+   "rf": null,
+   "mrp": 5.3,
+   "ke": null
+  },
+  {
+   "year": 2015,
+   "rf": 2.3,
+   "mrp": 5.9,
+   "ke": 8.3
+  },
+  {
+   "year": 2016,
+   "rf": null,
+   "mrp": 5.4,
+   "ke": null
+  },
+  {
+   "year": 2017,
+   "rf": 3.0,
+   "mrp": 6.0,
+   "ke": 9.0
+  },
+  {
+   "year": 2018,
+   "rf": 2.9,
+   "mrp": 5.8,
+   "ke": 8.7
+  },
+  {
+   "year": 2019,
+   "rf": 2.5,
+   "mrp": 5.8,
+   "ke": 8.3
+  },
+  {
+   "year": 2020,
+   "rf": 1.8,
+   "mrp": 5.7,
+   "ke": 7.4
+  },
+  {
+   "year": 2021,
+   "rf": 1.9,
+   "mrp": 5.6,
+   "ke": 7.6
+  },
+  {
+   "year": 2022,
+   "rf": 2.8,
+   "mrp": 5.7,
+   "ke": 8.5
+  },
+  {
+   "year": 2023,
+   "rf": 3.5,
+   "mrp": 6.0,
+   "ke": 9.5
+  },
+  {
+   "year": 2024,
+   "rf": 3.5,
+   "mrp": 5.2,
+   "ke": 8.4
+  },
+  {
+   "year": 2025,
+   "rf": 3.3,
+   "mrp": 5.6,
+   "ke": 8.9
+  },
+  {
+   "year": 2026,
+   "rf": 3.8,
+   "mrp": 4.8,
+   "ke": 8.6
+  }
+ ]
+}

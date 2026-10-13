@@ -518,8 +518,9 @@ export function buildIndicatorCard(container, {
   //                                 source alone signs the card (Cap Rates)
   //   captionPt 10                — caption size in the exported PNG, in
   //                                 points at 300 DPI (else the export CSS's)
+  //   xLabel    'Year'            — x-axis title (default "Date")
   refBand, refLine, table, zeroBased = false, mirrorY = true, sourceInCaption = false,
-  signed = true, captionPt = null,
+  signed = true, captionPt = null, xLabel = 'Date',
   // `sourceLabel` names the publisher — "Statistics Canada", "Bank of Canada
   // & Colliers Average Cap Rates (CR)". It is appended to the SUBTITLE, not
   // the caption: the caption carries the company name (firm.js), the way the
@@ -820,7 +821,7 @@ export function buildIndicatorCard(container, {
       marginBottom: 52,      // room for the x-axis title under the tick labels
       x: {
         type: 'utc',
-        label: 'Date',
+        label: xLabel,
         labelOffset: 42,
         ...dateAxisTicks(xMin, xMax, { quarters: !!opts.quarterTicks }),
         inset: 8,
@@ -863,6 +864,11 @@ export function buildIndicatorCard(container, {
         // point, in the series colour (FCC Farmland's "Show values" toggle).
         // Meant for one or two lines; off everywhere else.
         ...(opts.valueLabels ? valueLabelMarks(filtered, opts.valueLabels.format || yFormatter) : []),
+        // `opts.dots`: a marker on every point, so a year with no neighbour
+        // (a survey that reported a figure only once) still shows.
+        ...(opts.dots && !opts.valueLabels ? [Plot.dot(filtered.filter(p => p.value != null && Number.isFinite(p.value)), {
+          x: 'date', y: 'value', fill: 'label', r: 3, stroke: 'white', strokeWidth: 0.8,
+        })] : []),
         ...(mirrorY
           ? mirrorYMarks(yTickFormat, { ticks: yTicks })
           : [Plot.axisY({ anchor: 'left', tickFormat: yTickFormat, tickSize: 3, label: null, ...(yTicks ? { ticks: yTicks } : {}) })]),
