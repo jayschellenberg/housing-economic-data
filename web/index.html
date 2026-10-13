@@ -1743,12 +1743,24 @@
           <p class="text-xs text-neutral-500 mt-1">Defaults to the last five surveys. The headline figures are the last year in the range.</p>
         </section>
 
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Investment performance</h2>
+          <label class="block text-xs text-neutral-600 mb-1" for="dr-eff-date">Effective date</label>
+          <input id="dr-eff-date" type="date" class="border border-neutral-300 rounded px-2 py-1 text-sm" />
+          <label class="block text-xs text-neutral-600 mt-2 mb-1" for="dr-years-back">Years back</label>
+          <input id="dr-years-back" type="number" min="1" max="15" step="1" placeholder="5" class="w-20 border border-neutral-300 rounded px-2 py-1 text-sm" />
+          <div class="flex gap-3 text-xs mt-2">
+            <button id="dr-perf-reset" type="button" class="underline text-neutral-600">Reset</button>
+          </div>
+          <p class="text-xs text-neutral-500 mt-1">Blank = the latest market data and five years back. The narrative cites the newest Fernandez survey published by the effective date.</p>
+        </section>
+
         <section class="pt-2 border-t border-neutral-200 space-y-2">
           <button id="dr-download-xlsx" type="button"
             class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
             Download Excel (data)
           </button>
-          <p class="text-xs text-neutral-500">The table for the selected years.</p>
+          <p class="text-xs text-neutral-500">The survey table for the selected years, plus the investment performance summary and GIC rates.</p>
           <button id="dr-download-docx-charts" type="button"
             class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
             Download Word (charts)
@@ -1765,9 +1777,14 @@
         <p id="dr-error" class="text-sm text-red-700" hidden></p>
         <section id="dr-kpis" class="cmhc-snapshot-grid" aria-label="Latest figures"></section>
         <section id="dr-chart-grid" class="grid md:grid-cols-2 gap-4 items-start"></section>
+        <h2 class="cmhc-mi-section-title" id="dr-perf-title">Comparison to other investments</h2>
+        <p id="dr-perf-warning" class="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2" hidden></p>
+        <section id="dr-perf-grid" class="grid md:grid-cols-2 gap-4 items-start"></section>
+        <section id="dr-narrative" class="chart-card max-w-3xl" hidden></section>
         <footer class="text-xs text-neutral-500 pt-4 border-t border-neutral-200">
           Source: Pablo Fernandez et al, annual surveys of the market risk premium and risk-free rate used for Canada (IESE Business School; published on SSRN).
           Figures are the survey averages. Years before 2017 report the market risk premium only, apart from 2013 and 2015.
+          Investment performance: XIC (iShares Core S&amp;P/TSX Capped Composite) and ZFL (BMO Long Federal Bond) adjusted closes from Yahoo Finance, Statistics Canada CPI (Table 18-10-0004-01), and the credit unions' published GIC rates; refreshed weekly.
         </footer>
       </main>
     </div>

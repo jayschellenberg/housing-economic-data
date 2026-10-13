@@ -458,7 +458,7 @@ async function bootstrap() {
     docxBtnId: 'dr-download-docx-charts',
     xlsxBtnId: 'dr-download-xlsx-charts',
     baseName:  'MarketDiscountRates',
-    getNodes:  () => [...document.querySelectorAll('#dr-chart-grid .chart-card')].filter(hasPlot),
+    getNodes:  () => [...document.querySelectorAll('#dr-chart-grid .chart-card, #dr-perf-grid .chart-card')].filter(hasPlot),
   });
   wireChartDocExports({
     docxBtnId: 'jr-download-docx-charts',

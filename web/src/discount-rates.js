@@ -22,6 +22,24 @@ import { getPref, setPref } from './prefs.js';
 
 const PREF_KEY = 'discountRates.v1';
 const DATA_URL = './data/economy/market_discount_rates.json';
+// Growth-of-$100 series + GIC rates, refreshed weekly by
+// r/28_scrape_investment_context.R.
+const INVEST_URL = './data/economy/investment_context.json';
+const DEFAULT_YEARS_BACK = 5;
+// The Quarto chart's colours: equities dark green, long bonds steel blue,
+// CPI dark red.
+const PERF_SERIES = [
+  { id: 'xic', colour: '#1B7A1B' },
+  { id: 'zfl', colour: '#4F94CD' },
+  { id: 'cpi', colour: '#8B0000' },
+];
+const PERF_SOURCE = 'Yahoo Finance (XIC, ZFL adjusted close) & Statistics Canada (CPI)';
+// Narrative wording per credit union; anything new falls back to its own
+// institution + product names.
+const GIC_PHRASE = {
+  scu: 'Steinbach Credit Union 5-year GIC rate (for deposits of $250,000 and over)',
+  acu: 'Access Credit Union 5-year GIC rate',
+};
 const DEFAULT_YEARS = 5;
 const TITLE = 'Canada — Market Risk-Free Rate, Market Risk Premium & Required Return to Equity';
 // The workbook's series, in its order and colours: RF blue (dotted in Excel),
@@ -57,19 +75,32 @@ export async function initDiscountRates() {
     $error: document.getElementById('dr-error'),
     $from: document.getElementById('dr-year-from'),
     $to: document.getElementById('dr-year-to'),
+    $perfGrid: document.getElementById('dr-perf-grid'),
+    $perfWarn: document.getElementById('dr-perf-warning'),
+    $narrative: document.getElementById('dr-narrative'),
+    $effDate: document.getElementById('dr-eff-date'),
+    $yearsBack: document.getElementById('dr-years-back'),
     data: null,
+    invest: null,
     cards: new Map(),
     prefs: loadPrefs(),
   };
-  try {
-    const res = await fetch(DATA_URL);
+  const getJson = async (url) => {
+    const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    ui.data = await res.json();
-  } catch (err) {
-    ui.$error.textContent = `Could not load the discount-rate data (${err?.message || err}).`;
+    return res.json();
+  };
+  // The investment context is a second, optional file: without it the
+  // survey half of the tab still renders.
+  const [survey, invest] = await Promise.allSettled([getJson(DATA_URL), getJson(INVEST_URL)]);
+  if (survey.status !== 'fulfilled') {
+    ui.$error.textContent = `Could not load the discount-rate data (${survey.reason?.message || survey.reason}).`;
     ui.$error.hidden = false;
     return;
   }
+  ui.data = survey.value;
+  if (invest.status === 'fulfilled') ui.invest = invest.value;
+  else console.error('[discount-rates] investment context', invest.reason);
   wireControls();
   renderYearPickers();
   render();
@@ -124,6 +155,24 @@ function wireControls() {
     ui.prefs = savePrefs({ from: null, to: null });
     renderYearPickers();
     render();
+  });
+  // Investment performance window. Blank = latest data / five years.
+  ui.$effDate.value = ui.prefs.effDate || '';
+  ui.$yearsBack.value = ui.prefs.yearsBack || '';
+  ui.$effDate.addEventListener('change', () => {
+    ui.prefs = savePrefs({ effDate: ui.$effDate.value || null });
+    renderPerformance();
+  });
+  ui.$yearsBack.addEventListener('change', () => {
+    const n = Math.round(Number(ui.$yearsBack.value));
+    ui.prefs = savePrefs({ yearsBack: n >= 1 && n <= 15 ? n : null });
+    ui.$yearsBack.value = ui.prefs.yearsBack || '';
+    renderPerformance();
+  });
+  document.getElementById('dr-perf-reset')?.addEventListener('click', () => {
+    ui.prefs = savePrefs({ effDate: null, yearsBack: null });
+    ui.$effDate.value = ''; ui.$yearsBack.value = '';
+    renderPerformance();
   });
   document.getElementById('dr-download-xlsx')?.addEventListener('click', () => exportData().catch(err => {
     console.error('[discount-rates excel]', err);
@@ -184,9 +233,232 @@ function render() {
   // 3. The workbook's table.
   {
     const id = 'discount_rates_table';
-    const card = buildTableCard(ui.$grid, { id, title: TITLE, subtitle: span, source, rows });
+    const card = buildTableCard(ui.$grid, {
+      id, title: TITLE, subtitle: span, source,
+      head: ['Country', 'Year', ...SERIES.map(s => s.label)],
+      rows: rows.map(r => [ui.data.country, String(r.year), ...SERIES.map(s => fmtPct(r[s.key]))]),
+      empty: 'No surveys in the selected years.',
+    });
     ui.cards.set(id, { card: card.card });
   }
+  // The narrative cites the newest survey, so it follows the survey data too.
+  renderPerformance();
+}
+
+// --- Investment performance ----------------------------------------------------
+
+const isoAddYears = (iso, n) => {
+  const [y, m, d] = iso.split('-').map(Number);
+  // 29 Feb → 28 Feb in a non-leap year.
+  const dt = new Date(Date.UTC(y + n, m - 1, d));
+  if (dt.getUTCMonth() !== m - 1) dt.setUTCDate(0);
+  return dt.toISOString().slice(0, 10);
+};
+const daysBetween = (a, b) => (Date.parse(b) - Date.parse(a)) / 86400000;
+const longDate = (iso) => new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+// "Oct 13, 2021"; a monthly series (CPI) as "Oct 2021".
+const shortDate = (iso, monthly = false) => (!iso ? '**' : new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-CA', { year: 'numeric', month: 'short', timeZone: 'UTC', ...(monthly ? {} : { day: 'numeric' }) }));
+const fmtAnnual = (v) => (v == null || !Number.isFinite(v) ? '**' : `${(v * 100).toFixed(1)}%`);
+
+/** The latest date every market series has data for. */
+function latestMarketDate() {
+  const market = ui.invest.series.filter(s => s.frequency === 'daily');
+  return market.map(s => s.dates[s.dates.length - 1]).sort()[0];
+}
+
+/**
+ * The comparison window and each series' growth of $100 over it. A series
+ * starts at its first observation on or after the start date (CPI: the start
+ * date's month) and ends at its last on or before the effective date.
+ * Annualized = (end ÷ start)^(365.25 ÷ days) − 1, as in the Quarto exhibit.
+ */
+function performance() {
+  const latest = latestMarketDate();
+  let end = ui.prefs.effDate && ui.prefs.effDate < latest ? ui.prefs.effDate : latest;
+  const years = ui.prefs.yearsBack || DEFAULT_YEARS_BACK;
+  const start = isoAddYears(end, -years);
+  const out = [];
+  for (const s of ui.invest.series) {
+    const from = s.frequency === 'monthly' ? `${start.slice(0, 7)}-01` : start;
+    const idx = s.dates.map((d, i) => i).filter(i => s.dates[i] >= from && s.dates[i] <= end);
+    if (idx.length < 2) { out.push({ ...s, points: [], annual: null }); continue; }
+    const base = s.values[idx[0]];
+    const points = idx.map(i => ({ date: s.dates[i], value: (s.values[i] / base) * 100 }));
+    const first = points[0], last = points[points.length - 1];
+    const span = daysBetween(first.date, last.date);
+    out.push({
+      ...s, points, startDate: first.date, endDate: last.date, endValue: last.value,
+      // A series that started after the window opened (ZFL before mid-2010)
+      // covers less than the full span; it is flagged rather than stretched.
+      partial: daysBetween(start, first.date) > 45,
+      annual: span >= 330 ? (last.value / 100) ** (365.25 / span) - 1 : null,
+    });
+  }
+  return { start, end, years, series: out };
+}
+
+function renderPerformance() {
+  const $grid = ui.$perfGrid;
+  const open = new Map();
+  for (const [id, c] of ui.perfCards || []) open.set(id, readOpenPanels(c.card));
+  ui.perfCards = new Map();
+  $grid.replaceChildren();
+  ui.$perfWarn.hidden = true;
+  if (!ui.invest?.series?.length) {
+    ui.$perfWarn.textContent = 'The investment performance data could not be loaded.';
+    ui.$perfWarn.hidden = false;
+    ui.$narrative.hidden = true;
+    return;
+  }
+  const perf = performance();
+  ui.$effDate.max = latestMarketDate();
+  ui.$effDate.placeholder = latestMarketDate();
+  const byId = Object.fromEntries(perf.series.map(s => [s.id, s]));
+  const warnings = [];
+  for (const s of perf.series) {
+    if (s.partial) warnings.push(`${s.label} data starts ${longDate(s.startDate)}, after the window opens; its annualized return covers the shorter period.`);
+  }
+  const gicStale = (ui.invest.gic || []).filter(g => g.stale);
+  if (gicStale.length) warnings.push(`The latest weekly check could not read ${gicStale.map(g => g.institution).join(' and ')}'s rate page; the rate shown is the last one read (${gicStale.map(g => longDate(g.checked)).join(', ')}).`);
+  if (ui.prefs.effDate && ui.invest.gic?.length && daysBetween(ui.prefs.effDate, ui.invest.built) > 31) {
+    warnings.push('The GIC rates are the credit unions\' current rates, not rates as of the effective date.');
+  }
+  if (warnings.length) { ui.$perfWarn.textContent = warnings.join(' '); ui.$perfWarn.hidden = false; }
+
+  // 1. Growth of $100.
+  {
+    const id = 'investment_performance';
+    const card = buildIndicatorCard($grid, {
+      chartId: id, fileStem: id, title: 'Investment Performance Comparison', sourceLabel: PERF_SOURCE,
+      sourceInCaption: true, captionPt: 10, mirrorY: false,
+      description: 'Growth of $100 invested at the start of the window. Equities are the iShares Core S&P/TSX Capped Composite ETF (XIC) ' +
+        'and long Government of Canada bonds the BMO Long Federal Bond Index ETF (ZFL), both at adjusted closes so distributions are reinvested ' +
+        '(total return, after the funds\' small management fees). Inflation is the Canada All-items CPI. The %/yr beside each name is its annualized return over the window.',
+    });
+    const seriesMeta = perf.series.map(s => ({
+      id: `${id}:${s.id}`, chartLabel: s.label, units: 'dollar', provider: 'local', frequency: s.frequency, geo: 'Canada',
+    }));
+    const records = perf.series.flatMap(s => s.points.map(p => ({ id: `${id}:${s.id}`, date: p.date, value: p.value })));
+    card.render(records, seriesMeta, {
+      subtitle: 'Growth of $100', rangeSubtitle: 'month', annualized: true,
+      seriesColours: Object.fromEntries(PERF_SERIES.map(s => [`${id}:${s.id}`, s.colour])),
+    });
+    card.setOpenPanels(open.get(id) || []);
+    ui.perfCards.set(id, { card: card.card });
+  }
+  // 2. Summary table.
+  {
+    const id = 'investment_performance_table';
+    const card = buildTableCard($grid, {
+      id, title: 'Investment Performance Summary', subtitle: `Growth of $100 — ${longDate(perf.start)} to ${longDate(perf.end)}`,
+      source: PERF_SOURCE,
+      head: ['Benchmark', 'Start', 'End', 'Value of $100', 'Annualized'],
+      rows: perf.series.map(s => [s.label, shortDate(s.startDate, s.frequency === 'monthly'), shortDate(s.endDate, s.frequency === 'monthly'),
+        s.endValue == null ? '**' : `$${s.endValue.toFixed(2)}`, fmtAnnual(s.annual)]),
+      empty: 'No data in the window.',
+    });
+    ui.perfCards.set(id, { card: card.card });
+  }
+  renderNarrative(perf, byId);
+}
+
+/** Survey row the narrative cites: the newest one published by the effective date. */
+function citedSurvey(end) {
+  const rows = ui.data.rows.filter(r => r.rf != null && r.mrp != null && r.ke != null);
+  const ok = rows.filter(r => (r.study?.published ? r.study.published <= end : r.year < Number(end.slice(0, 4))));
+  return ok[ok.length - 1] || null;
+}
+
+function narrativeBlocks(perf, byId) {
+  const blocks = [];
+  const n = perf.years;
+  const cpi = byId.cpi?.annual, bond = byId.zfl?.annual, tsx = byId.xic?.annual;
+  blocks.push({ type: 'para', text: 'As of the effective date, the data illustrates:' });
+  if (cpi != null) {
+    blocks.push({ type: 'bullet', label: 'CPI Benchmark:', text: `Average annual inflation has been ${fmtAnnual(cpi)} over the last ${n} year${n === 1 ? '' : 's'}, meaning an investment must yield more than this to maintain purchasing power.` });
+  }
+  if (bond != null) {
+    const vsCpi = cpi == null ? '' : bond < cpi ? ', failing to keep pace with the CPI' : ', keeping ahead of the CPI';
+    blocks.push({ type: 'bullet', label: 'Bond Rates:', text: `Government Bonds (10+ Year) are often cited as "risk-free" in terms of default, but they have carried significant interest rate risk. Over this ${n}-year window, their total return was approximately ${fmtAnnual(bond)} annualized${vsCpi}.` });
+  }
+  if (tsx != null) {
+    const others = [bond, cpi].filter(v => v != null);
+    const beatAll = others.every(v => tsx > v);
+    let verb;
+    if (beatAll && others.length === 2) verb = `${tsx - Math.max(...others) >= 0.02 ? 'significantly ' : ''}outpaced both bonds and inflation`;
+    else if (cpi != null && tsx > cpi) verb = 'outpaced inflation but trailed bonds';
+    else if (cpi != null) verb = 'trailed inflation';
+    else verb = 'returned';
+    blocks.push({ type: 'bullet', label: 'Equity Performance:', text: `The S&P/TSX Total Return index ${verb}, providing an annualized return of ${fmtAnnual(tsx)}.` });
+  }
+  const s = citedSurvey(perf.end);
+  if (s) {
+    const st = s.study || {};
+    const who = st.title
+      ? `A study entitled "${st.title}" by ${st.authors || 'Pablo Fernandez et al'}${st.published ? ` (published ${longDate(st.published)})` : ''}`
+      : `Pablo Fernandez et al's ${s.year} survey of the market risk premium and risk-free rate${st.published ? ` (published ${longDate(st.published)})` : ''}`;
+    blocks.push({ type: 'para', text: `${who} reported in Canada an average "risk free rate" of ${fmtPct(s.rf)} and an estimated market risk premium of ${fmtPct(s.mrp)} with a required return to equity (i.e. risk-free rate plus market risk premium) of ${fmtPct(s.ke)}.` });
+  }
+  const gic = ui.invest.gic || [];
+  if (gic.length) {
+    blocks.push({ type: 'para', text: 'Other current benchmarks for risk-free rates:' });
+    for (const g of gic) {
+      const what = GIC_PHRASE[g.id] || `${g.institution} ${g.product} rate`;
+      blocks.push({ type: 'bullet', text: `${what} is ${g.rate.toFixed(2)}%${g.updated ? ` (rates updated ${longDate(g.updated)})` : ''}` });
+    }
+  }
+  return blocks;
+}
+
+function renderNarrative(perf, byId) {
+  const blocks = narrativeBlocks(perf, byId);
+  const html = blocksToHtml(blocks);
+  ui.$narrative.hidden = false;
+  ui.$narrative.innerHTML = `
+    <header class="chart-title">Discount Rate Narrative</header>
+    <p class="chart-sub">Auto-written from the figures above for an effective date of ${escapeHtml(longDate(perf.end))}; edit freely after pasting.</p>
+    <div class="flex flex-wrap gap-2 mt-2">
+      <button type="button" data-role="copy" class="text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">Copy narrative</button>
+      <button type="button" data-role="docx" class="text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">Download Word (narrative)</button>
+    </div>
+    <div class="text-sm text-neutral-800 leading-relaxed mt-3" data-role="body">${html}</div>`;
+  const $copy = ui.$narrative.querySelector('[data-role="copy"]');
+  $copy.addEventListener('click', async () => {
+    const text = blocks.map(b => (b.type === 'bullet' ? `•  ${b.label ? `${b.label} ` : ''}${b.text}` : b.text)).join('\n');
+    try {
+      await navigator.clipboard.write([new ClipboardItem({
+        'text/html': new Blob([html], { type: 'text/html' }),
+        'text/plain': new Blob([text], { type: 'text/plain' }),
+      })]);
+    } catch { await navigator.clipboard?.writeText(text); }
+    $copy.textContent = 'Copied';
+    setTimeout(() => { $copy.textContent = 'Copy narrative'; }, 1500);
+  });
+  ui.$narrative.querySelector('[data-role="docx"]').addEventListener('click', async () => {
+    const { exportNarrativeToWord } = await import('./word-export.js');
+    // No bullet block type in the Word export: "•"-prefixed paragraphs (as census.js).
+    await exportNarrativeToWord(blocks.map(b => (b.type === 'bullet'
+      ? { type: 'para', text: `•  ${b.label ? `${b.label} ` : ''}${b.text}` } : b)), {
+      filename: `Discount_Rate_Narrative_${perf.end}.docx`,
+      description: `Discount rate support — effective ${longDate(perf.end)}`,
+    });
+  });
+}
+
+/** Paragraphs, with runs of bullets gathered into one list. */
+function blocksToHtml(blocks) {
+  let html = '';
+  let inList = false;
+  for (const b of blocks) {
+    if (b.type === 'bullet') {
+      if (!inList) { html += '<ul style="list-style:disc;padding-left:1.5em;margin:0 0 0.75em">'; inList = true; }
+      html += `<li>${b.label ? `<strong>${escapeHtml(b.label)}</strong> ` : ''}${escapeHtml(b.text)}</li>`;
+    } else {
+      if (inList) { html += '</ul>'; inList = false; }
+      html += `<p style="margin:0 0 0.75em">${escapeHtml(b.text)}</p>`;
+    }
+  }
+  return inList ? `${html}</ul>` : html;
 }
 
 /** Latest figure in range per series. A year missing a series (pre-2017)
@@ -298,18 +570,19 @@ function buildStackCard(container, { id, title, source }) {
 
 // --- Table card --------------------------------------------------------------
 
-function buildTableCard(container, { id, title, subtitle, source, rows }) {
+/** A table card: `head` labels, `rows` arrays of display strings. */
+function buildTableCard(container, { id, title, subtitle, source, head, rows, empty }) {
   const card = document.createElement('section');
   card.className = 'chart-card cmhc-indicator-card';
   card.dataset.chartId = id;
-  const head = ['Country', 'Year', ...SERIES.map(s => s.label)];
-  const body = rows.map(r => `<tr><td>${escapeHtml(ui.data.country)}</td><td>${r.year}</td>${SERIES.map(s => `<td>${fmtPct(r[s.key])}</td>`).join('')}</tr>`).join('');
+  // Only the first column may wrap; dates and figures stay on one line.
+  const body = rows.map(r => `<tr>${r.map((c, i) => `<td${i ? ' style="white-space:nowrap"' : ''}>${escapeHtml(c)}</td>`).join('')}</tr>`).join('');
   card.innerHTML = `
     <header class="chart-title">${escapeHtml(title)}</header>
     <p class="chart-sub">${escapeHtml(subtitle)}</p>
     <div class="cmhc-chart-table-scroll" data-role="plot" style="min-height:0">
       <table class="cmhc-table cmhc-table-compact"><thead><tr>${head.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>
-      <tbody>${body || '<tr><td colspan="5">No surveys in the selected years.</td></tr>'}</tbody></table>
+      <tbody>${body || `<tr><td colspan="${head.length}">${escapeHtml(empty || 'No data.')}</td></tr>`}</tbody></table>
     </div>
     <div class="chart-caption chart-caption-sourced"><span class="chart-source" data-role="source"></span></div>
     <div class="chart-actions">
@@ -348,7 +621,7 @@ function buildTableCard(container, { id, title, subtitle, source, rows }) {
     $scroll.style.setProperty('overflow', 'visible');
     fit(); fit(); fit();
   });
-  const tsv = [head.join('\t'), ...rows.map(r => [ui.data.country, r.year, ...SERIES.map(s => fmtPct(r[s.key]))].join('\t'))].join('\n');
+  const tsv = [head, ...rows].map(r => r.join('\t')).join('\n');
   const $copy = card.querySelector('[data-role="copy"]');
   $copy.addEventListener('click', async () => {
     try { await navigator.clipboard.writeText(tsv); $copy.textContent = 'Copied'; setTimeout(() => { $copy.textContent = 'Copy table'; }, 1500); }
@@ -378,6 +651,29 @@ async function exportData() {
     row.eachCell((c, i) => { if (i >= 3) c.numFmt = '0.0%'; });
   }
   [10, 8, 16, 20, 26].forEach((w, i) => { ws.getColumn(i + 1).width = w; });
+  if (ui.invest?.series?.length) {
+    const perf = performance();
+    const ps = wb.addWorksheet('Investment Performance');
+    ps.addRow([`Investment Performance — growth of $100, ${perf.start} to ${perf.end}`]).font = { bold: true };
+    ps.addRow([`Source: ${PERF_SOURCE}`]);
+    ps.addRow([]);
+    ps.addRow(['Benchmark', 'Start', 'End', 'Value of $100', 'Annualized return']).font = { bold: true };
+    for (const s of perf.series) {
+      const row = ps.addRow([s.label, s.startDate || null, s.endDate || null,
+        s.endValue == null ? null : Math.round(s.endValue * 100) / 100,
+        s.annual == null ? null : Math.round(s.annual * 1e4) / 1e4]);
+      row.getCell(4).numFmt = '$0.00';
+      row.getCell(5).numFmt = '0.0%';
+    }
+    if (ui.invest.gic?.length) {
+      ps.addRow([]);
+      ps.addRow(['GIC rate', 'Rate', 'Updated', 'Checked']).font = { bold: true };
+      for (const g of ui.invest.gic) {
+        ps.addRow([GIC_PHRASE[g.id] || `${g.institution} ${g.product}`, g.rate / 100, g.updated, g.checked]).getCell(2).numFmt = '0.00%';
+      }
+    }
+    [44, 12, 12, 14, 18].forEach((w, i) => { ps.getColumn(i + 1).width = w; });
+  }
   const buf = await wb.xlsx.writeBuffer();
   const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   const a = document.createElement('a');

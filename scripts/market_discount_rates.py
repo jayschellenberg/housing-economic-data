@@ -86,6 +86,53 @@ def pdf_check(folder):
     return year, pdf.name, found
 
 
+MONTHS = ("January|February|March|April|May|June|July|August|September|"
+          "October|November|December")
+
+
+def study_meta(pdf):
+    """Title, authors and publication date from a study's first two pages,
+    for the tab's narrative ("A study entitled ... by ... (published ...)").
+    Any part that can't be read is None."""
+    def text(*extra):
+        return subprocess.run(["pdftotext", "-enc", "UTF-8", "-l", "2", *extra, str(pdf), "-"], capture_output=True,
+                              text=True, encoding="utf-8", errors="replace").stdout
+    layout, plain = text("-layout"), text()
+    # Running header, left side: "Pablo Fernandez, Amir Habibian and Antonio F. Acin"
+    first = next((ln for ln in layout.splitlines() if ln.strip()), "")
+    authors = re.split(r"\s{2,}", first.strip())[0] or None
+    # The PDFs' fonts drop accented letters to U+FFFD; restore the known ones.
+    for bad, good in (("Ac�n", "Acín"), ("Garc�a", "García"), ("Ba�uls", "Bañuls")):
+        authors = authors.replace(bad, good) if authors else authors
+    if authors and ("�" in authors or not re.search(r"Fernandez", authors)):
+        authors = None
+    # Title: from "Survey:" (newer studies) or "Discount Rate" (2017-era) to
+    # "... in YYYY"; the running header ("Market Risk Premium and ...") last.
+    title = None
+    for lead in ("Survey:", "Discount Rate", "Market Risk Premium"):
+        m = re.search(re.escape(lead) + r"[^\n]*(?:\n[^\n]*){0,2}?\bin (?:19|20)\d{2}(?:: a survey)?", plain)
+        if m:
+            title = re.sub(r"\s+", " ", m.group(0)).strip()
+            break
+    # Older studies repeat the title in a running header and run it into the
+    # answer count; keep only a clean one-off title.
+    if title and (len(title) > 110 or title.count(" in ") > 1 and title.count("countries") > 1):
+        title = None
+    m = re.search(rf"^\s*((?:{MONTHS}) \d{{1,2}}, (?:19|20)\d{{2}})\s*$", plain, re.M)
+    published = dt.datetime.strptime(m.group(1), "%B %d, %Y").date().isoformat() if m else None
+    return {"title": title, "authors": authors, "published": published}
+
+
+def studies(folder):
+    out = {}
+    if not shutil.which("pdftotext"):
+        return out
+    for pdf in folder.glob("Market Discount Rate * Study*.pdf"):
+        year = int(re.search(r"(\d{4})", pdf.name).group(1))
+        out[year] = study_meta(pdf)
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--folder", type=pathlib.Path, default=DEFAULT_FOLDER)
@@ -110,6 +157,12 @@ def main():
             print(f"  {label:<20} PDF {pdf_v if pdf_v is not None else '?':>5}   workbook {wb_v if wb_v is not None else '?':>5}{flag}")
     else:
         print("(PDF cross-check skipped: no study PDFs or pdftotext not on PATH)")
+
+    meta = studies(args.folder)
+    for r in rows:
+        r["study"] = meta.get(r["year"])
+    newest = meta.get(rows[-1]["year"]) or {}
+    print(f"Newest study: {newest.get('title')} | {newest.get('authors')} | {newest.get('published')}")
 
     data = {
         "country": COUNTRY,

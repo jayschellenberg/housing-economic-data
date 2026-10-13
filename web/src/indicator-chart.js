@@ -907,7 +907,13 @@ export function buildIndicatorCard(container, {
           ? compoundAvgPct(pts.map(p => p.value))
           : (annualizedChange(pts)?.rate ?? NaN) * 100;
         if (!Number.isFinite(rate)) continue;
-        const since = from > xMin ? ` since ${periodLabel(from, s.frequency)}` : '';
+        // Daily / weekly series name the month, never the day (Jason,
+        // 2026-10-13): the subtitle already gives the range, and a line that
+        // opens a trading day after the chart (a weekend start) is not "later".
+        const coarse = ['annual', 'quarterly', 'monthly'].includes(s.frequency) ? s.frequency : 'monthly';
+        const monthKey = (d) => d.getUTCFullYear() * 12 + d.getUTCMonth();
+        const later = coarse === s.frequency ? from > xMin : monthKey(from) > monthKey(xMin);
+        const since = later ? ` since ${periodLabel(from, coarse)}` : '';
         annualById.set(s.id, {
           text: `${rate >= 0 ? '+' : ''}${rate.toFixed(1)}%/yr${since}`,
           tip: `${opts.annualized === 'rates' ? 'Compound average of the annual changes' : 'Compound annual change'}, ` +

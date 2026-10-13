@@ -8,103 +8,188 @@
    "year": 2010,
    "rf": null,
    "mrp": 5.9,
-   "ke": null
+   "ke": null,
+   "study": {
+    "title": "Market Risk Premium used in 2010",
+    "authors": "Pablo Fernandez & Javier del Campo",
+    "published": "2010-05-15"
+   }
   },
   {
    "year": 2011,
    "rf": null,
    "mrp": 5.9,
-   "ke": null
+   "ke": null,
+   "study": {
+    "title": null,
+    "authors": "Pablo Fernandez, Javier Aguirreamalloa and Luis Corres",
+    "published": "2011-04-25"
+   }
   },
   {
    "year": 2012,
    "rf": null,
    "mrp": 5.4,
-   "ke": null
+   "ke": null,
+   "study": {
+    "title": "Market Risk Premium used in 82 countries in 2012: a survey",
+    "authors": "Pablo Fernandez, Javier Aguirreamalloa and Luis Corres",
+    "published": null
+   }
   },
   {
    "year": 2013,
    "rf": 2.0,
    "mrp": 5.4,
-   "ke": 7.4
+   "ke": 7.4,
+   "study": {
+    "title": null,
+    "authors": "Pablo Fernandez, Javier Aguirreamalloa and Pablo Linares",
+    "published": "2013-06-26"
+   }
   },
   {
    "year": 2014,
    "rf": null,
    "mrp": 5.3,
-   "ke": null
+   "ke": null,
+   "study": {
+    "title": null,
+    "authors": "Pablo Fernandez, Pablo Linares and Isabel Fdez. Ac\u00edn",
+    "published": "2014-06-20"
+   }
   },
   {
    "year": 2015,
    "rf": 2.3,
    "mrp": 5.9,
-   "ke": 8.3
+   "ke": 8.3,
+   "study": {
+    "title": "Discount Rate (Risk-Free Rate and Market Risk Premium) used for 41 countries in 2015: a survey",
+    "authors": "Pablo Fernandez, Alberto Ortiz and Isabel F. Acin",
+    "published": "2015-04-23"
+   }
   },
   {
    "year": 2016,
    "rf": null,
    "mrp": 5.4,
-   "ke": null
+   "ke": null,
+   "study": {
+    "title": null,
+    "authors": "Pablo Fernandez, Alberto Ortiz and Isabel F. Ac\u00edn",
+    "published": "2016-05-09"
+   }
   },
   {
    "year": 2017,
    "rf": 3.0,
    "mrp": 6.0,
-   "ke": 9.0
+   "ke": 9.0,
+   "study": {
+    "title": "Discount Rate (Risk-Free Rate and Market Risk Premium) used for 41 countries in 2017: a survey",
+    "authors": "Pablo Fernandez, Vitaly Pershin and Isabel F. Acin",
+    "published": "2017-04-17"
+   }
   },
   {
    "year": 2018,
    "rf": 2.9,
    "mrp": 5.8,
-   "ke": 8.7
+   "ke": 8.7,
+   "study": {
+    "title": null,
+    "authors": "Pablo Fernandez, Vitaly Pershin and Isabel F. Acin",
+    "published": null
+   }
   },
   {
    "year": 2019,
    "rf": 2.5,
    "mrp": 5.8,
-   "ke": 8.3
+   "ke": 8.3,
+   "study": {
+    "title": null,
+    "authors": "Pablo Fernandez, Mar Martinez and Isabel F. Acin",
+    "published": null
+   }
   },
   {
    "year": 2020,
    "rf": 1.8,
    "mrp": 5.7,
-   "ke": 7.4
+   "ke": 7.4,
+   "study": {
+    "title": "Survey: Market Risk Premium and Risk-Free Rate used for 81 countries in 2020",
+    "authors": "Pablo Fernandez, Eduardo de Apellaniz and Javier F. Acin",
+    "published": "2020-03-25"
+   }
   },
   {
    "year": 2021,
    "rf": 1.9,
    "mrp": 5.6,
-   "ke": 7.6
+   "ke": 7.6,
+   "study": {
+    "title": "Survey: Market Risk Premium and Risk-Free Rate used for 88 countries in 2021",
+    "authors": "Pablo Fernandez, Sofia Ba\u00f1uls and Pablo F. Acin",
+    "published": "2021-06-07"
+   }
   },
   {
    "year": 2022,
    "rf": 2.8,
    "mrp": 5.7,
-   "ke": 8.5
+   "ke": 8.5,
+   "study": {
+    "title": "Survey: Market Risk Premium and Risk-Free Rate used for 95 countries in 2022",
+    "authors": "Pablo Fernandez, Teresa Garc\u00eda and Javier F. Acin",
+    "published": "2022-05-24"
+   }
   },
   {
    "year": 2023,
    "rf": 3.5,
    "mrp": 6.0,
-   "ke": 9.5
+   "ke": 9.5,
+   "study": {
+    "title": "Survey: Market Risk Premium and Risk-Free Rate used for 80 countries in 2023",
+    "authors": "Pablo Fernandez, Diego Garc\u00eda and Javier F. Acin",
+    "published": "2023-04-03"
+   }
   },
   {
    "year": 2024,
    "rf": 3.5,
    "mrp": 5.2,
-   "ke": 8.4
+   "ke": 8.4,
+   "study": {
+    "title": "Survey: Market Risk Premium and Risk-Free Rate used for 96 countries in 2024",
+    "authors": "Pablo Fernandez, Diego Garc\u00eda and Lucia F. Acin",
+    "published": "2024-03-11"
+   }
   },
   {
    "year": 2025,
    "rf": 3.3,
    "mrp": 5.6,
-   "ke": 8.9
+   "ke": 8.9,
+   "study": {
+    "title": null,
+    "authors": "Pablo Fernandez, Diego Garc\u00eda and Lucia F. Acin",
+    "published": "2025-05-20"
+   }
   },
   {
    "year": 2026,
    "rf": 3.8,
    "mrp": 4.8,
-   "ke": 8.6
+   "ke": 8.6,
+   "study": {
+    "title": "Survey: Market Risk Premium and Risk-Free Rate used for 97 countries in 2026",
+    "authors": "Pablo Fernandez, Amir Habibian and Antonio F. Acin",
+    "published": "2026-04-13"
+   }
   }
  ]
 }
