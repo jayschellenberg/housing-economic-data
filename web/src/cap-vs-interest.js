@@ -447,6 +447,8 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', 
       // no company name — the published data signs the card (Jason, 2026-10-12).
       sourceLabel: capVsInterestCaption(ui.rateMeta, capTypes, $firm.value),
       sourceInCaption: true,
+      // Left-hand y axis only — no mirrored labels on the right.
+      mirrorY: false,
       signed: false,
       captionPt: 10,
       table: true,

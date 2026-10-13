@@ -347,6 +347,8 @@ function renderCharts() {
         // subtitle; no company name on any Cap Rates figure — they reproduce
         // the brokerages' published figures (Jason, 2026-09-30). 10 pt in print.
         sourceInCaption: true, signed: false, captionPt: 10,
+        // Left-hand y axis only — no mirrored labels on the right.
+        mirrorY: false,
         description: `Each brokerage's overall ${type.toLowerCase()} cap rate: the mean of the mid-points of every class it publishes for the type that quarter. ` + note(),
       });
       // The subtitle is just the range, "March 2021 to June 2026" (in the
