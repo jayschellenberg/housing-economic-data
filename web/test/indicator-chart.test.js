@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { periodLabel, yDomainFor, buildTipRows, renderDataTable, readOpenPanels, aggregateDashedIds, geoQualifiedLabels, freshnessLimitDays, annualizedChange } from '../src/indicator-chart.js';
+import { periodLabel, yDomainFor, buildTipRows, renderDataTable, readOpenPanels, aggregateDashedIds, geoQualifiedLabels, freshnessLimitDays, annualizedChange, compoundAvgPct } from '../src/indicator-chart.js';
 
 const utc = (iso) => new Date(iso);
 
@@ -343,5 +343,18 @@ describe('annualizedChange', () => {
   it('returns null for non-positive ends or empty input', () => {
     expect(annualizedChange([])).toBeNull();
     expect(annualizedChange([pt('2020-01-01', 0), pt('2025-01-01', 5)])).toBeNull();
+  });
+});
+
+describe('compoundAvgPct', () => {
+  it('compounds yearly % changes into one steady rate', () => {
+    // +10% then +5%: 1.10 × 1.05 = 1.155 over 2 years → 7.47%/yr
+    expect(compoundAvgPct([10, 5])).toBeCloseTo(7.47, 2);
+    expect(compoundAvgPct([10, -10])).toBeCloseTo(-0.50, 2);
+  });
+  it('skips missing years and needs at least two', () => {
+    expect(compoundAvgPct([null, 10, 5, NaN])).toBeCloseTo(7.47, 2);
+    expect(compoundAvgPct([12])).toBeNull();
+    expect(compoundAvgPct([])).toBeNull();
   });
 });

@@ -117,6 +117,21 @@ export function annualizedChange(points) {
 }
 
 /**
+ * Compound average of a run of annual % changes (percent points, nulls
+ * skipped): (Π(1 + v/100))^(1/n) − 1, in percent — the steady yearly rate
+ * that compounds to the same total. Null under two values.
+ *
+ * @param {Array<number|null>} values
+ * @returns {number|null}
+ */
+export function compoundAvgPct(values) {
+  const vs = values.filter(Number.isFinite);
+  if (vs.length < 2 || vs.some(v => v <= -100)) return null;
+  const growth = vs.reduce((g, v) => g * (1 + v / 100), 1);
+  return (Math.pow(growth, 1 / vs.length) - 1) * 100;
+}
+
+/**
  * Which series of a chart draw dashed so its aggregate reads solid — the
  * Market Indicators counterpart of the CMHC charts' "components dashed, Total
  * solid" rule. The aggregate of an indicator chart is, in order:
@@ -873,23 +888,35 @@ export function buildIndicatorCard(container, {
     // the chart). On screen it rides in the latest-value chips; the PNG drops
     // that row, so the legend (or, for a one-line chart, the subtitle) carries
     // it in an export-only span instead.
+    // `annualized: 'rates'` is for a chart that already plots annual % changes
+    // (FCC Farmland): the figure is their compound average instead.
     const annualById = new Map();
     if (opts.annualized) {
       for (const s of seriesMeta) {
-        const ann = annualizedChange(filtered.filter(p => p.id === s.id));
-        if (!ann) continue;
-        const since = ann.from > xMin ? ` since ${periodLabel(ann.from, s.frequency)}` : '';
+        const pts = filtered.filter(p => p.id === s.id && Number.isFinite(p.value));
+        if (!pts.length) continue;
+        const from = pts.reduce((a, p) => (p.date < a ? p.date : a), pts[0].date);
+        const to   = pts.reduce((a, p) => (p.date > a ? p.date : a), pts[0].date);
+        const rate = opts.annualized === 'rates'
+          ? compoundAvgPct(pts.map(p => p.value))
+          : (annualizedChange(pts)?.rate ?? NaN) * 100;
+        if (!Number.isFinite(rate)) continue;
+        const since = from > xMin ? ` since ${periodLabel(from, s.frequency)}` : '';
         annualById.set(s.id, {
-          text: `${ann.rate >= 0 ? '+' : ''}${(ann.rate * 100).toFixed(1)}%/yr${since}`,
-          tip: `Compound annual change, ${periodLabel(ann.from, s.frequency)} to ${periodLabel(ann.to, s.frequency)}`,
+          text: `${rate >= 0 ? '+' : ''}${rate.toFixed(1)}%/yr${since}`,
+          tip: `${opts.annualized === 'rates' ? 'Compound average of the annual changes' : 'Compound annual change'}, ` +
+            `${periodLabel(from, s.frequency)} to ${periodLabel(to, s.frequency)}`,
         });
       }
     }
     const annualByLabel = new Map(seriesMeta
       .filter(s => annualById.has(s.id)).map(s => [s.chartLabel || s.id, annualById.get(s.id)]));
+    // A card without latest-value chips (FCC Farmland's series carry no
+    // latestDate) shows the figure in its legend / subtitle on screen too.
+    const hasChips = seriesMeta.some(s => s.latestDate);
     const exportAnnual = (text) => {
       const el = document.createElement('span');
-      el.className = 'cmhc-export-only';
+      if (hasChips) el.className = 'cmhc-export-only';
       el.textContent = text;
       return el;
     };
