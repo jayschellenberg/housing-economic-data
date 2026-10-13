@@ -598,6 +598,22 @@
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 10px;
 }
+/* Market Discount Rates headline tiles: three across from ~1000 px, and
+   "Required Return to Equity" on one line once the tiles have the room; and each tile's rows (label, value,
+   meta, source) share the grid's rows through subgrid, so a label that does
+   wrap moves every figure in that row down with it and they stay level. */
+.dr-kpi-grid {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  max-width: 900px;
+  row-gap: 10px;
+}
+.dr-kpi-grid .cmhc-kpi {
+  display: grid;
+  grid-row: span 4;
+  grid-template-rows: subgrid;
+  row-gap: 0;
+  align-content: start;
+}
 .cmhc-kpi {
   border: 1px solid var(--color-neutral-200);
   border-radius: 4px;
