@@ -669,7 +669,9 @@ function buildChartSections(catalog, shards) {
         table:   chartCfg.table,
         // Company name bottom-left, "Source: …" bottom-right, like the rest
         // of the site's charts (and Cap vs Interest on this tab).
-        sourceInCaption: true, captionPt: 10,
+        // Public-agency data (StatCan, BoC, OSB, CMHC, CREA): the source alone
+        // signs the card, no company name (Jason, 2026-10-12).
+        sourceInCaption: true, signed: false, captionPt: 10,
       });
       // Only apply the geo filter on charts that have more than one
       // geography available. Charts where every series is the same geo
