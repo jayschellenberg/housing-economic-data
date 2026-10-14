@@ -105,44 +105,64 @@ export async function initIndicators() {
 // (optionally) a sale price. Output is the multiplier (index at effective /
 // index at sale) and the adjusted price. The chosen index's actual values
 // + observation dates are surfaced for transparency.
+//
+// Index families offered, in menu order. Every geography the shards carry for
+// a family is listed, so new provinces/CMAs appear without touching this.
+const TIME_ADJUST_FAMILIES = [
+  { prefix: 'statscan.nhpi.',                label: 'New Housing Price Index — house and land' },
+  { prefix: 'statscan.nhpi_house.',          label: 'New Housing Price Index — house only' },
+  { prefix: 'statscan.nhpi_land.',           label: 'New Housing Price Index — land only' },
+  { prefix: 'statscan.cpi_shelter.',         label: 'CPI — shelter' },
+  { prefix: 'statscan.cpi_allitems.',        label: 'CPI — all-items' },
+  { prefix: 'statscan.bcpi.residential.',    label: 'Building construction price index — residential' },
+  { prefix: 'statscan.bcpi.nonresidential.', label: 'Building construction price index — non-residential' },
+];
+
+// "201612=100" -> "Dec 2016=100"; "2002=100" passes through.
+function fmtIndexBase(base) {
+  const m = /^(\d{4})(\d{2})=100$/.exec(base || '');
+  if (!m) return base || '';
+  const d = new Date(Date.UTC(+m[1], +m[2] - 1, 1));
+  return `${d.toLocaleDateString('en-CA', { month: 'short', year: 'numeric', timeZone: 'UTC' })}=100`;
+}
+const fmtMonth = (iso) => new Date(`${iso}T00:00:00Z`)
+  .toLocaleDateString('en-CA', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+
 function buildTimeAdjustmentTool(catalog, shards) {
   const $grid = document.getElementById('mi-chart-grid');
   if (!$grid) return;
 
-  // Eligible source series — only indices and shelter inflation make sense
-  // here. Drop bond yields, payments, employment counts, etc.
-  const ELIGIBLE_IDS = [
-    'statscan.nhpi.winnipeg',
-    'statscan.nhpi.canada',
-    'statscan.cpi_shelter.manitoba',
-    'statscan.cpi_shelter.canada',
-    'statscan.bcpi.residential.winnipeg',
-    'statscan.bcpi.residential.canada',
-    'statscan.bcpi.nonresidential.winnipeg',
-    'statscan.bcpi.nonresidential.canada',
-  ];
-
-  // Collect available series from the shards, in eligible order.
-  const allSeries = [];
-  Object.values(shards).forEach(sh => (sh.series || []).forEach(s => allSeries.push(s)));
-  const seriesById = Object.fromEntries(allSeries.map(s => [s.id, s]));
+  // Collect available series + date-sorted records from the shards.
+  const seriesById = {};
   const recordsById = {};
-  Object.values(shards).forEach(sh => (sh.records || []).forEach(r => {
-    if (!recordsById[r.id]) recordsById[r.id] = [];
-    recordsById[r.id].push(r);
-  }));
-  // Sort each series's records by date ascending.
+  Object.values(shards).forEach(sh => {
+    (sh.series || []).forEach(s => { seriesById[s.id] = s; });
+    (sh.records || []).forEach(r => {
+      if (!recordsById[r.id]) recordsById[r.id] = [];
+      recordsById[r.id].push(r);
+    });
+  });
   Object.values(recordsById).forEach(arr => arr.sort((a, b) => a.date.localeCompare(b.date)));
 
-  const choices = ELIGIBLE_IDS
-    .filter(id => seriesById[id] && (recordsById[id]?.length || 0) > 0)
-    .map(id => ({ id, title: seriesById[id].title || id, geo: seriesById[id].geo, base: seriesById[id].indexBase }));
-  if (choices.length === 0) return;
+  const geoRank = (geo) => GEO_ORDER.indexOf(geo) + 1 || 99;
+  const groups = TIME_ADJUST_FAMILIES.map(f => ({
+    label: f.label,
+    choices: Object.values(seriesById)
+      .filter(s => s.id.startsWith(f.prefix) && !s.id.slice(f.prefix.length).includes('.')
+        && (recordsById[s.id]?.length || 0) > 0)
+      .sort((a, b) => geoRank(a.geo) - geoRank(b.geo))
+      .map(s => ({
+        id: s.id,
+        // chartLabel is the place ("Winnipeg", "Winnipeg — House only"); the
+        // optgroup already names the component, so keep only the place.
+        name: (s.chartLabel || s.geo || s.id).split(' — ')[0],
+        base: fmtIndexBase(s.indexBase),
+      })),
+  })).filter(g => g.choices.length);
+  if (groups.length === 0) return;
 
-  // Bracket the date range with the union of all eligible series.
-  const allDates = ELIGIBLE_IDS.flatMap(id => recordsById[id] || []).map(r => r.date).sort();
+  const allDates = groups.flatMap(g => g.choices).flatMap(c => recordsById[c.id]).map(r => r.date).sort();
   const minDate = allDates[0] || '2010-01-01';
-  const maxDate = allDates[allDates.length - 1] || new Date().toISOString().slice(0, 10);
   const todayIso = new Date().toISOString().slice(0, 10);
 
   const section = document.createElement('section');
@@ -162,17 +182,18 @@ function buildTimeAdjustmentTool(catalog, shards) {
       </div>
       <div class="cmhc-time-adjust-form">
         <label>Sale date<input type="date" id="ta-sale-date"
-                              min="${minDate}" max="${maxDate}" /></label>
+                              min="${minDate}" max="${todayIso}" /></label>
         <label>Effective date<input type="date" id="ta-eff-date"
                                     min="${minDate}" max="${todayIso}" value="${todayIso.slice(0, 7)}-01" /></label>
-        <label>Index
+        <label class="cmhc-time-adjust-wide">Index
           <select id="ta-index">
-            ${choices.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.title)}${c.base ? ` (${escapeHtml(c.base)})` : ''}</option>`).join('')}
+            ${groups.map(g => `<optgroup label="${escapeHtml(g.label)}">${g.choices.map(c =>
+              `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}${c.base ? ` (${escapeHtml(c.base)})` : ''}</option>`).join('')}</optgroup>`).join('')}
           </select>
         </label>
-        <label>Sale price <span class="cmhc-time-adjust-optional">(optional)</span>
+        <label><span>Sale price <span class="cmhc-time-adjust-optional">(optional)</span></span>
           <input type="number" id="ta-sale-price" min="0" step="1000" placeholder="e.g. 350000" /></label>
-        <button type="button" id="ta-compute">Calculate</button>
+        <button type="button" id="ta-compute" class="cmhc-time-adjust-inline-btn">Calculate</button>
       </div>
       <div id="ta-result" class="cmhc-time-adjust-result" hidden></div>
     </section>
@@ -185,8 +206,11 @@ function buildTimeAdjustmentTool(catalog, shards) {
   const $price = section.querySelector('#ta-sale-price');
   const $btn   = section.querySelector('#ta-compute');
   const $out   = section.querySelector('#ta-result');
+  // Default to Winnipeg NHPI, the usual residential comparable index.
+  if (recordsById['statscan.nhpi.winnipeg']?.length) $idx.value = 'statscan.nhpi.winnipeg';
 
-  // Find the record at or before the target date.
+  // Newest record at or before the target date. A date before the series
+  // starts returns null rather than borrowing the first observation.
   function lookupAtDate(seriesId, targetIso) {
     const recs = recordsById[seriesId];
     if (!recs || recs.length === 0 || !targetIso) return null;
@@ -195,7 +219,7 @@ function buildTimeAdjustmentTool(catalog, shards) {
       if (r.date <= targetIso) prev = r;
       else break;
     }
-    return prev || recs[0];
+    return prev;
   }
 
   function compute() {
@@ -209,32 +233,47 @@ function buildTimeAdjustmentTool(catalog, shards) {
       $out.innerHTML = `<p class="cmhc-time-adjust-error">Effective date must be after sale date.</p>`;
       return;
     }
+    const recs = recordsById[id];
     const saleHit = lookupAtDate(id, saleIso);
     const effHit  = lookupAtDate(id, effIso);
     if (!saleHit || !effHit) {
-      $out.innerHTML = `<p class="cmhc-time-adjust-error">Index has no observations near one of the dates.</p>`;
+      $out.innerHTML = `<p class="cmhc-time-adjust-error">This index starts in ${escapeHtml(fmtMonth(recs[0].date))}; pick a later sale date.</p>`;
       return;
     }
-    const meta = seriesById[id];
+    const opt = $idx.selectedOptions[0];
+    const idxLabel = `${opt.parentElement.label}, ${opt.textContent}`;
     const mult = effHit.value / saleHit.value;
     const pct  = (mult - 1) * 100;
     const saleVal = parseFloat($price.value);
     let priceLine = '';
     if (Number.isFinite(saleVal) && saleVal > 0) {
       const adj = saleVal * mult;
-      priceLine = `<p>Adjusted price: <strong>$${Math.round(adj).toLocaleString()}</strong> (from $${Math.round(saleVal).toLocaleString()})</p>`;
+      priceLine = `<p>Adjusted price: <strong>$${Math.round(adj).toLocaleString('en-CA')}</strong> (from $${Math.round(saleVal).toLocaleString('en-CA')})</p>`;
+    }
+    // Warn when the answer is less current than the dates suggest: both dates
+    // on one observation (no change by construction), or an effective date
+    // past the newest publication (the index is held at that month).
+    const latest = recs[recs.length - 1];
+    let warn = '';
+    if (saleHit.date === effHit.date) {
+      warn = `Both dates resolve to the same ${fmtMonth(saleHit.date)} observation, so the index shows no change.`;
+    } else if (effHit === latest && effIso.slice(0, 7) > latest.date.slice(0, 7)) {
+      warn = `Latest published value is ${fmtMonth(latest.date)}; the effective-date index is held at that month.`;
     }
     $out.innerHTML = `
       <p><strong>Multiplier:</strong> ${mult.toFixed(4)} <span class="cmhc-time-adjust-pct">(${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%)</span></p>
       ${priceLine}
+      ${warn ? `<p class="cmhc-time-adjust-warn">${escapeHtml(warn)}</p>` : ''}
       <p class="cmhc-time-adjust-detail">
-        ${escapeHtml(meta.title)} (${escapeHtml(meta.geo)}) — sale-date index <strong>${saleHit.value.toFixed(1)}</strong> (${escapeHtml(saleHit.date)}),
-        effective-date index <strong>${effHit.value.toFixed(1)}</strong> (${escapeHtml(effHit.date)}).
+        ${escapeHtml(idxLabel)} — sale-date index <strong>${saleHit.value.toFixed(1)}</strong> (${escapeHtml(fmtMonth(saleHit.date))}),
+        effective-date index <strong>${effHit.value.toFixed(1)}</strong> (${escapeHtml(fmtMonth(effHit.date))}).
+        Each date resolves to the newest observation published on or before it.
       </p>
     `;
   }
 
   $btn.addEventListener('click', compute);
+  $idx.addEventListener('change', () => { if (!$out.hidden) compute(); });
   // Pre-fill sale date to one year before today so the helper has a sensible
   // default the user can hit Calculate against.
   const oneYearAgo = new Date();
@@ -396,12 +435,12 @@ function buildInflationLookupTool(catalog, shards) {
     $out.innerHTML = `
       ${rateLine(rateA, fromIso)}
       ${rateLine(rateB, toIso)}
-      <p>Prices rose <strong>${pct(cumulative)}</strong> in total between ${escapeHtml(monthLabel(a.date))} and ${escapeHtml(monthLabel(b.date))}${
+      <p>Prices ${cumulative >= 0 ? 'rose' : 'fell'} <strong>${pct(cumulative)}</strong> in total between ${escapeHtml(monthLabel(a.date))} and ${escapeHtml(monthLabel(b.date))}${
         Number.isFinite(annualised) ? ` <span class="cmhc-time-adjust-pct">(${annualised.toFixed(2)}% a year, compounded)</span>` : ''}.</p>
       <p>$100 in ${escapeHtml(monthLabel(a.date))} buys what <strong>$${(100 * ratio).toFixed(2)}</strong> buys in ${escapeHtml(monthLabel(b.date))}.</p>
       <p class="cmhc-time-adjust-detail">
-        ${escapeHtml(m.label)} CPI, ${escapeHtml(geoLabel)} — index ${a.value.toFixed(1)} (${escapeHtml(a.date)})
-        → ${b.value.toFixed(1)} (${escapeHtml(b.date)}), 2002=100. Each date resolves to the newest month
+        ${escapeHtml(m.label)} CPI, ${escapeHtml(geoLabel)} — index ${a.value.toFixed(1)} (${escapeHtml(monthLabel(a.date))})
+        → ${b.value.toFixed(1)} (${escapeHtml(monthLabel(b.date))}), ${escapeHtml(fmtIndexBase(seriesById[levelId]?.indexBase) || '2002=100')}. Each date resolves to the newest month
         published on or before it. Cumulative change is the ratio of the two index levels, not the sum of
         the yearly rates.
       </p>

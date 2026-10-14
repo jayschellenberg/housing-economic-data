@@ -703,6 +703,7 @@
 
 /* Time-adjustment helper — interactive form inside the Tools section. */
 .cmhc-time-adjust { max-width: 720px; }
+.cmhc-time-adjust + .cmhc-time-adjust { margin-top: 14px; }
 .cmhc-time-adjust-disclaimer {
   background: #fef3c7;
   border: 1px solid #fcd34d;
@@ -715,10 +716,12 @@
 }
 .cmhc-time-adjust-form {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* minmax(0, …) so a long <option> can't widen its column past the card. */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px 12px;
   align-items: end;
 }
+.cmhc-time-adjust-form .cmhc-time-adjust-wide { grid-column: 1 / -1; }
 .cmhc-time-adjust-form label {
   display: flex;
   flex-direction: column;
@@ -733,6 +736,10 @@
   padding: 4px 6px;
   font-size: 13px;
   background: white;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  height: 30px;
 }
 .cmhc-time-adjust-optional {
   color: var(--color-neutral-500);
@@ -751,6 +758,12 @@
   cursor: pointer;
 }
 .cmhc-time-adjust-form button:hover { filter: brightness(0.95); }
+/* Calculate sits beside Sale price rather than on a row of its own. */
+.cmhc-time-adjust-form .cmhc-time-adjust-inline-btn { grid-column: auto; height: 30px; }
+@media (max-width: 560px) {
+  .cmhc-time-adjust-form { grid-template-columns: minmax(0, 1fr); }
+  .cmhc-time-adjust-form .cmhc-time-adjust-inline-btn { grid-column: 1 / -1; }
+}
 
 .cmhc-time-adjust-result {
   margin-top: 14px;
@@ -769,6 +782,7 @@
   margin-top: 8px !important;
 }
 .cmhc-time-adjust-error { color: #991b1b; }
+.cmhc-time-adjust-warn { color: #92400e; font-size: 13px; }
 
 /* Sidebar "Jump to section" anchor list for the Market Indicators tab. */
 .cmhc-mi-jump-list {
