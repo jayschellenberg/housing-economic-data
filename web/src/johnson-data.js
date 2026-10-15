@@ -35,7 +35,8 @@
 //                 table, x = row year (e.g. PRICE/SF from users/investors/all)
 //   period-rows   rows are "June 2017" / "December 2017"; columns are lines
 //
-// `district: true` marks the charts the district picker applies to.
+// `district: true` marks the charts the district picker applies to;
+// `retailType: true` the ones the Retail property-type picker applies to.
 // `family` groups the June and December versions of one measure so the long
 // series interleaves them; a chart with no family is annual.
 
@@ -107,9 +108,9 @@ export const CHARTS = [
     district: true, family: 'retail_ask' },
   { id: 'retail_ask_type', group: 'retail', kind: 'edition-col', series: ['retail_asking_rent_type'],
     column: 'ASKING RENT', title: 'Retail Asking Net Rent of Vacant Space by Type', units: 'dollar_psf',
-    family: 'retail_ask_type' },
+    family: 'retail_ask_type', retailType: true },
   { id: 'retail_inv_rate', group: 'retail', kind: 'edition-col', series: ['retail_inventory_snapshot'],
-    column: 'RATE', title: 'Retail Vacancy Rate by Type', units: 'percent', family: 'retail_inv_rate' },
+    column: 'RATE', title: 'Retail Vacancy Rate by Type', units: 'percent', family: 'retail_inv_rate', retailType: true },
 
   // --- Vacancy summary ---
   { id: 'vac_compare', group: 'summary', kind: 'records-cols', series: ['vac_rate_comparison'],

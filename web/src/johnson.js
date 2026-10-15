@@ -84,6 +84,9 @@ export async function initJohnson() {
     $districtSummary: document.getElementById('jr-district-summary-text'),
     $districtsAll: document.getElementById('jr-districts-all'),
     $districtsNone: document.getElementById('jr-districts-none'),
+    $typeMenu: document.getElementById('jr-type-menu'),
+    $types: document.getElementById('jr-types'),
+    $typeSummary: document.getElementById('jr-type-summary-text'),
     $yearFrom: document.getElementById('jr-year-from'),
     $yearTo: document.getElementById('jr-year-to'),
     $sections: document.getElementById('jr-section-toggles'),
@@ -94,6 +97,7 @@ export async function initJohnson() {
     $about: document.getElementById('jr-about'),
     editions: [],
     districts: [],
+    types: [],
     cards: new Map(),      // chart id → { card, render, setOpenPanels, kind }
     prefs: loadPrefs(),
   };
@@ -198,8 +202,10 @@ function wireControls() {
   ui.$districtsNone.addEventListener('click', () => setDistricts([]));
   document.getElementById('jr-sections-all').addEventListener('click', () => setGroups(GROUPS.map(g => g.id)));
   document.getElementById('jr-sections-none').addEventListener('click', () => setGroups([]));
-  // The District and Section dropdowns close on an outside click or Esc.
-  for (const $menu of [ui.$districtMenu, ui.$sectionMenu]) {
+  document.getElementById('jr-types-all').addEventListener('click', () => setTypesOff([]));
+  document.getElementById('jr-types-none').addEventListener('click', () => setTypesOff(ui.types));
+  // The District, Type and Section dropdowns close on an outside click or Esc.
+  for (const $menu of [ui.$districtMenu, ui.$typeMenu, ui.$sectionMenu]) {
     document.addEventListener('click', (e) => { if ($menu.open && !$menu.contains(e.target)) $menu.open = false; });
     $menu.addEventListener('keydown', (e) => { if (e.key === 'Escape') { $menu.open = false; $menu.querySelector('summary').focus(); } });
   }
@@ -280,6 +286,7 @@ function renderAll() {
   renderFolderBody();
   renderEditionPicker();
   renderDistrictPicker();
+  renderTypePicker();
   renderSectionToggles();
   renderCharts();
 }
@@ -379,6 +386,66 @@ function renderDistrictSummary() {
     : `${shown.length} of ${items.length} districts`;
 }
 
+// Retail property types (Malls, Power Centres, Strips, …) on the by-type
+// charts. Stored as the types switched OFF, so a type a later edition adds
+// shows up ticked. Total is not in the list: it is always drawn.
+function allRetailTypes() {
+  if (!ui.editions.length) return [];
+  const sel = { view: 'series', editionId: ui.editions[ui.editions.length - 1].id };
+  const seen = new Set();
+  for (const chart of CHARTS.filter(c => c.retailType)) {
+    for (const l of lineLabels(chartPoints(chart, ui.editions, sel))) if (!AGGREGATE_LABELS.has(l)) seen.add(l);
+  }
+  return [...seen].sort((a, b) => a.localeCompare(b));
+}
+
+function selectedTypes() {
+  const off = new Set(Array.isArray(ui.prefs.retailTypesOff) ? ui.prefs.retailTypesOff : []);
+  return ui.types.filter(t => !off.has(t));
+}
+
+function setTypesOff(list) {
+  ui.prefs = savePrefs({ retailTypesOff: [...list] });
+  renderTypePicker();
+  renderCharts();
+}
+
+function renderTypePicker() {
+  ui.types = allRetailTypes();
+  const chosen = new Set(selectedTypes());
+  const n = ui.types.length;
+  ui.$typeSummary.textContent = !n ? 'No data'
+    : chosen.size === n ? `All types (${n})`
+    : chosen.size === 0 ? 'None selected'
+    : chosen.size <= 2 ? [...chosen].join(', ')
+    : `${chosen.size} of ${n} types`;
+  const $box = ui.$types;
+  $box.replaceChildren();
+  if (!n) {
+    const hint = document.createElement('span');
+    hint.className = 'text-xs text-neutral-500';
+    hint.textContent = 'Types appear once data is loaded.';
+    $box.appendChild(hint);
+    return;
+  }
+  for (const t of ui.types) {
+    const label = document.createElement('label');
+    label.className = 'flex items-center gap-1 text-sm';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = chosen.has(t);
+    cb.addEventListener('change', () => {
+      const off = new Set(ui.types.filter(x => !chosen.has(x)));
+      if (cb.checked) off.delete(t); else off.add(t);
+      setTypesOff(ui.types.filter(x => off.has(x)));
+    });
+    const text = document.createElement('span');
+    text.textContent = t;
+    label.append(cb, text);
+    $box.appendChild(label);
+  }
+}
+
 function enabledGroups() {
   const saved = ui.prefs.groups;
   if (!Array.isArray(saved)) return new Set(GROUPS.map(g => g.id));
@@ -468,6 +535,7 @@ function renderCharts() {
   const sel = currentSelection();
   const source = sourceLabel(ui.editions, sel);
   const districts = selectedDistricts();
+  const types = selectedTypes();
   const groupsOn = enabledGroups();
   const style = ui.prefs.style || 'lines';
   const { monthFrom, monthTo } = monthRange();
@@ -490,7 +558,7 @@ function renderCharts() {
     for (const chart of charts) {
       const points = chartPoints(chart, ui.editions, sel);
       if (!points.length) continue;
-      const keep = chart.district ? districts : (chart.defaultRows || null);
+      const keep = chart.district ? districts : chart.retailType ? types : (chart.defaultRows || null);
       const input = toCardInput(chart, points, { keep, lineOrder: chart.district ? ui.districts : (chart.lineOrder || null) });
       if (!input.records.length) continue;
       drawn++;
@@ -690,6 +758,7 @@ async function exportData() {
   const sel = currentSelection();
   const source = sourceLabel(ui.editions, sel);
   const districts = selectedDistricts();
+  const types = selectedTypes();
   const groupsOn = enabledGroups();
   const usedNames = new Set();
 
@@ -698,7 +767,7 @@ async function exportData() {
     for (const chart of CHARTS.filter(c => c.group === g.id)) {
       const points = chartPoints(chart, ui.editions, sel);
       if (!points.length) continue;
-      const keep = chart.district ? districts : (chart.defaultRows || null);
+      const keep = chart.district ? districts : chart.retailType ? types : (chart.defaultRows || null);
       const { records, seriesMeta } = toCardInput(chart, points, { keep, lineOrder: chart.district ? ui.districts : (chart.lineOrder || null) });
       if (!records.length) continue;
       let name = chart.title.replace(/[\\/?*[\]:]/g, ' ').slice(0, 28).trim();

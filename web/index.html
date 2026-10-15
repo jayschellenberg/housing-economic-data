@@ -1095,6 +1095,23 @@
         </section>
 
         <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Retail property types</h2>
+          <details id="jr-type-menu" class="relative">
+            <summary class="list-none cursor-pointer w-full border border-neutral-300 rounded px-2 py-1 text-sm bg-white flex items-center justify-between">
+              <span id="jr-type-summary-text">No data</span><span aria-hidden="true" class="text-neutral-500">&#9662;</span>
+            </summary>
+            <div class="absolute left-0 right-0 z-20 mt-1 bg-white border border-neutral-300 rounded shadow-lg p-2">
+              <div class="flex gap-3 text-xs mb-1 pb-1 border-b border-neutral-200">
+                <button id="jr-types-all" type="button" class="underline text-neutral-600">All</button>
+                <button id="jr-types-none" type="button" class="underline text-neutral-600">None</button>
+              </div>
+              <div id="jr-types" class="grid gap-1 max-h-80 overflow-y-auto"></div>
+            </div>
+          </details>
+          <p class="text-xs text-neutral-500 mt-1">Applies to the Retail by-type charts (asking rent, vacancy rate); the Total line always stays.</p>
+        </section>
+
+        <section>
           <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Sections</h2>
           <details id="jr-section-menu" class="relative">
             <summary class="list-none cursor-pointer w-full border border-neutral-300 rounded px-2 py-1 text-sm bg-white flex items-center justify-between">
