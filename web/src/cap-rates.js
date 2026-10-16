@@ -482,12 +482,38 @@ function buildTableCard(container, { id, title, subtitle, table }) {
   // The 12 pt table is shorter than the 1050 px frame: crop the PNG to it
   // rather than centring it between bands of white (Jason, 2026-10-02).
   setExportCropHeight(card);
+  // On screen too, a table wider than its card shrinks to fit rather than
+  // scrolling sideways (Jason, 2026-10-16): narrower side padding first, then
+  // smaller text, down to a 9 px floor (below that the scrollbar returns).
+  const clearTable = () => {
+    $table.style.removeProperty('font-size');
+    for (const c of $cells) { c.style.removeProperty('padding'); c.style.removeProperty('line-height'); }
+  };
+  const fitScreen = () => {
+    if (card.classList.contains('cmhc-exporting') || !$scroll.clientWidth) return;
+    clearTable();
+    if ($table.scrollWidth <= $scroll.clientWidth) return;
+    let px = parseFloat(getComputedStyle($table).fontSize);
+    const padY = getComputedStyle($cells[0]).paddingTop;
+    const setScreen = (fs) => {
+      $table.style.setProperty('font-size', `${fs.toFixed(2)}px`);
+      for (const c of $cells) c.style.setProperty('padding', `${padY} ${(fs * 0.3).toFixed(2)}px`);
+    };
+    setScreen(px);
+    for (let i = 0; i < 8; i++) {
+      const over = $table.scrollWidth / $scroll.clientWidth;
+      if (over <= 1.005 || px <= 9) break;
+      px = Math.max(9, (px / over) * 0.98);
+      setScreen(px);
+    }
+  };
+  new ResizeObserver(() => fitScreen()).observe($scroll);
   setExportRedraw(card, (h) => {
     if (h == null) {
       $source.style.removeProperty('font-size');
       $scroll.style.removeProperty('overflow');
-      $table.style.removeProperty('font-size');
-      for (const c of $cells) { c.style.removeProperty('padding'); c.style.removeProperty('line-height'); }
+      clearTable();
+      fitScreen();
       return;
     }
     $scroll.style.setProperty('overflow', 'visible');
