@@ -454,27 +454,29 @@ function buildTableCard(container, { id, title, subtitle, table }) {
   // Brokerage names stay on one line ("Cushman & Wakefield", not three).
   const $names = [...$table.querySelectorAll('tbody td:first-child')];
   for (const c of $names) c.style.setProperty('white-space', 'nowrap');
-  const setTable = (px) => {
+  const setTable = (px, padX = 0.5) => {
     $table.style.setProperty('font-size', `${px.toFixed(2)}px`);
     // Tight rows: a fifth of the text size above and below, line height 1.15.
     for (const c of $cells) {
-      c.style.setProperty('padding', `${(px * 0.2).toFixed(2)}px ${(px * 0.5).toFixed(2)}px`);
+      c.style.setProperty('padding', `${(px * 0.2).toFixed(2)}px ${(px * padX).toFixed(2)}px`);
       c.style.setProperty('line-height', '1.15');
     }
   };
   // 12 pt at the card's scale; a table with many classes (Retail) is wider
   // than the frame at that size and would be cut off at the card's edge, so
-  // shrink its text until it fits.
+  // first narrow the cells' side padding, then shrink the text until it fits.
   const fit = () => {
     const scale = Math.min(EXPORT_W / card.offsetWidth, EXPORT_H / card.offsetHeight);
     $source.style.setProperty('font-size', `${(CAPTION_IMAGE_PX / scale).toFixed(2)}px`, 'important');
     let px = TABLE_IMAGE_PX / scale;
-    setTable(px);
+    let padX = 0.5;
+    setTable(px, padX);
+    if ($table.scrollWidth > $scroll.clientWidth * 1.005) { padX = 0.2; setTable(px, padX); }
     for (let i = 0; i < 8; i++) {
       const over = $table.scrollWidth / Math.max(1, $scroll.clientWidth);
       if (over <= 1.005) break;
       px = (px / over) * 0.98;
-      setTable(px);
+      setTable(px, padX);
     }
   };
   // The 12 pt table is shorter than the 1050 px frame: crop the PNG to it
