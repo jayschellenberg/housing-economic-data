@@ -11,7 +11,7 @@
  */
 
 import * as Plot from '@observablehq/plot';
-import { csvParse, autoType } from 'd3';
+import { csvParseRows, autoType } from 'd3';
 import { themed, gridMarks, frameMark, PALETTE } from './plot-theme.js';
 import { downloadCard } from './chart.js';
 import { escapeHtml } from './escape.js';
@@ -105,8 +105,7 @@ async function loadDataset(scope, basis) {
   const parsers = await Promise.all(CSV_FILES.map(async (name) => {
     const r = await fetch(`${BASE_URL}/${key}/${name}`);
     if (!r.ok) throw new Error(`${name}: HTTP ${r.status}`);
-    const text = await r.text();
-    return csvParse(text, autoType);
+    return parseCsv(await r.text());
   }));
   const [priceTrends, sizeTrends, psfByStyle, sizeByStyle,
          upgradeByYear, garageMix, indexCmp] = parsers;
@@ -114,6 +113,13 @@ async function loadDataset(scope, basis) {
                upgradeByYear, garageMix, indexCmp };
   ui.datasets.set(key, ds);
   return ds;
+}
+
+// d3's csvParse builds row objects with `new Function`, which the site's CSP
+// (script-src 'self', no unsafe-eval) blocks in production.
+function parseCsv(text) {
+  const [head, ...rows] = csvParseRows(text);
+  return rows.map(r => autoType(Object.fromEntries(head.map((h, i) => [h, r[i] ?? '']))));
 }
 
 function wireSidebar() {
