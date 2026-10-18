@@ -178,18 +178,22 @@ async function render() {
   const scopeLabel = SCOPES.find(s => s.key === scope).label;
   const basisLabel = BASES.find(b => b.key === basis).label;
   ui.$realNote.hidden = basis !== 'real';
-
-  ui.$grid.replaceChildren();
-  ui.$error.hidden = true;
+  // A newer render may start while this one awaits its CSVs; only the latest draws.
+  const token = ui.renderToken = (ui.renderToken || 0) + 1;
 
   let ds;
   try {
     ds = await loadDataset(scope, basis);
   } catch (err) {
+    if (token !== ui.renderToken) return;
+    ui.$grid.replaceChildren();
     ui.$error.textContent = `Could not load the ${scope}/${basis} snapshot (${err.message}).`;
     ui.$error.hidden = false;
     return;
   }
+  if (token !== ui.renderToken) return;
+  ui.$grid.replaceChildren();
+  ui.$error.hidden = true;
 
   const years = [...new Set(ds.priceTrends.map(r => r.year))].sort((a, b) => a - b);
   const { from, to } = fillYearPickers(years);
