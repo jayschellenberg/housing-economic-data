@@ -147,6 +147,10 @@
         class="cmhc-tab" data-tab="altus" aria-selected="false">
         Altus Costs
       </button>
+      <button type="button" role="tab" id="tab-btn-parade"
+        class="cmhc-tab" data-tab="parade" aria-selected="false">
+        Parade of Homes
+      </button>
       <button type="button" role="tab" id="tab-btn-fcc"
         class="cmhc-tab" data-tab="fcc" aria-selected="false">
         FCC Farmland
@@ -1873,6 +1877,61 @@
         <section id="alt-output" class="space-y-4"></section>
         <footer class="text-xs text-neutral-500 pt-4 border-t border-neutral-200">
           Source: Altus Group Canadian Cost Guide, 2018–2026 editions (published annually). Figures are the as-published low–high construction cost ranges; the midpoint is a simple average of the two. Building-type labels are preserved verbatim per year — Altus rewords a few between editions.
+        </footer>
+      </main>
+    </div>
+
+    <!-- ============================================================
+         Parade of Homes tab — Winnipeg (and all-Manitoba) new-home listings
+         distilled from MHBA Parade of Homes magazines, 2012–present. Figures
+         ship with the site as a snapshot under web/public/parade/, refreshed
+         with scripts/copy-parade-snapshot.ps1 after each Parade pipeline run.
+         Prices are listing-reported house-only (land excluded), ex-GST.
+         ============================================================ -->
+    <div id="tab-panel-parade" class="grid md:grid-cols-[320px_1fr] min-h-[calc(100vh-110px)]" role="tabpanel" aria-labelledby="tab-btn-parade" hidden>
+      <aside class="bg-white border-r border-neutral-200 p-4 space-y-4 overflow-y-auto" aria-label="Parade of Homes filters">
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Scope</h2>
+          <div id="po-scope" class="grid gap-1 text-sm" role="radiogroup" aria-label="Scope">
+            <label class="flex items-center gap-1"><input type="radio" name="poScope" value="winnipeg" checked /> Winnipeg CMA</label>
+            <label class="flex items-center gap-1"><input type="radio" name="poScope" value="all" /> All Manitoba</label>
+          </div>
+          <p class="text-xs text-neutral-500 mt-1">Winnipeg CMA covers the overwhelming majority of listings; All Manitoba also includes outlying developments.</p>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Dollars</h2>
+          <div id="po-basis" class="grid gap-1 text-sm" role="radiogroup" aria-label="Dollar basis">
+            <label class="flex items-center gap-1"><input type="radio" name="poBasis" value="nominal" checked /> Nominal (as listed)</label>
+            <label class="flex items-center gap-1"><input type="radio" name="poBasis" value="real" /> Real (inflation-adjusted)</label>
+          </div>
+          <p class="text-xs text-neutral-500 mt-1">Real-dollar values use Statistics Canada annual-average CPI, all-items.</p>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Years</h2>
+          <div class="flex items-center gap-2 text-sm">
+            <select id="po-year-from" class="border border-neutral-300 rounded px-2 py-1 text-sm" aria-label="From year"></select>
+            <span>to</span>
+            <select id="po-year-to" class="border border-neutral-300 rounded px-2 py-1 text-sm" aria-label="To year"></select>
+          </div>
+          <div class="flex gap-3 text-xs mt-2">
+            <button id="po-reset" type="button" class="underline text-neutral-600">Reset</button>
+          </div>
+        </section>
+
+        <section class="pt-2 border-t border-neutral-200">
+          <p class="text-xs text-neutral-500">Snapshot built from the Parade-Of-Homes pipeline. See <code>docs/parade-of-homes.md</code> for how to refresh.</p>
+        </section>
+      </aside>
+
+      <main class="p-4 space-y-4 overflow-x-hidden">
+        <p id="po-error" class="text-sm text-red-700" hidden></p>
+        <p id="po-headline" class="text-sm text-neutral-700 max-w-3xl"></p>
+        <section id="po-chart-grid" class="grid md:grid-cols-2 gap-4 items-start"></section>
+        <footer class="text-xs text-neutral-500 pt-4 border-t border-neutral-200">
+          Source: MHBA Parade of Homes magazine listings; automated extraction with QA review. Prices are listing-reported house-only prices (land excluded), shown excluding GST (net GST removed by estimate for 2012–2016 issues); they may vary by development charge and option inclusion. For market commentary only; not an appraisal or value opinion.
+          <span id="po-real-note" hidden> Real-dollar values use Statistics Canada annual-average CPI, all-items (Table 18-10-0005-01), expressed in the latest CPI year available.</span>
         </footer>
       </main>
     </div>
