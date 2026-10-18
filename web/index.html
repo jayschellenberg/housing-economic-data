@@ -143,6 +143,10 @@
         class="cmhc-tab" data-tab="rentcompare" aria-selected="false">
         Rent Comparison
       </button>
+      <button type="button" role="tab" id="tab-btn-altus"
+        class="cmhc-tab" data-tab="altus" aria-selected="false">
+        Altus Costs
+      </button>
       <button type="button" role="tab" id="tab-btn-fcc"
         class="cmhc-tab" data-tab="fcc" aria-selected="false">
         FCC Farmland
@@ -1803,6 +1807,49 @@
           Source: Pablo Fernandez et al, annual surveys of the market risk premium and risk-free rate used for Canada (IESE Business School; published on SSRN).
           Figures are the survey averages. Years before 2017 report the market risk premium only, apart from 2013 and 2015.
           Investment performance: XIC (iShares Core S&amp;P/TSX Capped Composite) and ZFL (BMO Long Federal Bond) adjusted closes from Yahoo Finance, Statistics Canada CPI (Table 18-10-0004-01), and the credit unions' published GIC rates; refreshed weekly.
+        </footer>
+      </main>
+    </div>
+
+    <!-- ============================================================
+         Altus Costs tab — $ per square foot construction cost ranges
+         published annually by Altus Group for the nine Canadian urban
+         centres (plus provincial LRT/highway rows). Figures ship with
+         the site; scripts/altus_cost_guide.py builds the data JSON from
+         extract_altus.py's long-format CSV. altus-costs.js.
+         ============================================================ -->
+    <div id="tab-panel-altus" class="grid md:grid-cols-[320px_1fr] min-h-[calc(100vh-110px)]" role="tabpanel" aria-labelledby="tab-btn-altus" hidden>
+      <aside class="bg-white border-r border-neutral-200 p-4 space-y-4 overflow-y-auto" aria-label="Altus Cost Guide filters">
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Section</h2>
+          <div id="alt-section" class="grid gap-1 text-sm" role="radiogroup" aria-label="Altus section"></div>
+          <p class="text-xs text-neutral-500 mt-1">Private &amp; Public sector costs are per square foot. Infrastructure is a mix (per metre, per acre, per lane-km, per km, per unit).</p>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Centres</h2>
+          <div id="alt-cities" class="grid grid-cols-2 gap-x-2 gap-y-1" aria-label="Urban centres"></div>
+          <p class="text-xs text-neutral-500 mt-1">Winnipeg is the primary focus; add any other centres (or provinces, for Infrastructure LRT &amp; highway rows) to overlay.</p>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Years</h2>
+          <div class="flex items-center gap-2 text-sm">
+            <select id="alt-year-from" class="border border-neutral-300 rounded px-2 py-1 text-sm" aria-label="From year"></select>
+            <span>to</span>
+            <select id="alt-year-to" class="border border-neutral-300 rounded px-2 py-1 text-sm" aria-label="To year"></select>
+          </div>
+          <div class="flex gap-3 text-xs mt-2">
+            <button id="alt-reset" type="button" class="underline text-neutral-600">Reset</button>
+          </div>
+        </section>
+      </aside>
+
+      <main class="p-4 space-y-4 overflow-x-hidden">
+        <p id="alt-error" class="text-sm text-red-700" hidden></p>
+        <section id="alt-output" class="space-y-4"></section>
+        <footer class="text-xs text-neutral-500 pt-4 border-t border-neutral-200">
+          Source: Altus Group Canadian Cost Guide, 2018–2026 editions (published annually). Figures are the as-published low–high construction cost ranges; the midpoint is a simple average of the two. Building-type labels are preserved verbatim per year — Altus rewords a few between editions.
         </footer>
       </main>
     </div>
