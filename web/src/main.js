@@ -35,6 +35,7 @@ import { initRentCompare, refreshRentCompare } from './rent-compare.js';
 import { initCapVsInterestTab } from './cap-vs-interest-tab.js';
 import { initZoning } from './zoning.js';
 import { initMarketDataBar } from './market-data-bar.js';
+import { initNavMenus, syncNavMenus } from './nav-menus.js';
 import { wireChartDocExports } from './doc-image-export.js';
 import { getFirm, setFirm, onFirmChange } from './firm.js';
 
@@ -192,9 +193,10 @@ function setupTabs(initial, onActivate) {
   };
 
   // Which top-level group each tab belongs to. The header shows one group
-  // link as active and one tab bar (#nav-housing / #nav-local) at a time;
-  // everything not listed here is Housing & Economic Data.
-  const TAB_GROUP = { johnson: 'local', yardi: 'local', rentalsca: 'local', rentcompare: 'local', fcc: 'local', brokerage: 'local', caprates: 'local', capvsint: 'local', discount: 'local', altus: 'local', parade: 'local', zoning: 'local', rental: 'local', commercial: 'local' };
+  // link as active and one menu bar (#nav-housing / #nav-local) at a time;
+  // everything not listed here is Housing & Economic Data. Within a bar the
+  // tabs sit in category menus (index.html, nav-menus.js).
+  const TAB_GROUP = { johnson: 'local', yardi: 'local', rentalsca: 'local', rentcompare: 'local', fcc: 'local', brokerage: 'local', caprates: 'local', capvsint: 'local', discount: 'local', altus: 'local', zoning: 'local', rental: 'local', commercial: 'local' };
   const groupOf = (name) => TAB_GROUP[name] || 'housing';
 
   function showGroup(group) {
@@ -221,9 +223,11 @@ function setupTabs(initial, onActivate) {
     for (const [key, t] of Object.entries(tabs)) {
       const isActive = key === name;
       t.btn?.classList.toggle('cmhc-tab-active', isActive);
-      t.btn?.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      if (isActive) t.btn?.setAttribute('aria-current', 'page');
+      else t.btn?.removeAttribute('aria-current');
       if (t.panel) t.panel.hidden = !isActive;
     }
+    syncNavMenus(name);
     activeTab = name;
     syncHash();
     // First-activation init for the tab's view. The `once` wrappers dedupe, and
@@ -247,6 +251,7 @@ function setupTabs(initial, onActivate) {
   }
   onSubviewChange = (app) => { if (app === activeTab) syncHash(); };
 
+  initNavMenus();
   for (const [key, t] of Object.entries(tabs)) {
     t.btn?.addEventListener('click', () => activate(key));
   }

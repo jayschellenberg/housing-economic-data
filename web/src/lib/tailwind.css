@@ -58,6 +58,107 @@
   cursor: pointer;
 }
 
+/* Category menus that hold each group's tabs (nav-menus.js). The trigger
+   reads like a tab; the menu holding the open tab is drawn as the active
+   tab and names it ("Rental · Rental Charts"). The panel floats over the
+   page and is a plain list of the group's tab buttons. */
+.cmhc-menubar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 0 16px;
+  background: var(--color-neutral-100);
+  border-bottom: 1px solid var(--color-neutral-200);
+  position: relative;
+  z-index: 20;
+}
+.cmhc-menubar[hidden] { display: none; }
+
+.cmhc-menu { position: relative; }
+
+.cmhc-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  color: var(--color-neutral-600);
+  border: 1px solid transparent;
+  border-bottom: none;
+  margin-bottom: -1px;
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.cmhc-menu-trigger::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  opacity: 0.7;
+}
+.cmhc-menu-trigger[aria-expanded="true"]::after { transform: translateY(1px) rotate(-135deg); }
+.cmhc-menu-trigger:hover,
+.cmhc-menu-trigger[aria-expanded="true"] {
+  color: var(--color-neutral-900);
+  background: white;
+}
+.cmhc-menu-active > .cmhc-menu-trigger {
+  color: var(--cmhc-brand-red);
+  background: white;
+  border-color: var(--color-neutral-200);
+  border-bottom-color: white;
+}
+.cmhc-menu-current:empty { display: none; }
+.cmhc-menu-current {
+  font-weight: 500;
+  color: var(--color-neutral-700);
+}
+.cmhc-menu-current::before { content: "· "; color: var(--color-neutral-400); }
+
+.cmhc-menu-panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 220px;
+  max-width: calc(100vw - 32px);
+  display: flex;
+  flex-direction: column;
+  padding: 4px 0;
+  background: white;
+  border: 1px solid var(--color-neutral-200);
+  border-radius: 0 4px 4px 4px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+}
+.cmhc-menu-panel[hidden] { display: none; }
+
+.cmhc-menu-item {
+  text-align: left;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 7px 16px;
+  color: var(--color-neutral-700);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.cmhc-menu-item[hidden] { display: none; }
+.cmhc-menu-item:hover,
+.cmhc-menu-item:focus-visible {
+  background: var(--color-neutral-100);
+  color: var(--color-neutral-900);
+  outline: none;
+}
+.cmhc-menu-item.cmhc-tab-active {
+  color: var(--cmhc-brand-red);
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 var(--cmhc-brand-red);
+}
+
 /* Header group links: the two top-level sections (Housing & Economic Data,
    Local Data). The active one reads as the site title; the other as a link. */
 .cmhc-group-link {

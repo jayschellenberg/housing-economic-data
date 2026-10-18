@@ -8,11 +8,24 @@ A multi-tab static website of Canadian housing & economic data, built for a comm
 
 ## Tabs
 
-The header carries two top-level groups, each with its own tab bar:
-**Housing & Economic Data** (the public CMHC / StatsCan tabs, Market Indicators
-included, and the landing view) and **Local Data** (Cap Rates, Cap Rates vs Interest, Market Discount Rates, Johnson Report, Brokerage Reports, Yardi Rental,
-Rentals.ca, Rent Comparison, Altus Costs, Parade of Homes, Zoning, Rental Dashboard and Commercial Dashboard — tabs whose data comes from folders
-on the viewer's disk; Market Discount Rates, Altus Costs and Parade of Homes are the exceptions — their figures are published or derived from published listings, so they ship with the site).
+The header carries two top-level groups, each with its own bar of category
+menus below it (`web/src/nav-menus.js`; each menu's trigger names the tab open
+under it, and every tab keeps its `#hash` link):
+
+- **Housing & Economic Data** (public; the landing view):
+  **Rental** (Rental Charts, Rental Tables, Compare Areas, Secondary Rental, RTB (MB)) ·
+  **Housing** (Housing Starts, Housing Stock, Affordability, Parade of Homes) ·
+  **Economy & People** (Census Profile, Current Snapshot, Market Indicators, Agriculture).
+- **Local Data** (tabs whose data comes from folders on the viewer's disk):
+  **Multifamily** (Yardi Rental, Rentals.ca, Rent Comparison, Rental Dashboard) ·
+  **Commercial** (Cap Rates, Cap Rates vs Interest, Market Discount Rates, Johnson Report,
+  Altus Costs, FCC Farmland, Brokerage Reports, Commercial Dashboard, Zoning).
+  Market Discount Rates and Altus Costs are the exceptions: their figures are
+  published, so they ship with the site.
+
+To add a tab, put its `tab-btn-*` button in the right menu panel in
+`web/index.html` and list it in `setupTabs` (and `TAB_GROUP` if it is Local Data)
+in `web/src/main.js`.
 
 The Local Data folders all live in one Dropbox folder shared with colleagues,
 **AppMarketData** (Jason's copy: `D:\Dropbox\SharedInfo\AppMarketData`), holding
@@ -22,7 +35,7 @@ its own subfolder or `AppMarketData` itself: `web/src/app-market-data.js`
 (`resolveAppFolder`) steps down to the tab's subfolder before the handle is
 saved, and `filterAppFiles` does the same for the folder-`<input>` fallback.
 
-One pick connects every tab: the strip under the Local Data tab bar
+One pick connects every tab: the strip under the Local Data menu bar
 (`web/src/market-data-bar.js`, logic in `web/src/market-data.js`) saves a
 handle to `AppMarketData`, or to any folder holding some of its subfolders,
 and fills each tab from it. A tab with no saved folder gets its subfolder
