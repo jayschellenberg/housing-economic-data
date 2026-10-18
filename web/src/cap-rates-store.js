@@ -19,6 +19,7 @@ const store = createFolderStore({ dbName: 'hed-cap-rates', pickerId: 'cap-rates'
 
 export const pickDirectory = () => store.pickDirectory();
 export const getSavedDirectory = () => store.getSavedDirectory();
+export const saveDirectory = (handle) => store.saveDirectory(handle);
 export const getManifest = () => store.getMeta('manifest');
 export const getData = () => store.get('files', 'cap_rates');
 export const clearCapRates = () => store.clear();

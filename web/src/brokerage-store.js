@@ -19,6 +19,7 @@ const store = createFolderStore({ dbName: 'hed-brokerage', pickerId: 'brokerage'
 
 export const pickDirectory = () => store.pickDirectory();
 export const getSavedDirectory = () => store.getSavedDirectory();
+export const saveDirectory = (handle) => store.saveDirectory(handle);
 export const getManifest = () => store.getMeta('manifest');
 export const getData = () => store.get('files', 'brokerage');
 export const clearBrokerage = () => store.clear();

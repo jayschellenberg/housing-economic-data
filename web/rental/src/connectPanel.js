@@ -12,6 +12,7 @@ import {
   describeImport, getBundleTexts, clearAll, requestPersistence,
 } from './lib/store.js';
 import { parseBundle } from './lib/bundle.js';
+import { onSourcesUpdated } from '../../src/market-data-channel.js';
 
 const fmt = (n) => Number(n || 0).toLocaleString('en-CA');
 
@@ -208,6 +209,9 @@ export function initConnectPanel({ onBundle, setStatus } = {}) {
       }
     } catch { /* never block the page on this */ }
   }
+
+  // The Local Data strip on the host page may fill an empty store.
+  onSourcesUpdated(['rental'], () => render());
 
   render().then((info) => { if (info?.present) checkQuietly(); });
 

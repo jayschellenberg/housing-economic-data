@@ -39,6 +39,7 @@ import {
   storeAvailable, fsAccessSupported, pickDirectory, getSavedDirectory, directoryPermission,
   importFromDirectory, importFromFileList, checkForUpdates, getAllEditions, getManifest, clearJohnson,
 } from './johnson-store.js';
+import { onSourcesUpdated } from './market-data-channel.js';
 
 const PREF_KEY = 'johnson.v1';
 
@@ -109,6 +110,8 @@ export async function initJohnson() {
 
   wireControls();
   await loadFromStore();
+  // Refill when the Local Data strip loads this tab from AppMarketData.
+  onSourcesUpdated(['johnson'], async () => { await loadFromStore(); await maybeAutoRefresh(); });
   await maybeAutoRefresh();
 }
 

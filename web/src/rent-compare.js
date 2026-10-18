@@ -24,6 +24,7 @@ import {
 } from './rent-compare-data.js';
 import * as rcStore from './rentalsca-store.js';
 import * as ydStore from './yardi-store.js';
+import { onSourcesUpdated } from './market-data-channel.js';
 
 const PREF_KEY = 'rentcompare.v1';
 const MISSING = '**';
@@ -77,6 +78,7 @@ export async function initRentCompare({ loadShard }) {
   if (!rcStore.storeAvailable()) { showError('This browser cannot store the data locally (IndexedDB is unavailable).'); return; }
   wireControls();
   renderSidebar();
+  onSourcesUpdated(['yardi', 'rentalsca'], () => loadFromStores());
   await loadFromStores();
 }
 
