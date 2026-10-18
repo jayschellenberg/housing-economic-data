@@ -32,7 +32,7 @@
              title="Rental, housing, census and economic data">Housing &amp; Economic Data</a>
           <a id="group-link-local" href="#caprates" data-group="local"
              class="cmhc-group-link"
-             title="Multifamily: Yardi Rental, Rentals.ca, Rent Comparison, Rental Dashboard. Commercial: Cap Rates, Cap Rates vs Interest, Market Discount Rates, Johnson Report, Altus Costs, FCC Farmland, Brokerage Reports, Commercial Dashboard, Zoning">Local Data</a>
+             title="Cap Rates, Cap Rates vs Interest, Market Discount Rates, Multifamily (Yardi Rental, Rentals.ca, Rent Comparison by Source, Rental Dashboard), Commercial (Johnson Report, Altus Costs, Brokerage Reports, Commercial Dashboard), FCC Farmland, Zoning">Local Data</a>
         </nav>
         <!-- Signs every indicator chart's caption, and so every PNG exported from
              one (see firm.js). The only place it is set; saved per browser once
@@ -100,6 +100,11 @@
     <!-- Local Data group: tabs that read the viewer's own files. Shown in
          place of the housing bar while one of its tabs is active. -->
     <nav id="nav-local" class="cmhc-menubar" aria-label="Local Data views" hidden>
+      <!-- Stand-alone tabs sit on the bar itself; only the multifamily rent
+           sources and the commercial market reports are grouped in menus. -->
+      <button type="button" id="tab-btn-caprates" class="cmhc-tab" data-tab="caprates">Cap Rates</button>
+      <button type="button" id="tab-btn-capvsint" class="cmhc-tab" data-tab="capvsint">Cap Rates vs Interest</button>
+      <button type="button" id="tab-btn-discount" class="cmhc-tab" data-tab="discount">Market Discount Rates</button>
       <div class="cmhc-menu">
         <button type="button" class="cmhc-menu-trigger" aria-expanded="false" aria-controls="menu-multifamily">
           <span class="cmhc-menu-label">Multifamily</span><span class="cmhc-menu-current"></span>
@@ -107,7 +112,7 @@
         <div id="menu-multifamily" class="cmhc-menu-panel" hidden>
           <button type="button" id="tab-btn-yardi" class="cmhc-menu-item" data-tab="yardi">Yardi Rental</button>
           <button type="button" id="tab-btn-rentalsca" class="cmhc-menu-item" data-tab="rentalsca">Rentals.ca</button>
-          <button type="button" id="tab-btn-rentcompare" class="cmhc-menu-item" data-tab="rentcompare">Rent Comparison</button>
+          <button type="button" id="tab-btn-rentcompare" class="cmhc-menu-item" data-tab="rentcompare">Rent Comparison by Source</button>
           <button type="button" id="tab-btn-rental" class="cmhc-menu-item" data-tab="rental">Rental Dashboard</button>
         </div>
       </div>
@@ -116,17 +121,14 @@
           <span class="cmhc-menu-label">Commercial</span><span class="cmhc-menu-current"></span>
         </button>
         <div id="menu-commercial" class="cmhc-menu-panel" hidden>
-          <button type="button" id="tab-btn-caprates" class="cmhc-menu-item" data-tab="caprates">Cap Rates</button>
-          <button type="button" id="tab-btn-capvsint" class="cmhc-menu-item" data-tab="capvsint">Cap Rates vs Interest</button>
-          <button type="button" id="tab-btn-discount" class="cmhc-menu-item" data-tab="discount">Market Discount Rates</button>
           <button type="button" id="tab-btn-johnson" class="cmhc-menu-item" data-tab="johnson">Johnson Report</button>
           <button type="button" id="tab-btn-altus" class="cmhc-menu-item" data-tab="altus">Altus Costs</button>
-          <button type="button" id="tab-btn-fcc" class="cmhc-menu-item" data-tab="fcc">FCC Farmland</button>
           <button type="button" id="tab-btn-brokerage" class="cmhc-menu-item" data-tab="brokerage">Brokerage Reports</button>
           <button type="button" id="tab-btn-commercial" class="cmhc-menu-item" data-tab="commercial">Commercial Dashboard</button>
-          <button type="button" id="tab-btn-zoning" class="cmhc-menu-item" data-tab="zoning">Zoning</button>
         </div>
       </div>
+      <button type="button" id="tab-btn-fcc" class="cmhc-tab" data-tab="fcc">FCC Farmland</button>
+      <button type="button" id="tab-btn-zoning" class="cmhc-tab" data-tab="zoning">Zoning</button>
     </nav>
     <!-- One folder pick for every Local Data tab (market-data-bar.js). Shown
          with the Local Data bar (data-show-group); removed in browsers that
@@ -2144,6 +2146,10 @@
       </aside>
 
       <main class="p-4 space-y-4 overflow-x-hidden">
+        <div id="zn-wip" role="note" class="bg-amber-50 border border-amber-300 border-l-4 border-l-amber-500 text-amber-900 rounded px-4 py-3 max-w-4xl">
+          <p class="text-sm font-bold uppercase tracking-wide">Work in progress — verify before use</p>
+          <p class="text-sm mt-1">This Zoning tab is still being built. Zones, permitted uses and bulk requirements are compiled from municipal by-laws and may be incomplete, out of date or wrong. Check every figure against the governing by-law before relying on it in a report.</p>
+        </div>
         <p id="zn-empty" class="text-sm text-neutral-600 max-w-2xl">
           No zoning data is loaded. This site publishes none of it: choose the shared <code>AppMarketData</code>
           folder or its <code>Zoning</code> subfolder. The narratives render from that folder in this browser only.

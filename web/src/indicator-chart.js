@@ -89,6 +89,8 @@ export function periodLabel(d, frequency) {
   const y = d.getUTCFullYear();
   const m = d.getUTCMonth();
   if (frequency === 'annual')    return String(y);
+  // Twice-yearly issues (Parade of Homes): spring and fall editions.
+  if (frequency === 'season')    return `${m < 6 ? 'Spring' : 'Fall'} ${y}`;
   if (frequency === 'quarterly') return `Q${Math.floor(m / 3) + 1} ${y}`;
   if (frequency === 'monthly')   return `${MONTH_ABBR[m]} ${y}`;
   return `${d.getUTCDate()} ${MONTH_ABBR[m]} ${y}`;
@@ -533,6 +535,13 @@ export function buildIndicatorCard(container, {
   // Series line width in CSS px. Cap vs Interest draws heavier lines, like
   // the reference appraisal chart it reproduces.
   lineWidth = 2.4,
+  // `toggleLegend`: each legend entry switches its line off and on (shift- or
+  // ctrl-click shows that line alone). An off line keeps its colour and its
+  // legend slot, greyed, but leaves the plot, the y axis, the tip and the data
+  // table, and its entry is dropped from the PNG. `hiddenSeries` (ids) is the
+  // starting set; `onLegendToggle(ids)` hears every change, so a tab that
+  // rebuilds its cards can carry the choice across.
+  toggleLegend = false, hiddenSeries = [], onLegendToggle = null,
 }) {
   const card = document.createElement('section');
   card.className = 'chart-card cmhc-indicator-card';
@@ -676,6 +685,9 @@ export function buildIndicatorCard(container, {
     // Display labels only: `opts.dashedIds` names ids, and the caller computed
     // them from the unqualified labels (see geoQualifiedLabels).
     const seriesMeta = geoQualifiedLabels(seriesMetaIn);
+    // Never every line off: a stale saved set falls back to all of them.
+    if (toggleLegend && seriesMeta.every(s => hidden.has(s.id))) hidden.clear();
+    const shownMeta = toggleLegend ? seriesMeta.filter(s => !hidden.has(s.id)) : seriesMeta;
     $plot.replaceChildren();
     $stale.hidden = true;
     $stale.textContent = '';
@@ -689,7 +701,7 @@ export function buildIndicatorCard(container, {
       tableFresh = false;
     }
 
-    const ids = new Set(seriesMeta.map(s => s.id));
+    const ids = new Set(shownMeta.map(s => s.id));
     const rows = records.filter(r => ids.has(r.id));
     if (rows.length === 0) {
       $title.textContent = title;
@@ -955,8 +967,17 @@ export function buildIndicatorCard(container, {
       const $text = item.querySelector('.cmhc-plot-legend-text');
       $text.textContent = cat;
       if (annualByLabel.has(cat)) $text.appendChild(exportAnnual(` ${annualByLabel.get(cat).text}`));
+      if (toggleLegend) wireLegendToggle(item, seriesMeta[i].id);
       legendEl.appendChild(item);
     });
+    if (toggleLegend && hidden.size) {
+      const reset = document.createElement('button');
+      reset.type = 'button';
+      reset.className = 'cmhc-plot-legend-reset';
+      reset.textContent = 'Show all';
+      reset.addEventListener('click', () => setHidden([]));
+      legendEl.appendChild(reset);
+    }
     // Annotation key for the reference band / line, so the shading is never
     // mistaken for a data series.
     if (refBand || refLine) {
@@ -971,7 +992,10 @@ export function buildIndicatorCard(container, {
     // 2000 to 2025"; Johnson Report).
     const plottedLabels = new Set(points.map(p => p.label));
     // A "Group · Row" label keeps only the row there ("Total Suburban").
+    // A toggleable card with more than one series keeps its legend, so a line
+    // switched off can be switched back on.
     const singleLabel = opts.singleSeriesInSubtitle && plottedLabels.size === 1 && !refBand && !refLine
+      && (!toggleLegend || seriesMeta.length === 1)
       ? String([...plottedLabels][0]).split(' · ').pop() : null;
 
     const wrap = document.createElement('div');
@@ -1038,7 +1062,7 @@ export function buildIndicatorCard(container, {
     let staleSeries = [];
     seriesMeta.forEach((s, i) => {
       const colour = seriesColours[i];
-      if (!s.latestDate) return;
+      if (!s.latestDate || !ids.has(s.id)) return;
       const chip = document.createElement('span');
       chip.className = 'cmhc-latest-chip';
       chip.innerHTML =
@@ -1072,7 +1096,7 @@ export function buildIndicatorCard(container, {
     // specific period (say May 2023) can be looked up, copied, or quoted.
     // Built when opened rather than now; see buildTableNow above.
     if ($table) {
-      tableInput = { periods, seriesMeta, freq, yFormatter };
+      tableInput = { periods, seriesMeta: shownMeta, freq, yFormatter };
       tableFresh = false;
       if ($tableBox?.open) buildTableNow();
     }
@@ -1086,6 +1110,43 @@ export function buildIndicatorCard(container, {
   // fell back to Plot's default width. Re-running the last render is enough:
   // everything else about it is unchanged.
   let lastRender = null;
+
+  const hidden = new Set(hiddenSeries || []);
+  function setHidden(ids, focusId = null) {
+    hidden.clear();
+    ids.forEach(id => hidden.add(id));
+    onLegendToggle?.([...hidden]);
+    if (lastRender) draw(...lastRender);
+    if (focusId) card.querySelector(`[data-series-id="${CSS.escape(focusId)}"]`)?.focus();
+  }
+  function toggleSeries(id, only) {
+    const all = (lastRender?.[1] || []).map(s => s.id);
+    const shown = all.filter(x => !hidden.has(x));
+    if (only) {
+      // Shift-click on the line already shown alone brings the rest back.
+      const solo = shown.length === 1 && shown[0] === id;
+      setHidden(solo ? [] : all.filter(x => x !== id), id);
+    } else if (hidden.has(id)) {
+      setHidden([...hidden].filter(x => x !== id), id);
+    } else if (shown.length > 1) {
+      setHidden([...hidden, id], id);
+    }
+  }
+  function wireLegendToggle(item, id) {
+    const off = hidden.has(id);
+    item.classList.add('cmhc-plot-legend-toggle');
+    item.classList.toggle('cmhc-plot-legend-off', off);
+    item.dataset.seriesId = id;
+    item.tabIndex = 0;
+    item.setAttribute('role', 'button');
+    item.setAttribute('aria-pressed', off ? 'false' : 'true');
+    item.title = `${off ? 'Show' : 'Hide'} this line. Shift-click: show only this line.`;
+    const act = (e) => toggleSeries(id, e.shiftKey || e.ctrlKey || e.metaKey);
+    item.addEventListener('click', act);
+    item.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); act(e); }
+    });
+  }
   function render(records, seriesMeta, opts = {}) {
     lastRender = [records, seriesMeta, opts];
     draw(records, seriesMeta, opts);

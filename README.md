@@ -17,9 +17,10 @@ under it, and every tab keeps its `#hash` link):
   **Housing** (Housing Starts, Housing Stock, Affordability, Parade of Homes) ·
   **Economy & People** (Census Profile, Current Snapshot, Market Indicators, Agriculture).
 - **Local Data** (tabs whose data comes from folders on the viewer's disk):
-  **Multifamily** (Yardi Rental, Rentals.ca, Rent Comparison, Rental Dashboard) ·
-  **Commercial** (Cap Rates, Cap Rates vs Interest, Market Discount Rates, Johnson Report,
-  Altus Costs, FCC Farmland, Brokerage Reports, Commercial Dashboard, Zoning).
+  Cap Rates · Cap Rates vs Interest · Market Discount Rates ·
+  **Multifamily** (Yardi Rental, Rentals.ca, Rent Comparison by Source, Rental Dashboard) ·
+  **Commercial** (Johnson Report, Altus Costs, Brokerage Reports, Commercial Dashboard) ·
+  FCC Farmland · Zoning. Stand-alone tabs sit on the bar as plain `cmhc-tab` buttons.
   Market Discount Rates and Altus Costs are the exceptions: their figures are
   published, so they ship with the site.
 
