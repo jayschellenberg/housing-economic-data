@@ -32,7 +32,7 @@
              title="Rental, housing, census and economic data">Housing &amp; Economic Data</a>
           <a id="group-link-local" href="#caprates" data-group="local"
              class="cmhc-group-link"
-             title="Cap Rates, Cap Rates vs Interest, Market Discount Rates, Johnson Report, Brokerage Reports, Rentals, FCC Farmland, Zoning, Rental Dashboard, Commercial Dashboard">Local Data</a>
+             title="Multifamily: Yardi Rental, Rentals.ca, Rent Comparison, Rental Dashboard. Commercial: Cap Rates, Cap Rates vs Interest, Market Discount Rates, Johnson Report, Altus Costs, FCC Farmland, Brokerage Reports, Commercial Dashboard, Zoning">Local Data</a>
         </nav>
         <!-- Signs every indicator chart's caption, and so every PNG exported from
              one (see firm.js). The only place it is set; saved per browser once
@@ -46,131 +46,87 @@
         </label>
         </div>
         <p id="group-tagline-housing" class="text-sm text-primary-100">Historical trends, comparison tables and charts spanning Canadian rental, construction, housing stock, affordability, census demographics and economic indicators — Manitoba, Saskatchewan, Alberta &amp; British Columbia in full detail (incl. municipalities); major centres elsewhere.</p>
-        <p id="group-tagline-local" class="text-sm text-primary-100" hidden>Market indicators from various copyrighted sources that are read from folders on your computer, never uploaded. Currently works with various Manitoba data and requires sharing from Jason Schellenberg with other confirmed legal subscribers to such data sources. Market Discount Rates, Altus Costs and Parade of Homes are the exceptions: they use published survey, cost-guide and market data (Parade of Homes as summary figures only), so they work without a folder.</p>
+        <p id="group-tagline-local" class="text-sm text-primary-100" hidden>Market indicators from various copyrighted sources that are read from folders on your computer, never uploaded. Currently works with various Manitoba data and requires sharing from Jason Schellenberg with other confirmed legal subscribers to such data sources. Market Discount Rates and Altus Costs are the exceptions: they use published survey and cost-guide data, so they work without a folder.</p>
       </div>
     </header>
 
-    <nav id="nav-housing" class="bg-neutral-100 border-b border-neutral-200 px-4 flex gap-1" role="tablist" aria-label="Housing & Economic Data views">
-      <button type="button" role="tab" id="tab-btn-charts"
-        class="cmhc-tab cmhc-tab-active" data-tab="charts" aria-selected="true">
-        Rental Charts
-      </button>
-      <button type="button" role="tab" id="tab-btn-tables"
-        class="cmhc-tab" data-tab="tables" aria-selected="false">
-        Rental Tables
-      </button>
-      <button type="button" role="tab" id="tab-btn-compare"
-        class="cmhc-tab" data-tab="compare" aria-selected="false">
-        Compare Areas
-      </button>
-      <button type="button" role="tab" id="tab-btn-secondary"
-        class="cmhc-tab" data-tab="secondary" aria-selected="false">
-        Secondary Rental
-      </button>
-      <button type="button" role="tab" id="tab-btn-starts"
-        class="cmhc-tab" data-tab="starts" aria-selected="false">
-        Housing Starts
-      </button>
-      <button type="button" role="tab" id="tab-btn-housing"
-        class="cmhc-tab" data-tab="housing" aria-selected="false">
-        Housing Stock
-      </button>
-      <button type="button" role="tab" id="tab-btn-census"
-        class="cmhc-tab" data-tab="census" aria-selected="false">
-        Census Profile
-      </button>
-      <button type="button" role="tab" id="tab-btn-affordability"
-        class="cmhc-tab" data-tab="affordability" aria-selected="false">
-        Affordability
-      </button>
-      <button type="button" role="tab" id="tab-btn-snapshot"
-        class="cmhc-tab" data-tab="snapshot" aria-selected="false">
-        Current Snapshot
-      </button>
-      <button type="button" role="tab" id="tab-btn-indicators"
-        class="cmhc-tab" data-tab="indicators" aria-selected="false">
-        Market Indicators
-      </button>
-      <button type="button" role="tab" id="tab-btn-agriculture"
-        class="cmhc-tab" data-tab="agriculture" aria-selected="false">
-        Agriculture
-      </button>
-      <button type="button" role="tab" id="tab-btn-rtb"
-        class="cmhc-tab" data-tab="rtb" aria-selected="false">
-        RTB (MB)
-      </button>
-      <!-- MB Economic Update — hidden again 2026-08 (previously hidden 2026-06,
-           revived 2026-07). PARKED, NOT REMOVED: the tab panel below,
-           economic-update.js, and the r/15 + r/16 pipeline are all intact and
-           the scheduled workflows keep refreshing its data, so the narrative
-           stays current while it is out of the nav. It remains reachable at
-           #economic for anyone with the link. Delete `hidden` to bring it back.
-           Flagged for future build-out — see README "Parked features". -->
-      <button type="button" role="tab" id="tab-btn-economic"
-        class="cmhc-tab" data-tab="economic" aria-selected="false" hidden>
-        MB Economic Update
-      </button>
+    <!-- Each group's tabs sit in a few category menus (nav-menus.js); a tab
+         button keeps its tab-btn-* id and data-tab, so setupTabs in main.js
+         and every #hash link work as before. The trigger shows the open tab. -->
+    <nav id="nav-housing" class="cmhc-menubar" aria-label="Housing &amp; Economic Data views">
+      <div class="cmhc-menu">
+        <button type="button" class="cmhc-menu-trigger" aria-expanded="false" aria-controls="menu-rental">
+          <span class="cmhc-menu-label">Rental</span><span class="cmhc-menu-current"></span>
+        </button>
+        <div id="menu-rental" class="cmhc-menu-panel" hidden>
+          <button type="button" id="tab-btn-charts" class="cmhc-menu-item" data-tab="charts">Rental Charts</button>
+          <button type="button" id="tab-btn-tables" class="cmhc-menu-item" data-tab="tables">Rental Tables</button>
+          <button type="button" id="tab-btn-compare" class="cmhc-menu-item" data-tab="compare">Compare Areas</button>
+          <button type="button" id="tab-btn-secondary" class="cmhc-menu-item" data-tab="secondary">Secondary Rental</button>
+          <button type="button" id="tab-btn-rtb" class="cmhc-menu-item" data-tab="rtb">RTB (MB)</button>
+        </div>
+      </div>
+      <div class="cmhc-menu">
+        <button type="button" class="cmhc-menu-trigger" aria-expanded="false" aria-controls="menu-housing">
+          <span class="cmhc-menu-label">Housing</span><span class="cmhc-menu-current"></span>
+        </button>
+        <div id="menu-housing" class="cmhc-menu-panel" hidden>
+          <button type="button" id="tab-btn-starts" class="cmhc-menu-item" data-tab="starts">Housing Starts</button>
+          <button type="button" id="tab-btn-housing" class="cmhc-menu-item" data-tab="housing">Housing Stock</button>
+          <button type="button" id="tab-btn-affordability" class="cmhc-menu-item" data-tab="affordability">Affordability</button>
+          <button type="button" id="tab-btn-parade" class="cmhc-menu-item" data-tab="parade">Parade of Homes</button>
+        </div>
+      </div>
+      <div class="cmhc-menu">
+        <button type="button" class="cmhc-menu-trigger" aria-expanded="false" aria-controls="menu-economy">
+          <span class="cmhc-menu-label">Economy &amp; People</span><span class="cmhc-menu-current"></span>
+        </button>
+        <div id="menu-economy" class="cmhc-menu-panel" hidden>
+          <button type="button" id="tab-btn-census" class="cmhc-menu-item" data-tab="census">Census Profile</button>
+          <button type="button" id="tab-btn-snapshot" class="cmhc-menu-item" data-tab="snapshot">Current Snapshot</button>
+          <button type="button" id="tab-btn-indicators" class="cmhc-menu-item" data-tab="indicators">Market Indicators</button>
+          <button type="button" id="tab-btn-agriculture" class="cmhc-menu-item" data-tab="agriculture">Agriculture</button>
+          <!-- MB Economic Update — hidden again 2026-08 (previously hidden 2026-06,
+               revived 2026-07). PARKED, NOT REMOVED: the tab panel below,
+               economic-update.js, and the r/15 + r/16 pipeline are all intact and
+               the scheduled workflows keep refreshing its data, so the narrative
+               stays current while it is out of the nav. It remains reachable at
+               #economic for anyone with the link. Delete `hidden` to bring it back.
+               Flagged for future build-out — see README "Parked features". -->
+          <button type="button" id="tab-btn-economic" class="cmhc-menu-item" data-tab="economic" hidden>MB Economic Update</button>
+        </div>
+      </div>
     </nav>
-
     <!-- Local Data group: tabs that read the viewer's own files. Shown in
          place of the housing bar while one of its tabs is active. -->
-    <nav id="nav-local" class="bg-neutral-100 border-b border-neutral-200 px-4 flex gap-1" role="tablist" aria-label="Local Data views" hidden>
-      <button type="button" role="tab" id="tab-btn-caprates"
-        class="cmhc-tab" data-tab="caprates" aria-selected="false">
-        Cap Rates
-      </button>
-      <button type="button" role="tab" id="tab-btn-capvsint"
-        class="cmhc-tab" data-tab="capvsint" aria-selected="false">
-        Cap Rates vs Interest
-      </button>
-      <button type="button" role="tab" id="tab-btn-discount"
-        class="cmhc-tab" data-tab="discount" aria-selected="false">
-        Market Discount Rates
-      </button>
-      <button type="button" role="tab" id="tab-btn-johnson"
-        class="cmhc-tab" data-tab="johnson" aria-selected="false">
-        Johnson Report
-      </button>
-      <button type="button" role="tab" id="tab-btn-yardi"
-        class="cmhc-tab" data-tab="yardi" aria-selected="false">
-        Yardi Rental
-      </button>
-      <button type="button" role="tab" id="tab-btn-rentalsca"
-        class="cmhc-tab" data-tab="rentalsca" aria-selected="false">
-        Rentals.ca
-      </button>
-      <button type="button" role="tab" id="tab-btn-rentcompare"
-        class="cmhc-tab" data-tab="rentcompare" aria-selected="false">
-        Rent Comparison
-      </button>
-      <button type="button" role="tab" id="tab-btn-altus"
-        class="cmhc-tab" data-tab="altus" aria-selected="false">
-        Altus Costs
-      </button>
-      <button type="button" role="tab" id="tab-btn-parade"
-        class="cmhc-tab" data-tab="parade" aria-selected="false">
-        Parade of Homes
-      </button>
-      <button type="button" role="tab" id="tab-btn-fcc"
-        class="cmhc-tab" data-tab="fcc" aria-selected="false">
-        FCC Farmland
-      </button>
-      <button type="button" role="tab" id="tab-btn-brokerage"
-        class="cmhc-tab" data-tab="brokerage" aria-selected="false">
-        Brokerage Reports
-      </button>
-      <button type="button" role="tab" id="tab-btn-rental"
-        class="cmhc-tab" data-tab="rental" aria-selected="false">
-        Rental Dashboard
-      </button>
-      <button type="button" role="tab" id="tab-btn-commercial"
-        class="cmhc-tab" data-tab="commercial" aria-selected="false">
-        Commercial Dashboard
-      </button>
-      <button type="button" role="tab" id="tab-btn-zoning"
-        class="cmhc-tab" data-tab="zoning" aria-selected="false">
-        Zoning
-      </button>
+    <nav id="nav-local" class="cmhc-menubar" aria-label="Local Data views" hidden>
+      <div class="cmhc-menu">
+        <button type="button" class="cmhc-menu-trigger" aria-expanded="false" aria-controls="menu-multifamily">
+          <span class="cmhc-menu-label">Multifamily</span><span class="cmhc-menu-current"></span>
+        </button>
+        <div id="menu-multifamily" class="cmhc-menu-panel" hidden>
+          <button type="button" id="tab-btn-yardi" class="cmhc-menu-item" data-tab="yardi">Yardi Rental</button>
+          <button type="button" id="tab-btn-rentalsca" class="cmhc-menu-item" data-tab="rentalsca">Rentals.ca</button>
+          <button type="button" id="tab-btn-rentcompare" class="cmhc-menu-item" data-tab="rentcompare">Rent Comparison</button>
+          <button type="button" id="tab-btn-rental" class="cmhc-menu-item" data-tab="rental">Rental Dashboard</button>
+        </div>
+      </div>
+      <div class="cmhc-menu">
+        <button type="button" class="cmhc-menu-trigger" aria-expanded="false" aria-controls="menu-commercial">
+          <span class="cmhc-menu-label">Commercial</span><span class="cmhc-menu-current"></span>
+        </button>
+        <div id="menu-commercial" class="cmhc-menu-panel" hidden>
+          <button type="button" id="tab-btn-caprates" class="cmhc-menu-item" data-tab="caprates">Cap Rates</button>
+          <button type="button" id="tab-btn-capvsint" class="cmhc-menu-item" data-tab="capvsint">Cap Rates vs Interest</button>
+          <button type="button" id="tab-btn-discount" class="cmhc-menu-item" data-tab="discount">Market Discount Rates</button>
+          <button type="button" id="tab-btn-johnson" class="cmhc-menu-item" data-tab="johnson">Johnson Report</button>
+          <button type="button" id="tab-btn-altus" class="cmhc-menu-item" data-tab="altus">Altus Costs</button>
+          <button type="button" id="tab-btn-fcc" class="cmhc-menu-item" data-tab="fcc">FCC Farmland</button>
+          <button type="button" id="tab-btn-brokerage" class="cmhc-menu-item" data-tab="brokerage">Brokerage Reports</button>
+          <button type="button" id="tab-btn-commercial" class="cmhc-menu-item" data-tab="commercial">Commercial Dashboard</button>
+          <button type="button" id="tab-btn-zoning" class="cmhc-menu-item" data-tab="zoning">Zoning</button>
+        </div>
+      </div>
     </nav>
     <!-- One folder pick for every Local Data tab (market-data-bar.js). Shown
          with the Local Data bar (data-show-group); removed in browsers that
