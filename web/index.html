@@ -168,6 +168,29 @@
         Zoning
       </button>
     </nav>
+    <!-- One folder pick for every Local Data tab (market-data-bar.js). Shown
+         with the Local Data bar (data-show-group); removed in browsers that
+         cannot keep a folder between visits. -->
+    <div id="market-data-bar" data-show-group="local" class="bg-white border-b border-neutral-200 px-4 py-2 text-sm" hidden>
+      <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span id="md-status" class="text-neutral-700"></span>
+        <button id="md-connect" type="button" class="text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1" hidden>Connect AppMarketData folder</button>
+        <button id="md-allow" type="button" class="text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1" hidden>Allow access</button>
+        <button id="md-add" type="button" class="text-xs underline text-neutral-600" hidden>Add another folder</button>
+        <button id="md-forget" type="button" class="text-xs underline text-neutral-600" hidden>Forget folder</button>
+        <details class="text-xs text-neutral-600">
+          <summary class="cursor-pointer underline">Details and setup</summary>
+          <div class="mt-2 mb-1 space-y-2 max-w-3xl">
+            <p id="md-folders"></p>
+            <ul id="md-list" class="space-y-0.5"></ul>
+            <p><strong>Shared the whole folder?</strong> Pick <code>AppMarketData</code> in your Dropbox. Every tab finds its own subfolder.</p>
+            <p><strong>Shared only some subfolders?</strong> Dropbox puts each one at the top of your Dropbox. Once, make a folder named <code>AppMarketData</code> in your Dropbox, drag your shared folders (CapRates, RentalData, …) into it, and pick that. Syncing keeps working after the move. Or connect each shared folder with <em>Add another folder</em>.</p>
+            <p>After a visit, Chrome asks once to re-open the folder; choose <em>Allow on every visit</em> to skip that. Clearing this site's data makes the browser forget the folder, so you will pick it once more. Files are read in this browser and never uploaded. A folder picked on a tab itself still takes priority.</p>
+          </div>
+        </details>
+      </div>
+      <p id="md-error" class="text-xs text-red-700 mt-1" hidden></p>
+    </div>
 
     <div id="tab-panel-charts" class="grid md:grid-cols-[320px_1fr] min-h-[calc(100vh-110px)]" role="tabpanel" aria-labelledby="tab-btn-charts">
       <aside class="bg-white border-r border-neutral-200 p-4 space-y-4 overflow-y-auto" aria-label="Filters">

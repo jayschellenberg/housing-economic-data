@@ -33,6 +33,7 @@ import { initBrokerage } from './brokerage.js';
 import { initRentCompare, refreshRentCompare } from './rent-compare.js';
 import { initCapVsInterestTab } from './cap-vs-interest-tab.js';
 import { initZoning } from './zoning.js';
+import { initMarketDataBar } from './market-data-bar.js';
 import { wireChartDocExports } from './doc-image-export.js';
 import { getFirm, setFirm, onFirmChange } from './firm.js';
 
@@ -203,6 +204,7 @@ function setupTabs(initial, onActivate) {
       const tag = document.getElementById(`group-tagline-${g}`);
       if (tag) tag.hidden = !on;
     }
+    for (const el of document.querySelectorAll('[data-show-group]')) el.hidden = el.dataset.showGroup !== group;
     // The site footer cites the public CMHC / StatsCan / BoC sources. Each
     // Local Data tab carries its own source line instead, so the footer would
     // only mislead there.
@@ -271,6 +273,7 @@ function wireFirmInput() {
 
 async function bootstrap() {
   wireFirmInput();
+  initMarketDataBar();
 
   const [manifest, geographies, capabilities] = await Promise.all([
     loadJson('./data/manifest.json').catch(() => ({ shards: [], lastUpdated: null, cmhcMaxYear: null })),

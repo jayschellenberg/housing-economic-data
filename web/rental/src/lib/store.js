@@ -123,6 +123,7 @@ export async function pickDirectory() {
 }
 
 export const getSavedDirectory = () => getMeta('dirHandle');
+export const saveDirectory = (handle) => putMeta('dirHandle', handle);
 
 /** 'granted' | 'prompt' | 'denied' | 'none'. Chrome drops a saved handle
  *  back to 'prompt' between sessions; re-granting is one click. */

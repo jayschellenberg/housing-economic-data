@@ -26,6 +26,7 @@ import {
   storeAvailable, fsAccessSupported, pickDirectory, getSavedDirectory, directoryPermission,
   importFromDirectory, importFromFileList, checkForUpdates, getData, getManifest, clearFcc,
 } from './fcc-store.js';
+import { onSourcesUpdated } from './market-data-channel.js';
 
 const PREF_KEY = 'fcc.v1';
 // The site-wide home province is an SGC code; FCC's tables use postal codes.
@@ -87,6 +88,8 @@ export async function initFcc() {
   }
   wireControls();
   await loadFromStore();
+  // Refill when the Local Data strip loads this tab from AppMarketData.
+  onSourcesUpdated(['fcc'], async () => { await loadFromStore(); await maybeAutoRefresh(); });
   await maybeAutoRefresh();
 }
 

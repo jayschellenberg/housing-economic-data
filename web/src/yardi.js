@@ -33,6 +33,7 @@ import {
   storeAvailable, fsAccessSupported, pickDirectory, getSavedDirectory, directoryPermission,
   importFromDirectory, importFromFileList, checkForUpdates, getData, getManifest, clearYardi,
 } from './yardi-store.js';
+import { onSourcesUpdated } from './market-data-channel.js';
 
 const PREF_KEY = 'yardi.v1';
 const MISSING = '**';
@@ -92,6 +93,8 @@ export async function initYardi() {
   }
   wireControls();
   await loadFromStore();
+  // Refill when the Local Data strip loads this tab from AppMarketData.
+  onSourcesUpdated(['yardi'], async () => { await loadFromStore(); await maybeAutoRefresh(); });
   await maybeAutoRefresh();
 }
 

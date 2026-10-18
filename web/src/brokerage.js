@@ -28,6 +28,7 @@ import {
   storeAvailable, fsAccessSupported, pickDirectory, getSavedDirectory, directoryPermission,
   importFromDirectory, importFromFileList, checkForUpdates, getData, getManifest, clearBrokerage,
 } from './brokerage-store.js';
+import { onSourcesUpdated } from './market-data-channel.js';
 
 const PREF_KEY = 'brokerage.v1';
 const DEFAULT_FROM_YEARS = 6;   // charts show this many years back when "from" is blank
@@ -99,6 +100,8 @@ export async function initBrokerage() {
   }
   wireControls();
   await loadFromStore();
+  // Refill when the Local Data strip loads this tab from AppMarketData.
+  onSourcesUpdated(['brokerage'], async () => { await loadFromStore(); await maybeAutoRefresh(); });
   await maybeAutoRefresh();
 }
 
