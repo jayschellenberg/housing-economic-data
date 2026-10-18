@@ -25,6 +25,7 @@ import {
   storeAvailable, fsAccessSupported, pickDirectory, getSavedDirectory, directoryPermission,
   importFromDirectory, importFromFileList, checkForUpdates, getData, getManifest, clearZoning,
 } from './zoning-store.js';
+import { onSourcesUpdated } from './market-data-channel.js';
 
 const PREF_KEY = 'zoning.v1';
 const CURRENCY_TIMEOUT_MS = 8000;
@@ -70,6 +71,8 @@ export async function initZoning() {
   }
   wireControls();
   await loadFromStore();
+  // Refill when the Local Data strip loads this tab from AppMarketData.
+  onSourcesUpdated(['zoning'], async () => { await loadFromStore(); await maybeAutoRefresh(); });
   await maybeAutoRefresh();
 }
 

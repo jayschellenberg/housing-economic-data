@@ -21,6 +21,20 @@ The Local Data folders all live in one Dropbox folder shared with colleagues,
 its own subfolder or `AppMarketData` itself: `web/src/app-market-data.js`
 (`resolveAppFolder`) steps down to the tab's subfolder before the handle is
 saved, and `filterAppFiles` does the same for the folder-`<input>` fallback.
+
+One pick connects every tab: the strip under the Local Data tab bar
+(`web/src/market-data-bar.js`, logic in `web/src/market-data.js`) saves a
+handle to `AppMarketData`, or to any folder holding some of its subfolders,
+and fills each tab from it. A tab with no saved folder gets its subfolder
+saved, and an empty tab gets it imported. A folder picked on the tab itself
+wins, and a tab that already holds data is left to its own update check.
+Several folders can be connected, for colleagues shared only some subfolders,
+which Dropbox puts at the top of their Dropbox. On later visits Chrome needs
+one "Allow" on the connected folder, which covers everything inside it. Open
+tabs and the two dashboards reload through `web/src/market-data-channel.js`
+(a BroadcastChannel). `SalesData` is not in `SOURCES` and is never opened.
+A new folder-backed tab needs a `SOURCES` entry, a `saveDirectory` export on
+its store, and an `onSourcesUpdated` listener.
 `TAB_GROUP` in `web/src/main.js` says which tabs belong to Local Data; every
 other tab is Housing.
 

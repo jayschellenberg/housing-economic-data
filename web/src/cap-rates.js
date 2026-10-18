@@ -28,6 +28,7 @@ import {
   storeAvailable, fsAccessSupported, pickDirectory, getSavedDirectory, directoryPermission,
   importFromDirectory, importFromFileList, checkForUpdates, getData, getManifest, clearCapRates,
 } from './cap-rates-store.js';
+import { onSourcesUpdated } from './market-data-channel.js';
 
 const PREF_KEY = 'capRates.v1';
 const SOURCE = 'Colliers, CBRE & Cushman & Wakefield Quarterly Cap Rate Market Reports';
@@ -80,6 +81,8 @@ export async function initCapRates() {
   }
   wireControls();
   await loadFromStore();
+  // Refill when the Local Data strip loads this tab from AppMarketData.
+  onSourcesUpdated(['caprates'], async () => { await loadFromStore(); await maybeAutoRefresh(); });
   await maybeAutoRefresh();
 }
 

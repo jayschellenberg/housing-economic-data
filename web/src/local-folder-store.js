@@ -107,6 +107,8 @@ export function createFolderStore({ dbName, pickerId, stores = ['files'], appPat
       return handle;
     },
     getSavedDirectory: () => api.getMeta('dirHandle'),
+    /** Remember a folder found for this tab elsewhere (market-data.js). */
+    saveDirectory: (handle) => api.putMeta('dirHandle', handle),
     directoryPermission,
   };
   return api;
