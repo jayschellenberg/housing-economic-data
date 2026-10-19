@@ -13,7 +13,9 @@
  */
 
 import { csvParseRows, autoType } from 'd3';
-import { buildIndicatorCard, readOpenPanels } from './indicator-chart.js';
+import { buildIndicatorCard, readOpenPanels, CHART_EXPORT_FILTER } from './indicator-chart.js';
+import { downloadCardPng } from './png-export.js';
+import { getFirm } from './firm.js';
 import { escapeHtml } from './escape.js';
 import { getPref, setPref } from './prefs.js';
 
@@ -39,9 +41,21 @@ const CSV_FILES = [
   'index_comparison.csv',
   'style_mix.csv',
   'lot_trends.csv',
+  'keyword_trends.csv',
+  'builder_activity.csv',
+  'neighbourhood_comparison.csv',
+  'builder_positioning.csv',
 ];
 
 let ui = null;
+
+// Table-cell formatters; missing values read "**" like every other table.
+const ok = (v) => v != null && Number.isFinite(v);
+const fmtInt  = (v) => (ok(v) ? Math.round(v).toLocaleString('en-CA') : '**');
+const fmtUsd  = (v) => (ok(v) ? `$${Math.round(v).toLocaleString('en-CA')}` : '**');
+const fmtUsd2 = (v) => (ok(v) ? `$${v.toFixed(2)}` : '**');
+const fmtPct  = (v) => (ok(v) ? `${(v * 100).toFixed(1)}%` : '**');
+const fmtSignedPct = (v) => (ok(v) ? `${v >= 0 ? '+' : ''}${(v * 100).toFixed(1)}%` : '**');
 
 function loadPrefs() {
   const p = getPref(PREF_KEY);
@@ -104,9 +118,11 @@ async function loadDataset(scope, basis) {
     return parseCsv(await r.text());
   }));
   const [priceTrends, sizeTrends, psfByStyle, sizeByStyle,
-         upgradeByYear, garageMix, indexCmp, styleMix, lotTrends] = parsers;
+         upgradeByYear, garageMix, indexCmp, styleMix, lotTrends,
+         keywordTrends, builderActivity, hoodCmp, builderPos] = parsers;
   const ds = { priceTrends, sizeTrends, psfByStyle, sizeByStyle,
-               upgradeByYear, garageMix, indexCmp, styleMix, lotTrends };
+               upgradeByYear, garageMix, indexCmp, styleMix, lotTrends,
+               keywordTrends, builderActivity, hoodCmp, builderPos };
   ui.datasets.set(key, ds);
   return ds;
 }
@@ -337,6 +353,50 @@ async function render() {
     });
   }
 
+  // Garage size mix by era (a table: eras are multi-year bins, not a series).
+  {
+    const eras = [...new Set(ds.garageMix.map(r => r.era))];
+    const order = ['Single', 'Tandem', 'Double', 'Triple', 'Quad'];
+    const sizes = [...new Set(ds.garageMix.map(r => r.garage_size))]
+      .sort((a, b) => (order.indexOf(a) + 1 || 99) - (order.indexOf(b) + 1 || 99));
+    const cell = (era, size) => ds.garageMix.find(r => r.era === era && r.garage_size === size)?.share;
+    addTableCard({
+      chartId: 'parade_garage_mix',
+      title: 'Garage size mix by era',
+      subtitle: `${scopeLabel} — share of listings with a known garage size`,
+      description: 'Share of listings by attached-garage size within each era, among listings whose garage size ' +
+        'is known (from the listing or the matched assessment record). n is the number of such listings; ' +
+        'the later eras rest on small samples. Not filtered by the year range.',
+      columns: [{ label: 'Era', align: 'left' }, ...sizes.map(sz => ({ label: sz })), { label: 'n' }],
+      rows: eras.map(era => [era, ...sizes.map(sz => fmtPct(cell(era, sz) ?? 0)),
+        fmtInt(ds.garageMix.find(r => r.era === era)?.era_n)]),
+    });
+  }
+
+  // Keyword mentions in listing descriptions, annual, one card per theme.
+  for (const [chartId, title, groups] of [
+    ['parade_keywords_finishes', 'Finishes named in listings', ['Countertops', 'Flooring']],
+    ['parade_keywords_features', 'Features and selling words in listings', ['Features', 'Marketing']],
+  ]) {
+    const rows = ds.keywordTrends.filter(r => inRange(r) && groups.includes(r.group));
+    const groupOf = new Map(rows.map(r => [r.keyword, r.group]));
+    const words = [...groupOf.keys()]
+      .sort((a, b) => groups.indexOf(groupOf.get(a)) - groups.indexOf(groupOf.get(b)) || a.localeCompare(b));
+    addCard({
+      chartId, title,
+      subtitle: `${scopeLabel} — mentions per 100 listings`,
+      description: 'How often each word appears in Parade listing descriptions, as mentions per 100 listings ' +
+        'in the year. Tracks what builders choose to advertise (quartz against granite, vinyl plank against ' +
+        'hardwood), not what every house has.',
+      series: words.map(w => ({
+        id: w, label: w, units: 'percent', frequency: 'annual',
+        points: rows.filter(r => r.keyword === w)
+          .map(r => [`${r.year}-01-01`, finite(r.mentions_per_listing) ? r.mentions_per_listing * 100 : null]),
+      })),
+      annualized: false,
+    });
+  }
+
   // 4. Median upgrade spend, annual.
   {
     const rows = ds.upgradeByYear.filter(inRange);
@@ -399,6 +459,60 @@ async function render() {
     });
   }
 
+  // Neighbourhood and builder comparisons over the pipeline's recent window.
+  {
+    const rows = [...ds.hoodCmp].sort((a, b) => (b.median_psf ?? 0) - (a.median_psf ?? 0));
+    const window = rows[0]?.window || '';
+    addTableCard({
+      chartId: 'parade_neighbourhoods',
+      wide: true,
+      title: 'Neighbourhood comparison',
+      subtitle: `${scopeLabel} — ${basisLabel} dollars, ${window} listings`,
+      description: 'Busiest Parade neighbourhoods over the recent window, sorted by median $/sq ft. ' +
+        '"vs market" is the neighbourhood median $/sq ft against the median for all listings in the window. ' +
+        'Not filtered by the year range.',
+      columns: ['Neighbourhood', 'Listings', 'Median price', 'Median sq ft', 'Median $/sq ft',
+                '$/sq ft vs market', 'Median lot sf', 'Bungalow share', 'Builders']
+        .map((label, i) => ({ label, align: i ? 'right' : 'left' })),
+      rows: rows.map(r => [r.neighborhood, fmtInt(r.listings), fmtUsd(r.median_price), fmtInt(r.median_sqft),
+        fmtUsd2(r.median_psf), fmtSignedPct(r.psf_vs_market), fmtInt(r.median_lot_sf),
+        fmtPct(r.share_bungalow), fmtInt(r.builders)]),
+    });
+  }
+  {
+    const rows = [...ds.builderPos].sort((a, b) => (b.median_psf ?? 0) - (a.median_psf ?? 0));
+    const window = rows[0]?.window || '';
+    addTableCard({
+      chartId: 'parade_builder_positioning',
+      wide: true,
+      title: 'Builder positioning',
+      subtitle: `${scopeLabel} — ${basisLabel} dollars, ${window} listings`,
+      description: 'Each active builder’s median size and $/sq ft over the recent window, set against the market ' +
+        'median for all listings (segment). Small listing counts can swing a builder’s figures. ' +
+        'Not filtered by the year range.',
+      columns: ['Builder', 'Listings', 'Median price', 'Median sq ft', 'Median $/sq ft', 'Median upgrade',
+                'Bungalow share', 'Top neighbourhood', 'Segment']
+        .map((label, i) => ({ label, align: i && i < 7 ? 'right' : 'left' })),
+      rows: rows.map(r => [r.builder, fmtInt(r.listings), fmtUsd(r.median_price), fmtInt(r.median_sqft),
+        fmtUsd2(r.median_psf), fmtPct(r.median_upgrade_pct), fmtPct(r.share_bungalow),
+        r.top_neighbourhood || '**', r.segment || '**']),
+    });
+  }
+  {
+    const rows = [...ds.builderActivity].sort((a, b) => b.total_listings - a.total_listings).slice(0, 20);
+    addTableCard({
+      chartId: 'parade_builder_activity',
+      title: 'Most active builders',
+      subtitle: `${scopeLabel} — all issues since 2012, top 20 by listings`,
+      description: 'Builders with the most Parade listings across every issue in the snapshot, with the years ' +
+        'they appeared. Not filtered by the year range.',
+      columns: ['Builder', 'Listings', 'Years active', 'First year', 'Last year']
+        .map((label, i) => ({ label, align: i ? 'right' : 'left' })),
+      rows: rows.map(r => [r.builder, fmtInt(r.total_listings), fmtInt(r.years_active),
+        String(r.first_year ?? '**'), String(r.last_year ?? '**')]),
+    });
+  }
+
   // Listings per issue: the sample behind every figure above.
   {
     const rows = ds.priceTrends.filter(inRange);
@@ -413,6 +527,78 @@ async function render() {
       singleSeriesInSubtitle: true,
       annualized: false,
     });
+  }
+
+  // A table card in the chart cards' house layout: title, subtitle with the
+  // source, the table, the company caption, then Download PNG / Copy table
+  // (kept out of the image) and a "What does this mean?" explainer.
+  function addTableCard({ chartId, title, subtitle, description, columns, rows, wide = false }) {
+    const card = document.createElement('section');
+    // A wide table spans both grid columns rather than scrolling sideways.
+    card.className = `chart-card cmhc-indicator-card${wide ? ' md:col-span-2' : ''}`;
+    card.dataset.chartId = chartId;
+    card.innerHTML = `
+      <header class="chart-title"></header>
+      <p class="chart-sub"></p>
+      <div class="overflow-x-auto" data-role="table"></div>
+      <div class="chart-caption">
+        <span class="chart-caption-left"></span>
+        <span class="chart-source"></span>
+      </div>
+      <div class="chart-actions">
+        <button type="button" data-role="dl-png">Download PNG</button>
+        <button type="button" data-role="copy-table">Copy table</button>
+      </div>
+      <details class="cmhc-explainer">
+        <summary>What does this mean?</summary>
+        <p></p>
+      </details>`;
+    card.querySelector('.chart-title').textContent = title;
+    card.querySelector('.chart-sub').textContent =
+      `${subtitle} • Source: MHBA Parade of Homes magazine listings`;
+    card.querySelector('.cmhc-explainer p').textContent = description;
+    const firm = getFirm();
+    card.querySelector('.chart-source').textContent = firm;
+    card.querySelector('.chart-caption').hidden = !firm;
+
+    const table = document.createElement('table');
+    table.className = 'cmhc-table text-xs';
+    const head = table.createTHead().insertRow();
+    for (const c of columns) {
+      const th = document.createElement('th');
+      th.textContent = c.label;
+      th.className = c.align === 'left' ? 'text-left' : 'text-right';
+      head.appendChild(th);
+    }
+    const body = table.createTBody();
+    for (const r of rows) {
+      const tr = body.insertRow();
+      r.forEach((v, i) => {
+        const td = tr.insertCell();
+        td.textContent = v;
+        td.className = columns[i].align === 'left' ? 'text-left' : 'text-right whitespace-nowrap';
+      });
+    }
+    card.querySelector('[data-role="table"]').appendChild(table);
+    ui.$grid.appendChild(card);
+
+    const tsv = [columns.map(c => c.label), ...rows].map(r => r.join('\t')).join('\n');
+    const $copy = card.querySelector('[data-role="copy-table"]');
+    $copy.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(tsv);
+        $copy.textContent = 'Copied';
+      } catch {
+        $copy.textContent = 'Copy failed';
+      }
+      setTimeout(() => { $copy.textContent = 'Copy table'; }, 1500);
+    });
+    card.querySelector('[data-role="dl-png"]').addEventListener('click', () =>
+      downloadCardPng(card, `${chartId}_${new Date().toISOString().slice(0, 10)}.png`,
+        { filter: CHART_EXPORT_FILTER }));
+    if ((openPanels.get(chartId) || []).includes('explainer')) {
+      card.querySelector('.cmhc-explainer').open = true;
+    }
   }
 
   function addCard({ chartId, title, subtitle, description, series, sources, sourceLabel,
