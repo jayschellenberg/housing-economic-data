@@ -37,6 +37,8 @@ const CSV_FILES = [
   'upgrade_by_year.csv',
   'garage_mix.csv',
   'index_comparison.csv',
+  'style_mix.csv',
+  'lot_trends.csv',
 ];
 
 let ui = null;
@@ -102,9 +104,9 @@ async function loadDataset(scope, basis) {
     return parseCsv(await r.text());
   }));
   const [priceTrends, sizeTrends, psfByStyle, sizeByStyle,
-         upgradeByYear, garageMix, indexCmp] = parsers;
+         upgradeByYear, garageMix, indexCmp, styleMix, lotTrends] = parsers;
   const ds = { priceTrends, sizeTrends, psfByStyle, sizeByStyle,
-               upgradeByYear, garageMix, indexCmp };
+               upgradeByYear, garageMix, indexCmp, styleMix, lotTrends };
   ui.datasets.set(key, ds);
   return ds;
 }
@@ -224,6 +226,29 @@ async function render() {
     });
   }
 
+  // Selling-price spread, one point per issue.
+  {
+    const rows = ds.priceTrends.filter(inRange);
+    addCard({
+      chartId: 'parade_price_range',
+      title: 'Selling price range',
+      subtitle,
+      description: 'Spread of listing-reported selling prices (house only, ex-GST) per Parade issue: the middle half ' +
+        'of listings sits between the 25th and 75th percentile lines. A mean well above the median means a few ' +
+        'high-priced show homes are pulling the average up.',
+      series: [
+        { id: 'p75', label: '75th percentile', key: 'p75_selling' },
+        { id: 'median', label: 'Median', key: 'median_selling' },
+        { id: 'p25', label: '25th percentile', key: 'p25_selling' },
+        { id: 'mean', label: 'Mean', key: 'mean_selling' },
+      ].map(({ id, label, key }) => ({
+        id, label, units: 'dollar', frequency: 'season',
+        points: rows.map(r => [issueDate(r), r[key]]),
+      })),
+      dashedIds: ['mean'],
+    });
+  }
+
   // 2. Median $/sq ft by style, annual.
   {
     const rows = ds.psfByStyle.filter(inRange);
@@ -255,6 +280,63 @@ async function render() {
     });
   }
 
+  // Median home size by style group, annual.
+  {
+    const rows = ds.sizeByStyle.filter(inRange);
+    const styles = [...new Set(rows.map(r => r.style_group))].sort();
+    addCard({
+      chartId: 'parade_sqft_by_style',
+      title: 'Median home size by style (sq ft)',
+      subtitle: scopeLabel,
+      description: 'Annual median above-grade square footage within each style group (detached single-family homes).',
+      series: styles.map(st => ({
+        id: st, label: st, units: 'units', frequency: 'annual',
+        points: rows.filter(r => r.style_group === st).map(r => [`${r.year}-01-01`, r.median_sqft]),
+      })),
+    });
+  }
+
+  // Style mix: share of each year's listings by style.
+  {
+    const rows = ds.styleMix.filter(inRange);
+    const order = ['2-Storey', 'Bungalow', 'Bi-Level', 'Split-Level', 'Cab-Over', 'Townhouse', 'Other'];
+    const styles = [...new Set(rows.map(r => r.style_broad))]
+      .sort((a, b) => (order.indexOf(a) + 1 || 99) - (order.indexOf(b) + 1 || 99));
+    addCard({
+      chartId: 'parade_style_mix',
+      title: 'Style mix of listings',
+      subtitle: scopeLabel,
+      description: 'Share of each year’s Parade listings by house style. A shift in the mix (for example fewer ' +
+        'bungalows) moves the overall median price and size even when each style’s own figures hold steady.',
+      series: styles.map(st => ({
+        id: st, label: st, units: 'percent', frequency: 'annual',
+        points: rows.filter(r => r.style_broad === st).map(r => [`${r.year}-01-01`, r.pct * 100]),
+      })),
+      annualized: false,
+    });
+  }
+
+  // Lot size and frontage, annual (from matched assessment parcels).
+  for (const [chartId, title, key, units, desc] of [
+    ['parade_lot_size', 'Median lot size (sq ft)', 'median_lot_sf', 'sf',
+      'Annual median lot area of Parade listings matched to City of Winnipeg assessment parcels.'],
+    ['parade_lot_frontage', 'Median lot frontage (ft)', 'median_frontage_ft', 'feet',
+      'Annual median lot frontage of Parade listings matched to City of Winnipeg assessment parcels.'],
+  ]) {
+    const rows = ds.lotTrends.filter(inRange);
+    addCard({
+      chartId, title, subtitle: '', description: desc,
+      sources: [
+        { citation: 'MHBA Parade of Homes magazine listings (automated extraction with QA review)' },
+        { citation: 'City of Winnipeg assessment parcels (lot area and frontage)' },
+      ],
+      sourceLabel: 'MHBA Parade of Homes; City of Winnipeg assessment',
+      series: [{ id: key, label: scopeLabel, units, frequency: 'annual',
+                 points: rows.map(r => [`${r.year}-01-01`, r[key]]) }],
+      singleSeriesInSubtitle: true,
+    });
+  }
+
   // 4. Median upgrade spend, annual.
   {
     const rows = ds.upgradeByYear.filter(inRange);
@@ -267,6 +349,26 @@ async function render() {
       series: [{ id: 'upgrade', label: scopeLabel, units: 'dollar', frequency: 'annual',
                  points: rows.map(r => [`${r.year}-01-01`, r.median_upgrade_dollars]) }],
       singleSeriesInSubtitle: true,
+    });
+  }
+
+  // Upgrade shares, annual: the figures the old upgrade tooltip carried.
+  {
+    const rows = ds.upgradeByYear.filter(inRange);
+    addCard({
+      chartId: 'parade_upgrade_shares',
+      title: 'Upgrades: how often and how much',
+      subtitle: scopeLabel,
+      description: 'Share of listings that report no upgrades over the base price, and, among listings that do, ' +
+        'the median upgrade amount as a percent of the base price.',
+      series: [
+        { id: 'none', label: 'Listings with no upgrades', key: 'share_no_upgrades' },
+        { id: 'pct', label: 'Median upgrade, % of base (when upgraded)', key: 'median_upgrade_pct_when_upgraded' },
+      ].map(({ id, label, key }) => ({
+        id, label, units: 'percent', frequency: 'annual',
+        points: rows.map(r => [`${r.year}-01-01`, finite(r[key]) ? r[key] * 100 : null]),
+      })),
+      annualized: false,
     });
   }
 
@@ -297,8 +399,24 @@ async function render() {
     });
   }
 
+  // Listings per issue: the sample behind every figure above.
+  {
+    const rows = ds.priceTrends.filter(inRange);
+    addCard({
+      chartId: 'parade_listings_count',
+      title: 'Listings per issue',
+      subtitle: '',
+      description: 'Number of Parade listings in each Spring and Fall issue. Fewer listings mean each median above ' +
+        'rests on a smaller sample and can move more from one issue to the next.',
+      series: [{ id: 'n', label: scopeLabel, units: 'units', frequency: 'season',
+                 points: rows.map(r => [issueDate(r), r.n]) }],
+      singleSeriesInSubtitle: true,
+      annualized: false,
+    });
+  }
+
   function addCard({ chartId, title, subtitle, description, series, sources, sourceLabel,
-                     singleSeriesInSubtitle = false }) {
+                     singleSeriesInSubtitle = false, annualized = true, dashedIds = [] }) {
     const hiddenPref = (ui.prefs.hidden || {})[chartId] || [];
     const card = buildIndicatorCard(ui.$grid, {
       chartId,
@@ -327,7 +445,8 @@ async function render() {
     card.render(records, seriesMeta, {
       subtitle,
       singleSeriesInSubtitle,
-      annualized: true,
+      annualized,
+      dashedIds,
       dots: true,
     });
     card.setOpenPanels(openPanels.get(chartId) || []);

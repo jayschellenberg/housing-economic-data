@@ -95,6 +95,8 @@ export const INDICATOR_FMT = {
   // their cents ($6.24/sf is not $6/sf), and floor areas are whole sq ft.
   dollar_psf:         (v) => v == null ? '—' : `$${Number(v).toFixed(2)}`,
   sf:                 (v) => v == null ? '—' : `${Math.round(Number(v)).toLocaleString()} sf`,
+  // Lot frontage (Parade of Homes lots), feet to one decimal.
+  feet:               (v) => v == null ? '—' : `${Number(v).toFixed(1)} ft`,
   balance_of_opinion: (v) => v == null ? '—' : `${Number(v).toFixed(0)}`,
   // Newmark's reversion spread (basis points over the going-in cap rate) and
   // national investment volume ($ billions as printed).
