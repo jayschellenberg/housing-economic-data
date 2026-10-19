@@ -21,7 +21,7 @@ Nothing in this repo generates the Parade data. To pick up a new issue:
    lives elsewhere.
 3. Commit the updated `web/public/parade/` files and deploy as usual.
 
-The script copies nine CSVs per scope × basis
+The script copies thirteen CSVs per scope × basis
 (`winnipeg_nominal`, `winnipeg_real`, `all_nominal`, `all_real`) and
 rewrites `web/public/parade/MANIFEST.json` with the new build date and the
 latest Parade issue label.
@@ -44,7 +44,11 @@ Per scope × basis folder:
 | `size_by_style_year.csv` | Median home size by style. |
 | `upgrade_by_year.csv` | Median upgrade spend; share with no upgrades and median upgrade % when upgraded. |
 | `lot_trends.csv` | Median lot size and lot frontage (assessment-matched parcels). |
-| `garage_mix.csv` | Not charted yet (garage shares by era). |
+| `garage_mix.csv` | Garage size mix by era (table card). |
+| `keyword_trends.csv` | Finishes / features named in listings (mentions per 100 listings). |
+| `neighbourhood_comparison.csv` | Neighbourhood comparison table (pipeline's recent window). |
+| `builder_positioning.csv` | Builder positioning table (recent window). |
+| `builder_activity.csv` | Most active builders table (top 20, all issues). |
 | `index_comparison.csv` | Parade price index vs CPI, NHPI and BCPI (rebased, one line per series). |
 
 Every chart's legend entries switch their line off and on (shift-click shows
