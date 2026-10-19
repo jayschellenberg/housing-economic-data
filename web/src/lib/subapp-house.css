@@ -457,3 +457,15 @@ table.hs-table tbody td.suppressed { color: #a3a3a3; font-style: italic; font-we
 
 /* A view's headed groups, stacked with the tab panel's spacing. */
 .hs-view-sections { display: flex; flex-direction: column; gap: 16px; }
+
+/* Toggleable legend (buildIndicatorCard's toggleLegend): click an entry to
+   switch its line off and on. An off entry stays, greyed and struck through,
+   so it can be switched back; the PNG drops it. */
+.cmhc-plot-legend-toggle { cursor: pointer; user-select: none; border-radius: 3px; padding: 1px 4px; }
+.cmhc-plot-legend-toggle:hover { background: var(--hs-neutral-100); }
+.cmhc-plot-legend-toggle:focus-visible { outline: 2px solid var(--hs-brand-red); outline-offset: 1px; }
+.cmhc-plot-legend-off { opacity: 0.45; }
+.cmhc-plot-legend-off .cmhc-plot-legend-text { text-decoration: line-through; }
+.cmhc-plot-legend-reset { font-size: 12px; color: var(--hs-neutral-600); text-decoration: underline; background: none; border: 0; padding: 0 4px; cursor: pointer; }
+.cmhc-exporting .cmhc-plot-legend-off,
+.cmhc-exporting .cmhc-plot-legend-reset { display: none !important; }

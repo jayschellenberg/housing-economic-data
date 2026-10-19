@@ -2,18 +2,18 @@
  * Parade of Homes tab — MHBA Parade of Homes magazine listings (2012-present),
  * distilled through the Parade-Of-Homes pipeline into a snapshot shipped
  * under web/public/parade/. Follows the altus-costs pattern: all data on
- * the site, no folder picker, each chart its own section with themed
- * Observable Plot.
+ * the site, no folder picker. Charts are the shared indicator cards
+ * (buildIndicatorCard), so they read like every other tab's: subtitle with
+ * range and source, legend beside the plot, hover tip, data table, and
+ * legend entries that switch lines off and on.
  *
  * Scope: Winnipeg CMA by default, with an All-Manitoba toggle. Dollars:
  * nominal (as listed) or CPI-adjusted; the snapshot ships both bases from
  * the pipeline. Prices are house-only (land excluded), ex-GST.
  */
 
-import * as Plot from '@observablehq/plot';
 import { csvParseRows, autoType } from 'd3';
-import { themed, gridMarks, frameMark, PALETTE } from './plot-theme.js';
-import { downloadCard } from './chart.js';
+import { buildIndicatorCard, readOpenPanels } from './indicator-chart.js';
 import { escapeHtml } from './escape.js';
 import { getPref, setPref } from './prefs.js';
 
@@ -40,12 +40,6 @@ const CSV_FILES = [
 ];
 
 let ui = null;
-
-const fmtUsdK = (v) => (v == null || !Number.isFinite(v) ? '**' : `$${Math.round(v / 1000)}k`);
-const fmtUsd  = (v) => (v == null || !Number.isFinite(v) ? '**' : `$${Math.round(v).toLocaleString('en-CA')}`);
-const fmtSqft = (v) => (v == null || !Number.isFinite(v) ? '**' : `${Math.round(v).toLocaleString('en-CA')}`);
-const fmtPct  = (v) => (v == null || !Number.isFinite(v) ? '**' : `${(v * 100).toFixed(1)}%`);
-const fmtIdx  = (v) => (v == null || !Number.isFinite(v) ? '**' : v.toFixed(1));
 
 function loadPrefs() {
   const p = getPref(PREF_KEY);
@@ -151,7 +145,7 @@ function wireSidebar() {
   ui.$from.addEventListener('change', onYear);
   ui.$to.addEventListener('change', onYear);
   document.getElementById('po-reset')?.addEventListener('click', () => {
-    ui.prefs = savePrefs({ scope: null, basis: null, from: null, to: null });
+    ui.prefs = savePrefs({ scope: null, basis: null, from: null, to: null, hidden: null });
     wireSidebar();
     render();
   });
@@ -192,7 +186,6 @@ async function render() {
     return;
   }
   if (token !== ui.renderToken) return;
-  ui.$grid.replaceChildren();
   ui.$error.hidden = true;
 
   const years = [...new Set(ds.priceTrends.map(r => r.year))].sort((a, b) => a - b);
@@ -203,213 +196,140 @@ async function render() {
     `from ${years[0]} through ${latest || years[years.length - 1]}, ${escapeHtml(scopeLabel)}. ` +
     `Figures below are shown in <strong>${escapeHtml(basisLabel.toLowerCase())}</strong> dollars; use the sidebar to switch.`;
 
-  // Apply the year range to each series.
+  // Carry each card's open panels (data table, explainer) across the rebuild.
+  const openPanels = new Map([...ui.$grid.querySelectorAll('.chart-card')]
+    .map(el => [el.dataset.chartId, readOpenPanels(el)]));
+  ui.$grid.replaceChildren();
+
   const inRange = (r) => r.year >= from && r.year <= to;
-  const period = (r) => r.period_date || `${r.year}-${r.quarter === 1 ? '03' : '09'}-01`;
+  const issueDate = (r) => r.period_date || `${r.year}-${r.quarter === 1 ? '03' : '09'}-01`;
+  const finite = (v) => v != null && Number.isFinite(v);
+  const subtitle = `${scopeLabel} — ${basisLabel} dollars`;
 
-  // 1. Median base price over time (one point per issue).
+  // 1. Median base and selling price, one point per issue.
   {
-    const rows = ds.priceTrends.filter(inRange).map(r => ({
-      date: new Date(period(r)),
-      label: r.period_label || `${r.year} Q${r.quarter}`,
-      value: r.median_base,
-    })).filter(d => d.value != null && Number.isFinite(d.value));
-    buildLineCard({
-      id: 'po_median_base_price',
-      title: 'Median base price',
-      subtitle: `${scopeLabel} — ${basisLabel} dollars, ${from} to ${to}`,
-      note: 'Median listing-reported "base price" (house only, ex-GST, land excluded). One point per Parade issue.',
-      yLabel: `${basisLabel} CA$`,
-      yFmt: fmtUsdK,
-      tooltipFmt: fmtUsd,
-      rows,
-      colour: PALETTE[0],
+    const rows = ds.priceTrends.filter(inRange);
+    addCard({
+      chartId: 'parade_median_price',
+      title: 'Median new-home price',
+      subtitle,
+      description: 'Median listing-reported price per Parade issue, house only (land excluded), ex-GST. ' +
+        'Base price is the house as advertised before upgrades; selling price adds the upgrades the listing names.',
+      series: [
+        { id: 'base',    label: 'Median base price',    units: 'dollar', frequency: 'season',
+          points: rows.map(r => [issueDate(r), r.median_base]) },
+        { id: 'selling', label: 'Median selling price', units: 'dollar', frequency: 'season',
+          points: rows.map(r => [issueDate(r), r.median_selling]) },
+      ],
     });
   }
 
-  // 2. Median $/sq ft by style (line per style).
+  // 2. Median $/sq ft by style, annual.
   {
-    const rows = ds.psfByStyle.filter(inRange).map(r => ({
-      date: new Date(`${r.year}-07-01`),
-      label: r.style_group,
-      value: r.median_psf,
-      n: r.n,
-    })).filter(d => d.value != null && Number.isFinite(d.value));
-    const styles = [...new Set(rows.map(r => r.label))].sort();
-    buildCategoryLineCard({
-      id: 'po_psf_by_style',
+    const rows = ds.psfByStyle.filter(inRange);
+    const styles = [...new Set(rows.map(r => r.style_group))].sort();
+    addCard({
+      chartId: 'parade_psf_by_style',
       title: 'Median $/sq ft by style',
-      subtitle: `${scopeLabel} — ${basisLabel} dollars per listed sq ft, ${from} to ${to}`,
-      note: 'Annual median $/sq ft within each style group. Styles with few listings in a year can swing year to year.',
-      yLabel: `${basisLabel} CA$ / sq ft`,
-      yFmt: (v) => `$${Math.round(v)}`,
-      tooltipFmt: (v) => `$${v.toFixed(2)}`,
-      rows,
-      categories: styles,
+      subtitle,
+      description: 'Annual median price per listed above-grade square foot within each style group. ' +
+        'Styles with few listings in a year can swing year to year.',
+      series: styles.map(st => ({
+        id: st, label: st, units: 'dollar_psf', frequency: 'annual',
+        points: rows.filter(r => r.style_group === st).map(r => [`${r.year}-01-01`, r.median_psf]),
+      })),
     });
   }
 
-  // 3. Median sq ft trend (one point per issue).
+  // 3. Median home size, one point per issue.
   {
-    const rows = ds.priceTrends.filter(inRange).map(r => ({
-      date: new Date(period(r)),
-      label: r.period_label || `${r.year} Q${r.quarter}`,
-      value: r.median_sqft,
-    })).filter(d => d.value != null && Number.isFinite(d.value));
-    buildLineCard({
-      id: 'po_median_sqft',
-      title: 'Median home size',
-      subtitle: `${scopeLabel} — ${from} to ${to}`,
-      note: 'Median above-grade square footage listed per Parade issue (basements excluded).',
-      yLabel: 'Square feet',
-      yFmt: fmtSqft,
-      tooltipFmt: fmtSqft,
-      rows,
-      colour: PALETTE[2],
+    const rows = ds.priceTrends.filter(inRange);
+    addCard({
+      chartId: 'parade_median_sqft',
+      title: 'Median home size (sq ft)',
+      subtitle: '',
+      description: 'Median above-grade square footage listed per Parade issue (basements excluded).',
+      series: [{ id: 'sqft', label: scopeLabel, units: 'units', frequency: 'season',
+                 points: rows.map(r => [issueDate(r), r.median_sqft]) }],
+      singleSeriesInSubtitle: true,
     });
   }
 
-  // 4. Median upgrade spend (annual).
+  // 4. Median upgrade spend, annual.
   {
-    const rows = ds.upgradeByYear.filter(inRange).map(r => ({
-      date: new Date(`${r.year}-07-01`),
-      label: String(r.year),
-      value: r.median_upgrade_dollars,
-      pct: r.median_upgrade_pct_when_upgraded,
-      noneShare: r.share_no_upgrades,
-    })).filter(d => d.value != null && Number.isFinite(d.value));
-    buildLineCard({
-      id: 'po_upgrade_spend',
+    const rows = ds.upgradeByYear.filter(inRange);
+    addCard({
+      chartId: 'parade_upgrade_spend',
       title: 'Median upgrade spend',
-      subtitle: `${scopeLabel} — ${basisLabel} dollars, ${from} to ${to}`,
-      note: 'Annual median of upgrade dollars listed on top of the base price (across all listings — zero for listings with no upgrades reported).',
-      yLabel: `${basisLabel} CA$`,
-      yFmt: fmtUsdK,
-      tooltipFmt: (v, d) => `${fmtUsd(v)} · ${fmtPct(d.pct)} when upgraded · ${fmtPct(d.noneShare)} with no upgrades`,
-      rows,
-      colour: PALETTE[3],
+      subtitle: `${basisLabel} dollars`,
+      description: 'Annual median of upgrade dollars listed on top of the base price, across all listings ' +
+        '(zero for listings with no upgrades reported).',
+      series: [{ id: 'upgrade', label: scopeLabel, units: 'dollar', frequency: 'annual',
+                 points: rows.map(r => [`${r.year}-01-01`, r.median_upgrade_dollars]) }],
+      singleSeriesInSubtitle: true,
     });
   }
 
-  // 5. Construction cost vs CPI index (two-series line).
+  // 5. Parade price index vs CPI, NHPI and BCPI, annual.
   {
-    const rows = ds.indexCmp.filter(inRange).map(r => ({
-      date: new Date(`${r.year}-07-01`),
-      label: r.series,
-      value: r.index_rebased,
-      base: r.base_year,
-    })).filter(d => d.value != null && Number.isFinite(d.value));
-    const seriesOrder = [...new Set(rows.map(r => r.label))];
-    const base = rows[0]?.base || '';
-    buildCategoryLineCard({
-      id: 'po_index_vs_cpi',
+    const rows = ds.indexCmp.filter(inRange);
+    const order = [...new Set(rows.map(r => r.series))];
+    const base = rows.find(r => r.base_year)?.base_year || '';
+    addCard({
+      chartId: 'parade_index_vs_cpi',
       title: 'Parade price index vs CPI',
-      subtitle: `${scopeLabel} — rebased to ${base} = 100, ${from} to ${to}`,
-      note: 'Parade median selling price and $/sq ft (house only, ex-GST) against Canada all-items CPI, each rebased so the base year reads 100. Reads how fast new-home listing prices moved compared to broad inflation.',
-      yLabel: `Index (${base} = 100)`,
-      yFmt: fmtIdx,
-      tooltipFmt: fmtIdx,
-      rows,
-      categories: seriesOrder,
+      subtitle: `${scopeLabel} — rebased to ${base} = 100`,
+      description: 'Parade median selling price and $/sq ft (house only, ex-GST) against Canada all-items CPI, ' +
+        'the Winnipeg new housing price index and the Winnipeg building construction price index, each rebased so ' +
+        'the base year reads 100. Reads how fast new-home listing prices moved compared to inflation and to ' +
+        'Statistics Canada\'s own new-home and construction-cost measures.',
+      sources: [
+        { citation: 'MHBA Parade of Homes magazine listings (automated extraction with QA review)' },
+        { citation: 'Statistics Canada, Table 18-10-0005-01 (CPI, annual average)' },
+        { citation: 'Statistics Canada, Table 18-10-0205-01 (New housing price index)' },
+        { citation: 'Statistics Canada, Table 18-10-0289-01 (Building construction price indexes)' },
+      ],
+      sourceLabel: 'MHBA Parade of Homes; Statistics Canada',
+      series: order.map((name, i) => ({
+        id: `idx${i}`, label: name, units: 'index', frequency: 'annual',
+        points: rows.filter(r => r.series === name).map(r => [`${r.year}-01-01`, r.index_rebased]),
+      })),
     });
   }
-}
 
-// --- Chart cards -------------------------------------------------------------
-
-/**
- * One-series line + dot card, titled above a themed plot with a short
- * descriptive note and a PNG download.
- */
-function buildLineCard({ id, title, subtitle, note, yLabel, yFmt, tooltipFmt, rows, colour }) {
-  const card = document.createElement('section');
-  card.className = 'chart-card';
-  card.innerHTML = `
-    <header class="chart-title">${escapeHtml(title)}</header>
-    <p class="chart-sub">${escapeHtml(subtitle)}</p>
-    <div data-role="plot" class="cmhc-plot"></div>
-    <p class="text-xs text-neutral-500 mt-2 max-w-prose">${escapeHtml(note)}</p>
-    <div class="chart-caption">
-      <span class="chart-caption-left"></span>
-      <span class="chart-source">Source: MHBA Parade of Homes magazine listings (automated extraction).</span>
-    </div>
-    <div class="chart-actions flex gap-3">
-      <button type="button" data-role="dl-png">Download PNG</button>
-    </div>`;
-  ui.$grid.appendChild(card);
-  const $plot = card.querySelector('[data-role="plot"]');
-  if (!rows.length) {
-    $plot.innerHTML = '<p class="text-sm text-neutral-500 px-2">No data in the selected years.</p>';
-  } else {
-    const maxV = Math.max(...rows.map(r => r.value));
-    const minV = Math.min(...rows.map(r => r.value));
-    const pad = Math.max((maxV - minV) * 0.08, maxV * 0.03);
-    $plot.appendChild(Plot.plot(themed({
-      height: 300, marginBottom: 36, marginLeft: 72, marginRight: 16,
-      x: { label: null, tickFormat: '%Y' },
-      y: { label: yLabel, grid: true, tickFormat: yFmt,
-           domain: [Math.max(0, minV - pad), maxV + pad] },
-      marks: [
-        ...gridMarks(),
-        Plot.lineY(rows, { x: 'date', y: 'value', stroke: colour, strokeWidth: 2,
-                           sort: { channel: 'x' } }),
-        Plot.dot(rows, { x: 'date', y: 'value', fill: colour, r: 3,
-                         title: (d) => `${d.label}: ${tooltipFmt(d.value, d)}` }),
-        frameMark(),
-      ],
-    })));
+  function addCard({ chartId, title, subtitle, description, series, sources, sourceLabel,
+                     singleSeriesInSubtitle = false }) {
+    const hiddenPref = (ui.prefs.hidden || {})[chartId] || [];
+    const card = buildIndicatorCard(ui.$grid, {
+      chartId,
+      fileStem: chartId,
+      title,
+      sourceLabel: sourceLabel || 'MHBA Parade of Homes magazine listings',
+      description,
+      sources: sources || [{ citation: 'MHBA Parade of Homes magazine listings, Spring and Fall issues (automated extraction with QA review)' }],
+      table: true,
+      zeroBased: true,
+      xLabel: 'Year',
+      toggleLegend: true,
+      hiddenSeries: hiddenPref,
+      onLegendToggle: (ids) => {
+        ui.prefs = savePrefs({ hidden: { ...(ui.prefs.hidden || {}), [chartId]: ids } });
+      },
+    });
+    const records = [];
+    const seriesMeta = [];
+    for (const s of series) {
+      const pts = s.points.filter(([, v]) => finite(v));
+      if (!pts.length) continue;
+      for (const [date, value] of pts) records.push({ id: s.id, date, value });
+      seriesMeta.push({ id: s.id, chartLabel: s.label, units: s.units, frequency: s.frequency });
+    }
+    card.render(records, seriesMeta, {
+      subtitle,
+      singleSeriesInSubtitle,
+      annualized: true,
+      dots: true,
+    });
+    card.setOpenPanels(openPanels.get(chartId) || []);
   }
-  card.querySelector('[data-role="dl-png"]').onclick = () =>
-    downloadCard(card, `${id}_${new Date().toISOString().slice(0, 10)}.png`);
-  return card;
-}
-
-/**
- * Multi-series line card, one coloured line per category (style group, index
- * series, etc.). Categories are coloured in order from PALETTE and shown in a
- * legend via Plot's default colour legend.
- */
-function buildCategoryLineCard({ id, title, subtitle, note, yLabel, yFmt, tooltipFmt, rows, categories }) {
-  const card = document.createElement('section');
-  card.className = 'chart-card';
-  card.innerHTML = `
-    <header class="chart-title">${escapeHtml(title)}</header>
-    <p class="chart-sub">${escapeHtml(subtitle)}</p>
-    <div data-role="plot" class="cmhc-plot"></div>
-    <p class="text-xs text-neutral-500 mt-2 max-w-prose">${escapeHtml(note)}</p>
-    <div class="chart-caption">
-      <span class="chart-caption-left"></span>
-      <span class="chart-source">Source: MHBA Parade of Homes magazine listings (automated extraction).</span>
-    </div>
-    <div class="chart-actions flex gap-3">
-      <button type="button" data-role="dl-png">Download PNG</button>
-    </div>`;
-  ui.$grid.appendChild(card);
-  const $plot = card.querySelector('[data-role="plot"]');
-  if (!rows.length) {
-    $plot.innerHTML = '<p class="text-sm text-neutral-500 px-2">No data in the selected years.</p>';
-  } else {
-    const range = categories.map((_, i) => PALETTE[i % PALETTE.length]);
-    const maxV = Math.max(...rows.map(r => r.value));
-    const minV = Math.min(...rows.map(r => r.value));
-    const pad = Math.max((maxV - minV) * 0.08, maxV * 0.03);
-    $plot.appendChild(Plot.plot(themed({
-      height: 320, marginBottom: 36, marginLeft: 72, marginRight: 16,
-      x: { label: null, tickFormat: '%Y' },
-      y: { label: yLabel, grid: true, tickFormat: yFmt,
-           domain: [Math.max(0, minV - pad), maxV + pad] },
-      color: { domain: categories, range, legend: true },
-      marks: [
-        ...gridMarks(),
-        Plot.lineY(rows, { x: 'date', y: 'value', stroke: 'label', strokeWidth: 1.8,
-                           sort: { channel: 'x' } }),
-        Plot.dot(rows, { x: 'date', y: 'value', fill: 'label', r: 2.6,
-                         title: (d) => `${d.label} · ${d.date.getUTCFullYear()}: ${tooltipFmt(d.value, d)}${d.n ? ` (n = ${d.n})` : ''}` }),
-        frameMark(),
-      ],
-    })));
-  }
-  card.querySelector('[data-role="dl-png"]').onclick = () =>
-    downloadCard(card, `${id}_${new Date().toISOString().slice(0, 10)}.png`);
-  return card;
 }
