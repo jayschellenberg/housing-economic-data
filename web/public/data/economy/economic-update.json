@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "generated": "2026-10-13T20:11:45Z",
-  "dataAsOf": "2026-10-13",
+  "generated": "2026-10-19T10:34:47Z",
+  "dataAsOf": "2026-10-19",
   "intro": {
     "censusYear": 2021,
     "provincePopulation": 1342153,
@@ -51,31 +51,25 @@
       "stale": false
     },
     "manufacturing_sales": {
-      "value": 2379966000,
-      "changePct": -7.7,
-      "direction": "down",
-      "period": "July 2026",
+      "value": 2367167000,
+      "changePct": 0.3,
+      "direction": "up",
+      "period": "August 2026",
       "comparison": "month-to-month, seasonally adjusted",
       "source": "Statistics Canada",
       "stale": false
     },
     "wholesale_trade": {
-      "value": 3995838000,
-      "changePct": 2,
+      "value": 4295669000,
+      "changePct": 6.4,
       "direction": "up",
-      "period": "July 2026",
+      "period": "August 2026",
       "comparison": "month-to-month, seasonally adjusted",
       "source": "Statistics Canada",
       "stale": false
     },
     "cpi": {
-      "value": 172.1,
-      "changePct": 4.4,
-      "direction": "up",
-      "period": "August 2026",
-      "comparison": "year-over-year",
-      "source": "Statistics Canada",
-      "stale": false
+      "stale": true
     },
     "employment": {
       "value": 751700,
@@ -137,19 +131,13 @@
   },
   "housing": {
     "starts": {
-      "value": 5176,
-      "ytdChangePct": 20.9,
-      "direction": "up",
-      "period": "year-to-date to August 2026",
-      "comparison": "year-to-date change",
-      "source": "CMHC / Statistics Canada",
-      "stale": false
+      "stale": true
     },
     "building_permits": {
-      "value": 197615000,
-      "changePct": -17.6,
-      "direction": "down",
-      "period": "July 2026",
+      "value": 291052000,
+      "changePct": 35.2,
+      "direction": "up",
+      "period": "August 2026",
       "comparison": "month-to-month, seasonally adjusted",
       "source": "Statistics Canada",
       "stale": false
@@ -191,16 +179,16 @@
       "fiveYrAvg": 269656
     },
     "hpi": {
-      "benchmarkLatest": 413900,
-      "benchmarkLatestDate": "August 2026",
+      "benchmarkLatest": 413600,
+      "benchmarkLatestDate": "September 2026",
       "isRecordHigh": false,
       "peakValue": 425900,
       "peakDate": "June 2026",
-      "pctFromPeak": -2.8,
+      "pctFromPeak": -2.9,
       "recentLowValue": 345700,
       "recentLowDate": "December 2023",
-      "pctFromRecentLow": 19.7,
-      "fiveYrChangePct": 19.8
+      "pctFromRecentLow": 19.6,
+      "fiveYrChangePct": 19.7
     }
   },
   "outlook": {
@@ -637,8 +625,8 @@
           "units": "dollar",
           "geo": "Winnipeg",
           "frequency": "monthly",
-          "latestDate": "2026-08-01",
-          "latestValue": 413900
+          "latestDate": "2026-09-01",
+          "latestValue": 413600
         },
         {
           "id": "mls.hpi.calgary.sf",
@@ -646,8 +634,8 @@
           "units": "dollar",
           "geo": "Calgary",
           "frequency": "monthly",
-          "latestDate": "2026-08-01",
-          "latestValue": 683500
+          "latestDate": "2026-09-01",
+          "latestValue": 679600
         },
         {
           "id": "mls.hpi.edmonton.sf",
@@ -655,8 +643,8 @@
           "units": "dollar",
           "geo": "Edmonton",
           "frequency": "monthly",
-          "latestDate": "2026-08-01",
-          "latestValue": 506700
+          "latestDate": "2026-09-01",
+          "latestValue": 501900
         },
         {
           "id": "mls.hpi.saskatoon.sf",
@@ -664,8 +652,8 @@
           "units": "dollar",
           "geo": "Saskatoon",
           "frequency": "monthly",
-          "latestDate": "2026-08-01",
-          "latestValue": 516000
+          "latestDate": "2026-09-01",
+          "latestValue": 509700
         },
         {
           "id": "mls.hpi.regina.sf",
@@ -673,8 +661,8 @@
           "units": "dollar",
           "geo": "Regina",
           "frequency": "monthly",
-          "latestDate": "2026-08-01",
-          "latestValue": 376600
+          "latestDate": "2026-09-01",
+          "latestValue": 369600
         },
         {
           "id": "mls.hpi.vancouver.sf",
@@ -682,8 +670,8 @@
           "units": "dollar",
           "geo": "Vancouver",
           "frequency": "monthly",
-          "latestDate": "2026-08-01",
-          "latestValue": 1804900
+          "latestDate": "2026-09-01",
+          "latestValue": 1792900
         },
         {
           "id": "mls.hpi.victoria.sf",
@@ -691,8 +679,8 @@
           "units": "dollar",
           "geo": "Victoria",
           "frequency": "monthly",
-          "latestDate": "2026-08-01",
-          "latestValue": 1163100
+          "latestDate": "2026-09-01",
+          "latestValue": 1150300
         }
       ],
       "records": [
@@ -1997,6 +1985,11 @@
           "value": 413900
         },
         {
+          "id": "mls.hpi.winnipeg.sf",
+          "date": "2026-09-01",
+          "value": 413600
+        },
+        {
           "id": "mls.hpi.calgary.sf",
           "date": "2005-01-01",
           "value": 227500
@@ -3295,6 +3288,11 @@
           "id": "mls.hpi.calgary.sf",
           "date": "2026-08-01",
           "value": 683500
+        },
+        {
+          "id": "mls.hpi.calgary.sf",
+          "date": "2026-09-01",
+          "value": 679600
         },
         {
           "id": "mls.hpi.edmonton.sf",
@@ -4597,6 +4595,11 @@
           "value": 506700
         },
         {
+          "id": "mls.hpi.edmonton.sf",
+          "date": "2026-09-01",
+          "value": 501900
+        },
+        {
           "id": "mls.hpi.saskatoon.sf",
           "date": "2005-01-01",
           "value": 134100
@@ -5895,6 +5898,11 @@
           "id": "mls.hpi.saskatoon.sf",
           "date": "2026-08-01",
           "value": 516000
+        },
+        {
+          "id": "mls.hpi.saskatoon.sf",
+          "date": "2026-09-01",
+          "value": 509700
         },
         {
           "id": "mls.hpi.regina.sf",
@@ -7197,6 +7205,11 @@
           "value": 376600
         },
         {
+          "id": "mls.hpi.regina.sf",
+          "date": "2026-09-01",
+          "value": 369600
+        },
+        {
           "id": "mls.hpi.vancouver.sf",
           "date": "2005-01-01",
           "value": 533600
@@ -8497,6 +8510,11 @@
           "value": 1804900
         },
         {
+          "id": "mls.hpi.vancouver.sf",
+          "date": "2026-09-01",
+          "value": 1792900
+        },
+        {
           "id": "mls.hpi.victoria.sf",
           "date": "2005-01-01",
           "value": 371000
@@ -9795,6 +9813,11 @@
           "id": "mls.hpi.victoria.sf",
           "date": "2026-08-01",
           "value": 1163100
+        },
+        {
+          "id": "mls.hpi.victoria.sf",
+          "date": "2026-09-01",
+          "value": 1150300
         }
       ]
     }
