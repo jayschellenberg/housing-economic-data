@@ -45,6 +45,7 @@ const CSV_FILES = [
   'builder_activity.csv',
   'neighbourhood_comparison.csv',
   'builder_positioning.csv',
+  'feature_trends.csv',
 ];
 
 let ui = null;
@@ -119,10 +120,10 @@ async function loadDataset(scope, basis) {
   }));
   const [priceTrends, sizeTrends, psfByStyle, sizeByStyle,
          upgradeByYear, garageMix, indexCmp, styleMix, lotTrends,
-         keywordTrends, builderActivity, hoodCmp, builderPos] = parsers;
+         keywordTrends, builderActivity, hoodCmp, builderPos, featureTrends] = parsers;
   const ds = { priceTrends, sizeTrends, psfByStyle, sizeByStyle,
                upgradeByYear, garageMix, indexCmp, styleMix, lotTrends,
-               keywordTrends, builderActivity, hoodCmp, builderPos };
+               keywordTrends, builderActivity, hoodCmp, builderPos, featureTrends };
   ui.datasets.set(key, ds);
   return ds;
 }
@@ -350,6 +351,36 @@ async function render() {
       series: [{ id: key, label: scopeLabel, units, frequency: 'annual',
                  points: rows.map(r => [`${r.year}-01-01`, r[key]]) }],
       singleSeriesInSubtitle: true,
+    });
+  }
+
+  // Garage and finished-basement shares, annual.
+  {
+    const rows = ds.featureTrends.filter(inRange);
+    const latest = rows[rows.length - 1];
+    addCard({
+      chartId: 'parade_features',
+      title: 'Garage and finished basement',
+      subtitle: scopeLabel,
+      description: 'Share of listings with a garage, and with a finished basement, among listings matched to a ' +
+        'built City of Winnipeg assessment record (a feature counts when the listing names it or the roll shows ' +
+        'it). Listings on still-vacant parcels, unmatched and rural listings are left out rather than counted ' +
+        'as "no", so the latest year rests on fewer listings' +
+        (latest ? ` (${latest.year}: ${latest.n_finish_known} of ${latest.n})` : '') +
+        '. Nearly every listing has a basement, so that share is not charted.',
+      sources: [
+        { citation: 'MHBA Parade of Homes magazine listings (automated extraction with QA review)' },
+        { citation: 'City of Winnipeg assessment parcels (garage, basement finish)' },
+      ],
+      sourceLabel: 'MHBA Parade of Homes; City of Winnipeg assessment',
+      series: [
+        { id: 'garage', label: 'Garage', key: 'pct_garage' },
+        { id: 'finished', label: 'Finished basement', key: 'pct_finished_basement' },
+      ].map(({ id, label, key }) => ({
+        id, label, units: 'percent', frequency: 'annual',
+        points: rows.map(r => [`${r.year}-01-01`, finite(r[key]) ? r[key] * 100 : null]),
+      })),
+      annualized: false,
     });
   }
 
