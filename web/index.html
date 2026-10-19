@@ -77,25 +77,19 @@
           <button type="button" id="tab-btn-parade" class="cmhc-menu-item" data-tab="parade">Parade of Homes</button>
         </div>
       </div>
-      <div class="cmhc-menu">
-        <button type="button" class="cmhc-menu-trigger" aria-expanded="false" aria-controls="menu-economy">
-          <span class="cmhc-menu-label">Economy &amp; People</span><span class="cmhc-menu-current"></span>
-        </button>
-        <div id="menu-economy" class="cmhc-menu-panel" hidden>
-          <button type="button" id="tab-btn-census" class="cmhc-menu-item" data-tab="census">Census Profile</button>
-          <button type="button" id="tab-btn-snapshot" class="cmhc-menu-item" data-tab="snapshot">Current Snapshot</button>
-          <button type="button" id="tab-btn-indicators" class="cmhc-menu-item" data-tab="indicators">Market Indicators</button>
-          <button type="button" id="tab-btn-agriculture" class="cmhc-menu-item" data-tab="agriculture">Agriculture</button>
-          <!-- MB Economic Update — hidden again 2026-08 (previously hidden 2026-06,
-               revived 2026-07). PARKED, NOT REMOVED: the tab panel below,
-               economic-update.js, and the r/15 + r/16 pipeline are all intact and
-               the scheduled workflows keep refreshing its data, so the narrative
-               stays current while it is out of the nav. It remains reachable at
-               #economic for anyone with the link. Delete `hidden` to bring it back.
-               Flagged for future build-out — see README "Parked features". -->
-          <button type="button" id="tab-btn-economic" class="cmhc-menu-item" data-tab="economic" hidden>MB Economic Update</button>
-        </div>
-      </div>
+      <!-- Economy & People tabs sit on the bar itself (no menu). -->
+      <button type="button" id="tab-btn-census" class="cmhc-tab" data-tab="census">Community Census Profile</button>
+      <button type="button" id="tab-btn-snapshot" class="cmhc-tab" data-tab="snapshot">Current Snapshot</button>
+      <button type="button" id="tab-btn-indicators" class="cmhc-tab" data-tab="indicators">Market Indicators</button>
+      <button type="button" id="tab-btn-agriculture" class="cmhc-tab" data-tab="agriculture">Agriculture</button>
+      <!-- MB Economic Update — hidden again 2026-08 (previously hidden 2026-06,
+           revived 2026-07). PARKED, NOT REMOVED: the tab panel below,
+           economic-update.js, and the r/15 + r/16 pipeline are all intact and
+           the scheduled workflows keep refreshing its data, so the narrative
+           stays current while it is out of the nav. It remains reachable at
+           #economic for anyone with the link. Delete `hidden` to bring it back.
+           Flagged for future build-out — see README "Parked features". -->
+      <button type="button" id="tab-btn-economic" class="cmhc-tab" data-tab="economic" hidden>MB Economic Update</button>
     </nav>
     <!-- Local Data group: tabs that read the viewer's own files. Shown in
          place of the housing bar while one of its tabs is active. -->
@@ -748,7 +742,7 @@
          (r/12_census_profile.R, pre-built).
          ============================================================ -->
     <div id="tab-panel-census" class="grid md:grid-cols-[320px_1fr] min-h-[calc(100vh-110px)]" role="tabpanel" aria-labelledby="tab-btn-census" hidden>
-      <aside class="bg-white border-r border-neutral-200 p-4 space-y-4 overflow-y-auto" aria-label="Census Profile filters">
+      <aside class="bg-white border-r border-neutral-200 p-4 space-y-4 overflow-y-auto" aria-label="Community Census Profile filters">
         <section>
           <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Census period</h2>
           <select id="census-period" class="w-full border border-neutral-300 rounded px-2 py-1 text-sm">
@@ -2228,7 +2222,7 @@
         Use or reproduction of any CMHC data shown here is subject to the
         <a class="underline" href="https://www.cmhc-schl.gc.ca/professionals/housing-markets-data-and-research/housing-data/cmhc-licence-agreement-use-of-data" rel="noopener" target="_blank">CMHC Licence Agreement for the Use of Data</a>,
         including its attribution requirements. This product is not affiliated with or endorsed by CMHC.
-        Census of Population data (Housing Stock, Census Profile and Affordability tabs) is from Statistics Canada, retrieved via the
+        Census of Population data (Housing Stock, Community Census Profile and Affordability tabs) is from Statistics Canada, retrieved via the
         <a class="underline" href="https://github.com/mountainMath/cancensus" rel="noopener" target="_blank">cancensus</a> R package / CensusMapper and StatsCan census tables.
         Market Indicators and the MB Economic Update also draw on the
         <a class="underline" href="https://www.bankofcanada.ca/valet/docs" rel="noopener" target="_blank">Bank of Canada Valet API</a>, the

@@ -1,6 +1,6 @@
 /*
  * nav-menus.js — the category menus that hold each group's tabs (Rental /
- * Housing / Economy & People; Multifamily / Commercial).
+ * Housing; Multifamily / Commercial). Economy & People tabs sit on the bar.
  *
  * A menu is a disclosure: its trigger button shows and hides a panel of the
  * group's ordinary tab buttons (tab-btn-*), which setupTabs in main.js still
