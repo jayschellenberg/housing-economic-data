@@ -494,6 +494,10 @@ function renderSources($box, sources, bare) {
   $box.appendChild(ul);
 }
 
+// Lines the user switched off, per chartId, for this page visit (see
+// `toggleLegend` in buildIndicatorCard).
+const HIDDEN_BY_CHART = new Map();
+
 /**
  * Build an indicator chart panel and append it to `container`.
  * Returns { render(records, seriesMeta[]) }.
@@ -535,13 +539,15 @@ export function buildIndicatorCard(container, {
   // Series line width in CSS px. Cap vs Interest draws heavier lines, like
   // the reference appraisal chart it reproduces.
   lineWidth = 2.4,
-  // `toggleLegend`: each legend entry switches its line off and on (shift- or
-  // ctrl-click shows that line alone). An off line keeps its colour and its
-  // legend slot, greyed, but leaves the plot, the y axis, the tip and the data
-  // table, and its entry is dropped from the PNG. `hiddenSeries` (ids) is the
-  // starting set; `onLegendToggle(ids)` hears every change, so a tab that
-  // rebuilds its cards can carry the choice across.
-  toggleLegend = false, hiddenSeries = [], onLegendToggle = null,
+  // `toggleLegend` (on for every card): each legend entry switches its line
+  // off and on (shift- or ctrl-click shows that line alone). An off line keeps
+  // its colour and its legend slot, greyed, but leaves the plot, the y axis,
+  // the tip and the data table, and its entry is dropped from the PNG.
+  // `hiddenSeries` (ids) is the starting set and `onLegendToggle(ids)` hears
+  // every change, for a tab that saves the choice (Parade of Homes). Without
+  // them the choice is kept per chartId for the page visit, so a tab that
+  // rebuilds its cards on a filter change keeps the lines the user turned off.
+  toggleLegend = true, hiddenSeries = null, onLegendToggle = null,
 }) {
   const card = document.createElement('section');
   card.className = 'chart-card cmhc-indicator-card';
@@ -994,8 +1000,9 @@ export function buildIndicatorCard(container, {
     // A "Group · Row" label keeps only the row there ("Total Suburban").
     // A toggleable card with more than one series keeps its legend, so a line
     // switched off can be switched back on.
+    const seriesWithData = new Set(rows.map(r => r.id));
     const singleLabel = opts.singleSeriesInSubtitle && plottedLabels.size === 1 && !refBand && !refLine
-      && (!toggleLegend || seriesMeta.length === 1)
+      && (!toggleLegend || seriesMeta.filter(s => hidden.has(s.id) || seriesWithData.has(s.id)).length === 1)
       ? String([...plottedLabels][0]).split(' · ').pop() : null;
 
     const wrap = document.createElement('div');
@@ -1111,10 +1118,11 @@ export function buildIndicatorCard(container, {
   // everything else about it is unchanged.
   let lastRender = null;
 
-  const hidden = new Set(hiddenSeries || []);
+  const hidden = new Set(hiddenSeries || HIDDEN_BY_CHART.get(chartId) || []);
   function setHidden(ids, focusId = null) {
     hidden.clear();
     ids.forEach(id => hidden.add(id));
+    HIDDEN_BY_CHART.set(chartId, [...hidden]);
     onLegendToggle?.([...hidden]);
     if (lastRender) draw(...lastRender);
     if (focusId) card.querySelector(`[data-series-id="${CSS.escape(focusId)}"]`)?.focus();

@@ -19,7 +19,7 @@ $Dst  = Join-Path $Repo 'web\public\parade'
 
 $Scopes = @('winnipeg_nominal', 'winnipeg_real', 'all_nominal', 'all_real')
 
-$Flat = @('price_trends.csv', 'size_trends.csv', 'style_mix.csv', 'keyword_trends.csv', 'builder_activity.csv')
+$Flat = @('price_trends.csv', 'size_trends.csv', 'style_mix.csv', 'keyword_trends.csv', 'builder_activity.csv', 'feature_trends.csv')
 $Appraiser = @(
     'psf_by_style_year.csv',
     'size_by_style_year.csv',
@@ -72,7 +72,8 @@ $manifest = [ordered]@{
         'keyword_trends.csv',
         'builder_activity.csv',
         'neighbourhood_comparison.csv',
-        'builder_positioning.csv'
+        'builder_positioning.csv',
+        'feature_trends.csv'
     )
     source          = 'MHBA Parade of Homes magazine listings (2012-present); automated extraction with QA review.'
     disclosure      = 'Prices are listing-reported house-only prices (land excluded), shown excluding GST (net GST removed by estimate for 2012-2016 issues); they may vary by development charge and option inclusion. For market commentary only; not an appraisal or value opinion.'
