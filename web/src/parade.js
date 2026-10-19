@@ -644,6 +644,9 @@ async function render() {
       sources: sources || [{ citation: 'MHBA Parade of Homes magazine listings, Spring and Fall issues (automated extraction with QA review)' }],
       table: true,
       zeroBased: true,
+      mirrorY: false,
+      // $/sq ft ticks in whole dollars; tooltips and the table keep cents.
+      axisFormat: { dollar_psf: (v) => `$${Math.round(v).toLocaleString()}` },
       xLabel: 'Year',
       toggleLegend: true,
       hiddenSeries: hiddenPref,

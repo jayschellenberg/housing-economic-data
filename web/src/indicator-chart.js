@@ -525,7 +525,10 @@ export function buildIndicatorCard(container, {
   //   captionPt 10                — caption size in the exported PNG, in
   //                                 points at 300 DPI (else the export CSS's)
   //   xLabel    'Year'            — x-axis title (default "Date")
-  refBand, refLine, table, zeroBased = false, mirrorY = true, sourceInCaption = false,
+  //   axisFormat { units: fn }    — y-axis tick format for a units key, in
+  //                                 place of the value formatter (Parade's
+  //                                 $/sq ft ticks drop the cents)
+  refBand, refLine, table, zeroBased = false, mirrorY = true, sourceInCaption = false, axisFormat = null,
   signed = true, captionPt = null, xLabel = 'Date',
   // `sourceLabel` names the publisher — "Statistics Canada", "Bank of Canada
   // & Colliers Average Cap Rates (CR)". It is appended to the SUBTITLE, not
@@ -810,7 +813,7 @@ export function buildIndicatorCard(container, {
     const yTickFormat = isPercentAxis ? percentTickFormat(yDomain)
                       : isSfAxis      ? sfTickFormat(yDomain)
                       : isPersonsAxis ? personsTickFormat(yDomain)
-                      : yFormatter;
+                      : axisFormat?.[seriesMeta[0]?.units] || yFormatter;
 
     // Percent ticks ("9%") are much narrower than the "$1,500"-width labels the
     // shared 86px left margin is sized for, and the mirrored right axis needs
