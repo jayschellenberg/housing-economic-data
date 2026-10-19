@@ -852,7 +852,7 @@ function wireSidebar(catalog, manifest) {
     );
     // Synthetic "Top" entry first so the user can hop back up.
     const topLi = document.createElement('li');
-    topLi.innerHTML = `<a href="#" data-jump="top" class="cmhc-mi-jump-link">↑ Current Snapshot</a>`;
+    topLi.innerHTML = `<a href="#" data-jump="top" class="cmhc-mi-jump-link">↑ Current Economic Snapshot</a>`;
     $jumpList.appendChild(topLi);
 
     Object.entries(catalog.displayGroups || {})
