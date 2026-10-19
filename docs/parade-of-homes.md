@@ -21,10 +21,15 @@ Nothing in this repo generates the Parade data. To pick up a new issue:
    lives elsewhere.
 3. Commit the updated `web/public/parade/` files and deploy as usual.
 
-The script copies seven CSVs per scope × basis
+The script copies nine CSVs per scope × basis
 (`winnipeg_nominal`, `winnipeg_real`, `all_nominal`, `all_real`) and
 rewrites `web/public/parade/MANIFEST.json` with the new build date and the
 latest Parade issue label.
+
+Re-run the copy script after **every** pipeline run, including re-extractions
+of old issues. The October 2026 spike in median home size (Spring 2022 reading
+2,082 sq ft) came from a snapshot copied before a fuller re-extraction:
+2021–22 issues then had only 25–30 Winnipeg listings each, against 62–77 after.
 
 ## Files shipped
 
@@ -32,13 +37,18 @@ Per scope × basis folder:
 
 | File | What it feeds |
 | --- | --- |
-| `price_trends.csv` | Median base price + median home-size cards (one point per Spring / Fall issue). |
-| `size_trends.csv` | Reserved for a future style-level size chart; included so the snapshot matches the pipeline. |
+| `price_trends.csv` | Median base / selling price, selling-price range (p25 / median / p75 / mean), median home size, listings per issue (one point per Spring / Fall issue). |
+| `size_trends.csv` | Not charted (broad-style sizes; `size_by_style_year.csv` is used instead). |
+| `style_mix.csv` | Style mix of listings (share by style, annual). |
 | `psf_by_style_year.csv` | $/sq ft by style (annual median per style group). |
-| `size_by_style_year.csv` | Reserved; same as above for sq ft by style. |
-| `upgrade_by_year.csv` | Median upgrade spend card. |
-| `garage_mix.csv` | Reserved; aggregates garage shares by era, not yet charted on the tab. |
-| `index_comparison.csv` | Parade price index vs CPI card (rebased, one line per series). |
+| `size_by_style_year.csv` | Median home size by style. |
+| `upgrade_by_year.csv` | Median upgrade spend; share with no upgrades and median upgrade % when upgraded. |
+| `lot_trends.csv` | Median lot size and lot frontage (assessment-matched parcels). |
+| `garage_mix.csv` | Not charted yet (garage shares by era). |
+| `index_comparison.csv` | Parade price index vs CPI, NHPI and BCPI (rebased, one line per series). |
+
+Every chart's legend entries switch their line off and on (shift-click shows
+one line alone); the choice is remembered per chart in the browser.
 
 ## Disclosure on charts
 
