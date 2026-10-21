@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   quarterKey, quarterList, typesPresent, subtypesFor, firmsFor, rowsUpTo, averageByClass, byFirm,
   rangeSeries, quarterTable, toCardInput, AVERAGE, breakGaps, nextQuarterEnd, averageByFirm, defaultYearFrom,
-  splitOfficeByLocation, collapseClasses, officeTotalsTable, officeByClassTable, previousQuarter, firmLabel, carriedNote,
+  splitOfficeByLocation, collapseClasses, officeTotalsTable, officeByClassTable, combineTypes, previousQuarter, firmLabel, carriedNote,
 } from '../src/cap-rates-data.js';
 
 const row = (quarter, firm, type, subtype, low, high) => ({
@@ -270,5 +270,19 @@ describe('officeByClassTable', () => {
   });
   it('is null when neither market has figures', () => {
     expect(officeByClassTable(rows, '2020 Q1')).toBeNull();
+  });
+});
+
+describe('combineTypes', () => {
+  it('relabels downtown and suburban office as one Office series', () => {
+    const rows = splitOfficeByLocation([
+      row('2026 Q3', 'CBRE', 'Office', 'Downtown Class A', 0.07, 0.08),
+      row('2026 Q3', 'CBRE', 'Office', 'Suburban Class B', 0.0725, 0.0825),
+      row('2026 Q3', 'CBRE', 'Industrial', 'Class A', 0.06, 0.065),
+    ]);
+    const office = combineTypes(rows, ['Downtown Office', 'Suburban Office'], 'Office');
+    expect(office.map(r => r.type)).toEqual(['Office', 'Office']);
+    // mids 7.5 and 7.75 -> 7.63
+    expect(averageByFirm(office, 'Office')).toEqual([{ line: 'CBRE', date: '2026-09-30', value: 7.63 }]);
   });
 });

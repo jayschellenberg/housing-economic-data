@@ -22,7 +22,7 @@ import { buildJumpBar } from './jump-bar.js';
 import {
   TYPE_ORDER, FIRM_ORDER, quarterList, typesPresent, rowsUpTo, splitOfficeByLocation,
   officeTotalsTable, officeByClassTable,
-  averageByFirm, quarterTable, toCardInput, fmtRate, defaultYearFrom, firmLabel, carriedNote,
+  averageByFirm, combineTypes, quarterTable, toCardInput, fmtRate, defaultYearFrom, firmLabel, carriedNote,
 } from './cap-rates-data.js';
 import {
   storeAvailable, fsAccessSupported, pickDirectory, getSavedDirectory, directoryPermission,
@@ -325,80 +325,83 @@ function renderCharts() {
   const on = enabledTypes();
   const drawnSections = [];
 
-  // The combined office table goes after the last office section drawn.
-  const officeTypes = typesPresent(rows).filter(t => (t === 'Downtown Office' || t === 'Suburban Office') && on.has(t));
-  const lastOffice = officeTypes[officeTypes.length - 1];
+  // An overall Office section (chart + the two combined tables) goes just
+  // before the first Downtown / Suburban office section, i.e. after Retail
+  // (Jason, 2026-10-21).
+  const OFFICE_TYPES = ['Downtown Office', 'Suburban Office'];
+  let officeDrawn = false;
+
+  const newSection = (id, heading) => {
+    const section = document.createElement('section');
+    section.className = 'cmhc-mi-section';
+    section.id = id;
+    section.innerHTML = `<h2 class="cmhc-mi-section-title"></h2><div class="grid md:grid-cols-2 gap-4 items-start" data-role="cards"></div>`;
+    section.querySelector('h2').textContent = heading;
+    return [section, section.querySelector('[data-role="cards"]')];
+  };
+  // Overall average by firm: the Excel chart, one line per brokerage, each
+  // the mean of its published class mid-points that quarter.
+  const firmsChart = ($cards, id, label, points, description) => {
+    const input = toCardInput(id, points, { lineOrder: FIRM_ORDER });
+    const card = buildIndicatorCard($cards, {
+      chartId: id, fileStem: id, title: `Winnipeg ${label} Cap Rates`, sourceLabel: SOURCE, table: true, zeroBased: true,
+      // "Source: …" alone, bottom-right of the caption and out of the
+      // subtitle; no company name on any Cap Rates figure — they reproduce
+      // the brokerages' published figures (Jason, 2026-09-30). 10 pt in print.
+      sourceInCaption: true, signed: false, captionPt: 10,
+      // Left-hand y axis only — no mirrored labels on the right.
+      mirrorY: false,
+      description: description + ' ' + note(),
+    });
+    // The subtitle is just the range, "March 2021 to June 2026" (in the
+    // title it ran too long for a December end); the caption names the
+    // brokerages (Jason, 2026-09-30).
+    card.render(input.records, input.seriesMeta, {
+      rangeSubtitle: 'month', monthFrom,
+      seriesColours: Object.fromEntries(input.seriesMeta.map(m => [m.id, FIRM_COLOURS[m.chartLabel]]).filter(([, c]) => c)),
+    });
+    card.setOpenPanels(open.get(id) || []);
+    ui.cards.set(id, { card: card.card });
+  };
+  const tableCard = ($cards, id, title, subtitle, table) => {
+    const card = buildTableCard($cards, { id, title, subtitle, table, quarter });
+    ui.cards.set(id, { card: card.card });
+  };
 
   for (const type of typesPresent(rows)) {
     if (!on.has(type)) continue;
 
-    const section = document.createElement('section');
-    section.className = 'cmhc-mi-section';
-    section.id = `cr-section-${slug(type)}`;
-    section.innerHTML = `<h2 class="cmhc-mi-section-title"></h2><div class="grid md:grid-cols-2 gap-4 items-start" data-role="cards"></div>`;
-    section.querySelector('h2').textContent = type;
-    const $cards = section.querySelector('[data-role="cards"]');
+    if (OFFICE_TYPES.includes(type) && !officeDrawn) {
+      officeDrawn = true;
+      const [section, $cards] = newSection('cr-section-office-all', 'Office');
+      firmsChart($cards, 'caprate_office_firms', 'Office', averageByFirm(combineTypes(rows, OFFICE_TYPES, 'Office'), 'Office'),
+        'Each brokerage’s overall office cap rate: the mean of the mid-points of every downtown and suburban class it publishes that quarter.');
+      // Every office cap rate in one table, a Downtown and a Suburban column
+      // pair (Jason, 2026-09-30)…
+      const office = officeTotalsTable(rows, quarter);
+      if (office) {
+        tableCard($cards, 'caprate_office_table', `Winnipeg Office Cap Rates — ${quarter}`,
+          'Downtown and Suburban: average of each brokerage’s published class ranges', office);
+      }
+      // …and the same by class: the workbook's office table, Downtown and
+      // Suburban over Class A / Class B over Low / High.
+      const officeClasses = officeByClassTable(rows, quarter);
+      if (officeClasses) {
+        tableCard($cards, 'caprate_office_classes_table', `Winnipeg Office Cap Rates by Class — ${quarter}`,
+          'Downtown and Suburban: published Low–High range by brokerage and class', officeClasses);
+      }
+      $grid.appendChild(section);
+      drawnSections.push({ id: section.id, label: 'Office' });
+    }
 
-    // 1. Overall average by firm: the Excel chart, one line per brokerage,
-    //    each the mean of its published class mid-points that quarter.
-    {
-      const id = `caprate_${slug(type)}_firms`;
-      const input = toCardInput(id, averageByFirm(rows, type), { lineOrder: FIRM_ORDER });
-      const card = buildIndicatorCard($cards, {
-        chartId: id, fileStem: id, title: `Winnipeg ${type} Cap Rates`, sourceLabel: SOURCE, table: true, zeroBased: true,
-        // "Source: …" alone, bottom-right of the caption and out of the
-        // subtitle; no company name on any Cap Rates figure — they reproduce
-        // the brokerages' published figures (Jason, 2026-09-30). 10 pt in print.
-        sourceInCaption: true, signed: false, captionPt: 10,
-        // Left-hand y axis only — no mirrored labels on the right.
-        mirrorY: false,
-        description: `Each brokerage's overall ${type.toLowerCase()} cap rate: the mean of the mid-points of every class it publishes for the type that quarter. ` + note(),
-      });
-      // The subtitle is just the range, "March 2021 to June 2026" (in the
-      // title it ran too long for a December end); the caption names the
-      // brokerages (Jason, 2026-09-30).
-      card.render(input.records, input.seriesMeta, {
-        rangeSubtitle: 'month', monthFrom,
-        seriesColours: Object.fromEntries(input.seriesMeta.map(m => [m.id, FIRM_COLOURS[m.chartLabel]]).filter(([, c]) => c)),
-      });
-      card.setOpenPanels(open.get(id) || []);
-      ui.cards.set(id, { card: card.card });
-    }
-    // 2. The quarter's table, a Low / High pair per class. Downtown and
-    //    Suburban office too: by class, not one all-class range (Jason,
-    //    2026-10-21 — the totals live on in the combined Office table).
-    {
-      const id = `caprate_${slug(type)}_table`;
-      const table = quarterTable(rows, type, quarter);
-      const card = buildTableCard($cards, {
-        id, title: `Winnipeg ${type} Cap Rates — ${quarter}`, subtitle: 'Published Low–High range by brokerage', table, quarter,
-      });
-      ui.cards.set(id, { card: card.card });
-    }
-    // 3. After the office sections: every office cap rate in one table, a
-    //    Downtown and a Suburban column pair (Jason, 2026-09-30).
-    const office = type === lastOffice ? officeTotalsTable(rows, quarter) : null;
-    if (office) {
-      const id = 'caprate_office_table';
-      const card = buildTableCard($cards, {
-        id, title: `Winnipeg Office Cap Rates — ${quarter}`,
-        subtitle: 'Downtown and Suburban: average of each brokerage\'s published class ranges',
-        table: office, quarter,
-      });
-      ui.cards.set(id, { card: card.card });
-    }
-    // 3b. …and the same by class: the workbook's office table, Downtown and
-    //     Suburban over Class A / Class B over Low / High.
-    const officeClasses = type === lastOffice ? officeByClassTable(rows, quarter) : null;
-    if (officeClasses) {
-      const id = 'caprate_office_classes_table';
-      const card = buildTableCard($cards, {
-        id, title: `Winnipeg Office Cap Rates by Class — ${quarter}`,
-        subtitle: 'Downtown and Suburban: published Low–High range by brokerage and class',
-        table: officeClasses, quarter,
-      });
-      ui.cards.set(id, { card: card.card });
-    }
+    const [section, $cards] = newSection(`cr-section-${slug(type)}`, type);
+    firmsChart($cards, `caprate_${slug(type)}_firms`, type, averageByFirm(rows, type),
+      `Each brokerage's overall ${type.toLowerCase()} cap rate: the mean of the mid-points of every class it publishes for the type that quarter.`);
+    // The quarter's table, a Low / High pair per class. Downtown and Suburban
+    // office too: by class, not one all-class range (Jason, 2026-10-21 — the
+    // totals live on in the Office section's table).
+    tableCard($cards, `caprate_${slug(type)}_table`, `Winnipeg ${type} Cap Rates — ${quarter}`,
+      'Published Low–High range by brokerage', quarterTable(rows, type, quarter));
     $grid.appendChild(section);
     drawnSections.push({ id: section.id, label: type });
   }
@@ -571,15 +574,19 @@ async function exportData() {
   const on = enabledTypes();
 
   const sheets = [];
+  let officeDone = false;
   for (const type of typesPresent(rows)) {
     if (!on.has(type)) continue;
-    sheets.push([type, quarterTable(rows, type, quarter)]);
-    if (type === 'Suburban Office' || (type === 'Downtown Office' && !on.has('Suburban Office'))) {
+    // The combined Office sheets come first, as the Office section does on
+    // the page.
+    if ((type === 'Downtown Office' || type === 'Suburban Office') && !officeDone) {
+      officeDone = true;
       const office = officeTotalsTable(rows, quarter);
       if (office) sheets.push(['Office', office]);
       const officeClasses = officeByClassTable(rows, quarter);
       if (officeClasses) sheets.push(['Office by class', officeClasses, `Winnipeg Office Cap Rates by Class — ${quarter}`]);
     }
+    sheets.push([type, quarterTable(rows, type, quarter)]);
   }
   // Excel percentages: store the fraction (0.065) and format it as 6.50%.
   // The tables hold percent units (6.5), the raw rows fractions (0.065).
