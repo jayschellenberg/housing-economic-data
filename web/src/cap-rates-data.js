@@ -116,6 +116,15 @@ export function averageByClass(rows, type) {
 }
 
 /**
+ * Rows of several types relabelled as one ("Downtown Office" + "Suburban
+ * Office" → "Office"), for an all-office series. Other rows are dropped.
+ */
+export function combineTypes(rows, types, as) {
+  const set = new Set(types);
+  return rows.filter(r => set.has(r.type)).map(r => ({ ...r, type: as }));
+}
+
+/**
  * { line: firm, date, value } — each firm's overall cap rate for a property
  * type: the mean of ITS published class mid-points that quarter (Industrial
  * = Class A and B together; Office = all four classes), in percent. The
