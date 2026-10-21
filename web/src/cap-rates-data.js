@@ -293,6 +293,45 @@ export function officeTotalsTable(rows, quarter) {
   };
 }
 
+/**
+ * All office cap rates by class in one quarter table, the workbook's layout:
+ * Downtown and Suburban across the top, Class A / Class B under each, Low /
+ * High under those. Columns are keyed "Downtown Class A" etc.; `groups` gives
+ * the top header row and `labels` the class names shown under it. Carries a
+ * late brokerage forward like quarterTable. Null when neither market has
+ * figures that quarter. Reads split rows (splitOfficeByLocation).
+ */
+export function officeByClassTable(rows, quarter) {
+  const parts = [['Downtown', 'Downtown Office'], ['Suburban', 'Suburban Office']]
+    .map(([label, type]) => [label, quarterTable(rows, type, quarter)])
+    .filter(([, t]) => t.subtypes.length);
+  if (!parts.length) return null;
+  const key = (label, sub) => `${label} ${sub}`;
+  const firms = orderBy([...new Set(parts.flatMap(([, t]) => t.firms))], FIRM_ORDER);
+  const cells = {};
+  const average = {};
+  const labels = {};
+  for (const [label, t] of parts) {
+    for (const sub of t.subtypes) {
+      const k = key(label, sub);
+      labels[k] = sub;
+      average[k] = t.average[sub];
+      for (const f of firms) {
+        if (t.cells[f]?.[sub]) (cells[f] ||= {})[k] = t.cells[f][sub];
+      }
+    }
+  }
+  return {
+    subtypes: parts.flatMap(([label, t]) => t.subtypes.map(sub => key(label, sub))),
+    groups: parts.map(([label, t]) => ({ label, span: t.subtypes.length })),
+    labels,
+    firms,
+    cells,
+    average,
+    carried: Object.assign({}, ...parts.map(([, t]) => t.carried)),
+  };
+}
+
 /** The quarter-end date that follows an ISO date. */
 export function nextQuarterEnd(iso) {
   const [y, m] = String(iso).split('-').map(Number);

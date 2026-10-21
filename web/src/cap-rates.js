@@ -21,7 +21,7 @@ import { getPref, setPref } from './prefs.js';
 import { buildJumpBar } from './jump-bar.js';
 import {
   TYPE_ORDER, FIRM_ORDER, quarterList, typesPresent, rowsUpTo, splitOfficeByLocation,
-  TOTAL_ONLY_TYPES, collapseClasses, officeTotalsTable,
+  TOTAL_ONLY_TYPES, collapseClasses, officeTotalsTable, officeByClassTable,
   averageByFirm, quarterTable, toCardInput, fmtRate, defaultYearFrom, firmLabel, carriedNote,
 } from './cap-rates-data.js';
 import {
@@ -374,6 +374,19 @@ function renderCharts() {
       const card = buildTableCard($cards, { id, title: `Winnipeg ${type} Cap Rates — ${quarter}`, subtitle, table, quarter });
       ui.cards.set(id, { card: card.card });
     }
+    // 2b. Downtown / Suburban office also by class, Class A / Class B column
+    //     pairs, beside the totals table (Jason, 2026-10-21: both layouts).
+    if (TOTAL_ONLY_TYPES.has(type)) {
+      const id = `caprate_${slug(type)}_classes_table`;
+      const table = quarterTable(rows, type, quarter);
+      if (table.subtypes.length) {
+        const card = buildTableCard($cards, {
+          id, title: `Winnipeg ${type} Cap Rates by Class — ${quarter}`,
+          subtitle: 'Published Low–High range by brokerage and class', table, quarter,
+        });
+        ui.cards.set(id, { card: card.card });
+      }
+    }
     // 3. After the office sections: every office cap rate in one table, a
     //    Downtown and a Suburban column pair (Jason, 2026-09-30).
     const office = type === lastOffice ? officeTotalsTable(rows, quarter) : null;
@@ -383,6 +396,18 @@ function renderCharts() {
         id, title: `Winnipeg Office Cap Rates — ${quarter}`,
         subtitle: 'Downtown and Suburban: average of each brokerage\'s published class ranges',
         table: office, quarter,
+      });
+      ui.cards.set(id, { card: card.card });
+    }
+    // 3b. …and the same by class: the workbook's office table, Downtown and
+    //     Suburban over Class A / Class B over Low / High.
+    const officeClasses = type === lastOffice ? officeByClassTable(rows, quarter) : null;
+    if (officeClasses) {
+      const id = 'caprate_office_classes_table';
+      const card = buildTableCard($cards, {
+        id, title: `Winnipeg Office Cap Rates by Class — ${quarter}`,
+        subtitle: 'Downtown and Suburban: published Low–High range by brokerage and class',
+        table: officeClasses, quarter,
       });
       ui.cards.set(id, { card: card.card });
     }
@@ -416,9 +441,16 @@ function buildTableCard(container, { id, title, subtitle, table, quarter }) {
   const card = document.createElement('section');
   card.className = 'chart-card cmhc-indicator-card';
   card.dataset.chartId = id;
-  const { subtypes, firms, cells, average } = table;
-  const head1 = subtypes.map(s => `<th colspan="2">${escapeHtml(s)}</th>`).join('');
+  const { subtypes, firms, cells, average, groups } = table;
+  const label = (s) => table.labels?.[s] ?? s;
+  // A grouped table (office by class) has a third header row on top:
+  // Downtown / Suburban over the classes.
+  const head0 = groups ? groups.map(g => `<th colspan="${2 * g.span}">${escapeHtml(g.label)}</th>`).join('') : '';
+  const head1 = subtypes.map(s => `<th colspan="2">${escapeHtml(label(s))}</th>`).join('');
   const head2 = subtypes.map(() => '<th>Low</th><th>High</th>').join('');
+  const thead = groups
+    ? `<tr><th rowspan="3">Source</th>${head0}</tr><tr>${head1}</tr><tr>${head2}</tr>`
+    : `<tr><th rowspan="2">Source</th>${head1}</tr><tr>${head2}</tr>`;
   const body = firms.map(f => `<tr><td>${escapeHtml(firmLabel(table, f))}</td>${subtypes.map(s => {
     const c = cells[f]?.[s];
     return `<td>${fmtRate(c?.low)}</td><td>${fmtRate(c?.high)}</td>`;
@@ -433,7 +465,7 @@ function buildTableCard(container, { id, title, subtitle, table, quarter }) {
     <header class="chart-title">${escapeHtml(title)}</header>
     <p class="chart-sub">${escapeHtml(subtitle)}</p>
     <div class="cmhc-chart-table-scroll" data-role="plot">
-      <table class="cmhc-table cmhc-table-compact"><thead><tr><th rowspan="2">Source</th>${head1}</tr><tr>${head2}</tr></thead>
+      <table class="cmhc-table cmhc-table-compact"><thead>${thead}</thead>
       <tbody>${body || '<tr><td colspan="99">No figures for this quarter.</td></tr>'}${body ? avg : ''}</tbody>${foot}</table>
     </div>
     <div class="chart-caption chart-caption-sourced"><span class="chart-source" data-role="source"></span></div>
@@ -561,9 +593,15 @@ async function exportData() {
   for (const type of typesPresent(rows)) {
     if (!on.has(type)) continue;
     sheets.push([type, typeTable(rows, type, quarter)]);
+    if (TOTAL_ONLY_TYPES.has(type)) {
+      const byClass = quarterTable(rows, type, quarter);
+      if (byClass.subtypes.length) sheets.push([`${type.replace(' Office', '')} by class`, byClass, `Winnipeg ${type} Cap Rates by Class — ${quarter}`]);
+    }
     if (type === 'Suburban Office' || (type === 'Downtown Office' && !on.has('Suburban Office'))) {
       const office = officeTotalsTable(rows, quarter);
       if (office) sheets.push(['Office', office]);
+      const officeClasses = officeByClassTable(rows, quarter);
+      if (officeClasses) sheets.push(['Office by class', officeClasses, `Winnipeg Office Cap Rates by Class — ${quarter}`]);
     }
   }
   // Excel percentages: store the fraction (0.065) and format it as 6.50%.
@@ -572,12 +610,15 @@ async function exportData() {
   const frac = (v) => (v == null || !Number.isFinite(v) ? null : Math.round(v * 1e4) / 1e6);
   const raw = (v) => (v == null || !Number.isFinite(v) ? null : Math.round(v * 1e6) / 1e6);
   const fmtPct = (row, from) => row.eachCell((c, i) => { if (i >= from && typeof c.value === 'number') c.numFmt = PCT; });
-  for (const [type, t] of sheets) {
+  for (const [type, t, title = `Winnipeg ${type} Cap Rates — ${quarter}`] of sheets) {
     const ws = wb.addWorksheet(`${type} ${quarter}`.slice(0, 31));
-    ws.addRow([`Winnipeg ${type} Cap Rates — ${quarter}`]).font = { bold: true };
+    ws.addRow([title]).font = { bold: true };
     ws.addRow([`Source: ${SOURCE}`]);
     ws.addRow([]);
-    ws.addRow(['Source', ...t.subtypes.flatMap(s => [s, ''])]).font = { bold: true };
+    if (t.groups) {
+      ws.addRow(['', ...t.groups.flatMap(g => [g.label, ...Array(2 * g.span - 1).fill('')])]).font = { bold: true };
+    }
+    ws.addRow(['Source', ...t.subtypes.flatMap(s => [t.labels?.[s] ?? s, ''])]).font = { bold: true };
     ws.addRow(['', ...t.subtypes.flatMap(() => ['Low', 'High'])]).font = { bold: true };
     for (const f of t.firms) fmtPct(ws.addRow([firmLabel(t, f), ...t.subtypes.flatMap(s => [frac(t.cells[f]?.[s]?.low), frac(t.cells[f]?.[s]?.high)])]), 2);
     const avgRow = ws.addRow(['Average', ...t.subtypes.flatMap(s => [frac(t.average[s]?.low), frac(t.average[s]?.high)])]);

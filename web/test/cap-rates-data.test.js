@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   quarterKey, quarterList, typesPresent, subtypesFor, firmsFor, rowsUpTo, averageByClass, byFirm,
   rangeSeries, quarterTable, toCardInput, AVERAGE, breakGaps, nextQuarterEnd, averageByFirm, defaultYearFrom,
-  splitOfficeByLocation, collapseClasses, officeTotalsTable, previousQuarter, firmLabel, carriedNote,
+  splitOfficeByLocation, collapseClasses, officeTotalsTable, officeByClassTable, previousQuarter, firmLabel, carriedNote,
 } from '../src/cap-rates-data.js';
 
 const row = (quarter, firm, type, subtype, low, high) => ({
@@ -239,5 +239,36 @@ describe('officeTotalsTable', () => {
 
   it('is null for a quarter with no office figures', () => {
     expect(officeTotalsTable(rows, '2025 Q1')).toBeNull();
+  });
+});
+
+describe('officeByClassTable', () => {
+  const rows = splitOfficeByLocation([
+    row('2026 Q3', 'Colliers', 'Office', 'Downtown Class A', 0.065, 0.08),
+    row('2026 Q3', 'Colliers', 'Office', 'Downtown Class B', 0.07, 0.085),
+    row('2026 Q3', 'Colliers', 'Office', 'Suburban Class B', 0.07, 0.0825),
+    row('2026 Q3', 'CBRE', 'Office', 'Downtown Class A', 0.07, 0.08),
+    row('2026 Q3', 'CBRE', 'Office', 'Suburban Class A', 0.0675, 0.0775),
+    row('2026 Q3', 'CBRE', 'Office', 'Suburban Class B', 0.0725, 0.0825),
+    row('2026 Q2', 'Cushman & Wakefield', 'Office', 'Suburban Class A', 0.0625, 0.07),
+  ]);
+  it('lays out Downtown and Suburban over Class A / Class B', () => {
+    const t = officeByClassTable(rows, '2026 Q3');
+    expect(t.subtypes).toEqual(['Downtown Class A', 'Downtown Class B', 'Suburban Class A', 'Suburban Class B']);
+    expect(t.groups).toEqual([{ label: 'Downtown', span: 2 }, { label: 'Suburban', span: 2 }]);
+    expect(t.labels['Suburban Class A']).toBe('Class A');
+    expect(t.cells.Colliers['Suburban Class A']).toBeUndefined();     // Colliers publishes no Suburban A
+    expect(t.cells.CBRE['Suburban Class A']).toEqual({ low: 6.75, high: 7.75 });
+    expect(t.average['Downtown Class A']).toEqual({ low: 6.75, high: 8 });
+  });
+  it('carries a late brokerage forward, marked', () => {
+    const t = officeByClassTable(rows, '2026 Q3');
+    expect(t.firms).toEqual(['Colliers', 'CBRE', 'Cushman & Wakefield']);
+    expect(t.carried).toEqual({ 'Cushman & Wakefield': '2026 Q2' });
+    // lows 6.75 (CBRE), 6.25 (C&W, carried) -> 6.5
+    expect(t.average['Suburban Class A']).toEqual({ low: 6.5, high: 7.38 });
+  });
+  it('is null when neither market has figures', () => {
+    expect(officeByClassTable(rows, '2020 Q1')).toBeNull();
   });
 });
