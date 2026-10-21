@@ -19,7 +19,7 @@
 
 import * as Plot from '@observablehq/plot';
 import { buildIndicatorCard, readOpenPanels } from './indicator-chart.js';
-import { themed, PALETTE, gridMarks, frameMark, plotWidth, plotHeight, fitPlotWidth, unitLineStyle } from './plot-theme.js';
+import { themed, PALETTE, gridMarks, frameMark, plotWidth, plotHeight, fitPlotWidth, unitLineStyle, plotFitted } from './plot-theme.js';
 import { downloadCardPng, setExportRedraw, setExportCropHeight, EXPORT_W, EXPORT_H, EXPORT_DPI } from './png-export.js';
 import { escapeHtml } from './escape.js';
 import { getPref, setPref } from './prefs.js';
@@ -703,7 +703,7 @@ function buildExpenseBarCard(container, { id, title, subtitle, rows, highlight, 
     // Selected centres' provinces in the second palette colour, National in
     // the third, the rest in the first — Yardi's own "highlight one bar" look.
     const colour = (p) => (highlight.has(p) && p !== 'National' ? PALETTE[1] : p === 'National' ? PALETTE[2] : PALETTE[0]);
-    const svg = Plot.plot(themed({
+    const svg = plotFitted(themed({
       width,
       height: exportH ?? plotHeight(width, 340),
       marginTop: 20, marginBottom: 70, marginLeft: 60,

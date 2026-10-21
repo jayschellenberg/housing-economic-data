@@ -14,7 +14,7 @@
 
 import * as Plot from '@observablehq/plot';
 import { themed, fmt, PALETTE, gridMarks, frameMark, mirrorYMarks, percentTickFormat, MIRROR_Y_MARGIN,
-         plotWidth, plotHeight, fitPlotWidth } from './plot-theme.js';
+         plotWidth, plotHeight, fitPlotWidth, plotFitted } from './plot-theme.js';
 import { escapeHtml } from './escape.js';
 import { downloadCardPng, setExportRedraw } from './png-export.js';
 
@@ -220,7 +220,7 @@ export function buildChartCard(container, { series }) {
       ],
     });
 
-    const svgEl = Plot.plot(spec);
+    const svgEl = plotFitted(spec);
 
     // Custom legend under the chart (see plotWrapWithLegend).
     $plot.appendChild(plotWrapWithLegend(svgEl, colorDomain, dashedCats));
@@ -340,7 +340,7 @@ export function buildBarCard(container, { title }) {
     const yFmt = isVac ? (v) => `${v}%` : (v) => `$${Number(v).toLocaleString()}`;
     const maxV = Math.max(...data.map(d => d.value));
     const width = plotWidth($plot);
-    const svgEl = Plot.plot(themed({
+    const svgEl = plotFitted(themed({
       width,
       height: exportH ?? plotHeight(width, 340), marginTop: 24, marginBottom: 22, marginLeft: 54,
       fx: { label: null, domain: categories },

@@ -14,7 +14,7 @@
  */
 
 import * as Plot from '@observablehq/plot';
-import { themed, frameMark, PALETTE } from './plot-theme.js';
+import { themed, frameMark, PALETTE, plotFitted } from './plot-theme.js';
 import { downloadCard } from './chart.js';
 import { mapCard, quantileChoropleth } from './map.js';
 import { provinceGeo, hasProvinceGeo } from './geo.js';
@@ -299,7 +299,7 @@ export async function initHousing() {
       DT_SHORT.forEach((lbl, i) => { if (c.types?.[i] != null) data.push({ year: y, type: lbl, value: c.types[i] }); });
     }
     if (data.length) {
-      const svg = Plot.plot(themed({
+      const svg = plotFitted(themed({
         height: 320, marginBottom: 30,
         x: { type: 'band', label: null },
         y: { label: 'Occupied dwellings', tickFormat: v => Number(v).toLocaleString() },
@@ -333,7 +333,7 @@ export async function initHousing() {
     // Chart: horizontal bar of structural types for the year.
     const data = DT_SHORT.map((lbl, i) => ({ type: lbl, value: c.types?.[i] })).filter(d => d.value != null);
     if (data.length) {
-      const svg = Plot.plot(themed({
+      const svg = plotFitted(themed({
         height: 320, marginLeft: 110, marginBottom: 28,
         x: { label: 'Occupied dwellings', tickFormat: v => Number(v).toLocaleString(), inset: 0 },
         y: { label: null },
@@ -412,7 +412,7 @@ export async function initHousing() {
       // dwelling type mix chart so the two sit side by side in the chart grid.
       const ageData = [];
       for (const y of ageYears) COMMON_AGE.forEach((lbl, i) => ageData.push({ year: y, band: lbl, value: rolled[y][i] }));
-      const ageChart = Plot.plot(themed({
+      const ageChart = plotFitted(themed({
         height: 320, marginBottom: 30,
         x: { type: 'band', label: null },
         y: { label: 'Occupied dwellings', tickFormat: v => Number(v).toLocaleString() },
@@ -527,7 +527,7 @@ export async function initHousing() {
     }));
     if (!data.length) return;
     const maxV = Math.max(...data.map(d => d.value));
-    const svg = Plot.plot(themed({
+    const svg = plotFitted(themed({
       height: 320, marginBottom: 42,
       fx: { label: null }, x: { axis: null, label: null },
       y: { label: '% of dwellings', tickFormat: v => `${v}%`, domain: [0, maxV * 1.15] },

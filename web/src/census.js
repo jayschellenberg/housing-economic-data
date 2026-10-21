@@ -13,7 +13,8 @@
  */
 
 import * as Plot from '@observablehq/plot';
-import { themed, gridMarks, frameMark, mirrorYMarks, MIRROR_Y_MARGIN, PALETTE } from './plot-theme.js';
+import { themed, gridMarks, frameMark, mirrorYMarks, MIRROR_Y_MARGIN, PALETTE, plotFitted, GRID_STROKE, GRID_DASHARRAY } from './plot-theme.js';
+import { populationGrowth, formatGrowth } from './census-growth.js';
 import { downloadCard } from './chart.js';
 import { mapCard, quantileChoropleth } from './map.js';
 import { provinceGeo, hasProvinceGeo } from './geo.js';
@@ -626,7 +627,10 @@ export async function initCensus() {
     const popRows = [];
     for (const r of cols) {
       const tr = r.trends || {};
-      for (const y of shownYears) if (tr[y]?.population != null)
+      // A zero population is a census where the area had no figures (Thompson
+      // (CA) has none for 2006/2011), not an empty town — plotting it drew a
+      // false line along the floor.
+      for (const y of shownYears) if (tr[y]?.population > 0)
         popRows.push({ region: r.name, year: +y, value: tr[y].population });
     }
     if (popRows.length) {
@@ -641,7 +645,7 @@ export async function initCensus() {
       // the demographic charts by indexing PALETTE off the full area order.
       const popRegions = regionNames.filter(n => popRows.some(d => d.region === n));
       const popRange = popRegions.map(n => PALETTE[regionNames.indexOf(n) % PALETTE.length]);
-      const svg = Plot.plot(themed({
+      const svg = plotFitted(themed({
         height: 330,
         marginRight: MIRROR_Y_MARGIN,
         marginBottom: 52,
@@ -657,6 +661,38 @@ export async function initCensus() {
         ],
       }));
       appendCard('Population trend', `${loY}–${hiY} — ${regionNames.join(' vs ')}`, svg);
+
+      // 1a. Population growth — % change over each census period, one bar per
+      // area. On the trend chart a small town is a flat line along the floor
+      // beside Winnipeg and Manitoba (Thompson, Jason 2026-10-21); as rates the
+      // areas compare on the same footing.
+      const growth = populationGrowth(popRows, popRegions);
+      if (growth.length) {
+        const periods = [...new Set(growth.map(d => d.period))].sort();
+        const lo = Math.min(0, ...growth.map(d => d.value));
+        const hi = Math.max(0, ...growth.map(d => d.value));
+        const pad = Math.max((hi - lo) * 0.15, 0.5);
+        const growthSvg = plotFitted(themed({
+          height: 330,
+          marginBottom: 34,
+          fx: { label: null, domain: periods },
+          x: { axis: null, label: null, domain: popRegions },
+          y: { label: '% change', tickFormat: v => `${v}%`, domain: [lo < 0 ? lo - pad : 0, hi + pad] },
+          color: { domain: popRegions, range: popRange, legend: popRegions.length > 1 },
+          marks: [
+            Plot.gridY({ stroke: GRID_STROKE, strokeDasharray: GRID_DASHARRAY }),
+            Plot.ruleY([0], { stroke: '#52525b', strokeWidth: 0.8 }),
+            Plot.barY(growth, { fx: 'period', x: 'region', y: 'value', fill: 'region' }),
+            Plot.text(growth, {
+              fx: 'period', x: 'region', y: 'value', text: d => formatGrowth(d.value),
+              dy: d => (d.value < 0 ? 9 : -7), fontSize: 10.5, fill: '#3f3f46',
+            }),
+            frameMark(),
+          ],
+        }));
+        appendCard('Population growth',
+          `% change over each census period — ${popRegions.join(' vs ')}`, growthSvg);
+      }
     }
 
     // 1b. Population — ANNUAL estimates (StatsCan July 1 estimates, 2021
@@ -679,7 +715,7 @@ export async function initCensus() {
         const maxV = Math.max(...estRows.map(d => d.value));
         const estRegions = regionNames.filter(n => estRows.some(d => d.region === n));
         const estRange = estRegions.map(n => PALETTE[regionNames.indexOf(n) % PALETTE.length]);
-        const svg = Plot.plot(themed({
+        const svg = plotFitted(themed({
           height: 330,
           marginRight: MIRROR_Y_MARGIN,
           marginBottom: 52,
@@ -710,7 +746,7 @@ export async function initCensus() {
       }
     }
     if (barData.length) {
-      const svg = Plot.plot(themed({
+      const svg = plotFitted(themed({
         height: 320, marginBottom: 30,
         x: { type: 'band', label: null },
         y: { label: 'Occupied dwellings', tickFormat: v => Number(v).toLocaleString() },
@@ -746,7 +782,7 @@ export async function initCensus() {
     }
     if (!rows.length) return;
     const maxV = Math.max(...rows.map(d => d.value));
-    const svg = Plot.plot(themed({
+    const svg = plotFitted(themed({
       height: 320, marginBottom: 34,
       // Pin the facet (category) order to the noted sequence and the within-group
       // bar order to regionNames so both match the legend — otherwise Plot sorts

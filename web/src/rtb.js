@@ -11,7 +11,7 @@
  */
 
 import * as Plot from '@observablehq/plot';
-import { themed, gridMarks, frameMark, mirrorYMarks, percentTickFormat, MIRROR_Y_MARGIN, PALETTE } from './plot-theme.js';
+import { themed, gridMarks, frameMark, mirrorYMarks, percentTickFormat, MIRROR_Y_MARGIN, PALETTE, plotFitted } from './plot-theme.js';
 import { downloadCard } from './chart.js';
 import { escapeHtml } from './escape.js';
 import { miss, fUsd, fPct1 as fPct } from './format.js';
@@ -168,7 +168,7 @@ function renderChart($chart, data, cpiByYear) {
   const loY = hist[0].year, hiY = hist[hist.length - 1].year;
   const maxV = Math.max(...rows.map(d => d.value), 5);
   const minV = Math.min(0, ...rows.map(d => d.value));
-  const svg = Plot.plot(themed({
+  const svg = plotFitted(themed({
     height: 330, marginBottom: 52, marginLeft: 40, marginRight: MIRROR_Y_MARGIN,   // no fixed width → Plot's ~640px default with max-width:100%, matching the Rental Charts page cards
     x: { label: 'Year', labelOffset: 42, tickFormat: 'd' },
     y: { label: null, tickFormat: percentTickFormat([minV, maxV * 1.1]), domain: [minV, maxV * 1.1], grid: true },

@@ -15,7 +15,7 @@
  */
 
 import * as Plot from '@observablehq/plot';
-import { themed, frameMark, PALETTE } from './plot-theme.js';
+import { themed, frameMark, PALETTE, plotFitted } from './plot-theme.js';
 import { downloadCard } from './chart.js';
 import { mapCard } from './map.js';
 import { provinceGeo, hasProvinceGeo } from './geo.js';
@@ -314,7 +314,7 @@ export async function initAffordability() {
     const data = rows.filter(r => !miss(r[key])).map(r => ({ area: r.name, value: r[key] }));
     if (!data.length) return;
     const maxV = Math.max(AFFORD_LINE + 5, ...data.map(d => d.value));
-    const svg = Plot.plot(themed({
+    const svg = plotFitted(themed({
       height: Math.max(240, data.length * 30 + 70), marginTop: 10, marginLeft: 140, marginBottom: 44, marginRight: 18,
       x: { label: '% of household income →', domain: [0, maxV], tickFormat: v => `${v}%` },
       y: { label: null, domain: data.slice().sort((a, b) => a.value - b.value).map(d => d.area) },
