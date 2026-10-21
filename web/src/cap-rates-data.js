@@ -17,7 +17,9 @@
 
 // Office is shown as two types on the Cap Rates tab (splitOfficeByLocation);
 // a plain "Office" row (no Downtown / Suburban in its class) still sorts here.
-export const TYPE_ORDER = ['Industrial', 'Retail', 'Downtown Office', 'Suburban Office', 'Office', 'Multi-Family', 'Hotel', 'Self Storage'];
+// Section order on the Cap Rates tab (Jason, 2026-10-21): Multi-Family first; the
+// overall Office section is drawn just before Downtown Office.
+export const TYPE_ORDER = ['Multi-Family', 'Industrial', 'Retail', 'Downtown Office', 'Suburban Office', 'Office', 'Hotel', 'Self Storage'];
 
 // Display order of classes within a type; anything unlisted follows, alphabetical.
 export const SUBTYPE_ORDER = {
