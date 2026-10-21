@@ -333,7 +333,9 @@ export async function initCensus() {
     renderNarrative(subject, cols.slice(1), period);
     renderServices(subject);
     renderCharts(subject, cols, period);
-    lastTrendTables = renderTrends(cols);
+    // Trends for Area 1 only — the same table once per area repeated the
+    // page (Jason, 2026-10-21); the demographics table still compares all three.
+    lastTrendTables = renderTrends([subject]);
     lastDemoTable   = renderDemographics(cols, period);
   }
 
@@ -492,7 +494,7 @@ export async function initCensus() {
     });
   }
 
-  // ---- Trends tables (one per area, all stacked) --------------------------
+  // ---- Trends table (Area 1) ----------------------------------------------
   function renderTrends(cols) {
     const models = [];
     // Skip areas with no multi-census trend data (SK/AB/BC municipalities carry
@@ -503,7 +505,7 @@ export async function initCensus() {
       return tableHtml;
     }).join('');
     $tables.querySelector('#census-trends').innerHTML = html ||
-      '<p class="text-sm text-neutral-600">No multi-census population &amp; dwelling trends for the selected area(s). Municipalities (CSDs) outside Manitoba currently carry demographics only — pick a province, CMA/CA or census division for trend history.</p>';
+      '<p class="text-sm text-neutral-600">No multi-census population &amp; dwelling trends for Area 1. Municipalities (CSDs) outside Manitoba currently carry demographics only — pick a province, CMA/CA or census division for trend history.</p>';
     return models;
   }
 
