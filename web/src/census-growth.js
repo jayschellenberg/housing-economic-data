@@ -27,6 +27,17 @@ export function populationGrowth(rows, regions) {
   return out;
 }
 
+/**
+ * Plot `render` hook that moves a text mark from the start of its x band to
+ * the middle. On a band x scale Plot anchors text at the band's start, so a
+ * bar's value label sat over the bar's left edge.
+ */
+export function centreOnBand(index, scales, values, dimensions, context, next) {
+  const half = (scales.x?.bandwidth?.() ?? 0) / 2;
+  const x = values.x && Float64Array.from(values.x, (v) => v + half);
+  return next(index, scales, { ...values, ...(x ? { x } : {}) }, dimensions, context);
+}
+
 /** "+4.7%", "−4.7%", "0.0%". */
 export function formatGrowth(v) {
   const s = Math.abs(v).toFixed(1);
