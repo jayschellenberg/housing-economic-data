@@ -19,31 +19,47 @@ export function nameableUses(zone) {
   return (zone?.uses || []).filter(u => u.status === 'P' && !u.qualifier);
 }
 
+/** Conditional uses an appraiser may name: principal (no accessory/mixed-use qualifier). */
+export function nameableConditional(zone) {
+  return (zone?.uses || []).filter(u => u.status === 'C' && !u.qualifier);
+}
+
+const proseList = (list) => list.map(u => u.prose || u.name.toLowerCase()).sort((a, b) => a.localeCompare(b));
+
 /**
- * The "Some permitted uses ..." sentence, matching R/narrative.R.
+ * The permitted-uses sentence (matching R/narrative.R) followed by the
+ * conditional-uses sentence.
  * @param {object} zone   a zone from zoning.json
- * @param {string[]} selected  use names (zone.uses[].name) to name
+ * @param {string[]} selected      permitted use names (zone.uses[].name) to name
+ * @param {string[]} [selectedCond] conditional use names to name; none named ->
+ *   "There are several conditional uses as well."
  */
-export function usesSentence(zone, selected) {
+export function usesSentence(zone, selected, selectedCond = []) {
   const pool = nameableUses(zone);
   const chosen = pool.filter(u => selected.includes(u.name));
+  const condPool = nameableConditional(zone);
+  const condChosen = condPool.filter(u => selectedCond.includes(u.name));
   const hasCond = (zone?.uses || []).some(u => u.status === 'C');
-  const prose = chosen.map(u => u.prose || u.name.toLowerCase()).sort((a, b) => a.localeCompare(b));
   let s;
-  if (prose.length) {
+  if (chosen.length) {
     const more = chosen.length < pool.length;
-    s = `Some permitted uses within the current zoning designation include ${oxford(prose)}${more ? ', among others' : ''}.`;
+    s = `Some permitted uses within the current zoning designation include ${oxford(proseList(chosen))}${more ? ', among others' : ''}.`;
   } else {
     s = 'The zone lists no permitted uses other than accessory and utility uses.';
   }
-  if (hasCond) s += ' There are several conditional uses as well.';
+  if (condChosen.length) {
+    const more = condChosen.length < condPool.length;
+    s += ` Conditional uses include ${oxford(proseList(condChosen))}${more ? ', among others' : ''}.`;
+  } else if (hasCond) {
+    s += ' There are several conditional uses as well.';
+  }
   return s;
 }
 
-/** Full narrative as paragraphs: intent, uses, bulk. */
-export function narrativeParagraphs(zone, selected) {
+/** Full narrative as paragraphs: intent, uses, bulk, parking. */
+export function narrativeParagraphs(zone, selected, selectedCond = []) {
   const n = zone?.narrative || {};
-  return [n.intent, usesSentence(zone, selected), n.bulk, n.parking].filter(Boolean);
+  return [n.intent, usesSentence(zone, selected, selectedCond), n.bulk, n.parking].filter(Boolean);
 }
 
 // --- bulk table ---------------------------------------------------------------

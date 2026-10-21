@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  oxford, usesSentence, narrativeParagraphs, formatValue, bulkRows,
+  oxford, usesSentence, narrativeParagraphs, nameableConditional, formatValue, bulkRows,
   currencyVerdict, currencyMessage, currencyQueryUrl, normBylaw, zoneShortName, zoneDescription,
 } from '../src/zoning-data.js';
 
@@ -111,5 +111,27 @@ describe('zoning designation', () => {
     expect(zoneDescription({ name: 'Agricultural Limited Zone', intent: 'is intended to provide for limited agricultural uses' }))
       .toBe('The Agricultural Limited Zone is intended to provide for limited agricultural uses.');
     expect(zoneDescription({ name: 'X', intent: '' })).toBe('');
+  });
+});
+
+describe('conditional uses', () => {
+  const z = {
+    uses: [
+      { name: 'Hotel / Motel', prose: 'hotel/motel', status: 'P', qualifier: null },
+      { name: 'Planned Unit Development', prose: 'planned unit development', status: 'C', qualifier: null },
+      { name: 'Single Room Occupancy', prose: 'single room occupancy', status: 'C', qualifier: null },
+      { name: 'Day Care Centre', prose: 'day care centre', status: 'C', qualifier: 'accessory_only' },
+    ],
+  };
+  it('lists principal conditional uses only', () => {
+    expect(nameableConditional(z).map(u => u.name)).toEqual(['Planned Unit Development', 'Single Room Occupancy']);
+  });
+  it('acknowledges conditional uses when none are ticked', () => {
+    expect(usesSentence(z, ['Hotel / Motel'])).toMatch(/There are several conditional uses as well\.$/);
+  });
+  it('names ticked conditional uses, with "among others" when some are left out', () => {
+    expect(usesSentence(z, ['Hotel / Motel'], ['Single Room Occupancy'])).toMatch(/ Conditional uses include single room occupancy, among others\.$/);
+    expect(usesSentence(z, ['Hotel / Motel'], ['Single Room Occupancy', 'Planned Unit Development']))
+      .toMatch(/ Conditional uses include planned unit development and single room occupancy\.$/);
   });
 });
