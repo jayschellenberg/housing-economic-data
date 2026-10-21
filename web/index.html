@@ -784,7 +784,7 @@
             <select id="census-prov3" class="w-2/5 border border-neutral-300 rounded px-2 py-1 text-sm" aria-label="Area 3 province"></select>
             <select id="census-area3" class="flex-1 min-w-0 border border-neutral-300 rounded px-2 py-1 text-sm" aria-label="Area 3"></select>
           </div>
-          <p class="text-xs text-neutral-500 mt-2 leading-snug">Pick a province, then any geography within it. All three areas appear in both tables and the comparison charts; Manitoba also offers Winnipeg Community Areas / Clusters / Neighbourhoods. Municipalities (CSDs) outside Manitoba carry demographics only (no multi-census trends). Area 1 also drives the Trends chart and dwelling-type mix.</p>
+          <p class="text-xs text-neutral-500 mt-2 leading-snug">Pick a province, then any geography within it. Area 1 drives the Population &amp; Dwelling Trends table and the dwelling-type mix; all three areas appear in the Demographics table and the comparison charts. Manitoba also offers Winnipeg Community Areas / Clusters / Neighbourhoods. Municipalities (CSDs) outside Manitoba carry demographics only (no multi-census trends).</p>
         </section>
 
         <section class="pt-2 border-t border-neutral-200 space-y-2">
@@ -816,8 +816,10 @@
 
       <main class="p-4 space-y-4 overflow-x-hidden">
         <div id="census-headline" class="cmhc-hsk-headline"></div>
-        <section id="census-chart-grid" class="grid md:grid-cols-2 gap-4"></section>
         <div id="census-tables" class="space-y-4"></div>
+        <!-- Charts below the tables: the Area 1 trends table and the
+             three-area demographics table lead (Jason, 2026-10-21). -->
+        <section id="census-chart-grid" class="grid md:grid-cols-2 gap-4"></section>
         <!-- Community-profile narrative (census-narrative.js): Area 1 read
              against Areas 2/3 as benchmarks, with a Word download. Kept near
              the bottom (above the map) while it is a work in progress. -->

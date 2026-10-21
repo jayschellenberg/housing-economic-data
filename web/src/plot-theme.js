@@ -109,28 +109,99 @@ export function frameMark() {
 }
 
 /**
- * Mirror the y scale on the right edge of the frame, the way the reference
- * appraisal chart's ggplot `sec_axis` does. On a wide chart the right-hand
- * values save the reader tracking back across the plot. Pair it with
- * `MIRROR_Y_MARGIN` as the spec's marginRight, or the labels are clipped.
- *
- * Ticks only — no duplicate axis title, which would just be noise.
+ * The y axis, left side only. Charts used to mirror the scale on the right
+ * edge (the reference chart's ggplot `sec_axis`); Jason dropped that on every
+ * page on 2026-10-21, so this now draws the left axis alone. The names are
+ * kept so the call sites read the same; `MIRROR_Y_MARGIN` is just the theme's
+ * ordinary right gutter now.
  */
-export const MIRROR_Y_MARGIN = 62;
+export const MIRROR_Y_MARGIN = 18;
 
 export function mirrorYMarks(tickFormat, { label = null, labelOffset, ticks } = {}) {
-  // BOTH axes have to be declared. Plot drops its implicit y axis as soon as
-  // any explicit axisY mark exists, so adding only the right-hand one MOVES
-  // the axis across instead of mirroring it. The left axis carries the label;
-  // repeating it on the right would just be noise.
-  return [
-    Plot.axisY({
-      anchor: 'left', tickFormat, tickSize: 3,
-      label, labelOffset, labelAnchor: 'center', labelArrow: 'none',
-      ...(ticks ? { ticks } : {}),
+  const opts = {
+    anchor: 'left', tickFormat, tickSize: 3,
+    label, labelOffset, labelAnchor: 'center', labelArrow: 'none',
+    ...(ticks ? { ticks } : {}),
+  };
+  const mark = Plot.axisY(opts);
+  mark[AXIS_OPTS] = opts;   // so plotFitted can move the title clear of the ticks
+  return [mark];
+}
+
+// ---- Y-axis title clearance ------------------------------------------------
+// A fixed labelOffset put the rotated y title on top of wide tick labels
+// ("1,800,000" under "Population"). plotFitted renders, measures the widest
+// y tick label, and if the title or the labels would not fit, renders again
+// with the title moved out and the left margin widened — enough for values
+// up to 99,999,999 ("99,000,000", "$99,000,000").
+
+const AXIS_OPTS = Symbol('axisOpts');
+const TICK_FONT_PX = 13.5;   // themed() style fontSize
+const TICK_GAP = 8.5;        // frame edge -> right end of a tick label, as Plot draws it
+const TITLE_HEIGHT = 18;     // the rotated title's glyphs (~0.71em + descent) plus a gap
+const EDGE = 4;              // white between the title and the chart's edge
+
+/** Width of a tick label in px, from character classes. A generous estimate
+ *  (no DOM needed, so it also runs under tests and before the chart is in
+ *  the page): digits and letters 0.6em, separators 0.3em, % and — wider. */
+export function estimateTickWidth(text, fontPx = TICK_FONT_PX) {
+  let em = 0;
+  for (const ch of String(text)) {
+    if (/[,.\s'’]/.test(ch)) em += 0.3;
+    else if (/[%—–mMwW]/.test(ch)) em += 0.9;
+    else em += 0.6;
+  }
+  return Math.ceil(em * fontPx);
+}
+
+/** Widest y-axis tick label in a rendered Plot chart. */
+export function widestYTick(el) {
+  let w = 0;
+  for (const t of el.querySelectorAll('g[aria-label="y-axis tick label"] text')) {
+    w = Math.max(w, estimateTickWidth(t.textContent));
+  }
+  return w;
+}
+
+/** The offsets the y title and left margin need for tick labels `w` px wide. */
+export function yAxisRoom(w, hasTitle) {
+  const labelOffset = w + TICK_GAP + TITLE_HEIGHT;
+  return {
+    labelOffset,
+    marginLeft: (hasTitle ? labelOffset : w + TICK_GAP) + EDGE,
+  };
+}
+
+/**
+ * `Plot.plot(spec)`, then once more with the y title and left margin moved
+ * out if the tick labels would collide with the title or run off the edge.
+ * Every chart on the site renders through this.
+ */
+export function plotFitted(spec) {
+  const first = Plot.plot(spec);
+  const w = widestYTick(first);
+  if (!w) return first;
+  const axisMarks = (spec.marks || []).filter((m) => m && m[AXIS_OPTS]);
+  const title = axisMarks.length ? axisMarks.some((m) => m[AXIS_OPTS].label) : !!spec.y?.label;
+  const need = yAxisRoom(w, title);
+  const curOffset = axisMarks.length
+    ? Math.min(...axisMarks.map((m) => m[AXIS_OPTS].labelOffset ?? 72))
+    : spec.y?.labelOffset ?? 72;
+  const curMargin = spec.marginLeft ?? 86;
+  if ((!title || curOffset >= need.labelOffset) && curMargin >= need.marginLeft) return first;
+  const labelOffset = Math.max(curOffset, need.labelOffset);
+  return Plot.plot({
+    ...spec,
+    marginLeft: Math.max(curMargin, title ? labelOffset + EDGE : need.marginLeft),
+    y: { ...(spec.y || {}), labelOffset },
+    marks: (spec.marks || []).map((m) => {
+      if (!m || !m[AXIS_OPTS]) return m;
+      const opts = { ...m[AXIS_OPTS], labelOffset };
+      const next = Plot.axisY(opts);
+      next[AXIS_OPTS] = opts;
+      return next;
     }),
-    Plot.axisY({ anchor: 'right', tickFormat, tickSize: 3, label: null, ...(ticks ? { ticks } : {}) }),
-  ];
+  });
 }
 
 /**

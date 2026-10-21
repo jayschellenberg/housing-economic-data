@@ -24,7 +24,7 @@
 
 import * as Plot from '@observablehq/plot';
 import { buildIndicatorCard, readOpenPanels } from './indicator-chart.js';
-import { themed, PALETTE, gridMarks, frameMark, plotWidth, plotHeight, fitPlotWidth, sfTickFormat } from './plot-theme.js';
+import { themed, PALETTE, gridMarks, frameMark, plotWidth, plotHeight, fitPlotWidth, sfTickFormat, plotFitted } from './plot-theme.js';
 import { downloadCardPng, setExportRedraw, EXPORT_W, EXPORT_H, EXPORT_DPI } from './png-export.js';
 import { escapeHtml } from './escape.js';
 import { indicatorFmt } from './format.js';
@@ -696,7 +696,7 @@ function buildBarCard(container, { chart, source }) {
     const isPct = chart.units === 'percent';
     const yDomain = [0, maxV * 1.12];
     const yTick = isPct ? (v) => `${v}%` : chart.units === 'sf' ? sfTickFormat(yDomain) : fmtV;
-    const svg = Plot.plot(themed({
+    const svg = plotFitted(themed({
       width,
       height: exportH ?? plotHeight(width, 380),
       marginTop: 20, marginBottom: 70, marginLeft: 54,

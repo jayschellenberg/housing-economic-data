@@ -18,7 +18,7 @@ import * as Plot from '@observablehq/plot';
 import { ticks as d3Ticks } from 'd3';
 import { downloadCardPng, setExportRedraw, EXPORT_W, EXPORT_H, EXPORT_DPI } from './png-export.js';
 import { themed, PALETTE, gridMarks, frameMark, mirrorYMarks, percentTickFormat, sfTickFormat, personsTickFormat, MIRROR_Y_MARGIN,
-         plotWidth, plotHeight, fitPlotWidth, dateAxisTicks } from './plot-theme.js';
+         plotWidth, plotHeight, fitPlotWidth, dateAxisTicks, plotFitted } from './plot-theme.js';
 import { escapeHtml } from './escape.js';
 import { getFirm, onFirmChange } from './firm.js';
 import { INDICATOR_FMT as FMT, indicatorFmt as fmt } from './format.js';
@@ -903,7 +903,7 @@ export function buildIndicatorCard(container, {
         frameMark(),
       ],
     });
-    const svgEl = Plot.plot(spec);
+    const svgEl = plotFitted(spec);
     if (exportH == null) {
       // The ticks Plot drew: its default count is the y range over 35px.
       const ys = svgEl.scale('y');

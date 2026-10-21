@@ -13,7 +13,7 @@
  */
 
 import * as Plot from '@observablehq/plot';
-import { themed, gridMarks, frameMark, PALETTE } from './plot-theme.js';
+import { themed, gridMarks, frameMark, PALETTE, plotFitted } from './plot-theme.js';
 import { downloadCard } from './chart.js';
 import { escapeHtml } from './escape.js';
 import { getPref, setPref } from './prefs.js';
@@ -294,7 +294,7 @@ function buildCategoryCard({ section, category, chartRows, cities, from, to, det
     plotEl.textContent = 'No data for the selected centres and years.';
   } else {
     const maxV = Math.max(...chartRows.map(d => d.value));
-    plotEl = Plot.plot(themed({
+    plotEl = plotFitted(themed({
       height: 320, marginBottom: 44, marginLeft: 54, marginRight: 16,
       x: { label: 'Year', labelOffset: 36, tickFormat: 'd',
            domain: [from - 0.3, to + 0.3] },
@@ -481,7 +481,7 @@ function buildInfraCard({ title, unit, chartRows, geos, from, to }) {
     ? (d => `$${d}`)
     : (d => `$${d >= 1e6 ? (d/1e6).toFixed(1)+'M' : d >= 1e3 ? Math.round(d/1e3)+'k' : d}`);
 
-  const plot = Plot.plot(themed({
+  const plot = plotFitted(themed({
     height: 300, marginBottom: 44, marginLeft: 66, marginRight: 16,
     x: { label: 'Year', labelOffset: 36, tickFormat: 'd', domain: [minY - 0.3, maxY + 0.3] },
     y: { label: null, domain: [0, maxV * 1.1], grid: true, tickFormat: fmtAxis },

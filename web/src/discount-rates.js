@@ -15,7 +15,7 @@
 
 import * as Plot from '@observablehq/plot';
 import { buildIndicatorCard, readOpenPanels } from './indicator-chart.js';
-import { themed, PALETTE, gridMarks, frameMark, plotWidth, plotHeight, fitPlotWidth } from './plot-theme.js';
+import { themed, PALETTE, gridMarks, frameMark, plotWidth, plotHeight, fitPlotWidth, plotFitted } from './plot-theme.js';
 import { downloadCardPng, setExportRedraw, setExportCropHeight, EXPORT_W, EXPORT_H, EXPORT_DPI } from './png-export.js';
 import { escapeHtml } from './escape.js';
 import { getPref, setPref } from './prefs.js';
@@ -523,7 +523,7 @@ function buildStackCard(container, { id, title, source }) {
     const data = both.flatMap(r => BAR_SERIES.map(s => ({ year: String(r.year), part: s.label, value: r[s.key], total: r.ke ?? r.rf + r.mrp })));
     const maxV = Math.max(...both.map(r => r.rf + r.mrp));
     const width = plotWidth($plot);
-    const svg = Plot.plot(themed({
+    const svg = plotFitted(themed({
       width,
       height: exportH ?? plotHeight(width, 320),
       marginTop: 20, marginBottom: 52, marginLeft: 54,

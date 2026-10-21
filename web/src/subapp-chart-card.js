@@ -20,7 +20,7 @@
  */
 
 import * as Plot from '@observablehq/plot';
-import { themed, gridMarks, frameMark } from './plot-theme.js';
+import { themed, gridMarks, frameMark, plotFitted } from './plot-theme.js';
 import { setExportRedraw, downloadCardPng } from './png-export.js';
 import { getFirm } from './firm.js';
 import { exportChartNodes } from './doc-image-export.js';
@@ -101,7 +101,7 @@ export function buildPlotCard(host, { title, fileStem, id, height = 280, explain
     const width = Math.max(280, Math.round($plot.clientWidth || 600));
     if (h == null) lastW = width;
     const s = spec(width);
-    $plot.appendChild(Plot.plot(themed({
+    $plot.appendChild(plotFitted(themed({
       ...s,
       width,
       height: h ?? height,

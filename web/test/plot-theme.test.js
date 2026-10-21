@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { percentTickFormat, sfTickFormat, personsTickFormat, dateAxisTicks, unitLineStyle, UNIT_COLOURS, PALETTE, MIRROR_Y_MARGIN, plotWidth, plotHeight, PLOT_FALLBACK_WIDTH } from '../src/plot-theme.js';
+import { percentTickFormat, sfTickFormat, personsTickFormat, dateAxisTicks, unitLineStyle, UNIT_COLOURS, PALETTE, MIRROR_Y_MARGIN, mirrorYMarks, plotFitted, themed, frameMark, estimateTickWidth, yAxisRoom, plotWidth, plotHeight, PLOT_FALLBACK_WIDTH } from '../src/plot-theme.js';
 
 describe('sfTickFormat', () => {
   it('reads millions compactly, dropping trailing zeros', () => {
@@ -63,8 +63,8 @@ describe('percentTickFormat', () => {
     expect(whole.map((t, i) => f(t, i, whole))).toEqual(['0%', '1%', '2%', '3%']);
   });
 
-  it('reserves enough right margin for the mirrored axis labels', () => {
-    expect(MIRROR_Y_MARGIN).toBeGreaterThan(40);
+  it('leaves only the ordinary gutter on the right (no mirrored axis)', () => {
+    expect(MIRROR_Y_MARGIN).toBeLessThanOrEqual(20);
   });
 });
 
@@ -144,5 +144,55 @@ describe('unitLineStyle', () => {
     expect(seriesColours).toEqual({ 'c:Studio': PALETTE[0], 'c:1-Bedroom': PALETTE[1], 'c:All units': PALETTE[4] });
     expect(dashedIds).toEqual(['c:Studio', 'c:1-Bedroom']);
     expect(UNIT_COLOURS['0br']).toBe(UNIT_COLOURS.bachelor);
+  });
+});
+
+describe('left y axis only, clear of its title', () => {
+  // Plot puts the y title at x = marginLeft - labelOffset (rotated) and right-
+  // aligns tick labels at x = marginLeft - tickSize - tickPadding.
+  const fmt = (v) => Number(v).toLocaleString('en-CA');
+  const render = (max, { viaMark = true } = {}) => plotFitted(themed({
+    width: 640, height: 330,
+    y: { label: viaMark ? null : 'Population', tickFormat: fmt, domain: [0, max] },
+    marks: [
+      ...(viaMark ? mirrorYMarks(fmt, { label: 'Population', labelOffset: 72 }) : []),
+      frameMark(),
+    ],
+  }));
+  const title = (el) => [...el.querySelectorAll('text')].find((t) => t.textContent === 'Population');
+  // x of a text node: its own translate plus its group's.
+  const tx = (n) => Number((n?.getAttribute?.('transform') || '').match(/translate\(([-\d.]+)/)?.[1] ?? 0);
+  const xOf = (t) => tx(t) + tx(t.parentNode);
+  const ticks = (el) => [...el.querySelectorAll('g[aria-label="y-axis tick label"] text')].map((t) => t.textContent);
+
+  it('mirrorYMarks draws one axis, on the left', () => {
+    const marks = mirrorYMarks(fmt, { label: 'x' });
+    expect(marks).toHaveLength(1);
+    const el = render(1e6);
+    expect(el.querySelectorAll('g[aria-label="y-axis tick label"]')).toHaveLength(1);
+  });
+
+  for (const max of [1.8e6, 99e6]) {
+    for (const viaMark of [true, false]) {
+      it(`keeps the title clear of ${fmt(max)} tick labels (${viaMark ? 'axis mark' : 'scale label'})`, () => {
+        const el = render(max, { viaMark });
+        const widest = Math.max(...ticks(el).map((t) => estimateTickWidth(t)));
+        const frameX = Number(el.querySelector('rect[aria-label="frame"]').getAttribute('x'));
+        const tickLeftEdge = frameX - 8.5 - widest;   // tick labels end 8.5 px left of the frame
+        const titleX = xOf(title(el));                // the rotated title's glyphs run ~14 px right of this
+        expect(tickLeftEdge - titleX).toBeGreaterThanOrEqual(16);
+        expect(titleX).toBeGreaterThanOrEqual(2);     // and it stays on the canvas
+      });
+    }
+  }
+
+  it('leaves small-number charts alone', () => {
+    expect(yAxisRoom(estimateTickWidth('80%'), true).labelOffset).toBeLessThan(72);
+    const el = render(100);
+    expect(xOf(title(el))).toBeCloseTo(86 - 72 + 0.5, 5);   // Plot's half-pixel crispness shift
+  });
+
+  it('estimates 99,000,000 wider than 1,800,000', () => {
+    expect(estimateTickWidth('99,000,000')).toBeGreaterThan(estimateTickWidth('1,800,000'));
   });
 });
