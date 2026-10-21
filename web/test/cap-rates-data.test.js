@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   quarterKey, quarterList, typesPresent, subtypesFor, firmsFor, rowsUpTo, averageByClass, byFirm,
   rangeSeries, quarterTable, toCardInput, AVERAGE, breakGaps, nextQuarterEnd, averageByFirm, defaultYearFrom,
-  splitOfficeByLocation, collapseClasses, officeTotalsTable,
+  splitOfficeByLocation, collapseClasses, officeTotalsTable, previousQuarter, firmLabel, carriedNote,
 } from '../src/cap-rates-data.js';
 
 const row = (quarter, firm, type, subtype, low, high) => ({
@@ -68,6 +68,56 @@ describe('quarterTable', () => {
     expect(t.cells.CBRE['Class A']).toEqual({ low: 6, high: 6.75 });
     expect(t.cells.CBRE['Class B']).toBeUndefined();
     expect(t.average['Class A']).toEqual({ low: 6, high: 6.88 });
+  });
+});
+
+describe('quarterTable carry-forward (late reports)', () => {
+  const Q3 = [
+    ...ROWS,
+    row('2026 Q3', 'Colliers', 'Industrial', 'Class A', 0.06, 0.07),
+    row('2026 Q3', 'CBRE', 'Industrial', 'Class A', 0.06, 0.065),
+  ];
+  it('previousQuarter steps back across a year end', () => {
+    expect(previousQuarter('2026 Q3')).toBe('2026 Q2');
+    expect(previousQuarter('2026 Q1')).toBe('2025 Q4');
+    expect(previousQuarter('nonsense')).toBeNull();
+  });
+  it('keeps a missing brokerage’s previous-quarter figure, marked and averaged', () => {
+    const t = quarterTable(Q3, 'Industrial', '2026 Q3');
+    expect(t.firms).toEqual(['Colliers', 'CBRE', 'Cushman & Wakefield']);
+    expect(t.carried).toEqual({ 'Cushman & Wakefield': '2026 Q2' });
+    expect(t.cells['Cushman & Wakefield']['Class A']).toEqual({ low: 5.25, high: 5.75 });
+    // lows 6, 6, 5.25 -> 5.75; highs 7, 6.5, 5.75 -> 6.42
+    expect(t.average['Class A']).toEqual({ low: 5.75, high: 6.42 });
+    expect(firmLabel(t, 'Cushman & Wakefield')).toBe('Cushman & Wakefield*');
+    expect(firmLabel(t, 'CBRE')).toBe('CBRE');
+    expect(carriedNote(t, '2026 Q3')).toBe('* 2026 Q2 figure; 2026 Q3 not yet published.');
+  });
+  it('carries only one quarter back', () => {
+    const late = [...ROWS, row('2026 Q4', 'Colliers', 'Industrial', 'Class A', 0.06, 0.07)];
+    const t = quarterTable(late, 'Industrial', '2026 Q4');
+    expect(t.firms).toEqual(['Colliers']);
+    expect(t.carried).toEqual({});
+    expect(carriedNote(t, '2026 Q4')).toBe('');
+  });
+  it('never fills a class the brokerage left out this quarter', () => {
+    // Colliers published Class B in Q1 but not Q2: no carry for a firm that reported
+    const t = quarterTable(ROWS, 'Industrial', '2026 Q2');
+    expect(t.carried).toEqual({});
+    expect(t.cells.Colliers['Class B']).toBeUndefined();
+  });
+  it('carries only into classes this quarter shows', () => {
+    const t = quarterTable([...Q3, row('2026 Q2', 'Cushman & Wakefield', 'Industrial', 'Class B', 0.06, 0.0675)], 'Industrial', '2026 Q3');
+    expect(t.subtypes).toEqual(['Class A']);
+    expect(t.cells['Cushman & Wakefield']['Class B']).toBeUndefined();
+  });
+  it('passes the marks through collapseClasses and officeTotalsTable', () => {
+    const rows = splitOfficeByLocation([
+      row('2026 Q2', 'Cushman & Wakefield', 'Office', 'Downtown Class A', 0.065, 0.075),
+      row('2026 Q3', 'Colliers', 'Office', 'Downtown Class A', 0.065, 0.08),
+    ]);
+    expect(collapseClasses(quarterTable(rows, 'Downtown Office', '2026 Q3')).carried).toEqual({ 'Cushman & Wakefield': '2026 Q2' });
+    expect(officeTotalsTable(rows, '2026 Q3').carried).toEqual({ 'Cushman & Wakefield': '2026 Q2' });
   });
 });
 

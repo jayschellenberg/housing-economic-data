@@ -1045,3 +1045,4 @@
 #jr-section-menu > summary::-webkit-details-marker { display: none; }
 /* Cap Rates tables: dark-red rule between the last brokerage and Average. */
 .cmhc-table tbody tr.cr-avg-row td { border-top: 2px solid var(--cmhc-brand-red); }
+.cmhc-table tfoot tr.cr-footnote td { border: 0; background: none; text-align: left; font-style: italic; font-weight: normal; font-size: 0.85em; color: var(--cmhc-ink-muted, #555); }

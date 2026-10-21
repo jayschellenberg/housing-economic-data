@@ -22,7 +22,7 @@ import { buildJumpBar } from './jump-bar.js';
 import {
   TYPE_ORDER, FIRM_ORDER, quarterList, typesPresent, rowsUpTo, splitOfficeByLocation,
   TOTAL_ONLY_TYPES, collapseClasses, officeTotalsTable,
-  averageByFirm, quarterTable, toCardInput, fmtRate, defaultYearFrom,
+  averageByFirm, quarterTable, toCardInput, fmtRate, defaultYearFrom, firmLabel, carriedNote,
 } from './cap-rates-data.js';
 import {
   storeAvailable, fsAccessSupported, pickDirectory, getSavedDirectory, directoryPermission,
@@ -371,7 +371,7 @@ function renderCharts() {
       const subtitle = table.classes
         ? `Average of each brokerage's published ${table.classes.join(' / ')} range`
         : 'Published Low–High range by brokerage';
-      const card = buildTableCard($cards, { id, title: `Winnipeg ${type} Cap Rates — ${quarter}`, subtitle, table });
+      const card = buildTableCard($cards, { id, title: `Winnipeg ${type} Cap Rates — ${quarter}`, subtitle, table, quarter });
       ui.cards.set(id, { card: card.card });
     }
     // 3. After the office sections: every office cap rate in one table, a
@@ -382,7 +382,7 @@ function renderCharts() {
       const card = buildTableCard($cards, {
         id, title: `Winnipeg Office Cap Rates — ${quarter}`,
         subtitle: 'Downtown and Suburban: average of each brokerage\'s published class ranges',
-        table: office,
+        table: office, quarter,
       });
       ui.cards.set(id, { card: card.card });
     }
@@ -412,24 +412,29 @@ function typeTable(rows, type, quarter) {
   return TOTAL_ONLY_TYPES.has(type) && t.subtypes.length ? collapseClasses(t) : t;
 }
 
-function buildTableCard(container, { id, title, subtitle, table }) {
+function buildTableCard(container, { id, title, subtitle, table, quarter }) {
   const card = document.createElement('section');
   card.className = 'chart-card cmhc-indicator-card';
   card.dataset.chartId = id;
   const { subtypes, firms, cells, average } = table;
   const head1 = subtypes.map(s => `<th colspan="2">${escapeHtml(s)}</th>`).join('');
   const head2 = subtypes.map(() => '<th>Low</th><th>High</th>').join('');
-  const body = firms.map(f => `<tr><td>${escapeHtml(f)}</td>${subtypes.map(s => {
+  const body = firms.map(f => `<tr><td>${escapeHtml(firmLabel(table, f))}</td>${subtypes.map(s => {
     const c = cells[f]?.[s];
     return `<td>${fmtRate(c?.low)}</td><td>${fmtRate(c?.high)}</td>`;
   }).join('')}</tr>`).join('');
   const avg = `<tr class="font-semibold cr-avg-row"><td>Average</td>${subtypes.map(s => `<td>${fmtRate(average[s]?.low)}</td><td>${fmtRate(average[s]?.high)}</td>`).join('')}</tr>`;
+  // A late report's previous-quarter figures, marked "*" on the name.
+  const footnote = carriedNote(table, quarter);
+  const foot = body && footnote
+    ? `<tfoot><tr class="cr-footnote"><td colspan="${1 + 2 * subtypes.length}">${escapeHtml(footnote)}</td></tr></tfoot>`
+    : '';
   card.innerHTML = `
     <header class="chart-title">${escapeHtml(title)}</header>
     <p class="chart-sub">${escapeHtml(subtitle)}</p>
     <div class="cmhc-chart-table-scroll" data-role="plot">
       <table class="cmhc-table cmhc-table-compact"><thead><tr><th rowspan="2">Source</th>${head1}</tr><tr>${head2}</tr></thead>
-      <tbody>${body || '<tr><td colspan="99">No figures for this quarter.</td></tr>'}${body ? avg : ''}</tbody></table>
+      <tbody>${body || '<tr><td colspan="99">No figures for this quarter.</td></tr>'}${body ? avg : ''}</tbody>${foot}</table>
     </div>
     <div class="chart-caption chart-caption-sourced"><span class="chart-source" data-role="source"></span></div>
     <div class="chart-actions">
@@ -456,6 +461,9 @@ function buildTableCard(container, { id, title, subtitle, table }) {
   const $cells = [...$table.querySelectorAll('th, td')];
   // Brokerage names stay on one line ("Cushman & Wakefield", not three).
   const $names = [...$table.querySelectorAll('tbody td:first-child')];
+  // The footnote spans the table and wraps rather than widening it.
+  const $foot = $table.querySelector('.cr-footnote td');
+  if ($foot) $foot.style.setProperty('white-space', 'normal');
   for (const c of $names) c.style.setProperty('white-space', 'nowrap');
   const setTable = (px, padX = 0.5) => {
     $table.style.setProperty('font-size', `${px.toFixed(2)}px`);
@@ -525,8 +533,9 @@ function buildTableCard(container, { id, title, subtitle, table }) {
   });
   const tsv = [
     ['Source', ...subtypes.flatMap(s => [`${s} Low`, `${s} High`])].join('\t'),
-    ...firms.map(f => [f, ...subtypes.flatMap(s => [fmtRate(cells[f]?.[s]?.low), fmtRate(cells[f]?.[s]?.high)])].join('\t')),
+    ...firms.map(f => [firmLabel(table, f), ...subtypes.flatMap(s => [fmtRate(cells[f]?.[s]?.low), fmtRate(cells[f]?.[s]?.high)])].join('\t')),
     ['Average', ...subtypes.flatMap(s => [fmtRate(average[s]?.low), fmtRate(average[s]?.high)])].join('\t'),
+    ...(footnote ? [footnote] : []),
   ].join('\n');
   const $copy = card.querySelector('[data-role="copy"]');
   $copy.addEventListener('click', async () => {
@@ -570,9 +579,11 @@ async function exportData() {
     ws.addRow([]);
     ws.addRow(['Source', ...t.subtypes.flatMap(s => [s, ''])]).font = { bold: true };
     ws.addRow(['', ...t.subtypes.flatMap(() => ['Low', 'High'])]).font = { bold: true };
-    for (const f of t.firms) fmtPct(ws.addRow([f, ...t.subtypes.flatMap(s => [frac(t.cells[f]?.[s]?.low), frac(t.cells[f]?.[s]?.high)])]), 2);
+    for (const f of t.firms) fmtPct(ws.addRow([firmLabel(t, f), ...t.subtypes.flatMap(s => [frac(t.cells[f]?.[s]?.low), frac(t.cells[f]?.[s]?.high)])]), 2);
     const avgRow = ws.addRow(['Average', ...t.subtypes.flatMap(s => [frac(t.average[s]?.low), frac(t.average[s]?.high)])]);
     avgRow.font = { bold: true }; fmtPct(avgRow, 2);
+    const footnote = carriedNote(t, quarter);
+    if (footnote) ws.addRow([footnote]).font = { italic: true };
     ws.getColumn(1).width = 22;
   }
   const all = wb.addWorksheet('All rows');
