@@ -18,7 +18,7 @@
 import { escapeHtml } from './escape.js';
 import { getPref, setPref } from './prefs.js';
 import {
-  nameableUses, narrativeParagraphs, bulkRows, formatValue, ATTRIBUTE_LABELS,
+  nameableUses, nameableConditional, narrativeParagraphs, bulkRows, formatValue, ATTRIBUTE_LABELS,
   currencyVerdict, currencyMessage, currencyQueryUrl, zoneShortName, zoneDescription,
 } from './zoning-data.js';
 import {
@@ -60,6 +60,8 @@ export async function initZoning() {
     $zone: document.getElementById('zn-zone'),
     $uses: document.getElementById('zn-use-toggles'),
     $usesCount: document.getElementById('zn-use-count'),
+    $cond: document.getElementById('zn-cond-toggles'),
+    $condCount: document.getElementById('zn-cond-count'),
     $empty: document.getElementById('zn-empty'),
     data: null,
     prefs: loadPrefs(),
@@ -135,6 +137,8 @@ function wireControls() {
   });
   document.getElementById('zn-use-default').addEventListener('click', () => setSelected(null));
   document.getElementById('zn-use-none').addEventListener('click', () => setSelected([]));
+  document.getElementById('zn-cond-all').addEventListener('click', () => setSelectedCond(nameableConditional(currentZone()).map(u => u.name)));
+  document.getElementById('zn-cond-none').addEventListener('click', () => setSelectedCond([]));
 }
 
 async function runImport(handle, { force = false } = {}) {
@@ -208,6 +212,15 @@ function setSelected(list) {
   // A hand-edited narrative is kept; "Regenerate" applies the new selection.
   renderUseToggles(); renderNarrative();
 }
+/** Ticked conditional uses for the current zone (none by default). */
+function selectedCond() {
+  const saved = ui.prefs.selectedCond?.[selKey()];
+  return Array.isArray(saved) ? saved : [];
+}
+function setSelectedCond(list) {
+  ui.prefs = savePrefs({ selectedCond: { ...(ui.prefs.selectedCond || {}), [selKey()]: list } });
+  renderUseToggles(); renderNarrative();
+}
 
 // --- Rendering ---------------------------------------------------------------
 
@@ -245,17 +258,23 @@ function renderZonePicker() {
 
 function renderUseToggles() {
   const z = currentZone();
-  if (!z) { ui.$uses.innerHTML = ''; ui.$usesCount.textContent = ''; return; }
-  const sel = new Set(selectedUses());
-  const pool = [...nameableUses(z)].sort((a, b) => a.name.localeCompare(b.name));
-  ui.$uses.innerHTML = pool.map((u, i) => `
+  renderToggles(ui.$uses, ui.$usesCount, z ? nameableUses(z) : [], selectedUses(), setSelected);
+  renderToggles(ui.$cond, ui.$condCount, z ? nameableConditional(z) : [], selectedCond(), setSelectedCond);
+}
+
+/** A checklist of use names; onChange receives the ticked names. */
+function renderToggles($box, $count, list, selected, onChange) {
+  if (!$box) return;
+  if (!list.length) { $box.innerHTML = '<p class="text-xs text-neutral-500">None listed.</p>'; $count.textContent = ''; return; }
+  const sel = new Set(selected);
+  const pool = [...list].sort((a, b) => a.name.localeCompare(b.name));
+  $box.innerHTML = pool.map((u, i) => `
     <label class="flex items-start gap-2"><input type="checkbox" data-i="${i}" ${sel.has(u.name) ? 'checked' : ''} class="mt-0.5">
       <span>${escapeHtml(u.name)}</span></label>`).join('');
-  ui.$uses.querySelectorAll('input').forEach(cb => cb.addEventListener('change', () => {
-    const names = [...ui.$uses.querySelectorAll('input:checked')].map(x => pool[Number(x.dataset.i)].name);
-    setSelected(names);
+  $box.querySelectorAll('input').forEach(cb => cb.addEventListener('change', () => {
+    onChange([...$box.querySelectorAll('input:checked')].map(x => pool[Number(x.dataset.i)].name));
   }));
-  ui.$usesCount.textContent = `${sel.size} of ${pool.length} named`;
+  $count.textContent = `${pool.filter(u => sel.has(u.name)).length} of ${pool.length} named`;
 }
 
 function renderZone() {
@@ -337,7 +356,7 @@ function renderNarrative() {
   const z = currentZone();
   const $text = ui.$main.querySelector('[data-role="narrative"] [data-role="text"]');
   if (!z || !$text || ui.edited) return;
-  $text.value = narrativeParagraphs(z, selectedUses()).join('\n\n');
+  $text.value = narrativeParagraphs(z, selectedUses(), selectedCond()).join('\n\n');
 }
 
 function useList(list) {
