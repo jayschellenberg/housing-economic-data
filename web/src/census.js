@@ -187,6 +187,13 @@ export async function initCensus() {
   const $tables   = document.getElementById('census-tables');
   if (!$area[0] || !$tables) return;
 
+  // Sidebar jump link. The URL hash routes tabs, so scroll instead of
+  // following the anchor.
+  document.getElementById('census-jump-narrative')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    $narr?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
   // popEst (annual-estimates chart), industry and highways (narrative
   // paragraphs) are optional garnish — census profile data is the hard
   // requirement, so a missing file for any of them must not block init.
