@@ -174,26 +174,64 @@ export function rangeSeries(rows, type, subtype) {
   })).sort((a, b) => a.date.localeCompare(b.date));
 }
 
+/** The quarter before "2026 Q3" ("2026 Q2"); null for an unparseable one. */
+export function previousQuarter(quarter) {
+  const k = quarterKey(quarter);
+  if (!k) return null;
+  const y = Math.floor(k / 10), q = k % 10;
+  return q === 1 ? `${y - 1} Q4` : `${y} Q${q - 1}`;
+}
+
 /**
  * One quarter's table for a type, in the workbook's layout:
- *   { subtypes, firms, cells: { [firm]: { [subtype]: { low, high } } }, average: { [subtype]: { low, high } } }
+ *   { subtypes, firms, cells: { [firm]: { [subtype]: { low, high } } }, average: { [subtype]: { low, high } },
+ *     carried: { [firm]: '2026 Q2' } }
  * Values in percent. `average` is the mean across firms of Low and of High.
+ *
+ * A brokerage that published this type last quarter but hasn't yet this
+ * quarter (a report that's late) keeps its previous-quarter figures, listed
+ * in `carried` so the table can mark them, and counted in the average (Jason,
+ * 2026-10-21). Only one quarter back, so a brokerage that stopped publishing
+ * a type isn't padded with stale figures; and only in the classes this
+ * quarter already shows (class names changed at the 2021 Summary join).
  */
 export function quarterTable(rows, type, quarter) {
   const sel = rows.filter(r => r.type === type && r.quarter === quarter);
   const subtypes = subtypesFor(sel, type);
-  const firms = firmsFor(sel);
   const cells = {};
   for (const r of sel) {
     (cells[r.firm] ||= {})[r.subtype] = { low: pct(r.low), high: pct(r.high) };
   }
+  const carried = {};
+  const prev = previousQuarter(quarter);
+  if (sel.length && prev) {
+    const shown = new Set(subtypes);
+    const current = new Set(Object.keys(cells));
+    for (const r of rows) {
+      if (r.type !== type || r.quarter !== prev || current.has(r.firm) || !shown.has(r.subtype)) continue;
+      carried[r.firm] = prev;
+      (cells[r.firm] ||= {})[r.subtype] = { low: pct(r.low), high: pct(r.high) };
+    }
+  }
+  const firms = orderBy(Object.keys(cells), FIRM_ORDER);
   const average = {};
   for (const s of subtypes) {
     const lows = firms.map(f => cells[f]?.[s]?.low).filter(v => v != null);
     const highs = firms.map(f => cells[f]?.[s]?.high).filter(v => v != null);
     average[s] = { low: lows.length ? Math.round(mean(lows) * 100) / 100 : null, high: highs.length ? Math.round(mean(highs) * 100) / 100 : null };
   }
-  return { subtypes, firms, cells, average };
+  return { subtypes, firms, cells, average, carried };
+}
+
+/** "Cushman & Wakefield*" for a carried-forward brokerage, else the name. */
+export function firmLabel(table, firm) {
+  return table.carried?.[firm] ? `${firm}*` : firm;
+}
+
+/** The table's footnote for carried-forward figures, or '' when there are none. */
+export function carriedNote(table, quarter) {
+  const prev = [...new Set(Object.values(table.carried || {}))];
+  return prev.length ? `* ${prev.join(' / ')} figure; ${quarter} not yet published.` : '';
 }
 
 /**
@@ -227,6 +265,7 @@ export function collapseClasses(table, label = ALL_CLASSES) {
     subtypes: [label], firms: table.firms, cells,
     average: { [label]: { low: avg(col('low')), high: avg(col('high')) } },
     classes: table.subtypes,
+    carried: { ...(table.carried || {}) },
   };
 }
 
@@ -250,6 +289,7 @@ export function officeTotalsTable(rows, quarter) {
     firms,
     cells,
     average: Object.assign({}, ...parts.map(p => p.average)),
+    carried: Object.assign({}, ...parts.map(p => p.carried || {})),
   };
 }
 
