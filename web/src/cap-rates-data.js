@@ -234,12 +234,6 @@ export function carriedNote(table, quarter) {
   return prev.length ? `* ${prev.join(' / ')} figure; ${quarter} not yet published.` : '';
 }
 
-/**
- * Types whose quarter table shows one range per brokerage — the average of
- * the classes it published — instead of a column pair per class (Jason,
- * 2026-09-30: Downtown and Suburban office as totals, not Class A / B).
- */
-export const TOTAL_ONLY_TYPES = new Set(['Downtown Office', 'Suburban Office']);
 export const ALL_CLASSES = 'All classes';
 
 /**

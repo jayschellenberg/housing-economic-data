@@ -21,7 +21,7 @@ import { getPref, setPref } from './prefs.js';
 import { buildJumpBar } from './jump-bar.js';
 import {
   TYPE_ORDER, FIRM_ORDER, quarterList, typesPresent, rowsUpTo, splitOfficeByLocation,
-  TOTAL_ONLY_TYPES, collapseClasses, officeTotalsTable, officeByClassTable,
+  officeTotalsTable, officeByClassTable,
   averageByFirm, quarterTable, toCardInput, fmtRate, defaultYearFrom, firmLabel, carriedNote,
 } from './cap-rates-data.js';
 import {
@@ -364,28 +364,16 @@ function renderCharts() {
       card.setOpenPanels(open.get(id) || []);
       ui.cards.set(id, { card: card.card });
     }
-    // 2. The quarter's table
+    // 2. The quarter's table, a Low / High pair per class. Downtown and
+    //    Suburban office too: by class, not one all-class range (Jason,
+    //    2026-10-21 — the totals live on in the combined Office table).
     {
       const id = `caprate_${slug(type)}_table`;
-      const table = typeTable(rows, type, quarter);
-      const subtitle = table.classes
-        ? `Average of each brokerage's published ${table.classes.join(' / ')} range`
-        : 'Published Low–High range by brokerage';
-      const card = buildTableCard($cards, { id, title: `Winnipeg ${type} Cap Rates — ${quarter}`, subtitle, table, quarter });
-      ui.cards.set(id, { card: card.card });
-    }
-    // 2b. Downtown / Suburban office also by class, Class A / Class B column
-    //     pairs, beside the totals table (Jason, 2026-10-21: both layouts).
-    if (TOTAL_ONLY_TYPES.has(type)) {
-      const id = `caprate_${slug(type)}_classes_table`;
       const table = quarterTable(rows, type, quarter);
-      if (table.subtypes.length) {
-        const card = buildTableCard($cards, {
-          id, title: `Winnipeg ${type} Cap Rates by Class — ${quarter}`,
-          subtitle: 'Published Low–High range by brokerage and class', table, quarter,
-        });
-        ui.cards.set(id, { card: card.card });
-      }
+      const card = buildTableCard($cards, {
+        id, title: `Winnipeg ${type} Cap Rates — ${quarter}`, subtitle: 'Published Low–High range by brokerage', table, quarter,
+      });
+      ui.cards.set(id, { card: card.card });
     }
     // 3. After the office sections: every office cap rate in one table, a
     //    Downtown and a Suburban column pair (Jason, 2026-09-30).
@@ -429,13 +417,6 @@ function note() {
 }
 
 // --- Quarter table card ------------------------------------------------------
-
-/** The quarter's table for a type: one range per brokerage for the
- *  total-only types (Downtown / Suburban Office), else a pair per class. */
-function typeTable(rows, type, quarter) {
-  const t = quarterTable(rows, type, quarter);
-  return TOTAL_ONLY_TYPES.has(type) && t.subtypes.length ? collapseClasses(t) : t;
-}
 
 function buildTableCard(container, { id, title, subtitle, table, quarter }) {
   const card = document.createElement('section');
@@ -592,11 +573,7 @@ async function exportData() {
   const sheets = [];
   for (const type of typesPresent(rows)) {
     if (!on.has(type)) continue;
-    sheets.push([type, typeTable(rows, type, quarter)]);
-    if (TOTAL_ONLY_TYPES.has(type)) {
-      const byClass = quarterTable(rows, type, quarter);
-      if (byClass.subtypes.length) sheets.push([`${type.replace(' Office', '')} by class`, byClass, `Winnipeg ${type} Cap Rates by Class — ${quarter}`]);
-    }
+    sheets.push([type, quarterTable(rows, type, quarter)]);
     if (type === 'Suburban Office' || (type === 'Downtown Office' && !on.has('Suburban Office'))) {
       const office = officeTotalsTable(rows, quarter);
       if (office) sheets.push(['Office', office]);
