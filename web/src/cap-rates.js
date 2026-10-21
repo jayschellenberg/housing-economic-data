@@ -273,7 +273,20 @@ function renderTypeToggles() {
     : shown.length === 0 ? 'None selected'
     : shown.length <= 2 ? shown.join(', ')
     : `${shown.length} of ${types.length} types`;
+  const jumpLink = (text, id) => {
+    const li = document.createElement('li');
+    const a = document.createElement('a');
+    a.href = `#${id}`; a.className = 'underline text-accent-600'; a.textContent = text;
+    a.addEventListener('click', (e) => { e.preventDefault(); document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+    li.appendChild(a); ui.$jump.appendChild(li);
+  };
+  let officeLinked = false;
   for (const t of types) {
+    // The overall Office section sits above Downtown / Suburban Office.
+    if ((t === 'Downtown Office' || t === 'Suburban Office') && !officeLinked) {
+      officeLinked = true;
+      jumpLink('Office', 'cr-section-office-all');
+    }
     const label = document.createElement('label');
     label.className = 'flex items-center gap-1 text-sm cursor-pointer';
     const cb = document.createElement('input');
@@ -286,11 +299,7 @@ function renderTypeToggles() {
     const text = document.createElement('span'); text.textContent = t;
     label.append(cb, text);
     ui.$types.appendChild(label);
-    const li = document.createElement('li');
-    const a = document.createElement('a');
-    a.href = `#cr-section-${slug(t)}`; a.className = 'underline text-accent-600'; a.textContent = t;
-    a.addEventListener('click', (e) => { e.preventDefault(); document.getElementById(`cr-section-${slug(t)}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
-    li.appendChild(a); ui.$jump.appendChild(li);
+    jumpLink(t, `cr-section-${slug(t)}`);
   }
 }
 
