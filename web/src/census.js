@@ -14,7 +14,7 @@
 
 import * as Plot from '@observablehq/plot';
 import { themed, gridMarks, frameMark, mirrorYMarks, MIRROR_Y_MARGIN, PALETTE, plotFitted, GRID_STROKE, GRID_DASHARRAY } from './plot-theme.js';
-import { populationGrowth, formatGrowth } from './census-growth.js';
+import { populationGrowth, formatGrowth, centreOnBand } from './census-growth.js';
 import { downloadCard } from './chart.js';
 import { mapCard, quantileChoropleth } from './map.js';
 import { provinceGeo, hasProvinceGeo } from './geo.js';
@@ -685,10 +685,12 @@ export async function initCensus() {
             Plot.gridY({ stroke: GRID_STROKE, strokeDasharray: GRID_DASHARRAY }),
             Plot.ruleY([0], { stroke: '#52525b', strokeWidth: 0.8 }),
             Plot.barY(growth, { fx: 'period', x: 'region', y: 'value', fill: 'region' }),
-            Plot.text(growth, {
-              fx: 'period', x: 'region', y: 'value', text: d => formatGrowth(d.value),
-              dy: d => (d.value < 0 ? 9 : -7), fontSize: 10.5, fill: '#3f3f46',
-            }),
+            // The rate on each bar, centred on it: above a rise, below a fall.
+            ...[[d => d.value >= 0, 'bottom', -3], [d => d.value < 0, 'top', 3]].map(([keep, lineAnchor, dy]) =>
+              Plot.text(growth.filter(keep), {
+                fx: 'period', x: 'region', y: 'value', text: d => formatGrowth(d.value),
+                lineAnchor, dy, fontSize: 10.5, fill: '#3f3f46', render: centreOnBand,
+              })),
             frameMark(),
           ],
         }));
