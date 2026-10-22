@@ -355,7 +355,10 @@ export function describeFilters(filters, manifest) {
     if (has(f[key])) chips.push({ key, label: `${label}: ${f[key].join(', ')}` });
   }
   if (hasText(f.from) || hasText(f.to)) {
-    chips.push({ key: 'cycles', label: `Seen ${f.from || 'start'} to ${f.to || cycle || 'latest'}` });
+    const label = !hasText(f.to) ? `Last seen since ${f.from}`
+      : !hasText(f.from) ? `Last seen up to ${f.to}`
+      : `Last seen ${f.from} to ${f.to}`;
+    chips.push({ key: 'cycles', label });
   }
   if (hasText(f.sfLo) || hasText(f.sfHi)) {
     chips.push({ key: 'size', label: `${f.sfLo || '0'}–${f.sfHi || '∞'} sf` });

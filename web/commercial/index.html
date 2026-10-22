@@ -112,6 +112,17 @@
             <label class="inline"><input type="radio" name="f-market" value="current" checked /> On the market</label>
             <label class="inline"><input type="radio" name="f-market" value="any" /> All records</label>
           </div>
+
+          <!-- Hides records last seen before the picked month (that month
+               itself stays in). Monthly because last_seen is a cycle. -->
+          <div class="field">
+            <div class="hs-section-head">
+              <label class="field-label" for="f-from">Last seen since</label>
+              <button id="f-from-clear" type="button" class="hs-link" hidden>clear</button>
+            </div>
+            <input id="f-from" type="month" aria-label="Last seen since" />
+            <p id="f-from-hint" class="hs-hint" hidden></p>
+          </div>
         </section>
 
         <section class="hs-section">
@@ -221,11 +232,8 @@
             </div>
 
             <div class="field">
-              <span class="field-label">Seen between</span>
-              <div class="row2">
-                <input id="f-from" type="month" aria-label="From cycle" />
-                <input id="f-to" type="month" aria-label="To cycle" />
-              </div>
+              <label class="field-label" for="f-to">Last seen up to</label>
+              <input id="f-to" type="month" aria-label="Last seen up to" />
             </div>
             <label class="inline block"><input id="f-flyer" type="checkbox" /> Has a flyer</label>
             <label class="inline block"><input id="f-mapped" type="checkbox" /> Mapped only</label>

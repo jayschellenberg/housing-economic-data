@@ -87,7 +87,7 @@ export function initFiltersPanel({ onChange } = {}) {
   // from inside a folded panel; open it so the picker is in view.
   function revealMoreFilters() {
     const more = $('more-filters');
-    if (more && (state.clusters?.length || state.neighbourhoods?.length)) more.open = true;
+    if (more && (state.clusters?.length || state.neighbourhoods?.length || state.to)) more.open = true;
   }
 
   function readControls() {
@@ -144,7 +144,25 @@ export function initFiltersPanel({ onChange } = {}) {
   function syncSearchPlaceholder() {
     const el = $('f-text');
     if (el) el.placeholder = SCOPE_PLACEHOLDER[state.textScope] || SCOPE_PLACEHOLDER.address;
+    syncLastSeen();
   }
+
+  // "On the market" is already only the newest cycle, so a past "since"
+  // month changes nothing there; say so rather than leave it looking broken.
+  function syncLastSeen() {
+    const set = Boolean(state.from);
+    const clear = $('f-from-clear');
+    if (clear) clear.hidden = !set;
+    const hint = $('f-from-hint');
+    if (!hint) return;
+    hint.hidden = !(set && state.market === 'current');
+    hint.textContent = 'On the market is only the latest cycle — choose All records to see older listings.';
+  }
+  $('f-from-clear')?.addEventListener('click', () => {
+    const el = $('f-from');
+    if (el) el.value = '';
+    applyControls();
+  });
 
   // Re-render only when the filters actually changed. Leaving the search
   // box fires `change` on blur for text the `input` handler has ALREADY
