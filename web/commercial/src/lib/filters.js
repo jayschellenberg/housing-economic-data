@@ -50,6 +50,26 @@ export const DEFAULT_FILTERS = Object.freeze({
 
 export const defaultFilters = () => ({ ...DEFAULT_FILTERS });
 
+/** How far back "Last seen since" starts on the page, in months. */
+export const LAST_SEEN_DEFAULT_MONTHS = 36;
+
+/**
+ * The month LAST_SEEN_DEFAULT_MONTHS before `today`, as 'YYYY-MM'. Read
+ * off the wall clock, not the data, by Jason's ruling (2026-10-22): the
+ * page opens on the last three years from the day it is used.
+ */
+export function defaultLastSeen(today = new Date()) {
+  const m = today.getFullYear() * 12 + today.getMonth() - LAST_SEEN_DEFAULT_MONTHS;
+  return `${Math.floor(m / 12)}-${String((m % 12) + 1).padStart(2, '0')}`;
+}
+
+/**
+ * The state the page opens on and Reset returns to: the defaults plus the
+ * three-year "Last seen since". DEFAULT_FILTERS itself stays unbounded, so
+ * applyFilters with no `from` still means every cycle.
+ */
+export const startingFilters = (today) => ({ ...DEFAULT_FILTERS, from: defaultLastSeen(today) });
+
 const num = (v) => {
   if (v === '' || v == null) return null;
   const n = Number(v);
@@ -322,10 +342,10 @@ export function applyFilters(records, filters, manifest) {
 }
 
 /** True when anything differs from the defaults — drives "Clear all". */
-export function isDefault(filters) {
-  const f = { ...DEFAULT_FILTERS, ...(filters || {}) };
-  return Object.keys(DEFAULT_FILTERS).every((k) => {
-    const a = f[k], b = DEFAULT_FILTERS[k];
+export function isDefault(filters, base = DEFAULT_FILTERS) {
+  const f = { ...base, ...(filters || {}) };
+  return Object.keys(base).every((k) => {
+    const a = f[k], b = base[k];
     if (Array.isArray(b)) return !has(a);
     return a === b;
   });

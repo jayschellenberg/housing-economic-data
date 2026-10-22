@@ -8,7 +8,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  DEFAULT_FILTERS, defaultFilters, applyFilters, describeFilters, isDefault,
+  DEFAULT_FILTERS, defaultFilters, applyFilters, describeFilters, isDefault, defaultLastSeen, startingFilters,
   collapseDuplicates, optionsFor, rateOf, priceOf, sizeOf,
   searchTokens, tokenMatches, TEXT_SCOPES,
 } from '../src/lib/filters.js';
@@ -104,6 +104,19 @@ test('"last seen since" keeps the picked month and drops everything before it', 
   assert.equal(chip({ from: '2020-01' }), 'Last seen since 2020-01');
   assert.equal(chip({ to: '2022-12' }), 'Last seen up to 2022-12');
   assert.equal(chip({ from: '2020-01', to: '2022-12' }), 'Last seen 2020-01 to 2022-12');
+});
+
+test('the page starts 36 months back from today, while DEFAULT_FILTERS stays unbounded', () => {
+  assert.equal(defaultLastSeen(new Date(2026, 9, 22)), '2023-10');
+  assert.equal(defaultLastSeen(new Date(2026, 0, 15)), '2023-01');
+  assert.equal(defaultLastSeen(new Date(2026, 11, 31)), '2023-12');
+  const start = startingFilters(new Date(2026, 9, 22));
+  assert.equal(start.from, '2023-10');
+  assert.equal(DEFAULT_FILTERS.from, '');
+  // Reset compares against the starting state, so it opens disabled...
+  assert.equal(isDefault(start, start), true);
+  // ...and clearing the month to "every cycle" counts as a change.
+  assert.equal(isDefault({ ...start, from: '' }, start), false);
 });
 
 test('search covers the fields a person would type into it', () => {

@@ -19,7 +19,7 @@ import { initTabs } from './tabs.js';
 import { buildSubjectIndex, lookupSubject } from './lib/subjectLookup.js';
 import { FILES } from './lib/bundle.js';
 import { getFile } from './lib/store.js';
-import { applyFilters, defaultFilters, describeFilters, annotateDistance } from './lib/filters.js';
+import { applyFilters, startingFilters, describeFilters, annotateDistance } from './lib/filters.js';
 import { normalizeShapes, passesShapeFilter } from './lib/shapeFilter.js';
 
 const $ = (id) => document.getElementById(id);
@@ -35,7 +35,7 @@ const AREA_FILTER = Object.freeze({
 
 const state = {
   bundle: null,          // { manifest, records, runs } or null
-  filters: defaultFilters(),
+  filters: startingFilters(),   // the same state filtersPanel opens on
   filtered: [],
   // Set on the map, not in the sidebar: drawn include/exclude areas and a
   // subject point with a radius. They filter the same rows, but a change
