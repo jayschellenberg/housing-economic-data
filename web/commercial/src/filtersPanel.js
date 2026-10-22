@@ -6,7 +6,7 @@
  * Contract: onChange(filters) fires whenever the state changes.
  */
 
-import { DEFAULT_FILTERS, defaultFilters, optionsFor, describeFilters, isDefault } from './lib/filters.js';
+import { DEFAULT_FILTERS, startingFilters, optionsFor, describeFilters, isDefault } from './lib/filters.js';
 import { initMultiSelect, retainSelection } from './lib/multiSelect.js';
 
 const $ = (id) => document.getElementById(id);
@@ -38,9 +38,10 @@ const CHECKBOXES = {
 
 export function initFiltersPanel({ onChange } = {}) {
   const root = $('filters');
-  if (!root) return { setRecords() {}, get: defaultFilters, set() {}, renderChips() {} };
+  if (!root) return { setRecords() {}, get: startingFilters, set() {}, renderChips() {} };
 
-  let state = defaultFilters();
+  // Opens on, and Reset returns to, the last three years (startingFilters).
+  let state = startingFilters();
   let records = [];
   const pickers = {};
 
@@ -149,13 +150,14 @@ export function initFiltersPanel({ onChange } = {}) {
 
   // "On the market" is already only the newest cycle, so a past "since"
   // month changes nothing there; say so rather than leave it looking broken.
+  // Not for the three-year default, which nobody chose and would only nag.
   function syncLastSeen() {
     const set = Boolean(state.from);
     const clear = $('f-from-clear');
     if (clear) clear.hidden = !set;
     const hint = $('f-from-hint');
     if (!hint) return;
-    hint.hidden = !(set && state.market === 'current');
+    hint.hidden = !(set && state.market === 'current' && state.from !== startingFilters().from);
     hint.textContent = 'On the market is only the latest cycle — choose All records to see older listings.';
   }
   $('f-from-clear')?.addEventListener('click', () => {
@@ -183,7 +185,7 @@ export function initFiltersPanel({ onChange } = {}) {
   $('f-text')?.addEventListener('input', debounce(applyControls, 200));
 
   $('f-clear')?.addEventListener('click', () => {
-    state = defaultFilters();
+    state = startingFilters();
     writeControls();
     applied = JSON.stringify(state);
     emit();
@@ -243,7 +245,7 @@ export function initFiltersPanel({ onChange } = {}) {
       host.appendChild(el);
     }
     const clear = $('f-clear');
-    if (clear) clear.disabled = isDefault(state);
+    if (clear) clear.disabled = isDefault(state, startingFilters());
   }
 
   writeControls();
