@@ -101,12 +101,21 @@
            is set, so a collapsed disclosure never narrows results silently.
            #filters wraps every section: the panel listens for changes on it. -->
       <div id="filters" class="hs-stack">
-        <!-- First, because looking up one address is the most common start. -->
+        <!-- On the market / all records first, then the search: the two
+             choices most lookups start with. -->
         <section class="hs-section">
           <div class="hs-section-head">
-            <h2 class="hs-section-title"><label for="f-text">Search</label></h2>
+            <h2 class="hs-section-title">Showing</h2>
             <button id="f-clear" type="button" class="hs-link" disabled>Reset all filters</button>
           </div>
+          <div class="checks" role="radiogroup" aria-label="Showing">
+            <label class="inline"><input type="radio" name="f-market" value="current" checked /> On the market</label>
+            <label class="inline"><input type="radio" name="f-market" value="any" /> All records</label>
+          </div>
+        </section>
+
+        <section class="hs-section">
+          <h2 class="hs-section-title"><label for="f-text">Search</label></h2>
           <input id="f-text" class="field-input" type="search" placeholder="address, name, unit, roll" />
           <div class="checks" role="radiogroup" aria-label="Search in">
             <label class="inline"><input type="radio" name="f-text-scope" value="address" checked /> Address</label>
@@ -117,14 +126,6 @@
 
         <section class="hs-section">
           <h2 class="hs-section-title">Listings</h2>
-
-          <fieldset class="field">
-            <legend class="field-label">Showing</legend>
-            <div class="checks">
-              <label class="inline"><input type="radio" name="f-market" value="current" checked /> On the market</label>
-              <label class="inline"><input type="radio" name="f-market" value="any" /> All records</label>
-            </div>
-          </fieldset>
 
           <div class="field">
             <span class="field-label">Type</span>
