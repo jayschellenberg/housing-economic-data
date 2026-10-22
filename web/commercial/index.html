@@ -101,11 +101,22 @@
            is set, so a collapsed disclosure never narrows results silently.
            #filters wraps every section: the panel listens for changes on it. -->
       <div id="filters" class="hs-stack">
+        <!-- First, because looking up one address is the most common start. -->
         <section class="hs-section">
           <div class="hs-section-head">
-            <h2 class="hs-section-title">Listings</h2>
+            <h2 class="hs-section-title"><label for="f-text">Search</label></h2>
             <button id="f-clear" type="button" class="hs-link" disabled>Reset all filters</button>
           </div>
+          <input id="f-text" class="field-input" type="search" placeholder="address, name, unit, roll" />
+          <div class="checks" role="radiogroup" aria-label="Search in">
+            <label class="inline"><input type="radio" name="f-text-scope" value="address" checked /> Address</label>
+            <label class="inline"><input type="radio" name="f-text-scope" value="notes" /> Notes</label>
+            <label class="inline"><input type="radio" name="f-text-scope" value="all" /> Everything</label>
+          </div>
+        </section>
+
+        <section class="hs-section">
+          <h2 class="hs-section-title">Listings</h2>
 
           <fieldset class="field">
             <legend class="field-label">Showing</legend>
@@ -123,13 +134,12 @@
             </details>
           </div>
 
-          <div class="field">
-            <span class="field-label">Sale / lease</span>
-            <details class="multiselect" id="f-listing">
-              <summary><span class="multiselect-label"></span></summary>
-              <div class="multiselect-menu"></div>
-            </details>
-          </div>
+          <!-- One checkbox per listing type, written from the connected
+               bundle; all ticked = both. The last one can't be unticked. -->
+          <fieldset class="field">
+            <legend class="field-label">Sale / lease</legend>
+            <div class="checks" id="f-listing"></div>
+          </fieldset>
 
           <div class="field">
             <span class="field-label">Status</span>
@@ -155,22 +165,6 @@
           <div class="field">
             <span class="field-label">Municipality</span>
             <details class="multiselect" id="f-muni">
-              <summary><span class="multiselect-label"></span></summary>
-              <div class="multiselect-menu"></div>
-            </details>
-          </div>
-
-          <div class="field">
-            <span class="field-label">Cluster</span>
-            <details class="multiselect" id="f-cluster">
-              <summary><span class="multiselect-label"></span></summary>
-              <div class="multiselect-menu"></div>
-            </details>
-          </div>
-
-          <div class="field">
-            <span class="field-label">Neighbourhood</span>
-            <details class="multiselect" id="f-nbhd">
               <summary><span class="multiselect-label"></span></summary>
               <div class="multiselect-menu"></div>
             </details>
@@ -205,18 +199,26 @@
         </section>
 
         <section class="hs-section">
-          <h2 class="hs-section-title"><label for="f-text">Search</label></h2>
-          <input id="f-text" class="field-input" type="search" placeholder="address, name, unit, roll" />
-          <div class="checks" role="radiogroup" aria-label="Search in">
-            <label class="inline"><input type="radio" name="f-text-scope" value="address" checked /> Address</label>
-            <label class="inline"><input type="radio" name="f-text-scope" value="notes" /> Notes</label>
-            <label class="inline"><input type="radio" name="f-text-scope" value="all" /> Everything</label>
-          </div>
-        </section>
-
-        <section class="hs-section">
-          <details class="more-filters">
+          <!-- Opens itself when a cluster or neighbourhood is set (a map
+               click selects one), so a folded panel never hides a filter. -->
+          <details class="more-filters" id="more-filters">
             <summary>Additional filters</summary>
+            <div class="field">
+              <span class="field-label">Cluster</span>
+              <details class="multiselect" id="f-cluster">
+                <summary><span class="multiselect-label"></span></summary>
+                <div class="multiselect-menu"></div>
+              </details>
+            </div>
+
+            <div class="field">
+              <span class="field-label">Neighbourhood</span>
+              <details class="multiselect" id="f-nbhd">
+                <summary><span class="multiselect-label"></span></summary>
+                <div class="multiselect-menu"></div>
+              </details>
+            </div>
+
             <div class="field">
               <span class="field-label">Seen between</span>
               <div class="row2">

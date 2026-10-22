@@ -14,7 +14,6 @@ const $ = (id) => document.getElementById(id);
 // Multi-select id → the record field it draws its options from.
 const PICKERS = {
   'f-space': { field: 'space_type', state: 'spaceTypes', placeholder: 'Any type' },
-  'f-listing': { field: 'listing_type', state: 'listingTypes', placeholder: 'Sale + lease' },
   'f-status': { field: 'status', state: 'statuses', placeholder: 'Any status' },
   'f-brokerage': { field: 'brokerage', state: 'brokerages', placeholder: 'Any brokerage', searchable: true },
   'f-muni': { field: 'municipality', state: 'municipalities', placeholder: 'Any municipality', searchable: true },
@@ -55,6 +54,42 @@ export function initFiltersPanel({ onChange } = {}) {
 
   const emit = () => { renderChips(); onChange?.({ ...state }); };
 
+  // Sale / lease: a checkbox per listing type the bundle carries, so
+  // switching is one click rather than open-pick-close. All ticked means
+  // no filter (listingTypes []), which keeps the default state default.
+  const listingHost = $('f-listing');
+  const listingBoxes = () => [...root.querySelectorAll('input[name="f-listing-type"]')];
+  // Unticking the last box would mean "neither", which matches nothing.
+  // Runs before #filters' own change listener, so that one sees no change.
+  listingHost?.addEventListener('change', (e) => {
+    if (e.target.name === 'f-listing-type' && !listingBoxes().some((b) => b.checked)) e.target.checked = true;
+  });
+  function renderListingChecks(opts) {
+    if (!listingHost) return;
+    listingHost.textContent = '';
+    for (const opt of opts) {
+      const label = document.createElement('label');
+      label.className = 'inline';
+      const box = document.createElement('input');
+      box.type = 'checkbox';
+      box.name = 'f-listing-type';
+      box.value = opt.value;
+      label.append(box, ` ${opt.label}`);
+      listingHost.appendChild(label);
+    }
+  }
+  function syncListingChecks() {
+    const wanted = state.listingTypes || [];
+    for (const box of listingBoxes()) box.checked = wanted.length === 0 || wanted.includes(box.value);
+  }
+
+  // A cluster or neighbourhood set from the map would otherwise filter
+  // from inside a folded panel; open it so the picker is in view.
+  function revealMoreFilters() {
+    const more = $('more-filters');
+    if (more && (state.clusters?.length || state.neighbourhoods?.length)) more.open = true;
+  }
+
   function readControls() {
     for (const [id, key] of Object.entries(TEXT_INPUTS)) {
       const el = $(id);
@@ -68,6 +103,11 @@ export function initFiltersPanel({ onChange } = {}) {
     if (market) state.market = market.value;
     const scope = root.querySelector('input[name="f-text-scope"]:checked');
     if (scope) state.textScope = scope.value;
+    const boxes = listingBoxes();
+    if (boxes.length) {
+      const ticked = boxes.filter((b) => b.checked).map((b) => b.value);
+      state.listingTypes = ticked.length === boxes.length ? [] : ticked;
+    }
     for (const [id, spec] of Object.entries(PICKERS)) {
       state[spec.state] = pickers[id].getSelected();
     }
@@ -87,9 +127,11 @@ export function initFiltersPanel({ onChange } = {}) {
     const scope = root.querySelector(`input[name="f-text-scope"][value="${state.textScope}"]`);
     if (scope) scope.checked = true;
     syncSearchPlaceholder();
+    syncListingChecks();
     for (const [id, spec] of Object.entries(PICKERS)) {
       pickers[id].setSelected(state[spec.state] || []);
     }
+    revealMoreFilters();
   }
 
   // The placeholder names the fields the chosen scope actually reads, so
@@ -144,6 +186,12 @@ export function initFiltersPanel({ onChange } = {}) {
       state[spec.state] = retainSelection(state[spec.state], opts.map((o) => o.value));
       pickers[id].setSelected(state[spec.state]);
     }
+    const listingOpts = optionsFor(records, 'listing_type');
+    renderListingChecks(listingOpts);
+    const kept = retainSelection(state.listingTypes, listingOpts.map((o) => o.value));
+    state.listingTypes = kept.length === listingOpts.length ? [] : kept;
+    syncListingChecks();
+    revealMoreFilters();
     // Offered only when the folder says which rows Moody's added — a
     // folder published before record_source existed has none to leave out.
     const wrap = $('f-brokerage-only-wrap');
