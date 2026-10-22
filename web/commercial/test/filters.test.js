@@ -96,6 +96,16 @@ test('cycle bounds read last_seen', () => {
   assert.equal(run(records, { market: 'any', from: '2019-01', to: '2027-01' }).length, 2);
 });
 
+test('"last seen since" keeps the picked month and drops everything before it', () => {
+  const records = [rec({ last_seen: '2019-04' }), rec({ last_seen: '2020-01' }), rec({ last_seen: '2019-12' })];
+  const kept = run(records, { market: 'any', from: '2020-01' });
+  assert.deepEqual(kept.map((r) => r.last_seen), ['2020-01']);
+  const chip = (over) => describeFilters({ ...defaultFilters(), ...over }, MANIFEST).find((c) => c.key === 'cycles')?.label;
+  assert.equal(chip({ from: '2020-01' }), 'Last seen since 2020-01');
+  assert.equal(chip({ to: '2022-12' }), 'Last seen up to 2022-12');
+  assert.equal(chip({ from: '2020-01', to: '2022-12' }), 'Last seen 2020-01 to 2022-12');
+});
+
 test('search covers the fields a person would type into it', () => {
   /* Since the scope switch exists, "the fields a person would type into
      it" depends on which scope is chosen. The default is address, so a
