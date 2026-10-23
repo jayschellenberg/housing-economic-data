@@ -6,7 +6,7 @@
  * Contract: onChange(filters) fires whenever the state changes.
  */
 
-import { DEFAULT_FILTERS, startingFilters, optionsFor, describeFilters, isDefault } from './lib/filters.js';
+import { DEFAULT_FILTERS, startingFilters, optionsFor, describeFilters, isDefault, LISTING_TYPE_ORDER } from './lib/filters.js';
 import { initMultiSelect, retainSelection } from './lib/multiSelect.js';
 
 const $ = (id) => document.getElementById(id);
@@ -206,7 +206,8 @@ export function initFiltersPanel({ onChange } = {}) {
       state[spec.state] = retainSelection(state[spec.state], opts.map((o) => o.value));
       pickers[id].setSelected(state[spec.state]);
     }
-    const listingOpts = optionsFor(records, 'listing_type');
+    const rank = (v) => { const i = LISTING_TYPE_ORDER.indexOf(v); return i < 0 ? LISTING_TYPE_ORDER.length : i; };
+    const listingOpts = optionsFor(records, 'listing_type').sort((a, b) => rank(a.value) - rank(b.value));
     renderListingChecks(listingOpts);
     const kept = retainSelection(state.listingTypes, listingOpts.map((o) => o.value));
     state.listingTypes = kept.length === listingOpts.length ? [] : kept;
