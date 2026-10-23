@@ -65,10 +65,16 @@ export function defaultLastSeen(today = new Date()) {
 
 /**
  * The state the page opens on and Reset returns to: the defaults plus the
- * three-year "Last seen since". DEFAULT_FILTERS itself stays unbounded, so
- * applyFilters with no `from` still means every cycle.
+ * three-year "Last seen since" and sales only (Jason's ask, 2026-10-23).
+ * DEFAULT_FILTERS itself stays unbounded, so applyFilters with no `from`
+ * still means every cycle and both listing types.
  */
-export const startingFilters = (today) => ({ ...DEFAULT_FILTERS, from: defaultLastSeen(today) });
+export const startingFilters = (today) => ({
+  ...DEFAULT_FILTERS, from: defaultLastSeen(today), listingTypes: ['Sale'],
+});
+
+/** Sale / lease checkbox order: Sale first, anything unexpected after. */
+export const LISTING_TYPE_ORDER = ['Sale', 'Lease'];
 
 const num = (v) => {
   if (v === '' || v == null) return null;
@@ -346,7 +352,11 @@ export function isDefault(filters, base = DEFAULT_FILTERS) {
   const f = { ...base, ...(filters || {}) };
   return Object.keys(base).every((k) => {
     const a = f[k], b = base[k];
-    if (Array.isArray(b)) return !has(a);
+    if (Array.isArray(b)) {
+      // A non-empty base (startingFilters' ['Sale']) has to match as a set.
+      const x = has(a) ? a : [];
+      return x.length === b.length && b.every((v) => x.includes(v));
+    }
     return a === b;
   });
 }

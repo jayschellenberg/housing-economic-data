@@ -117,6 +117,11 @@ test('the page starts 36 months back from today, while DEFAULT_FILTERS stays unb
   assert.equal(isDefault(start, start), true);
   // ...and clearing the month to "every cycle" counts as a change.
   assert.equal(isDefault({ ...start, from: '' }, start), false);
+  // Opens on sales only; ticking Lease too (= no filter) is a change.
+  assert.deepEqual(start.listingTypes, ['Sale']);
+  assert.deepEqual(DEFAULT_FILTERS.listingTypes, []);
+  assert.equal(isDefault({ ...start, listingTypes: [] }, start), false);
+  assert.equal(isDefault({ ...start, listingTypes: ['Lease'] }, start), false);
 });
 
 test('search covers the fields a person would type into it', () => {
