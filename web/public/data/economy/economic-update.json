@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "generated": "2026-10-19T10:34:47Z",
-  "dataAsOf": "2026-10-19",
+  "generated": "2026-10-26T11:00:23Z",
+  "dataAsOf": "2026-10-26",
   "intro": {
     "censusYear": 2021,
     "provincePopulation": 1342153,
@@ -42,10 +42,10 @@
   },
   "indicators": {
     "retail_trade": {
-      "value": 2482519000,
-      "changePct": -0.4,
-      "direction": "down",
-      "period": "July 2026",
+      "value": 2530270000,
+      "changePct": 1.6,
+      "direction": "up",
+      "period": "August 2026",
       "comparison": "month-to-month, seasonally adjusted",
       "source": "Statistics Canada",
       "stale": false
@@ -69,7 +69,13 @@
       "stale": false
     },
     "cpi": {
-      "stale": true
+      "value": 172.2,
+      "changePct": 4.4,
+      "direction": "up",
+      "period": "September 2026",
+      "comparison": "year-over-year",
+      "source": "Statistics Canada",
+      "stale": false
     },
     "employment": {
       "value": 751700,
@@ -131,7 +137,13 @@
   },
   "housing": {
     "starts": {
-      "stale": true
+      "value": 6071,
+      "ytdChangePct": 16.4,
+      "direction": "up",
+      "period": "year-to-date to September 2026",
+      "comparison": "year-to-date change",
+      "source": "CMHC / Statistics Canada",
+      "stale": false
     },
     "building_permits": {
       "value": 291052000,
