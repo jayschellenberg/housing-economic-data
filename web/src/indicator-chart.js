@@ -999,16 +999,6 @@ export function buildIndicatorCard(container, {
       note.textContent = [refBand?.label, refLine?.label].filter(Boolean).join(' • ');
       legendEl.appendChild(note);
     }
-    // `opts.legendKey` ([{ colour, label }]): a key for the caller's extra
-    // marks, square swatches so they don't read as more lines.
-    for (const { colour, label } of opts.legendKey || []) {
-      const item = document.createElement('div');
-      item.className = 'cmhc-plot-legend-item cmhc-plot-legend-key';
-      item.innerHTML = `<span class="cmhc-plot-legend-key-swatch" style="background:${colour}"></span>` +
-        '<span class="cmhc-plot-legend-text"></span>';
-      item.querySelector('.cmhc-plot-legend-text').textContent = label;
-      legendEl.appendChild(item);
-    }
 
     // `singleSeriesInSubtitle`: a chart that draws one line needs no legend —
     // its name goes at the front of the subtitle instead ("Dollar volume —

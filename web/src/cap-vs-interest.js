@@ -85,13 +85,22 @@ const CAP_COLOURS = {
 
 // The spread chart measures against the 10-year, as CBRE's does.
 const SPREAD_BOND_ID = 'boc.goc_10yr';
-// Spread bars by kind: translucent so the lines read through them, and in
-// colours no series on this tab uses.
-const SPREAD_KINDS = [
-  { kind: 'high',    colour: '#D97706', label: 'Widest two spreads' },
-  { kind: 'low',     colour: '#0F766E', label: 'Narrowest two spreads' },
-  { kind: 'current', colour: '#404040', label: 'Current spread' },
-];
+// Every spread bar is the same light, neutral grey, kept out of the legend: the
+// bps label says what a bar is, and the lines read through the shading (Jason,
+// 2026-10-29).
+const SPREAD_BAR = { stroke: '#9CA3AF', strokeOpacity: 0.28 };
+// The chart's window: the latest 15 years, rolling forward with the data.
+const SPREAD_YEARS = 15;
+
+/**
+ * First month ("YYYY-MM") of a rolling window of `years` that ends on the
+ * month of `lastIso`: 2026-10 over 15 years → 2011-11.
+ */
+export function rollingFrom(lastIso, years) {
+  const [y, m] = String(lastIso).split('-').map(Number);
+  const idx = y * 12 + (m - 1) - years * 12 + 1;
+  return `${Math.floor(idx / 12)}-${String((idx % 12) + 1).padStart(2, '0')}`;
+}
 
 /** "2012-06-01" → "Q2 2012". */
 function quarterLabel(date) {
@@ -101,23 +110,19 @@ function quarterLabel(date) {
 
 /**
  * A bar from the 10-year up to the cap rate at each marked quarter, with its
- * width in basis points written up it ("470 bps"). One mark per kind, each with
- * a constant colour: a colour channel would run through the card's series
- * colour scale instead.
+ * width in basis points written up it ("470 bps"). The colour is a constant: a
+ * colour channel would run through the card's series colour scale instead.
  */
 function spreadMarks(markers) {
+  if (!markers.length) return [];
   const rows = markers.map(m => ({ ...m, x: new Date(m.date), mid: (m.cap + m.bond) / 2, text: `${m.bps} bps` }));
-  return SPREAD_KINDS.flatMap(({ kind, colour }) => {
-    const data = rows.filter(r => r.kind === kind);
-    if (!data.length) return [];
-    return [
-      Plot.ruleX(data, { x: 'x', y1: 'bond', y2: 'cap', stroke: colour, strokeWidth: 14, strokeOpacity: 0.4 }),
-      Plot.text(data, {
-        x: 'x', y: 'mid', text: 'text', rotate: -90, fontSize: 11, fontWeight: 600,
-        fill: '#171717', stroke: 'white', strokeWidth: 3, paintOrder: 'stroke',
-      }),
-    ];
-  });
+  return [
+    Plot.ruleX(rows, { x: 'x', y1: 'bond', y2: 'cap', strokeWidth: 14, ...SPREAD_BAR }),
+    Plot.text(rows, {
+      x: 'x', y: 'mid', text: 'text', rotate: -90, fontSize: 11, fontWeight: 600,
+      fill: '#171717', stroke: 'white', strokeWidth: 3, paintOrder: 'stroke',
+    }),
+  ];
 }
 
 // Cap-rate property types, in the order they should appear. Anything else in
@@ -592,11 +597,11 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', 
     renderSpreadCard(capTypes);
   }
 
-  // The CBRE-style spread chart: one cap-rate type against the 10-year GoC,
-  // over the type's whole history (it ignores the tab's date range, so the
-  // highs and lows are the real ones), with bars marking the spread at the
-  // current quarter and at the two widest and two narrowest. One overlay
-  // only: with several, the bars would have no single line to measure from.
+  // The CBRE-style spread chart: one cap-rate type against the 10-year GoC
+  // over the latest 15 years, rolling (it ignores the tab's date range), with
+  // bars marking the spread at the current quarter and at the two widest and
+  // two narrowest within that window. One overlay only: with several, the
+  // bars would have no single line to measure from.
   function renderSpreadCard(capTypes) {
     const open = readOpenPanels(ui.spreadCard?.card);
     $spreadGrid.replaceChildren();
@@ -618,7 +623,11 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', 
     const type = capTypes[0];
     const capId = `cap.${type}`;
     const bondRecords = ui.rateRecords.filter(r => r.id === SPREAD_BOND_ID);
-    const spreads = capSpreads(series.types[type], bondRecords);
+    const lastBond = bondRecords[bondRecords.length - 1]?.date;
+    const monthFrom = lastBond ? rollingFrom(lastBond, SPREAD_YEARS) : null;
+    // Highs and lows are picked inside the window, so every bar is on screen.
+    const spreads = capSpreads(series.types[type], bondRecords)
+      .filter(s => !monthFrom || s.date.slice(0, 7) >= monthFrom);
     if (!spreads.length) return;
     const markers = spreadMarkers(spreads);
     const capLast = spreads[spreads.length - 1];
@@ -653,8 +662,9 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', 
         'published Low–High mid-points averaged across the type’s classes) is set against the ' +
         'monthly mean of the daily 10-year yield for the quarter’s final month. Bars mark the ' +
         `current spread (${listed('current')}), the two widest (${listed('high') || 'none'}) and the two ` +
-        `narrowest (${listed('low') || 'none'}), each at least a year from the others, over the whole ` +
-        'cap-rate history — this chart does not follow the date range. The cap-rate data is the ' +
+        `narrowest (${listed('low') || 'none'}), each at least a year from the others, within the ` +
+        `latest ${SPREAD_YEARS} years — this chart shows a rolling ${SPREAD_YEARS}-year window and does ` +
+        'not follow the date range. The cap-rate data is the ' +
         'same local file the Cap Rates tab reads and is not published with this site.',
     });
 
@@ -666,12 +676,9 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', 
         [SPREAD_BOND_ID]: RATE_COLOURS[SPREAD_BOND_ID],
         ...(CAP_COLOURS[type] ? { [capId]: CAP_COLOURS[type] } : {}),
       },
-      monthFrom: capRecords[0].date.slice(0, 7),
+      monthFrom: monthFrom || capRecords[0].date.slice(0, 7),
       monthTo: null,
       extraMarks: () => spreadMarks(markers),
-      legendKey: SPREAD_KINDS
-        .filter(k => markers.some(m => m.kind === k.kind))
-        .map(({ colour, label }) => ({ colour, label })),
     });
     card.setOpenPanels(open);
     ui.spreadCard = card;

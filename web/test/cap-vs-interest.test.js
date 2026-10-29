@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  capSeriesFromRows, capSpreads, spreadMarkers, capVsInterestCaption, orderTypes, monthlyMean, capPublisher, ALL_FIRMS, DEFAULT_FIRM, KNOWN_TYPES, DEFAULT_OFF_TYPES,
+  capSeriesFromRows, capSpreads, spreadMarkers, rollingFrom, capVsInterestCaption, orderTypes, monthlyMean, capPublisher, ALL_FIRMS, DEFAULT_FIRM, KNOWN_TYPES, DEFAULT_OFF_TYPES,
 } from '../src/cap-vs-interest.js';
 
 // Rows in the shape cap_rates.json carries (mid as a fraction), for two
@@ -144,5 +144,13 @@ describe('spreadMarkers', () => {
   it('copes with a short history', () => {
     expect(kinds(spreadMarkers([q(2026, 6, 255)]))).toEqual(['current:2026-06']);
     expect(spreadMarkers([])).toEqual([]);
+  });
+});
+
+describe('rollingFrom', () => {
+  it('opens a window of whole years that ends on the given month', () => {
+    expect(rollingFrom('2026-10-01', 15)).toBe('2011-11');   // Nov 2011 … Oct 2026 = 180 months
+    expect(rollingFrom('2026-01-28', 15)).toBe('2011-02');
+    expect(rollingFrom('2026-12-01', 1)).toBe('2026-01');
   });
 });
