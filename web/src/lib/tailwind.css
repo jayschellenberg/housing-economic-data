@@ -906,6 +906,10 @@
 }
 .cmhc-time-adjust-error { color: #991b1b; }
 .cmhc-time-adjust-warn { color: #92400e; font-size: 13px; }
+/* Lease indexing tool: CRSPI and CPI results side by side. */
+.cmhc-index-pair:not([hidden]) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 640px) { .cmhc-index-pair:not([hidden]) { grid-template-columns: minmax(0, 1fr); } }
+.cmhc-index-pair-title { font-size: 13px; font-weight: 600; color: var(--color-neutral-700); margin: 0 0 4px; }
 
 /* Sidebar "Jump to section" anchor list for the Market Indicators tab. */
 .cmhc-mi-jump-list {

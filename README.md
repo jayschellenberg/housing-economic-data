@@ -15,7 +15,13 @@ under it, and every tab keeps its `#hash` link):
 - **Housing & Economic Data** (public; the landing view):
   **Rental** (Rental Charts, Rental Tables, Compare Areas, Secondary Rental, RTB (MB)) ·
   **Housing** (Housing Starts, Housing Stock, Affordability, Parade of Homes) ·
-  **Economy & People** (Census Profile, Current Snapshot, Market Indicators, Agriculture).
+  **Economy & People** (Census Profile, Current Snapshot, Market Indicators, Construction Cost,
+  Commercial Leasing, Agriculture). Construction Cost and Commercial Leasing are catalog groups
+  tagged `tab` (rendered by `web/src/cost-lease-tabs.js`, still tiled on the Snapshot via
+  `inSnapshot`), each with an indexing tool: a cost or rent from a year/quarter brought to the
+  latest quarter. Winnipeg BCPI starts 2017Q1, so earlier years chain onto a proxy (NHPI
+  house-only for residential; a chosen 15-CMA / Calgary / Edmonton / Prairie BCPI for
+  non-residential); Winnipeg CRSPI chains onto Canada CRSPI before 2019, shown beside CPI.
 - **Local Data** (tabs whose data comes from folders on the viewer's disk):
   Cap Rates · Cap Rates vs Interest · Market Discount Rates ·
   **Multifamily** (Yardi Rental, Rentals.ca, Rent Comparison by Source, Rental Dashboard) ·

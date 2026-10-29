@@ -75,9 +75,9 @@
     {
       "group": "construction_cost",
       "file": "construction_cost.json",
-      "seriesCount": 20,
-      "recordCount": 1368,
-      "latestDate": "2026-04-01"
+      "seriesCount": 58,
+      "recordCount": 6306,
+      "latestDate": "2026-07-01"
     },
     {
       "group": "demand",
