@@ -95,17 +95,12 @@ describe('monthlyMean', () => {
 });
 
 describe('capVsInterestCaption', () => {
-  const catalog = require('../public/data/indicators/_catalog.json');
-  const rateMeta = ['boc.policy_target', 'boc.goc_5yr', 'boc.goc_10yr']
-    .map((id) => catalog.series.find((s) => s.id === id));
-  it('names the BoC series, then the cap-rate reports when cap rates are drawn', () => {
-    const rates = capVsInterestCaption(rateMeta, [], 'Colliers');
-    expect(rates).toMatch(/^Bank of Canada/);
-    expect(rates).not.toMatch(/cap rate/);
-    expect(capVsInterestCaption(rateMeta, ['Office'], 'Colliers'))
-      .toBe(`${rates}; Colliers Winnipeg quarterly cap rate reports`);
-    expect(capVsInterestCaption(rateMeta, ['Office'], ALL_FIRMS))
-      .toMatch(/; Colliers Winnipeg, CBRE & Cushman & Wakefield quarterly cap rate reports$/);
+  it('names the Bank of Canada (no series codes), then the cap-rate reports when cap rates are drawn', () => {
+    expect(capVsInterestCaption([], 'Colliers')).toBe('Bank of Canada');
+    expect(capVsInterestCaption(['Office'], 'Colliers'))
+      .toBe('Bank of Canada; Colliers Winnipeg Quarterly CR Reports');
+    expect(capVsInterestCaption(['Office'], ALL_FIRMS))
+      .toMatch(/; Colliers Winnipeg, CBRE & Cushman & Wakefield Quarterly CR Reports$/);
   });
 });
 

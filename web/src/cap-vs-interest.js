@@ -209,14 +209,15 @@ export function capVsInterestSources(rateMeta, capTypes, firm) {
 }
 
 /**
- * The caption's source line: the BoC series behind the rate lines, then the
- * brokerage reports behind the cap rates — "Bank of Canada, series V39079,
- * …; Colliers Winnipeg quarterly cap rate reports".
+ * The caption's source line: the publisher of the rate lines, then the
+ * brokerage reports behind the cap rates — "Bank of Canada; Colliers Winnipeg
+ * Quarterly CR Reports". The BoC series codes are left to the explainer's
+ * Sources list (capVsInterestSources), where they can still be looked up.
  */
-export function capVsInterestCaption(rateMeta, capTypes, firm) {
+export function capVsInterestCaption(capTypes, firm) {
   return [
-    seriesSources(rateMeta).short || 'Bank of Canada',
-    capTypes.length ? `${captionPublisher(firm)} quarterly cap rate reports` : '',
+    'Bank of Canada',
+    capTypes.length ? `${captionPublisher(firm)} Quarterly CR Reports` : '',
   ].filter(Boolean).join('; ');
 }
 
@@ -548,7 +549,7 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', 
         : 'Canadian Rate Environment',
       // The actual sources in the caption, bottom-right, 10 pt in print, and
       // no company name — the published data signs the card (Jason, 2026-10-12).
-      sourceLabel: capVsInterestCaption(ui.rateMeta, capTypes, $firm.value),
+      sourceLabel: capVsInterestCaption(capTypes, $firm.value),
       sourceInCaption: true,
       // Left-hand y axis only — no mirrored labels on the right.
       mirrorY: false,
@@ -644,7 +645,7 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', 
       fileStem: `cap_spread_10yr_${type.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`,
       lineWidth: 3.6,
       title: `${type} Cap Rate Spread to 10-Year GoC Bond Yield`,
-      sourceLabel: capVsInterestCaption([bondMeta], [type], $firm.value),
+      sourceLabel: capVsInterestCaption([type], $firm.value),
       sourceInCaption: true,
       mirrorY: false,
       signed: false,
