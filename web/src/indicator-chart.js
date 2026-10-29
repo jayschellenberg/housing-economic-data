@@ -890,6 +890,10 @@ export function buildIndicatorCard(container, {
         ...(opts.dots && !opts.valueLabels ? [Plot.dot(filtered.filter(p => p.value != null && Number.isFinite(p.value)), {
           x: 'date', y: 'value', fill: 'label', r: 3, stroke: 'white', strokeWidth: 0.8,
         })] : []),
+        // `opts.extraMarks()`: annotation marks a caller draws over the lines
+        // (the cap-rate spread bars). A function, not an array, because the
+        // PNG export redraws the plot and each draw needs marks of its own.
+        ...(opts.extraMarks ? opts.extraMarks() : []),
         ...(mirrorY
           ? mirrorYMarks(yTickFormat, { ticks: yTicks })
           : [Plot.axisY({ anchor: 'left', tickFormat: yTickFormat, tickSize: 3, label: null, ...(yTicks ? { ticks: yTicks } : {}) })]),
@@ -994,6 +998,16 @@ export function buildIndicatorCard(container, {
       note.className = 'cmhc-plot-legend-note';
       note.textContent = [refBand?.label, refLine?.label].filter(Boolean).join(' • ');
       legendEl.appendChild(note);
+    }
+    // `opts.legendKey` ([{ colour, label }]): a key for the caller's extra
+    // marks, square swatches so they don't read as more lines.
+    for (const { colour, label } of opts.legendKey || []) {
+      const item = document.createElement('div');
+      item.className = 'cmhc-plot-legend-item cmhc-plot-legend-key';
+      item.innerHTML = `<span class="cmhc-plot-legend-key-swatch" style="background:${colour}"></span>` +
+        '<span class="cmhc-plot-legend-text"></span>';
+      item.querySelector('.cmhc-plot-legend-text').textContent = label;
+      legendEl.appendChild(item);
     }
 
     // `singleSeriesInSubtitle`: a chart that draws one line needs no legend —

@@ -36,6 +36,7 @@
  * announces a fresh import (the 'hed:cap-rates-updated' window event).
  */
 
+import * as Plot from '@observablehq/plot';
 import { buildIndicatorCard, readOpenPanels } from './indicator-chart.js';
 import { seriesSources } from './indicator-sources.js';
 import { getPref, setPref } from './prefs.js';
@@ -81,6 +82,43 @@ const CAP_COLOURS = {
   'Hotel':        '#CD8500',        // orange3 — not in the reference scheme
   'Self Storage': '#8B4789',        // orchid4 — not in the reference scheme
 };
+
+// The spread chart measures against the 10-year, as CBRE's does.
+const SPREAD_BOND_ID = 'boc.goc_10yr';
+// Spread bars by kind: translucent so the lines read through them, and in
+// colours no series on this tab uses.
+const SPREAD_KINDS = [
+  { kind: 'high',    colour: '#D97706', label: 'Widest two spreads' },
+  { kind: 'low',     colour: '#0F766E', label: 'Narrowest two spreads' },
+  { kind: 'current', colour: '#404040', label: 'Current spread' },
+];
+
+/** "2012-06-01" → "Q2 2012". */
+function quarterLabel(date) {
+  const [y, m] = String(date).split('-').map(Number);
+  return `Q${Math.ceil(m / 3)} ${y}`;
+}
+
+/**
+ * A bar from the 10-year up to the cap rate at each marked quarter, with its
+ * width in basis points written up it ("470 bps"). One mark per kind, each with
+ * a constant colour: a colour channel would run through the card's series
+ * colour scale instead.
+ */
+function spreadMarks(markers) {
+  const rows = markers.map(m => ({ ...m, x: new Date(m.date), mid: (m.cap + m.bond) / 2, text: `${m.bps} bps` }));
+  return SPREAD_KINDS.flatMap(({ kind, colour }) => {
+    const data = rows.filter(r => r.kind === kind);
+    if (!data.length) return [];
+    return [
+      Plot.ruleX(data, { x: 'x', y1: 'bond', y2: 'cap', stroke: colour, strokeWidth: 14, strokeOpacity: 0.4 }),
+      Plot.text(data, {
+        x: 'x', y: 'mid', text: 'text', rotate: -90, fontSize: 11, fontWeight: 600,
+        fill: '#171717', stroke: 'white', strokeWidth: 3, paintOrder: 'stroke',
+      }),
+    ];
+  });
+}
 
 // Cap-rate property types, in the order they should appear. Anything else in
 // the data is carried through as-is after these.
@@ -207,6 +245,63 @@ export function monthlyMean(records) {
     .map(([month, { total, n }]) => ({ date: `${month}-01`, value: total / n }));
 }
 
+// --- Spread to the 10-year ---------------------------------------------------
+
+/**
+ * One cap-rate type's spread over the 10-year GoC yield, quarter by quarter:
+ * the cap rate less that quarter-end month's mean yield — the same month the
+ * chart plots the cap-rate point at, so each spread bar meets both lines.
+ * Quarters without a yield month are dropped.
+ *
+ * @param {Array<[string, number]>} capPoints  [[iso, percent], …] (capSeriesFromRows)
+ * @param {Array<{date:string, value:number}>} bondMonthly  monthlyMean of the 10-year
+ * @returns {Array<{date:string, iso:string, cap:number, bond:number, bps:number}>}
+ *          date = "YYYY-MM-01" (where it plots), iso = the survey's own date
+ */
+export function capSpreads(capPoints, bondMonthly) {
+  const bondByMonth = new Map((bondMonthly || []).map(p => [String(p.date).slice(0, 7), p.value]));
+  const out = [];
+  for (const [iso, cap] of capPoints || []) {
+    const month = String(iso).slice(0, 7);
+    const bond = bondByMonth.get(month);
+    if (!Number.isFinite(cap) || !Number.isFinite(bond)) continue;
+    out.push({ date: `${month}-01`, iso, cap, bond, bps: Math.round((cap - bond) * 100) });
+  }
+  return out.sort((a, b) => (a.date < b.date ? -1 : 1));
+}
+
+const monthIndex = (date) => {
+  const [y, m] = String(date).split('-').map(Number);
+  return y * 12 + m;
+};
+
+/**
+ * The spreads worth marking, as on CBRE's chart: the current (latest) one,
+ * then the widest `count` and the narrowest `count`. Each pick sits at least
+ * `minGapMonths` from every earlier pick, so the two highs are two separate
+ * episodes rather than neighbouring quarters of one — and no marker lands on
+ * top of the current one.
+ *
+ * @returns {Array<{date, cap, bond, bps, kind:'current'|'high'|'low'}>}  chronological
+ */
+export function spreadMarkers(spreads, { count = 2, minGapMonths = 12 } = {}) {
+  if (!spreads?.length) return [];
+  const picked = [{ ...spreads[spreads.length - 1], kind: 'current' }];
+  const clear = (s) => picked.every(p => Math.abs(monthIndex(p.date) - monthIndex(s.date)) >= minGapMonths);
+  // Ties go to the more recent quarter: it is the one a reader can place.
+  const byNewest = (a, b) => (a.date < b.date ? 1 : -1);
+  for (const [kind, order] of [['high', (a, b) => b.bps - a.bps], ['low', (a, b) => a.bps - b.bps]]) {
+    let n = 0;
+    for (const s of [...spreads].sort((a, b) => order(a, b) || byNewest(a, b))) {
+      if (n >= count) break;
+      if (!clear(s)) continue;
+      picked.push({ ...s, kind });
+      n += 1;
+    }
+  }
+  return picked.sort((a, b) => (a.date < b.date ? -1 : 1));
+}
+
 // --- Preferences -------------------------------------------------------------
 
 function loadPrefs() {
@@ -258,6 +353,8 @@ function sectionMarkup(controlsElsewhere) {
     <div class="grid md:grid-cols-2 gap-4 items-start">
       <div data-role="cvi-card-grid" class="min-w-0"></div>
       ${controlsElsewhere ? '' : controlsMarkup(false)}
+      <!-- The spread chart for a single overlay (renderSpreadCard). -->
+      <div data-role="cvi-spread-grid" class="min-w-0"></div>
     </div>
   `;
 }
@@ -312,12 +409,13 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', 
   const $bulk   = ctl.querySelector('[data-role="cvi-bulk"]');
   const $status = ctl.querySelector('[data-role="cvi-status"]');
   const $cardGrid = section.querySelector('[data-role="cvi-card-grid"]');
+  const $spreadGrid = section.querySelector('[data-role="cvi-spread-grid"]');
 
   let prefs = loadPrefs();
   let rows = null;          // the Cap Rates tab's rows, or null when not loaded
   let series = { types: {}, firstDate: null, lastDate: null };
 
-  ui = { section, rateMeta, rateRecords, rangeRef, card: null };
+  ui = { section, rateMeta, rateRecords, rangeRef, card: null, spreadCard: null };
 
   for (const [value, label] of [...FIRMS.map(f => [f, f]), [ALL_FIRMS, 'Average of all firms']]) {
     const opt = document.createElement('option');
@@ -491,6 +589,92 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', 
     });
     card.setOpenPanels(open);
     ui.card = card;
+    renderSpreadCard(capTypes);
+  }
+
+  // The CBRE-style spread chart: one cap-rate type against the 10-year GoC,
+  // over the type's whole history (it ignores the tab's date range, so the
+  // highs and lows are the real ones), with bars marking the spread at the
+  // current quarter and at the two widest and two narrowest. One overlay
+  // only: with several, the bars would have no single line to measure from.
+  function renderSpreadCard(capTypes) {
+    const open = readOpenPanels(ui.spreadCard?.card);
+    $spreadGrid.replaceChildren();
+    ui.spreadCard = null;
+
+    const bondMeta = ui.rateMeta.find(s => s.id === SPREAD_BOND_ID);
+    if (!bondMeta) return;
+    if (capTypes.length !== 1) {
+      const box = document.createElement('section');
+      box.className = 'chart-card';
+      box.innerHTML = '<header class="chart-title">Cap Rate Spread to 10-Year Bond Yield</header><p class="chart-sub"></p>';
+      box.querySelector('.chart-sub').textContent = !Object.keys(series.types).length
+        ? 'Load the CapRates folder on the Cap Rates tab to chart a cap rate’s spread to the 10-year GoC yield.'
+        : `Check exactly one cap-rate overlay to see its spread to the 10-year GoC yield${capTypes.length ? ` (${capTypes.length} are checked)` : ''}.`;
+      $spreadGrid.appendChild(box);
+      return;
+    }
+
+    const type = capTypes[0];
+    const capId = `cap.${type}`;
+    const bondRecords = ui.rateRecords.filter(r => r.id === SPREAD_BOND_ID);
+    const spreads = capSpreads(series.types[type], bondRecords);
+    if (!spreads.length) return;
+    const markers = spreadMarkers(spreads);
+    const capLast = spreads[spreads.length - 1];
+    const capMeta = {
+      id: capId, provider: 'local', chartLabel: `${type} CR`, units: 'percent', frequency: 'quarterly',
+      geo: 'Winnipeg', latestDate: capLast.iso, latestValue: capLast.cap,
+    };
+    const capRecords = spreads.map(s => ({ id: capId, date: s.date, value: s.cap }));
+
+    const listed = (kind) => markers.filter(m => m.kind === kind)
+      .map(m => `${m.bps} bps in ${quarterLabel(m.date)}`).join(' and ');
+    const card = buildIndicatorCard($spreadGrid, {
+      chartId: 'cap_spread_10yr',
+      fileStem: `cap_spread_10yr_${type.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`,
+      lineWidth: 3.6,
+      title: `${type} Cap Rate Spread to 10-Year GoC Bond Yield`,
+      sourceLabel: capVsInterestCaption([bondMeta], [type], $firm.value),
+      sourceInCaption: true,
+      mirrorY: false,
+      signed: false,
+      captionPt: 10,
+      table: true,
+      zeroBased: true,
+      // Two lines that the bars are measured between; hiding one would leave
+      // the bars hanging.
+      toggleLegend: false,
+      sources: capVsInterestSources([bondMeta], [type], $firm.value),
+      description:
+        `The spread is the ${type.toLowerCase()} cap rate less the 10-year Government of Canada bond ` +
+        'yield, in basis points (100 bps = 1 percentage point) — the premium over the long-term ' +
+        'risk-free rate the market is pricing. Each quarter’s cap rate (the chosen firm’s ' +
+        'published Low–High mid-points averaged across the type’s classes) is set against the ' +
+        'monthly mean of the daily 10-year yield for the quarter’s final month. Bars mark the ' +
+        `current spread (${listed('current')}), the two widest (${listed('high') || 'none'}) and the two ` +
+        `narrowest (${listed('low') || 'none'}), each at least a year from the others, over the whole ` +
+        'cap-rate history — this chart does not follow the date range. The cap-rate data is the ' +
+        'same local file the Cap Rates tab reads and is not published with this site.',
+    });
+
+    card.render([...bondRecords, ...capRecords], [{ ...bondMeta, chartLabel: '10-Year GoC Bond Yield' }, capMeta], {
+      rangePrefix: true,
+      subtitle: 'Spread = Cap Rate (CR) less 10-Year GoC Bond Yield',
+      dashedIds: [capId],
+      seriesColours: {
+        [SPREAD_BOND_ID]: RATE_COLOURS[SPREAD_BOND_ID],
+        ...(CAP_COLOURS[type] ? { [capId]: CAP_COLOURS[type] } : {}),
+      },
+      monthFrom: capRecords[0].date.slice(0, 7),
+      monthTo: null,
+      extraMarks: () => spreadMarks(markers),
+      legendKey: SPREAD_KINDS
+        .filter(k => markers.some(m => m.kind === k.kind))
+        .map(({ colour, label }) => ({ colour, label })),
+    });
+    card.setOpenPanels(open);
+    ui.spreadCard = card;
   }
 
   async function loadRows() {
