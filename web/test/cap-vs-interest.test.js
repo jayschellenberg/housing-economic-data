@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  capSeriesFromRows, capVsInterestCaption, orderTypes, monthlyMean, capPublisher, ALL_FIRMS, DEFAULT_FIRM, KNOWN_TYPES, DEFAULT_OFF_TYPES,
+  capSeriesFromRows, capSpreads, spreadMarkers, capVsInterestCaption, orderTypes, monthlyMean, capPublisher, ALL_FIRMS, DEFAULT_FIRM, KNOWN_TYPES, DEFAULT_OFF_TYPES,
 } from '../src/cap-vs-interest.js';
 
 // Rows in the shape cap_rates.json carries (mid as a fraction), for two
@@ -106,5 +106,43 @@ describe('capVsInterestCaption', () => {
       .toBe(`${rates}; Colliers Winnipeg quarterly cap rate reports`);
     expect(capVsInterestCaption(rateMeta, ['Office'], ALL_FIRMS))
       .toMatch(/; Colliers Winnipeg, CBRE & Cushman & Wakefield quarterly cap rate reports$/);
+  });
+});
+
+describe('capSpreads', () => {
+  it('measures each quarter against its quarter-end month\'s mean 10-year yield, in bps', () => {
+    const bond = [{ date: '2026-03-01', value: 3.1 }, { date: '2026-06-01', value: 3.4 }];
+    const out = capSpreads([['2026-06-30', 7.0], ['2026-03-31', 7.25], ['2026-09-30', 7.0]], bond);
+    expect(out).toEqual([
+      { date: '2026-03-01', iso: '2026-03-31', cap: 7.25, bond: 3.1, bps: 415 },
+      { date: '2026-06-01', iso: '2026-06-30', cap: 7.0, bond: 3.4, bps: 360 },
+    ]);   // 2026-09 has no yield month → dropped
+  });
+});
+
+describe('spreadMarkers', () => {
+  // Quarterly spreads 2010Q1 … with two adjacent highs and two adjacent lows.
+  const q = (y, m, bps) => ({ date: `${y}-${String(m).padStart(2, '0')}-01`, cap: 0, bond: 0, bps });
+  const spreads = [
+    q(2010, 3, 500), q(2010, 6, 510), q(2010, 9, 400), q(2011, 3, 300),
+    q(2013, 3, 480), q(2015, 3, 200), q(2015, 6, 190), q(2018, 3, 250),
+    q(2020, 3, 230), q(2026, 3, 260), q(2026, 6, 255),
+  ];
+  const kinds = (ms) => ms.map(m => `${m.kind}:${m.date.slice(0, 7)}`);
+
+  it('marks the current quarter plus two highs and two lows at least a year apart', () => {
+    expect(kinds(spreadMarkers(spreads))).toEqual([
+      'high:2010-06', 'high:2013-03', 'low:2015-06', 'low:2020-03', 'current:2026-06',
+    ]);
+  });
+
+  it('can take neighbouring quarters when the gap is zero', () => {
+    const highs = spreadMarkers(spreads, { minGapMonths: 0 }).filter(m => m.kind === 'high');
+    expect(highs.map(m => m.bps)).toEqual([500, 510]);
+  });
+
+  it('copes with a short history', () => {
+    expect(kinds(spreadMarkers([q(2026, 6, 255)]))).toEqual(['current:2026-06']);
+    expect(spreadMarkers([])).toEqual([]);
   });
 });
