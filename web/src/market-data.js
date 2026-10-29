@@ -39,6 +39,7 @@ import * as rentalsCaStore from './rentalsca-store.js';
 import * as fccStore from './fcc-store.js';
 import * as brokerageStore from './brokerage-store.js';
 import * as zoningStore from './zoning-store.js';
+import * as aptCompsStore from './apartment-comps-store.js';
 
 export { fsAccessSupported, storeAvailable };
 
@@ -65,6 +66,8 @@ export const SOURCES = [
     load: async () => brokerageStore, hasData: hasFolderData },
   { id: 'zoning',     label: 'Zoning', folder: 'Zoning',
     load: async () => zoningStore, hasData: hasFolderData },
+  { id: 'aptcomps',   label: 'Apartment Income & Expenses', folder: 'ApartmentComps',
+    load: async () => aptCompsStore, hasData: hasFolderData },
   { id: 'rental',     label: 'Rental Dashboard', folder: 'RentalDashboard',
     load: () => import('../rental/src/lib/store.js'), hasData: hasDashboardData },
   { id: 'commercial', label: 'Commercial Dashboard', folder: 'CommercialAvailability',

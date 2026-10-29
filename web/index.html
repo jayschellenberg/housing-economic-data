@@ -107,6 +107,7 @@
           <button type="button" id="tab-btn-yardi" class="cmhc-menu-item" data-tab="yardi">Yardi Rental</button>
           <button type="button" id="tab-btn-rentalsca" class="cmhc-menu-item" data-tab="rentalsca">Rentals.ca</button>
           <button type="button" id="tab-btn-rentcompare" class="cmhc-menu-item" data-tab="rentcompare">Rent Comparison by Source</button>
+          <button type="button" id="tab-btn-aptcomps" class="cmhc-menu-item" data-tab="aptcomps">Apartment Income &amp; Expenses</button>
           <button type="button" id="tab-btn-rental" class="cmhc-menu-item" data-tab="rental">Rental Dashboard</button>
         </div>
       </div>
@@ -1728,6 +1729,183 @@
         <footer class="text-xs text-neutral-500 pt-4 border-t border-neutral-200">
           Source: Rentals.ca &amp; Urbanation, National Rent Report (monthly).
           Figures shown here are read from the viewer's own locally held copy and are not redistributed by this site.
+        </footer>
+      </main>
+    </div>
+
+    <!-- ============================================================
+         Apartment Income & Expenses tab — Winnipeg apartment comparables
+         from the appraiser's comps database plus extracted listings, pro
+         formas and CIMs, normalized by income and expense category. NOTHING
+         SHIPS WITH THE SITE: scripts/apartment_comps.py writes
+         apartment_comps.json to SharedInfo\AppMarketData\ApartmentComps;
+         see apartment-comps.js / apartment-comps-store.js.
+         ============================================================ -->
+    <div id="tab-panel-aptcomps" class="grid md:grid-cols-[320px_1fr] min-h-[calc(100vh-110px)]" role="tabpanel" aria-labelledby="tab-btn-aptcomps" hidden>
+      <aside class="bg-white border-r border-neutral-200 p-4 space-y-4 overflow-y-auto" aria-label="Apartment comps filters">
+        <section>
+          <div class="flex items-center justify-between mb-2">
+            <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Data folder</h2>
+            <button id="ac-folder-toggle" type="button" class="text-xs underline text-neutral-600" aria-controls="ac-folder-body" aria-expanded="true" hidden>Hide</button>
+          </div>
+          <p id="ac-folder-status" class="text-xs text-neutral-600 mb-2"></p>
+          <p id="ac-folder-error" class="text-xs text-red-700 mb-2" hidden></p>
+          <div id="ac-folder-body">
+          <div class="space-y-2">
+            <button id="ac-pick-folder" type="button"
+              class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+              Choose folder
+            </button>
+            <input id="ac-pick-fallback" type="file" webkitdirectory multiple hidden
+              class="block w-full text-xs file:mr-2 file:rounded file:border file:border-neutral-300 file:bg-white file:px-2 file:py-1 file:text-xs" />
+            <div class="flex gap-3 text-xs">
+              <button id="ac-rescan" type="button" class="underline text-neutral-600">Reload folder</button>
+              <button id="ac-clear" type="button" class="underline text-neutral-600" hidden>Disconnect</button>
+            </div>
+          </div>
+          <p class="text-xs text-neutral-500 mt-2">Pick the firm's shared <code>AppMarketData</code> folder or its <code>ApartmentComps</code> subfolder. Read locally, never uploaded.</p>
+          </div>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Search</h2>
+          <input id="ac-search" type="search" placeholder="Address, MLS #, file or note" class="w-full border border-neutral-300 rounded px-2 py-1 text-sm" />
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Date</h2>
+          <div class="flex items-center gap-2 text-sm">
+            <input id="ac-date-from" type="month" aria-label="From month" class="w-full border border-neutral-300 rounded px-2 py-1 text-sm" />
+            <span class="text-neutral-500">to</span>
+            <input id="ac-date-to" type="month" aria-label="To month" class="w-full border border-neutral-300 rounded px-2 py-1 text-sm" />
+          </div>
+          <p class="text-xs text-neutral-500 mt-1">Sale date, or the document's date (from the file name).</p>
+        </section>
+
+        <section class="grid grid-cols-2 gap-3">
+          <div>
+            <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Year built</h2>
+            <div class="flex items-center gap-1">
+              <input id="ac-yr-from" type="number" min="1850" max="2100" placeholder="from" aria-label="Built from" class="w-full border border-neutral-300 rounded px-2 py-1 text-sm" />
+              <input id="ac-yr-to" type="number" min="1850" max="2100" placeholder="to" aria-label="Built to" class="w-full border border-neutral-300 rounded px-2 py-1 text-sm" />
+            </div>
+          </div>
+          <div>
+            <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Suites</h2>
+            <div class="flex items-center gap-1">
+              <input id="ac-suites-min" type="number" min="1" placeholder="min" aria-label="Minimum suites" class="w-full border border-neutral-300 rounded px-2 py-1 text-sm" />
+              <input id="ac-suites-max" type="number" min="1" placeholder="max" aria-label="Maximum suites" class="w-full border border-neutral-300 rounded px-2 py-1 text-sm" />
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Record type</h2>
+          <div id="ac-kinds" class="grid gap-1 text-sm"></div>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Property type</h2>
+          <div id="ac-ptypes" class="grid gap-1 text-sm"></div>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Figures</h2>
+          <div id="ac-projected" class="grid gap-1 text-sm">
+            <label class="flex items-center gap-2"><input type="radio" name="ac-projected" value="all" checked /> All</label>
+            <label class="flex items-center gap-2"><input type="radio" name="ac-projected" value="actual" /> Current / actual only</label>
+            <label class="flex items-center gap-2"><input type="radio" name="ac-projected" value="projected" /> Pro forma / future only</label>
+          </div>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Utilities</h2>
+          <label class="block text-xs text-neutral-600 mb-1" for="ac-heat">Heat source</label>
+          <select id="ac-heat" class="w-full border border-neutral-300 rounded px-2 py-1 text-sm mb-2">
+            <option value="">Any</option>
+            <option value="gas">Gas / boiler</option>
+            <option value="electric">Electric</option>
+            <option value="furnace">Individual furnace</option>
+            <option value="other">Other</option>
+          </select>
+          <div class="grid grid-cols-3 gap-2 text-xs">
+            <label class="grid gap-1">Tenant pays hydro
+              <select id="ac-pays-hydro" class="border border-neutral-300 rounded px-1 py-1 text-sm"><option value="any">Any</option><option value="Y">Yes</option><option value="N">No</option></select>
+            </label>
+            <label class="grid gap-1">Tenant pays heat
+              <select id="ac-pays-heat" class="border border-neutral-300 rounded px-1 py-1 text-sm"><option value="any">Any</option><option value="Y">Yes</option><option value="N">No</option></select>
+            </label>
+            <label class="grid gap-1">Tenant pays water
+              <select id="ac-pays-water" class="border border-neutral-300 rounded px-1 py-1 text-sm"><option value="any">Any</option><option value="Y">Yes</option><option value="N">No</option></select>
+            </label>
+          </div>
+          <p class="text-xs text-neutral-500 mt-1">Only records that state it match a Yes / No choice.</p>
+        </section>
+
+        <section>
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Show expenses as</h2>
+          <div id="ac-mode" class="grid gap-1 text-sm">
+            <label class="flex items-center gap-2"><input type="radio" name="ac-mode" value="suite" checked /> $ per suite per year</label>
+            <label class="flex items-center gap-2"><input type="radio" name="ac-mode" value="egi" /> % of EGI</label>
+            <label class="flex items-center gap-2"><input type="radio" name="ac-mode" value="annual" /> Annual $</label>
+          </div>
+        </section>
+
+        <section class="grid gap-1 text-sm">
+          <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-1">Options</h2>
+          <label class="flex items-center gap-2"><input id="ac-with-exp" type="checkbox" checked /> Only records with expenses</label>
+          <label class="flex items-center gap-2"><input id="ac-assumed" type="checkbox" /> Include assumed allowances</label>
+          <label class="flex items-center gap-2"><input id="ac-conf" type="checkbox" checked /> Show confidential (CIM) records</label>
+          <label class="flex items-center gap-2"><input id="ac-unchecked" type="checkbox" /> Only documents not yet checked</label>
+          <p class="text-xs text-neutral-500">Assumed allowances are your database formulas of units, gross income or EGI (R&amp;M =&nbsp;$/suite × suites, management =&nbsp;% of EGI, vacancy =&nbsp;% of gross). Off, they are left out of the figures and averages.</p>
+          <button id="ac-reset" type="button" class="text-xs underline text-neutral-600 justify-self-start mt-1">Reset filters</button>
+        </section>
+
+        <section class="pt-2 border-t border-neutral-200 space-y-2">
+          <button id="ac-download-xlsx" type="button"
+            class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+            Download Excel (filtered)
+          </button>
+          <p class="text-xs text-neutral-500">The filtered records with every income and expense category in annual dollars, plus the summary.</p>
+        </section>
+      </aside>
+
+      <main class="p-4 space-y-4 overflow-x-hidden">
+        <p id="ac-empty" class="text-sm text-neutral-600 max-w-2xl">
+          No apartment comparables are loaded. This site publishes none of them: choose the firm's shared
+          <code>AppMarketData</code> folder or its <code>ApartmentComps</code> subfolder (written by
+          <code>apartment-comps-rebuild.bat</code>). The data is read in this browser only.
+        </p>
+        <section id="ac-summary-wrap" class="space-y-2" hidden>
+          <h2 class="cmhc-mi-section-title">Expense summary</h2>
+          <p id="ac-summary-note" class="text-xs text-neutral-600"></p>
+          <div id="ac-summary" class="overflow-x-auto"></div>
+        </section>
+        <section id="ac-table-wrap" class="space-y-2" hidden>
+          <h2 class="cmhc-mi-section-title">Records</h2>
+          <p id="ac-count" class="text-xs text-neutral-600"></p>
+          <div id="ac-table" class="overflow-x-auto"></div>
+        </section>
+        <section id="ac-about" class="max-w-4xl space-y-2 text-sm text-neutral-700" hidden>
+          <h2 class="cmhc-mi-section-title">About this data</h2>
+          <p>
+            Two sources. <strong>Database</strong> rows are read as-is from <code>Apartment Income-Expenses DB.xlsx</code>
+            (Wpg MF Comps, Income-Expense Comps-Appraised, Wpg Rooming Houses and Mixed Res-Comm). <strong>Document</strong>
+            rows are the listings, pro formas, CIMs and income statements in the Apartments-Multi-family folder, read into
+            <code>Apartment Docs Extract.xlsx</code> one line at a time with the document's own label kept. A document with
+            Present and Future (or actual and pro forma) columns gives one row per column.
+          </p>
+          <p>
+            Documents marked <span class="ac-badge ac-badge-warn">unchecked</span> have not been reviewed against the source
+            yet; open a row for the review note. <span class="ac-badge ac-badge-conf">CIM</span> rows come from confidential
+            offering memoranda. Cells marked <sup>a</sup> are database allowances, not reported figures. Utilities
+            combined is a single line that covers more than one utility, so it is not in the single-utility averages but is
+            in All utilities. "**" means no figure.
+          </p>
+        </section>
+        <footer class="text-xs text-neutral-500 pt-4 border-t border-neutral-200">
+          Sources: the appraiser's apartment comps database; brokers' listings, pro formas and offering memoranda (some confidential).
+          Read from the viewer's own locally held copy and not redistributed by this site.
         </footer>
       </main>
     </div>

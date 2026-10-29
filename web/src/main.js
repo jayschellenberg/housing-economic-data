@@ -28,6 +28,7 @@ import { initYardi, refreshYardi } from './yardi.js';
 import { initRentalsCa, refreshRentalsCa } from './rentalsca.js';
 import { initFcc } from './fcc.js';
 import { initDiscountRates } from './discount-rates.js';
+import { initApartmentComps } from './apartment-comps.js';
 import { initAltusCosts } from './altus-costs.js';
 import { initParade } from './parade.js';
 import { initBrokerage } from './brokerage.js';
@@ -183,6 +184,7 @@ function setupTabs(initial, onActivate) {
     fcc:        { btn: document.getElementById('tab-btn-fcc'),        panel: document.getElementById('tab-panel-fcc') },
     brokerage:  { btn: document.getElementById('tab-btn-brokerage'),  panel: document.getElementById('tab-panel-brokerage') },
     rentcompare:{ btn: document.getElementById('tab-btn-rentcompare'), panel: document.getElementById('tab-panel-rentcompare') },
+    aptcomps:   { btn: document.getElementById('tab-btn-aptcomps'),   panel: document.getElementById('tab-panel-aptcomps') },
     capvsint:   { btn: document.getElementById('tab-btn-capvsint'),   panel: document.getElementById('tab-panel-capvsint') },
     discount:   { btn: document.getElementById('tab-btn-discount'),   panel: document.getElementById('tab-panel-discount') },
     altus:      { btn: document.getElementById('tab-btn-altus'),      panel: document.getElementById('tab-panel-altus') },
@@ -196,7 +198,7 @@ function setupTabs(initial, onActivate) {
   // link as active and one menu bar (#nav-housing / #nav-local) at a time;
   // everything not listed here is Housing & Economic Data. Within a bar the
   // tabs sit in category menus (index.html, nav-menus.js).
-  const TAB_GROUP = { johnson: 'local', yardi: 'local', rentalsca: 'local', rentcompare: 'local', fcc: 'local', brokerage: 'local', caprates: 'local', capvsint: 'local', discount: 'local', altus: 'local', zoning: 'local', rental: 'local', commercial: 'local' };
+  const TAB_GROUP = { johnson: 'local', yardi: 'local', rentalsca: 'local', rentcompare: 'local', aptcomps: 'local', fcc: 'local', brokerage: 'local', caprates: 'local', capvsint: 'local', discount: 'local', altus: 'local', zoning: 'local', rental: 'local', commercial: 'local' };
   const groupOf = (name) => TAB_GROUP[name] || 'housing';
 
   function showGroup(group) {
@@ -354,7 +356,7 @@ async function bootstrap() {
   const rawHash = hashTab in SUBAPP_TABS && SUBVIEW_RE.test(hashView || '') ? hashTab : fullHash;
   if (rawHash === hashTab && hashView) subappView[hashTab] = hashView;
   let initialTab = 'charts';
-  if (['charts', 'tables', 'compare', 'starts', 'secondary', 'housing', 'census', 'affordability', 'rtb', 'johnson', 'yardi', 'rentalsca', 'rentcompare', 'fcc', 'brokerage', 'caprates', 'capvsint', 'discount', 'altus', 'parade', 'zoning', 'rental', 'commercial', 'snapshot', 'indicators', 'agriculture', 'economic'].includes(rawHash)) {
+  if (['charts', 'tables', 'compare', 'starts', 'secondary', 'housing', 'census', 'affordability', 'rtb', 'johnson', 'yardi', 'rentalsca', 'rentcompare', 'aptcomps', 'fcc', 'brokerage', 'caprates', 'capvsint', 'discount', 'altus', 'parade', 'zoning', 'rental', 'commercial', 'snapshot', 'indicators', 'agriculture', 'economic'].includes(rawHash)) {
     initialTab = rawHash;
   } else if (rawHash.startsWith('mi-section-')) {
     initialTab = 'indicators';
@@ -393,6 +395,7 @@ async function bootstrap() {
     fcc:           once(() => initFcc().catch(err => console.error('[fcc bootstrap]', err))),
     brokerage:     once(() => initBrokerage().catch(err => console.error('[brokerage bootstrap]', err))),
     rentcompare:   once(() => initRentCompare({ loadShard }).catch(err => console.error('[rent-compare bootstrap]', err))),
+    aptcomps:      once(() => initApartmentComps().catch(err => console.error('[apartment-comps bootstrap]', err))),
     capvsint:      once(() => initCapVsInterestTab().catch(err => console.error('[cap-vs-interest bootstrap]', err))),
     discount:      once(() => initDiscountRates().catch(err => console.error('[discount-rates bootstrap]', err))),
     altus:         once(() => initAltusCosts().catch(err => console.error('[altus-costs bootstrap]', err))),
