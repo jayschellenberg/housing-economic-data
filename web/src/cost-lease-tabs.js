@@ -29,10 +29,11 @@ const loadJson = (path) =>
   fetch(path).then((r) => (r.ok ? r.json() : Promise.reject(new Error(r.status)))).catch(() => null);
 
 const GEO_ORDER = ['Winnipeg-CMA', 'MB', 'CA', 'Calgary-CMA', 'Edmonton-CMA', 'Regina-CMA', 'Saskatoon-CMA',
-  'Vancouver-CMA', 'Victoria-CMA'];
+  'Vancouver-CMA', 'Victoria-CMA', 'Prairies'];
 const GEO_LABEL = {
   'Winnipeg-CMA': 'Winnipeg', MB: 'Manitoba', CA: 'Canada', 'Calgary-CMA': 'Calgary', 'Edmonton-CMA': 'Edmonton',
   'Regina-CMA': 'Regina', 'Saskatoon-CMA': 'Saskatoon', 'Vancouver-CMA': 'Vancouver', 'Victoria-CMA': 'Victoria',
+  Prairies: 'Prairie Region',
 };
 const geoRank = (g) => (GEO_ORDER.indexOf(g) + 1) || 99;
 const money = (v) => `$${v.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -110,8 +111,12 @@ async function initCostLeaseTab(key) {
     .map(([chartId, c]) => ({ chartId, cfg: c, meta: Object.values(seriesById).filter((s) => s.chartId === chartId) }))
     .filter((c) => c.meta.some((s) => recordsById[s.id]?.length));
 
-  // Geography checkboxes: every geography the tab's charts carry.
-  const available = [...new Set(charts.flatMap((c) => c.meta.map((s) => s.geo)))].sort((a, b) => geoRank(a) - geoRank(b));
+  // Geography checkboxes: the geographies the multi-geography charts carry.
+  // A single-geography chart always draws (see renderCharts), so its geography
+  // (the Prairie Region building-type split) would be a box that does nothing.
+  const geosOf = (list) => [...new Set(list.flatMap((c) => c.meta.map((s) => s.geo)))];
+  const multiGeo = charts.filter((c) => new Set(c.meta.map((s) => s.geo)).size > 1);
+  const available = (multiGeo.length ? geosOf(multiGeo) : geosOf(charts)).sort((a, b) => geoRank(a) - geoRank(b));
   const prefKey = `${cfg.prefix}Geos`;
   let selected = resolveGeos(getPref(prefKey), available);
   const $geos = $('geo-toggles');
@@ -413,12 +418,39 @@ const LEASE_GEOS = [
   { slug: 'canada', label: 'Canada' },
 ];
 const CRSPI_CANADA = 'statscan.crspi.canada.total';
+// StatsCan splits CRSPI by building type for Canada and its regions only, from
+// Q1 2019. A prairie city (or Manitoba) takes the Prairie Region split, anything
+// else the national one; earlier years chain onto the Canada all-types total.
+const LEASE_TYPES = [
+  { slug: 'total', label: 'All building types' },
+  { slug: 'office', label: 'Office' },
+  { slug: 'retail', label: 'Retail' },
+  { slug: 'industrial', label: 'Industrial & warehouse' },
+];
+const PRAIRIE_SLUGS = new Set(['winnipeg', 'manitoba', 'calgary', 'edmonton', 'saskatoon', 'regina']);
+
+/**
+ * Which CRSPI series a lease lookup uses: the geography's own total, or for a
+ * building type the regional (Prairie) or national split.
+ *
+ * @param {string} geoSlug  'winnipeg', 'canada', …
+ * @param {string} typeSlug 'total' | 'office' | 'retail' | 'industrial'
+ * @returns {{ id:string, region:'local'|'prairie'|'canada' }}
+ */
+export function leaseCrspiSeries(geoSlug, typeSlug) {
+  if (typeSlug === 'total') return { id: `statscan.crspi.${geoSlug}.total`, region: 'local' };
+  const region = PRAIRIE_SLUGS.has(geoSlug) ? 'prairie' : 'canada';
+  return { id: `statscan.crspi.${region}.${typeSlug}`, region };
+}
 
 function buildLeaseTool($host, { recordsById }) {
   if (!$host) return;
   const geos = LEASE_GEOS.filter((g) => recordsById[`statscan.crspi.${g.slug}.total`]?.length
     && recordsById[`statscan.cpi_allitems.${g.slug}`]?.length);
   if (!geos.length) return;
+  // A building type is offered once both of its splits are in the shards.
+  const types = LEASE_TYPES.filter((t) => t.slug === 'total'
+    || ['prairie', 'canada'].every((r) => recordsById[`statscan.crspi.${r}.${t.slug}`]?.length));
   const latestYear = +(recordsById[CRSPI_CANADA]?.at(-1)?.date.slice(0, 4) || new Date().getFullYear());
   const rentFmt = (v) => `$${v.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   $host.innerHTML = `
@@ -429,10 +461,15 @@ function buildLeaseTool($host, { recordsById }) {
         <strong>Note:</strong> CRSPI tracks net effective rents for occupied office, retail and industrial space;
         CPI all-items is the usual basis of a lease escalation clause. Local CRSPI starts in Q1 2019 and is chained
         onto Canada CRSPI (from 2006) before that; for years before 2006 only the CPI result is available.
+        Statistics Canada splits CRSPI by building type only for Canada and its regions (from Q1 2019), so a
+        building type uses the Prairie Region index for a prairie geography and the national one otherwise.
       </div>
       <div class="cmhc-time-adjust-form">
         <label class="cmhc-time-adjust-wide">Geography
           <select id="clt-geo">${geos.map((g) => `<option value="${g.slug}">${escapeHtml(g.label)}</option>`).join('')}</select>
+        </label>
+        <label class="cmhc-time-adjust-wide">Building type (CRSPI)
+          <select id="clt-type">${types.map((t) => `<option value="${t.slug}">${escapeHtml(t.label)}</option>`).join('')}</select>
         </label>
         ${periodInputs('clt', { minYear: 1971, maxYear: latestYear, amountLabel: 'Rent ($/sf or $/yr)', amountPlaceholder: 'e.g. 14.50' })}
         <button type="button" id="clt-compute" class="cmhc-time-adjust-inline-btn">Calculate</button>
@@ -440,6 +477,7 @@ function buildLeaseTool($host, { recordsById }) {
       <div id="clt-result" class="cmhc-time-adjust-result cmhc-index-pair" hidden></div>
     </section>`;
   const $geo = $host.querySelector('#clt-geo');
+  const $type = $host.querySelector('#clt-type');
   const $year = $host.querySelector('#clt-year');
   const $q = $host.querySelector('#clt-quarter');
   const $amt = $host.querySelector('#clt-amount');
@@ -453,25 +491,41 @@ function buildLeaseTool($host, { recordsById }) {
     const quarter = $q.value ? +$q.value : null;
     const amount = parseFloat($amt.value);
 
-    const local = quarterly(recordsById, `statscan.crspi.${g.slug}.total`);
-    const { series: crspi, linkQ } = g.slug === 'canada'
+    const t = types.find((x) => x.slug === $type.value) || types[0];
+    const pick = leaseCrspiSeries(g.slug, t.slug);
+    const local = quarterly(recordsById, pick.id);
+    const { series: crspi, linkQ } = pick.id === CRSPI_CANADA
       ? { series: local, linkQ: null }
       : chain(local, quarterly(recordsById, CRSPI_CANADA));
+    const typeName = t.label.toLowerCase();
+    const indexName = t.slug === 'total' ? g.label
+      : `${pick.region === 'prairie' ? 'Prairie Region' : 'Canada'}, ${typeName}`;
+    // Say so whenever the index is not the geography's own.
+    const regionNote = pick.region === 'prairie'
+      ? `No ${typeName} CRSPI is published for ${g.label}; this uses the Prairie Region (MB + SK + AB) index.`
+      : pick.region === 'canada' && g.slug !== 'canada'
+        ? `No ${typeName} CRSPI is published for ${g.label}; this uses the national index.` : '';
+    const linkNote = !linkQ ? ''
+      : t.slug === 'total'
+        ? `${g.label} CRSPI starts ${fmtQuarter(linkQ)}: the base period is spliced onto Canada CRSPI, linked at ${fmtQuarter(linkQ)}.`
+        : `Building-type CRSPI starts ${fmtQuarter(linkQ)}: the base period is spliced onto the Canada all-types CRSPI, linked at ${fmtQuarter(linkQ)}.`;
     const cpi = quarterly(recordsById, `statscan.cpi_allitems.${g.slug}`);
 
-    const col = (title, r, opts, missing) => `<div><h3 class="cmhc-index-pair-title">${escapeHtml(title)}</h3>${r
+    const col = (title, r, opts, missing, note = '') => `<div><h3 class="cmhc-index-pair-title">${escapeHtml(title)}</h3>${
+      note ? `<p class="cmhc-time-adjust-warn">${escapeHtml(note)}</p>` : ''}${r
       ? resultHtml(r, amount, { amountFmt: rentFmt, ...opts })
       : `<p class="cmhc-time-adjust-error">${escapeHtml(missing)}</p>`}</div>`;
     $out.innerHTML =
       col('Market rents — CRSPI', indexToCurrent(crspi, amount, year, quarter), {
-        name: `CRSPI, ${g.label}`,
-        linkNote: linkQ ? `${g.label} CRSPI starts ${fmtQuarter(linkQ)}: the base period is spliced onto Canada CRSPI, linked at ${fmtQuarter(linkQ)}.` : '',
-      }, `CRSPI starts ${crspi[0] ? fmtQuarter(crspi[0].q) : '2006'}; no market-rent index for that period.`)
+        name: `CRSPI, ${indexName}`,
+        linkNote,
+      }, `CRSPI starts ${crspi[0] ? fmtQuarter(crspi[0].q) : '2006'}; no market-rent index for that period.`, regionNote)
       + col('Inflation — CPI all-items', indexToCurrent(cpi, amount, year, quarter), {
         name: `CPI all-items, ${g.label} (quarterly average of monthly)`,
       }, `CPI for ${g.label} starts ${cpi[0] ? fmtQuarter(cpi[0].q) : '—'}.`);
   }
 
   $geo.addEventListener('change', () => { if (!$out.hidden) compute(); });
+  $type.addEventListener('change', () => { if (!$out.hidden) compute(); });
   $host.querySelector('#clt-compute').addEventListener('click', compute);
 }
