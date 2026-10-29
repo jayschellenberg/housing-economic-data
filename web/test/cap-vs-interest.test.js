@@ -103,9 +103,9 @@ describe('capVsInterestCaption', () => {
     expect(rates).toMatch(/^Bank of Canada/);
     expect(rates).not.toMatch(/cap rate/);
     expect(capVsInterestCaption(rateMeta, ['Office'], 'Colliers'))
-      .toBe(`${rates}; Colliers Winnipeg quarterly cap rate reports`);
+      .toBe(`${rates}; Colliers Winnipeg quarterly CR reports`);
     expect(capVsInterestCaption(rateMeta, ['Office'], ALL_FIRMS))
-      .toMatch(/; Colliers Winnipeg, CBRE & Cushman & Wakefield quarterly cap rate reports$/);
+      .toMatch(/; Colliers Winnipeg, CBRE & Cushman & Wakefield quarterly CR reports$/);
   });
 });
 

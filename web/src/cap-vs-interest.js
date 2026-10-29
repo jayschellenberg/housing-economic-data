@@ -211,12 +211,12 @@ export function capVsInterestSources(rateMeta, capTypes, firm) {
 /**
  * The caption's source line: the BoC series behind the rate lines, then the
  * brokerage reports behind the cap rates — "Bank of Canada, series V39079,
- * …; Colliers Winnipeg quarterly cap rate reports".
+ * …; Colliers Winnipeg quarterly CR reports".
  */
 export function capVsInterestCaption(rateMeta, capTypes, firm) {
   return [
     seriesSources(rateMeta).short || 'Bank of Canada',
-    capTypes.length ? `${captionPublisher(firm)} quarterly cap rate reports` : '',
+    capTypes.length ? `${captionPublisher(firm)} quarterly CR reports` : '',
   ].filter(Boolean).join('; ');
 }
 
