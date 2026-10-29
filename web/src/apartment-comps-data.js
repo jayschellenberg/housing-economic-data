@@ -166,6 +166,26 @@ export function hasExpenses(r) {
 const ymd = (d) => String(d || '');
 
 /**
+ * The address as the City of Winnipeg address index wants it: the first civic
+ * number of a range ("1165-1167-1169 Alexander Ave", "300-318 Marion St",
+ * "626/630 Jessie Ave" → "1165 Alexander Ave" …). null without a leading number.
+ */
+export function lookupAddressText(address) {
+  const s = String(address || '')
+    .replace(/\([^)]*\)/g, ' ')                // "(71 Lenore)", "(to be built)"
+    .replace(/\s+&\s+.*$/, '')                // "175 Ruby St & 911 Westminster"
+    .replace(/\s*-\s*appr\w*\.?\s*$/i, '')    // "270 St. John's Ave-APPRAISED"
+    .replace(/\bCr\b\.?/i, 'Cres')            // the appraiser's "Cr" for Crescent
+    .replace(/\s+/g, ' ')
+    .trim();
+  const m = s.match(/^(\d+)[A-Za-z]?(?:\s*[-/&,]\s*\d+[A-Za-z]?)*\s+(.*[A-Za-z].*)$/);
+  return m ? `${m[1]} ${m[2]}` : null;
+}
+
+/** Label used for records the address index could not place. */
+export const NO_CLUSTER = '(not matched)';
+
+/**
  * @param {Array} records
  * @param {Object} f  { q, dateFrom, dateTo ('YYYY-MM'), yrFrom, yrTo, suitesMin,
  *   suitesMax, ptypes:Set, kinds:Set, projected:'all'|'actual'|'projected',
@@ -190,6 +210,7 @@ export function filterRecords(records, f) {
     if (isNum(f.suitesMin) && !(isNum(r.suites) && r.suites >= f.suitesMin)) return false;
     if (isNum(f.suitesMax) && !(isNum(r.suites) && r.suites <= f.suitesMax)) return false;
     if (f.ptypes && !f.ptypes.has(r.ptype || 'apartment')) return false;
+    if (f.clusters && !f.clusters.has(r.cluster || NO_CLUSTER)) return false;
     if (f.kinds && !f.kinds.has(kindGroup(r))) return false;
     if (f.projected === 'actual' && isProjected(r)) return false;
     if (f.projected === 'projected' && !isProjected(r)) return false;
@@ -230,7 +251,47 @@ export function summarize(records, { mode = 'suite', assumed = false } = {}) {
     ...COLUMNS.map((c) => row(c.label, (r) => columnValue(r, c.cats, opts)?.v ?? null, { id: c.id })),
     row('All utilities', (r) => utilitiesTotal(r, opts), { id: 'utilities_all', strong: true }),
     row('Total expenses', (r) => totalExpenses(r, opts), { id: 'total', strong: true }),
+    // Always a share of EGI, whatever the chosen metric.
+    { label: 'Expense ratio (% of EGI)', id: 'ratio', strong: true, fmt: 'pct',
+      ...stats(records.map((r) => expenseRatio(r, opts))) },
+    { label: 'EGIM (price ÷ EGI)', id: 'egim', fmt: 'x', gap: true, ...stats(records.map((r) => egimOf(r, opts))) },
+    { label: 'Cap rate', id: 'cap', fmt: 'pct', ...stats(records.map(capOf)) },
   ];
+}
+
+/**
+ * NOI, or null when it means nothing: income with no expenses beside it (NOI
+ * would just be EGI) or a NOI of zero or less. A document that states a NOI
+ * with no line items at all keeps it.
+ */
+export function noiOf(r) {
+  if (!isNum(r.noi) || r.noi <= 0) return null;
+  const hasIncome = Object.keys(r.inc || {}).length > 0;
+  if (hasIncome && !hasExpenses(r)) return null;
+  return r.noi;
+}
+
+/** Cap rate as a fraction: the source's own, else NOI ÷ price; null with no usable NOI. */
+export function capOf(r) {
+  const noi = noiOf(r);
+  if (noi == null) return null;
+  if (isNum(r.cap) && r.cap > 0) return r.cap;
+  const price = priceOf(r);
+  return price ? noi / price : null;
+}
+
+/** Effective gross income multiplier: price ÷ EGI. */
+export function egimOf(r, opts = {}) {
+  const price = priceOf(r);
+  const egi = egiOf(r, opts);
+  return price && egi && egi > 0 ? price / egi : null;
+}
+
+/** Total expenses as a fraction of EGI, or null. */
+export function expenseRatio(r, opts = {}) {
+  const t = totalExpenses(r, opts);
+  const e = egiOf(r, opts);
+  return t != null && e && e > 0 ? t / e : null;
 }
 
 /** Other records of the same property (same address key), newest first. */
@@ -256,9 +317,11 @@ export function sortValue(r, id, opts) {
     case 'per_suite': return priceOf(r) && r.suites ? priceOf(r) / r.suites : null;
     case 'egi': return egiOf(r, opts);
     case 'total': return normalize(totalExpenses(r, opts), r, opts.mode, opts);
-    case 'ratio': { const t = totalExpenses(r, opts); const e = egiOf(r, opts); return t != null && e ? t / e : null; }
-    case 'noi': return r.noi ?? null;
-    case 'cap': return r.cap ?? (r.noi && priceOf(r) ? r.noi / priceOf(r) : null);
+    case 'cluster': return r.cluster ? r.cluster.toLowerCase() : null;
+    case 'ratio': return expenseRatio(r, opts);
+    case 'egim': return egimOf(r, opts);
+    case 'noi': return noiOf(r);
+    case 'cap': return capOf(r);
     default: {
       const c = COLUMNS.find((x) => x.id === id);
       return c ? normalize(columnValue(r, c.cats, opts)?.v ?? null, r, opts.mode, opts) : null;

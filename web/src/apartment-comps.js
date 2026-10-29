@@ -20,10 +20,12 @@
 import { escapeHtml } from './escape.js';
 import { getPref, setPref } from './prefs.js';
 import { fUsd, fPctFrac1, fInt } from './format.js';
+import { loadWpgAddressIndex, lookupAddress } from './wpg-address.js';
 import {
   INCOME_LABELS, EXPENSE_LABELS, COLUMNS, KIND_GROUPS, KIND_LABEL, PTYPE_LABELS, HEAT_LABELS,
   kindGroup, isProjected, heatGroup, catValue, columnValue, egiOf, totalExpenses, normalize,
-  filterRecords, summarize, sameProperty, priceOf, sortRecords,
+  filterRecords, summarize, sameProperty, priceOf, sortRecords, expenseRatio,
+  noiOf, capOf, egimOf, lookupAddressText, NO_CLUSTER,
 } from './apartment-comps-data.js';
 import {
   storeAvailable, fsAccessSupported, pickDirectory, getSavedDirectory, directoryPermission,
@@ -65,6 +67,8 @@ export async function initApartmentComps() {
     $summaryWrap: $('ac-summary-wrap'), $summary: $('ac-summary'), $summaryNote: $('ac-summary-note'),
     $tableWrap: $('ac-table-wrap'), $table: $('ac-table'), $count: $('ac-count'),
     $kinds: $('ac-kinds'), $ptypes: $('ac-ptypes'),
+    $clusters: $('ac-clusters'), $clusterMenu: $('ac-cluster-menu'), $clusterSummary: $('ac-cluster-summary'),
+    $active: $('ac-active-filters'),
     data: null, records: [], open: new Set(), shown: PAGE,
     prefs: loadPrefs(),
   };
@@ -152,6 +156,7 @@ function noDataText() {
 async function loadFromStore() {
   ui.data = (await getData()) || null;
   ui.records = ui.data?.records || [];
+  await placeInClusters(ui.records);
   ui.$clear.hidden = !ui.data;
   setStatus(ui.data ? summaryText(await getManifest()) : noDataText());
   render();
@@ -181,6 +186,36 @@ async function maybeAutoRefresh() {
   }
 }
 
+/**
+ * Give each Winnipeg record its City neighbourhood, cluster and community
+ * area from the committed address index (wpg-address.js). Kept on the
+ * in-memory records only; a record the index cannot place has no cluster.
+ */
+async function placeInClusters(records) {
+  if (!records.length) return;
+  const idx = await loadWpgAddressIndex();
+  if (!idx) return;
+  const seen = new Map();
+  for (const r of records) {
+    if (r.city && !/winnipeg/i.test(r.city)) continue;
+    const text = lookupAddressText(r.address);
+    if (!text) continue;
+    if (!seen.has(text)) {
+      let hit = lookupAddress(idx, text);
+      // "441 Marion St E": retry without a direction the City doesn't use.
+      const bare = text.replace(/\s+(N|S|E|W)$/i, '');
+      if (!hit.ok && bare !== text) hit = lookupAddress(idx, bare);
+      seen.set(text, hit.ok ? hit : null);
+    }
+    const hit = seen.get(text);
+    if (hit) {
+      r.cluster = hit.cluster;
+      r.neighbourhood = hit.neighbourhood;
+      r.community = hit.communityArea;
+    }
+  }
+}
+
 function renderFolderBody() {
   const collapsed = !!ui.data && !!ui.prefs.folderCollapsed;
   ui.$folderBody.hidden = collapsed;
@@ -193,7 +228,7 @@ function renderFolderBody() {
 
 const FILTER_DEFAULTS = {
   q: '', dateFrom: '', dateTo: '', yrFrom: '', yrTo: '', suitesMin: '', suitesMax: '',
-  kinds: DEFAULT_KINDS, ptypes: null, projected: 'all', heat: '',
+  kinds: DEFAULT_KINDS, ptypes: null, clusters: null, projected: 'all', heat: '',
   paysHydro: 'any', paysHeat: 'any', paysWater: 'any', mode: 'suite',
   withExp: true, assumed: false, conf: true, unchecked: false,
   sort: 'date', dir: 'desc',
@@ -229,10 +264,23 @@ function wireFilters() {
   ui.$ptypes.addEventListener('change', () => {
     setFilter({ ptypes: [...ui.$ptypes.querySelectorAll('input:checked')].map(x => x.value) });
   });
+  ui.$clusters.addEventListener('change', () => {
+    const all = ui.$clusters.querySelectorAll('input');
+    const on = [...ui.$clusters.querySelectorAll('input:checked')].map(x => x.value);
+    setFilter({ clusters: on.length === all.length ? null : on });
+  });
+  $('ac-clusters-all').addEventListener('click', () => setFilter({ clusters: null }));
+  $('ac-clusters-none').addEventListener('click', () => setFilter({ clusters: [] }));
+  const $menu = ui.$clusterMenu;
+  document.addEventListener('click', (e) => { if ($menu.open && !$menu.contains(e.target)) $menu.open = false; });
+  $menu.addEventListener('keydown', (e) => { if (e.key === 'Escape') { $menu.open = false; $menu.querySelector('summary').focus(); } });
+  // Clear every filter; the display choices (metric, sort, folder panel) stay.
   $('ac-reset').addEventListener('click', () => {
-    const keep = { folderCollapsed: ui.prefs.folderCollapsed, mode: prefs().mode };
+    const p = prefs();
+    const keep = { folderCollapsed: ui.prefs.folderCollapsed, mode: p.mode, sort: p.sort, dir: p.dir };
     setPref(PREF_KEY, keep);
     ui.prefs = keep;
+    ui.shown = PAGE;
     syncInputs();
     render();
   });
@@ -276,10 +324,51 @@ function renderChoiceLists() {
   const ptypes = [...new Set(ui.records.map(r => r.ptype || 'apartment'))]
     .sort((a, b) => Object.keys(PTYPE_LABELS).indexOf(a) - Object.keys(PTYPE_LABELS).indexOf(b));
   const sel = p.ptypes ? new Set(p.ptypes) : new Set(ptypes);
+  renderClusterList(p);
   ui.$ptypes.innerHTML = ptypes.map(t => {
     const n = ui.records.filter(r => (r.ptype || 'apartment') === t).length;
     return `<label class="flex items-center gap-2"><input type="checkbox" value="${escapeHtml(t)}" ${sel.has(t) ? 'checked' : ''}/> ${escapeHtml(PTYPE_LABELS[t] || t)} <span class="text-neutral-400 text-xs">${fInt(n)}</span></label>`;
   }).join('');
+}
+
+function renderClusterList(p) {
+  const counts = new Map();
+  for (const r of ui.records) {
+    const c = r.cluster || NO_CLUSTER;
+    counts.set(c, (counts.get(c) || 0) + 1);
+  }
+  const names = [...counts.keys()].filter(c => c !== NO_CLUSTER).sort((a, b) => a.localeCompare(b));
+  if (counts.has(NO_CLUSTER)) names.push(NO_CLUSTER);
+  const sel = p.clusters ? new Set(p.clusters) : null;
+  ui.$clusters.innerHTML = names.map(c =>
+    `<label class="flex items-center gap-2"><input type="checkbox" value="${escapeHtml(c)}" ${!sel || sel.has(c) ? 'checked' : ''}/> ${escapeHtml(c)} <span class="text-neutral-400 text-xs">${fInt(counts.get(c))}</span></label>`).join('');
+  ui.$clusterSummary.textContent = !sel ? 'All clusters'
+    : sel.size === 0 ? 'No clusters'
+    : sel.size === 1 ? [...sel][0]
+    : `${sel.size} of ${names.length} clusters`;
+}
+
+/** A line naming the active filters, so a narrowed view is never mistaken for everything. */
+function renderActiveFilters() {
+  const p = prefs();
+  const on = [];
+  if (p.q) on.push(`"${p.q}"`);
+  if (p.clusters) on.push(p.clusters.length === 1 ? p.clusters[0] : `${p.clusters.length} clusters`);
+  if (p.kinds.length !== DEFAULT_KINDS.length) on.push('type');
+  if (p.dateFrom || p.dateTo) on.push(`dates ${p.dateFrom || '…'} to ${p.dateTo || '…'}`);
+  if (p.yrFrom || p.yrTo) on.push(`built ${p.yrFrom || '…'}–${p.yrTo || '…'}`);
+  if (p.suitesMin || p.suitesMax) on.push(`${p.suitesMin || '…'}–${p.suitesMax || '…'} suites`);
+  if (p.ptypes) on.push('property type');
+  if (p.projected !== 'all') on.push(p.projected === 'actual' ? 'current / actual' : 'pro forma');
+  if (p.heat) on.push(`heat: ${HEAT_LABELS[p.heat]}`);
+  for (const [k, u] of [['paysHydro', 'hydro'], ['paysHeat', 'heat'], ['paysWater', 'water']]) {
+    if (p[k] !== 'any') on.push(`tenant pays ${u}: ${p[k] === 'Y' ? 'yes' : 'no'}`);
+  }
+  if (!p.withExp) on.push('records without expenses included');
+  if (!p.conf) on.push('CIMs hidden');
+  if (p.unchecked) on.push('unchecked only');
+  ui.$active.hidden = !on.length;
+  ui.$active.textContent = on.length ? `Filtered by ${on.join(', ')}.` : '';
 }
 
 function currentFilter() {
@@ -289,6 +378,7 @@ function currentFilter() {
     q: p.q, dateFrom: p.dateFrom, dateTo: p.dateTo,
     yrFrom: n(p.yrFrom), yrTo: n(p.yrTo), suitesMin: n(p.suitesMin), suitesMax: n(p.suitesMax),
     kinds: new Set(p.kinds), ptypes: p.ptypes ? new Set(p.ptypes) : null,
+    clusters: p.clusters ? new Set(p.clusters) : null,
     projected: p.projected, heat: p.heat,
     pays: { hydro: p.paysHydro, heat: p.paysHeat, water: p.paysWater },
     withExpenses: p.withExp, showConf: p.conf, unchecked: p.unchecked,
@@ -306,6 +396,7 @@ function render() {
   ui.$tableWrap.hidden = !has;
   if (!has) { ui.$summary.innerHTML = ''; ui.$table.innerHTML = ''; return; }
   renderChoiceLists();
+  renderActiveFilters();
   const p = prefs();
   const opts = { mode: p.mode, assumed: p.assumed };
   ui.filtered = sortRecords(filterRecords(ui.records, currentFilter()), p.sort, p.dir, opts);
@@ -313,6 +404,7 @@ function render() {
   renderTable(ui.filtered, opts);
 }
 
+const fX = (v) => (v == null || !Number.isFinite(v) ? MISSING : v.toFixed(2));
 const fmtMetric = (v, mode) => (mode === 'egi' ? fPctFrac1(v, MISSING) : fUsd(v, MISSING));
 const MODE_LABEL = { suite: '$ per suite per year', egi: '% of EGI', annual: 'annual $' };
 
@@ -324,20 +416,24 @@ function renderSummary(rows, opts) {
     (opts.assumed ? ', including the database allowances.' : ', reported figures only (database allowances left out).') +
     ` Each row counts only the records that give that category${opts.mode === 'suite' ? ' and a suite count' : opts.mode === 'egi' ? ' and an EGI' : ''}.` +
     (egis.length ? '' : ' No record in the selection has income figures.');
-  const tr = (s) => `<tr${s.strong ? ' class="font-semibold"' : ''}><td class="ac-addr">${escapeHtml(s.label)}</td>` +
-    `<td>${fmtMetric(s.median, opts.mode)}</td><td>${fmtMetric(s.mean, opts.mode)}</td>` +
-    `<td>${fmtMetric(s.min, opts.mode)}</td><td>${fmtMetric(s.max, opts.mode)}</td><td>${fInt(s.n)}</td></tr>`;
+  const tr = (s) => {
+    const f = (v) => (s.fmt === 'pct' ? fPctFrac1(v, MISSING) : s.fmt === 'x' ? fX(v) : fmtMetric(v, opts.mode));
+    return `<tr${s.strong ? ' class="font-semibold"' : ''}${s.gap ? ' style="border-top:2px solid #999"' : ''}><td class="ac-addr">${escapeHtml(s.label)}</td>` +
+      `<td>${f(s.median)}</td><td>${f(s.mean)}</td><td>${f(s.min)}</td><td>${f(s.max)}</td><td>${fInt(s.n)}</td></tr>`;
+  };
   ui.$summary.innerHTML = `<table class="cmhc-table cmhc-table-compact"><thead><tr>
     <th>Category</th><th>Median</th><th>Average</th><th>Low</th><th>High</th><th>Records</th></tr></thead>
     <tbody>${sum.map(tr).join('')}</tbody></table>`;
 }
 
 const TABLE_COLS = [
-  { id: 'date', label: 'Date' }, { id: 'address', label: 'Address' }, { id: 'kind', label: 'Type' },
+  { id: 'date', label: 'Date' }, { id: 'address', label: 'Address' }, { id: 'cluster', label: 'Cluster' },
+  { id: 'kind', label: 'Type' },
   { id: 'suites', label: 'Suites' }, { id: 'yr', label: 'Built' }, { id: 'price', label: 'Price' },
   { id: 'per_suite', label: 'Price / suite' }, { id: 'egi', label: 'EGI' },
+  { id: 'egim', label: 'EGIM', title: 'Effective gross income multiplier: price ÷ EGI' },
   ...COLUMNS.map(c => ({ id: c.id, label: c.label, title: c.title, metric: true })),
-  { id: 'total', label: 'Total exp.', metric: true }, { id: 'ratio', label: 'Exp. ratio' },
+  { id: 'total', label: 'Total exp.', metric: true }, { id: 'ratio', label: 'Exp. ratio', title: 'Total expenses as a % of EGI' },
   { id: 'noi', label: 'NOI' }, { id: 'cap', label: 'Cap' },
 ];
 
@@ -360,23 +456,24 @@ function rowHtml(r, opts) {
   const price = priceOf(r);
   const egi = egiOf(r, opts);
   const total = totalExpenses(r, opts);
-  const cap = r.cap ?? (r.noi && price ? r.noi / price : null);
   const priceNote = r.price_kind && r.price_kind !== 'sale' ? ` <span class="text-neutral-500">(${escapeHtml(r.price_kind)})</span>` : '';
   const open = ui.open.has(r.id);
   const cells = [
     escapeHtml(r.date || MISSING),
     `${escapeHtml(r.address || MISSING)}${badges(r)}`,
+    escapeHtml(r.cluster || MISSING),
     escapeHtml(KIND_LABEL[kindGroup(r)] || r.kind || ''),
     fInt(r.suites, MISSING), escapeHtml(r.yr_text || (r.yr ? String(r.yr) : MISSING)),
     fUsd(price, MISSING) + priceNote,
     fUsd(price && r.suites ? price / r.suites : null, MISSING),
     opts.mode === 'suite' ? fUsd(egi != null && r.suites ? egi / r.suites : null, MISSING) : fUsd(egi, MISSING),
+    fX(egimOf(r, opts)),
     ...COLUMNS.map(c => cellMetric(r, c.cats, opts)),
     fmtMetric(normalize(total, r, opts.mode, opts), opts.mode),
-    fPctFrac1(total != null && egi ? total / egi : null, MISSING),
-    fUsd(r.noi, MISSING), fPctFrac1(cap, MISSING),
+    fPctFrac1(expenseRatio(r, opts), MISSING),
+    fUsd(noiOf(r), MISSING), fPctFrac1(capOf(r), MISSING),
   ];
-  const tds = cells.map((c, i) => `<td${i === 1 ? ' class="ac-addr"' : ''}>${c}</td>`).join('');
+  const tds = cells.map((c, i) => `<td${i === 1 || i === 2 ? ' class="ac-addr"' : ''}>${c}</td>`).join('');
   const row = `<tr class="ac-row" data-id="${escapeHtml(r.id)}" tabindex="0" aria-expanded="${open}">${tds}</tr>`;
   return open ? row + `<tr class="ac-detail"><td colspan="${TABLE_COLS.length}">${detailHtml(r, opts)}</td></tr>` : row;
 }
@@ -403,7 +500,7 @@ function onTableClick(e) {
   if (sortBtn) {
     const id = sortBtn.dataset.sort;
     const p = prefs();
-    const dir = p.sort === id ? (p.dir === 'asc' ? 'desc' : 'asc') : (id === 'address' || id === 'kind' ? 'asc' : 'desc');
+    const dir = p.sort === id ? (p.dir === 'asc' ? 'desc' : 'asc') : (id === 'address' || id === 'kind' || id === 'cluster' ? 'asc' : 'desc');
     setFilter({ sort: id, dir });
     return;
   }
@@ -444,6 +541,7 @@ function detailHtml(r, opts) {
     ['Source', r.src === 'db' ? `Database, ${escapeHtml(r.sheet)} row ${r.row}${r.section ? ` (${escapeHtml(r.section)})` : ''}` : `Document: ${escapeHtml(r.file)}${r.pages ? `, ${escapeHtml(r.pages)}` : ''}`],
     ['Record', escapeHtml([r.kind, r.scenario && `${r.scenario}${r.period ? ` — ${r.period}` : ''}`].filter(Boolean).join(' · '))],
     ['Other addresses', r.other_addresses ? escapeHtml(r.other_addresses) : null],
+    ['Neighbourhood', r.cluster ? escapeHtml([r.neighbourhood, r.cluster, r.community].filter(Boolean).join(' · ')) : null],
     ['MLS # / area', [r.mls, r.area].filter(Boolean).map(escapeHtml).join(' / ') || null],
     ['Property type', escapeHtml(PTYPE_LABELS[r.ptype] || r.ptype || '')],
     ['Suite mix', r.mix ? escapeHtml(Object.entries(r.mix).map(([k, v]) => `${v} ${k === 'bach' ? 'bach' : k.replace('b', '') + '-bed'}`).join(', ')) : null],
@@ -472,10 +570,15 @@ function detailHtml(r, opts) {
       <td class="num">${fUsd(e.v)}</td><td class="num">${fUsd(per, MISSING)}</td><td class="num">${fPctFrac1(egi ? e.v / egi : null, MISSING)}</td></tr>`;
   }).join('');
   const egiRow = egi != null ? `<tr class="font-semibold"><td>EGI</td><td class="num">${fUsd(egi)}</td><td class="num">${fUsd(r.suites ? egi / r.suites : null, MISSING)}</td><td></td></tr>` : '';
+  const total = totalExpenses(r, opts);
+  const totalRow = total != null ? `<tr class="font-semibold"><td>Total expenses</td><td class="num">${fUsd(total)}</td><td class="num">${fUsd(r.suites ? total / r.suites : null, MISSING)}</td><td class="num">${fPctFrac1(expenseRatio(r, opts), MISSING)}</td></tr>` : '';
   const stated = [['Stated total expenses', r.total_exp], ['Stated NOI', r.noi]].filter(([, v]) => v != null)
     .map(([k, v]) => `<tr><td>${k}</td><td class="num">${fUsd(v)}</td><td></td><td></td></tr>`).join('');
+  const egim = egimOf(r, opts);
+  const ratios = `<tr><td>EGIM</td><td class="num">${fX(egim)}</td><td></td><td></td></tr>` +
+    `<tr><td>Cap rate</td><td class="num">${fPctFrac1(capOf(r), MISSING)}</td><td></td><td></td></tr>`;
   const breakdown = `<table class="cmhc-table cmhc-table-compact ac-lines"><thead><tr><th>Category</th><th>Annual</th><th>Per suite</th><th>% EGI</th></tr></thead>
-    <tbody>${catRows(INCOME_LABELS, true)}${egiRow}${catRows(EXPENSE_LABELS, false)}${stated}</tbody></table>
+    <tbody>${catRows(INCOME_LABELS, true)}${egiRow}${catRows(EXPENSE_LABELS, false)}${totalRow}${stated}${ratios}</tbody></table>
     ${opts.assumed ? '' : '<p class="text-xs text-neutral-500 mt-1">Greyed lines are database allowances, left out while "Include assumed allowances" is off.</p>'}`;
 
   const lines = r.lines?.length ? `<h4 class="font-semibold mt-2 mb-1">As printed in the document</h4>
@@ -515,42 +618,48 @@ async function exportExcel() {
   const ws = wb.addWorksheet('Records', { views: [{ state: 'frozen', xSplit: 2, ySplit: 1 }] });
   const incCats = Object.keys(INCOME_LABELS), expCats = Object.keys(EXPENSE_LABELS);
   const cols = [
-    ['Date', 11], ['Address', 26], ['Type', 12], ['Scenario', 14], ['Confidential', 8], ['Checked', 8],
+    ['Date', 11], ['Address', 26], ['Neighbourhood cluster', 22], ['Neighbourhood', 20], ['Type', 12], ['Scenario', 14], ['Confidential', 8], ['Checked', 8],
     ['Property type', 14], ['Suites', 7], ['Year built', 10], ['Price', 12], ['Price type', 9], ['Heat', 16],
     ['Tenants pay', 16], ...incCats.map(c => [INCOME_LABELS[c], 12]), ['EGI', 12],
-    ...expCats.map(c => [EXPENSE_LABELS[c], 12]), ['Total expenses', 13], ['NOI (stated)', 12],
-    ['Cap rate', 8], ['Assumed allowances', 20], ['Source', 40], ['Notes / review', 50],
+    ...expCats.map(c => [EXPENSE_LABELS[c], 12]), ['Total expenses', 13], ['Expense ratio', 9], ['NOI', 12],
+    ['Cap rate', 8], ['EGIM', 7], ['Assumed allowances', 20], ['Source', 40], ['Notes / review', 50],
   ];
   ws.columns = cols.map(([header, width]) => ({ header, width }));
   ws.getRow(1).eachCell(c => Object.assign(c, head));
   for (const r of rows) {
     const assumedCats = [...Object.entries(r.inc || {}), ...Object.entries(r.exp || {})].filter(([, e]) => e.a).map(([k]) => k);
     ws.addRow([
-      r.date || null, r.address || null, KIND_LABEL[kindGroup(r)] || r.kind || null,
+      r.date || null, r.address || null, r.cluster || null, r.neighbourhood || null, KIND_LABEL[kindGroup(r)] || r.kind || null,
       r.scenario ? `${r.scenario}${r.period ? ` — ${r.period}` : ''}` : null,
       r.conf ? 'Y' : null, r.src === 'doc' ? (r.checked ? 'Y' : 'N') : null,
       PTYPE_LABELS[r.ptype] || r.ptype || null, r.suites ?? null, r.yr_text || r.yr || null,
       priceOf(r), r.price_kind || null, r.heat || null,
       r.tenants_pay || (r.pays ? Object.entries(r.pays).map(([u, v]) => `${u} ${yesNo(v)}`).join(', ') : null),
       ...incCats.map(c => catValue(r, c, opts)), egiOf(r, opts),
-      ...expCats.map(c => catValue(r, c, opts)), totalExpenses(r, opts), r.noi ?? null, r.cap ?? null,
+      ...expCats.map(c => catValue(r, c, opts)), totalExpenses(r, opts), expenseRatio(r, opts), noiOf(r), capOf(r),
+      egimOf(r, opts),
       assumedCats.length ? (opts.assumed ? 'included: ' : 'left out: ') + assumedCats.join(', ') : null,
       r.src === 'db' ? `DB ${r.sheet} row ${r.row}` : r.file, [r.notes, r.review].filter(Boolean).join(' | ') || null,
     ]);
   }
   const money = cols.findIndex(c => c[0] === 'Price') + 1;
   ws.getColumn(money).numFmt = '#,##0';
-  for (let i = cols.findIndex(c => c[0] === INCOME_LABELS.rent) + 1; i <= cols.findIndex(c => c[0] === 'NOI (stated)') + 1; i++) ws.getColumn(i).numFmt = '#,##0';
+  for (let i = cols.findIndex(c => c[0] === INCOME_LABELS.rent) + 1; i <= cols.findIndex(c => c[0] === 'NOI') + 1; i++) ws.getColumn(i).numFmt = '#,##0';
   ws.getColumn(cols.findIndex(c => c[0] === 'Cap rate') + 1).numFmt = '0.00%';
+  ws.getColumn(cols.findIndex(c => c[0] === 'Expense ratio') + 1).numFmt = '0.0%';
+  ws.getColumn(cols.findIndex(c => c[0] === 'EGIM') + 1).numFmt = '0.00';
 
   const ss = wb.addWorksheet('Summary');
   ss.addRow([`Apartment income & expenses — ${rows.length} records, expenses as ${MODE_LABEL[opts.mode]}${opts.assumed ? ' (allowances included)' : ' (reported figures only)'}`]).font = { bold: true };
   ss.addRow([]);
   const hr = ss.addRow(['Category', 'Median', 'Average', 'Low', 'High', 'Records']);
   hr.eachCell(c => Object.assign(c, head));
-  for (const s of summarize(rows, opts)) ss.addRow([s.label, s.median, s.mean, s.min, s.max, s.n]);
+  for (const s of summarize(rows, opts)) {
+    const row = ss.addRow([s.label, s.median, s.mean, s.min, s.max, s.n]);
+    const fmt = s.fmt === 'pct' || (!s.fmt && opts.mode === 'egi') ? '0.0%' : s.fmt === 'x' ? '0.00' : '#,##0';
+    for (let i = 2; i <= 5; i++) row.getCell(i).numFmt = fmt;
+  }
   [28, 12, 12, 12, 12, 9].forEach((w, i) => { ss.getColumn(i + 1).width = w; });
-  for (let i = 2; i <= 5; i++) ss.getColumn(i).numFmt = opts.mode === 'egi' ? '0.0%' : '#,##0';
   ss.addRow([]);
   ss.addRow(['Exported', new Date().toISOString().slice(0, 10)]);
   ss.addRow(['Caveat', 'Includes brokers\' confidential material where CIM records are shown. Not for redistribution.']);
