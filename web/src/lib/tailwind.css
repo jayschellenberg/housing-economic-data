@@ -637,16 +637,6 @@
    looked like two vertical bars. Wider than the solid swatch so more than one
    dash fits. The inline style sets background-IMAGE (not the shorthand) so
    these size/position rules survive. */
-/* Key for a card's annotation marks (cap-rate spread bars): a translucent
-   square, set apart from the series swatches. */
-.cmhc-plot-legend-key-swatch {
-  display: inline-block;
-  width: 10px;
-  height: 14px;
-  border-radius: 1px;
-  opacity: 0.45;
-  flex-shrink: 0;
-}
 .cmhc-plot-legend-swatch-dashed {
   width: 22px;
   border-radius: 0;
