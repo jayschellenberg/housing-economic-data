@@ -1046,3 +1046,23 @@
 /* Cap Rates tables: dark-red rule between the last brokerage and Average. */
 .cmhc-table tbody tr.cr-avg-row td { border-top: 2px solid var(--cmhc-brand-red); }
 .cmhc-table tfoot tr.cr-footnote td { border: 0; background: none; text-align: left; font-style: italic; font-weight: normal; font-size: 0.85em; color: var(--cmhc-ink-muted, #555); }
+
+/* Apartment Income & Expenses tab (apartment-comps.js) */
+.ac-badge { display: inline-block; font-size: 0.7rem; line-height: 1; padding: 2px 5px; border-radius: 3px; margin-left: 4px; vertical-align: middle; white-space: nowrap; font-weight: 600; }
+.ac-badge-conf { background: #fde2e1; color: #8a1c14; }
+.ac-badge-warn { background: #fff4d6; color: #7a5300; }
+.ac-badge-proj { background: #e6eefb; color: #1f4e79; }
+#ac-table table td, #ac-summary table td { white-space: nowrap; }
+#ac-table tbody tr.ac-row { cursor: pointer; }
+#ac-table tbody tr.ac-row:hover td { background: #f5f7fa; }
+#ac-table tbody tr.ac-row[aria-expanded="true"] td { background: #eef3f9; }
+#ac-table thead th button { all: unset; cursor: pointer; }
+#ac-table thead th button:focus-visible { outline: 2px solid #1f4e79; }
+#ac-table td.ac-addr { text-align: left; }
+#ac-table tr.ac-detail td { white-space: normal; text-align: left; background: #fafbfc; }
+.ac-detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.75rem 1.5rem; font-size: 0.8rem; }
+.ac-detail-grid dt { color: #666; }
+.ac-detail-grid dd { margin: 0 0 0.25rem; }
+.ac-lines td { text-align: left !important; }
+.ac-lines td.num { text-align: right !important; }
+#ac-table sup, #ac-summary sup { color: #8a1c14; margin-left: 1px; }
