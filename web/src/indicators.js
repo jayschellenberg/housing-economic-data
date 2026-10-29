@@ -514,9 +514,11 @@ function buildSnapshot(catalog, shards) {
   const tiers = { national: [], provincial: [], urban: [] };
   Object.entries(catalog.charts || {}).forEach(([chartId, c]) => {
     if (!c.snapshotPick) return;
-    // Skip charts belonging to another tab's groups (e.g. Agriculture).
+    // Skip charts belonging to another tab's groups (e.g. Agriculture), unless
+    // the group keeps its tiles here (`inSnapshot`: Construction Cost and
+    // Commercial Leasing moved to their own tabs but still headline here).
     const grp = (catalog.displayGroups || {})[c.displayGroup];
-    if (grp && grp.tab && grp.tab !== 'indicators') return;
+    if (grp && grp.tab && grp.tab !== 'indicators' && !grp.inSnapshot) return;
     const shard = shards[c.displayGroup];
     if (!shard) return;
     const pick = (shard.series || []).find(s => s.id === c.snapshotPick);

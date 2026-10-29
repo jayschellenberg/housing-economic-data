@@ -22,6 +22,7 @@ import { initEconomicUpdate } from './economic-update.js';
 import { initAffordability } from './affordability.js';
 import { initRtb } from './rtb.js';
 import { initAgriculture } from './agriculture.js';
+import { initConstruction, initLeasing } from './cost-lease-tabs.js';
 import { initJohnson } from './johnson.js';
 import { initCapRates } from './cap-rates.js';
 import { initYardi, refreshYardi } from './yardi.js';
@@ -174,6 +175,8 @@ function setupTabs(initial, onActivate) {
     snapshot:   { btn: document.getElementById('tab-btn-snapshot'),   panel: document.getElementById('tab-panel-snapshot') },
     indicators: { btn: document.getElementById('tab-btn-indicators'), panel: document.getElementById('tab-panel-indicators') },
     agriculture:{ btn: document.getElementById('tab-btn-agriculture'), panel: document.getElementById('tab-panel-agriculture') },
+    construction:{ btn: document.getElementById('tab-btn-construction'), panel: document.getElementById('tab-panel-construction') },
+    leasing:    { btn: document.getElementById('tab-btn-leasing'),    panel: document.getElementById('tab-panel-leasing') },
     economic:   { btn: document.getElementById('tab-btn-economic'),   panel: document.getElementById('tab-panel-economic') },
     affordability: { btn: document.getElementById('tab-btn-affordability'), panel: document.getElementById('tab-panel-affordability') },
     rtb:        { btn: document.getElementById('tab-btn-rtb'),        panel: document.getElementById('tab-panel-rtb') },
@@ -356,7 +359,7 @@ async function bootstrap() {
   const rawHash = hashTab in SUBAPP_TABS && SUBVIEW_RE.test(hashView || '') ? hashTab : fullHash;
   if (rawHash === hashTab && hashView) subappView[hashTab] = hashView;
   let initialTab = 'charts';
-  if (['charts', 'tables', 'compare', 'starts', 'secondary', 'housing', 'census', 'affordability', 'rtb', 'johnson', 'yardi', 'rentalsca', 'rentcompare', 'aptcomps', 'fcc', 'brokerage', 'caprates', 'capvsint', 'discount', 'altus', 'parade', 'zoning', 'rental', 'commercial', 'snapshot', 'indicators', 'agriculture', 'economic'].includes(rawHash)) {
+  if (['charts', 'tables', 'compare', 'starts', 'secondary', 'housing', 'census', 'affordability', 'rtb', 'johnson', 'yardi', 'rentalsca', 'rentcompare', 'aptcomps', 'fcc', 'brokerage', 'caprates', 'capvsint', 'discount', 'altus', 'parade', 'zoning', 'rental', 'commercial', 'snapshot', 'indicators', 'construction', 'leasing', 'agriculture', 'economic'].includes(rawHash)) {
     initialTab = rawHash;
   } else if (rawHash.startsWith('mi-section-')) {
     initialTab = 'indicators';
@@ -388,6 +391,8 @@ async function bootstrap() {
     affordability: once(() => initAffordability().catch(err => console.error('[affordability bootstrap]', err))),
     rtb:           once(() => initRtb().catch(err => console.error('[rtb bootstrap]', err))),
     agriculture:   once(() => initAgriculture().catch(err => console.error('[agriculture bootstrap]', err))),
+    construction:  once(() => initConstruction().catch(err => console.error('[construction bootstrap]', err))),
+    leasing:       once(() => initLeasing().catch(err => console.error('[leasing bootstrap]', err))),
     johnson:       once(() => initJohnson().catch(err => console.error('[johnson bootstrap]', err))),
     caprates:      once(() => initCapRates().catch(err => console.error('[cap-rates bootstrap]', err))),
     yardi:         once(() => initYardi().catch(err => console.error('[yardi bootstrap]', err))),
@@ -512,6 +517,18 @@ async function bootstrap() {
     xlsxBtnId: 'rx-download-xlsx-charts',
     baseName:  'RentComparison',
     getNodes:  () => [...document.querySelectorAll('#rx-chart-grid .chart-card')].filter(hasPlot),
+  });
+  wireChartDocExports({
+    docxBtnId: 'cc-download-docx-charts',
+    xlsxBtnId: 'cc-download-xlsx-charts',
+    baseName:  'ConstructionCost',
+    getNodes:  () => [...document.querySelectorAll('#cc-chart-grid .chart-card')].filter(hasPlot),
+  });
+  wireChartDocExports({
+    docxBtnId: 'cl-download-docx-charts',
+    xlsxBtnId: 'cl-download-xlsx-charts',
+    baseName:  'CommercialLeasing',
+    getNodes:  () => [...document.querySelectorAll('#cl-chart-grid .chart-card')].filter(hasPlot),
   });
   wireChartDocExports({
     docxBtnId: 'ag-download-docx-charts',
