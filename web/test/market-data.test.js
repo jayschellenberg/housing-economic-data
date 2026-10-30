@@ -106,6 +106,19 @@ describe('syncSource', () => {
     expect(store.saved).toBe(own);
     expect(store.imported).toBe(0);
   });
+  it('replaces a tab folder that was moved away', async () => {
+    const moved = dir('CapRates');
+    moved.entries = () => ({ next: async () => { throw Object.assign(new Error('gone'), { name: 'NotFoundError' }); } });
+    const store = fakeStore({ saved: moved, data: { old: true } });
+    expect((await syncSource(src(store), [amd])).status).toBe('loaded');
+    expect(store.saved).toBe(capRates);
+  });
+  it('keeps a tab folder it cannot list yet (no access this visit)', async () => {
+    const locked = dir('CapRates', [], { perm: 'prompt' });
+    locked.entries = () => ({ next: async () => { throw Object.assign(new Error('no'), { name: 'NotAllowedError' }); } });
+    const store = fakeStore({ saved: locked });
+    expect((await syncSource(src(store), [amd])).status).toBe('own-folder');
+  });
   it('replaces a tab folder Chrome can no longer open', async () => {
     const gone = dir('CapRates', [], { perm: 'denied' });
     const store = fakeStore({ saved: gone });

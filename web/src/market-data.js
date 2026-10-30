@@ -102,6 +102,18 @@ export async function findSourceFolder(root, folder, depth = 2) {
   return null;
 }
 
+// False only when the folder is known to be gone (moved or deleted since it
+// was picked: Chrome keeps the handle but listing it throws NotFoundError).
+// Without read access this visit we cannot tell, so assume it is still there.
+async function stillExists(handle) {
+  try {
+    await handle.entries().next();
+    return true;
+  } catch (err) {
+    return err?.name !== 'NotFoundError';
+  }
+}
+
 async function sameEntry(a, b) {
   try { return Boolean(a && b && await a.isSameEntry(b)); } catch { return false; }
 }
@@ -169,8 +181,11 @@ export async function syncSource(src, roots, { anyLocked = false } = {}) {
   const saved = await store.getSavedDirectory();
   if (saved && !(await sameEntry(saved, sub))) {
     // A different folder picked on the tab. If it is still reachable it is
-    // the viewer's choice; if Chrome has lost it outright, take ours.
-    if ((await directoryPermission(saved)) !== 'denied') return { status: 'own-folder' };
+    // the viewer's choice; if Chrome has lost it outright, or the folder was
+    // moved away (AppMarketData's split into tier folders), take ours.
+    if ((await directoryPermission(saved)) !== 'denied' && await stillExists(saved)) {
+      return { status: 'own-folder' };
+    }
   }
   if (!saved || !(await sameEntry(saved, sub))) await store.saveDirectory(sub);
   if (await src.hasData(store)) return { status: 'loaded' };
