@@ -351,13 +351,22 @@ def new_extract_book(path):
         group = ("income" if cat in INCOME_CATS else "expense" if cat in EXPENSE_CATS
                  else "stated total" if cat in STATED_CATS else "not used")
         ws3.append([cat, group, meaning.get(cat, cat.replace("_", " "))])
+    add_dropdowns(wb)
+    wb.save(path)
+
+
+def add_dropdowns(wb):
+    """(Re)apply the category and Y/N dropdowns. Excel saves the cross-sheet
+    category list as an extension openpyxl can't read, so every openpyxl save
+    would otherwise drop it."""
+    wb["Lines"].data_validations.dataValidation = []
+    wb["Docs"].data_validations.dataValidation = []
     dv = DataValidation(type="list", formula1=f"=Categories!$A$2:$A${len(ALL_CATS) + 1}", allow_blank=True)
-    ws2.add_data_validation(dv)
+    wb["Lines"].add_data_validation(dv)
     dv.add("G2:G20000")
     yn = DataValidation(type="list", formula1='"Y,N"', allow_blank=True)
-    ws.add_data_validation(yn)
+    wb["Docs"].add_data_validation(yn)
     yn.add("B2:C5000")
-    wb.save(path)
 
 
 def read_extract(path):
@@ -556,6 +565,7 @@ def add(args):
                 for name, _ in LINE_COLUMNS:
                     ws_l.cell(lr, lcol[name], vals.get(name))
     try:
+        add_dropdowns(wb)
         wb.save(EXTRACT_BOOK)
     except PermissionError:
         sys.exit(f"{EXTRACT_BOOK.name} is open in Excel; close it and run again.")
