@@ -7,7 +7,7 @@
  *
  * NO BROKERAGE DATA SHIPS WITH THE SITE. Brokerage-Reports/ingest/run.bat
  * parses the report PDFs into brokerage.json and publishes it to
- * SharedInfo\AppMarketData\BrokerageReports; the user nominates that folder
+ * SharedInfo\AppMarketData\AppMarketData-External\BrokerageReports; the user nominates that folder
  * here and the browser reads it locally (brokerage-store.js), as the Johnson
  * Report and FCC Farmland tabs do.
  */

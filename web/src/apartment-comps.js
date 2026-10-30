@@ -5,7 +5,7 @@
  *
  * NO DATA SHIPS WITH THE SITE. scripts/apartment_comps.py reads the
  * appraiser's comps database and the extracted listings / pro formas / CIMs
- * into apartment_comps.json in SharedInfo\AppMarketData\ApartmentComps; the
+ * into apartment_comps.json in SharedInfo\AppMarketData\AppMarketData-Internal\ApartmentComps; the
  * user nominates that folder here and the browser reads it locally
  * (apartment-comps-store.js). The figures and summaries are worked out in
  * apartment-comps-data.js.

@@ -4,7 +4,7 @@
  *
  * NO ZONING DATA SHIPS WITH THE SITE. R/export.R in the zoning-narrative project
  * writes zoning.json (reviewed municipalities only) to
- * SharedInfo\AppMarketData\Zoning; access is whoever that folder is shared with.
+ * SharedInfo\AppMarketData\AppMarketData-Internal\Zoning; access is whoever that folder is shared with.
  * The user nominates the folder here and the browser reads it locally
  * (zoning-store.js).
  *

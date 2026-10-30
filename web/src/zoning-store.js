@@ -2,7 +2,7 @@
  * zoning-store.js — parsed Manitoba zoning by-laws, held locally in the browser.
  *
  * The data is one file, zoning.json, written by R/export.R in the
- * zoning-narrative project and published to SharedInfo\AppMarketData\Zoning.
+ * zoning-narrative project and published to SharedInfo\AppMarketData\AppMarketData-Internal\Zoning.
  * Only municipalities whose review sheet has been signed off are exported.
  * Access is controlled by who the folder is shared with: the user nominates
  * it once, the browser keeps a handle, stores the JSON in IndexedDB

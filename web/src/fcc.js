@@ -7,7 +7,7 @@
  *
  * NO FCC DATA SHIPS WITH THE SITE. FCC-Farmland/ingest/run.bat parses the
  * report PDFs into fcc_farmland.json and publishes it to
- * SharedInfo\AppMarketData\FCCFarmland; the user nominates that folder here
+ * SharedInfo\AppMarketData\AppMarketData-External\FCCFarmland; the user nominates that folder here
  * and the browser reads it locally (fcc-store.js), as the Johnson Report and
  * Rentals.ca tabs do.
  */

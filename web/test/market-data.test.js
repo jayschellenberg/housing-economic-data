@@ -36,6 +36,18 @@ describe('findSourceFolder', () => {
   it('finds shared subfolders gathered into a folder of any name', async () => {
     expect(await findSourceFolder(dir('Market', [capRates]), 'CapRates')).toBe(capRates);
   });
+  it('finds folders inside permission-tier folders', async () => {
+    const ext = dir('AppMarketData-External', [capRates]);
+    const int = dir('AppMarketData-Internal', [zoning]);
+    const tiered = dir('AppMarketData', [ext, int]);
+    expect(await findSourceFolder(tiered, 'CapRates')).toBe(capRates);
+    expect(await findSourceFolder(tiered, 'Zoning')).toBe(zoning);
+    expect(await findSourceFolder(int, 'Zoning')).toBe(zoning);
+    expect(await findSourceFolder(dir('SharedInfo', [tiered]), 'Zoning')).toBe(zoning);
+    // tier shares sitting at the top of a colleague's Dropbox
+    expect(await findSourceFolder(dir('Dropbox', [ext, int]), 'CapRates')).toBe(capRates);
+    expect(await findSourceFolder(tiered, 'SalesData')).toBeNull();
+  });
   it('returns null when the folder is not there', async () => {
     expect(await findSourceFolder(amd, 'FCCFarmland')).toBeNull();
     expect(await findSourceFolder(dir('Other', [dir('Stuff')]), 'Zoning')).toBeNull();
