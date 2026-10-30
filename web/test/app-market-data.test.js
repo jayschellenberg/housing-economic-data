@@ -37,6 +37,22 @@ describe('resolveAppFolder', () => {
     const other = dir('Somewhere', [dir('Else')]);
     expect(await resolveAppFolder(other, ['SalesData', 'Manitoba'])).toBe(other);
   });
+  it('looks inside permission-tier folders', async () => {
+    const tiered = dir('AppMarketData', [
+      dir('AppMarketData-External', [dir('CapRates')]),
+      dir('AppMarketData-Internal', [rental]),
+      dir('AppMarketData-Limited', [sales]),
+    ]);
+    expect(await resolveAppFolder(tiered, ['RentalDashboard'])).toBe(rental);
+    expect(await resolveAppFolder(tiered, ['SalesData', 'Manitoba'])).toBe(manitoba);
+    expect(await resolveAppFolder(dir('AppMarketData-Limited', [sales]), ['SalesData', 'Manitoba'])).toBe(manitoba);
+    // a colleague's own gathering folder, or their Dropbox root
+    expect(await resolveAppFolder(dir('Dropbox', [dir('AppMarketData-Internal', [rental])]), ['RentalDashboard'])).toBe(rental);
+  });
+  it('does not search ordinary subfolders', async () => {
+    const other = dir('Somewhere', [dir('Projects', [rental])]);
+    expect(await resolveAppFolder(other, ['RentalDashboard'])).toBe(other);
+  });
   it('leaves the pick alone when the path breaks part way', async () => {
     const partial = dir('AppMarketData', [dir('SalesData', [dir('Winnipeg')])]);
     expect(await resolveAppFolder(partial, ['SalesData', 'Manitoba'])).toBe(partial);

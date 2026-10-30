@@ -142,8 +142,8 @@
           <div class="mt-2 mb-1 space-y-2 max-w-3xl">
             <p id="md-folders"></p>
             <ul id="md-list" class="space-y-0.5"></ul>
-            <p><strong>Shared the whole folder?</strong> Pick <code>AppMarketData</code> in your Dropbox. Every tab finds its own subfolder.</p>
-            <p><strong>Shared only some subfolders?</strong> Dropbox puts each one at the top of your Dropbox. Once, make a folder named <code>AppMarketData</code> in your Dropbox, drag your shared folders (CapRates, RentalData, …) into it, and pick that. Syncing keeps working after the move. Or connect each shared folder with <em>Add another folder</em>.</p>
+            <p><strong>One shared folder?</strong> Pick it (<code>AppMarketData-External</code>, <code>-Internal</code> or <code>-Limited</code>). Every tab finds its own subfolder.</p>
+            <p><strong>Two or three of them?</strong> Dropbox puts each one at the top of your Dropbox. Once, make a folder named <code>AppMarketData</code> in your Dropbox, drag your <code>AppMarketData-…</code> folders into it, and pick that. Syncing keeps working after the move. Or connect each one with <em>Add another folder</em>.</p>
             <p>After a visit, Chrome asks once to re-open the folder; choose <em>Allow on every visit</em> to skip that. Clearing this site's data makes the browser forget the folder, so you will pick it once more. Files are read in this browser and never uploaded. A folder picked on a tab itself still takes priority.</p>
           </div>
         </details>
@@ -1277,7 +1277,7 @@
          quarterly Yardi Canadian National Multifamily Report.
          NO DATA SHIPS WITH THE SITE: Yardi-Rental/ingest/parse_yardi.py
          parses the PDFs and publishes yardi.json to
-         SharedInfo\AppMarketData\RentalData; see yardi.js / yardi-store.js.
+         SharedInfo\AppMarketData\AppMarketData-Internal\RentalData; see yardi.js / yardi-store.js.
          ============================================================ -->
     <div id="tab-panel-yardi" class="grid md:grid-cols-[320px_1fr] min-h-[calc(100vh-110px)]" role="tabpanel" aria-labelledby="tab-btn-yardi" hidden>
       <aside class="bg-white border-r border-neutral-200 p-4 space-y-4 overflow-y-auto" aria-label="Yardi Rental filters">
@@ -1404,7 +1404,7 @@
          % change (1986 on), $/acre by region (1997 on), value ranges and
          pastureland, and each report's narrative by province. NO DATA SHIPS
          WITH THE SITE: FCC-Farmland/ingest/run.bat publishes fcc_farmland.json
-         to SharedInfo\AppMarketData\FCCFarmland; see fcc.js / fcc-store.js.
+         to SharedInfo\AppMarketData\AppMarketData-External\FCCFarmland; see fcc.js / fcc-store.js.
          ============================================================ -->
     <div id="tab-panel-fcc" class="grid md:grid-cols-[320px_1fr] min-h-[calc(100vh-110px)]" role="tabpanel" aria-labelledby="tab-btn-fcc" hidden>
       <aside class="bg-white border-r border-neutral-200 p-4 space-y-4 overflow-y-auto" aria-label="FCC Farmland filters">
@@ -1550,7 +1550,7 @@
          (Capital Group, Colliers, CBRE, CBRE Hotels, Avison Young).
          NO DATA SHIPS WITH THE SITE: Brokerage-Reports/ingest/run.bat
          parses the PDFs into brokerage.json and publishes it to
-         SharedInfo\AppMarketData\BrokerageReports; see brokerage.js /
+         SharedInfo\AppMarketData\AppMarketData-External\BrokerageReports; see brokerage.js /
          brokerage-store.js.
          ============================================================ -->
     <div id="tab-panel-brokerage" class="grid md:grid-cols-[320px_1fr] min-h-[calc(100vh-110px)]" role="tabpanel" aria-labelledby="tab-btn-brokerage" hidden>
@@ -1710,7 +1710,7 @@
          Rentals.ca tab — monthly average asking rents by city, province
          and property type from the Rentals.ca & Urbanation National Rent
          Report. NO DATA SHIPS WITH THE SITE: RentalsCa/ingest/run.bat
-         publishes rentalsca.json to SharedInfo\AppMarketData\RentalData;
+         publishes rentalsca.json to SharedInfo\AppMarketData\AppMarketData-Internal\RentalData;
          see rentalsca.js / rentalsca-store.js.
          ============================================================ -->
     <div id="tab-panel-rentalsca" class="grid md:grid-cols-[320px_1fr] min-h-[calc(100vh-110px)]" role="tabpanel" aria-labelledby="tab-btn-rentalsca" hidden>
@@ -1840,7 +1840,7 @@
          from the appraiser's comps database plus extracted listings, pro
          formas and CIMs, normalized by income and expense category. NOTHING
          SHIPS WITH THE SITE: scripts/apartment_comps.py writes
-         apartment_comps.json to SharedInfo\AppMarketData\ApartmentComps;
+         apartment_comps.json to SharedInfo\AppMarketData\AppMarketData-Internal\ApartmentComps;
          see apartment-comps.js / apartment-comps-store.js.
          ============================================================ -->
     <div id="tab-panel-aptcomps" class="grid md:grid-cols-[320px_1fr] min-h-[calc(100vh-110px)]" role="tabpanel" aria-labelledby="tab-btn-aptcomps" hidden>
@@ -2308,7 +2308,7 @@
          Cap Rates tab — Winnipeg cap-rate ranges by property type from
          the firm's Cap Rate Tables workbook (Colliers, CBRE, Cushman &
          Wakefield). NO DATA SHIPS WITH THE SITE: the user picks the
-         SharedInfo\AppMarketData\CapRates folder; see cap-rates.js.
+         SharedInfo\AppMarketData\AppMarketData-External\CapRates folder; see cap-rates.js.
          ============================================================ -->
     <div id="tab-panel-caprates" class="grid md:grid-cols-[320px_1fr] min-h-[calc(100vh-110px)]" role="tabpanel" aria-labelledby="tab-btn-caprates" hidden>
       <aside class="bg-white border-r border-neutral-200 p-4 space-y-4 overflow-y-auto" aria-label="Cap Rates filters">
@@ -2399,7 +2399,7 @@
     <!-- ============================================================
          Zoning tab — appraisal zoning narratives from Manitoba by-laws parsed
          into structured tables (zoning-narrative project). NO DATA SHIPS WITH
-         THE SITE: the user picks the SharedInfo\AppMarketData\Zoning folder,
+         THE SITE: the user picks the SharedInfo\AppMarketData\AppMarketData-Internal\Zoning folder,
          shared only with chosen users; see zoning.js.
          ============================================================ -->
     <div id="tab-panel-zoning" class="grid md:grid-cols-[320px_1fr] min-h-[calc(100vh-110px)]" role="tabpanel" aria-labelledby="tab-btn-zoning" hidden>

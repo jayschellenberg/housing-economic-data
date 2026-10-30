@@ -47,7 +47,7 @@ COMPARABLES = pathlib.Path(r"D:\Dropbox\Appraisal\Comparables")
 DB_BOOK = COMPARABLES / "Apartment Income-Expenses DB.xlsx"
 EXTRACT_BOOK = COMPARABLES / "Apartment Docs Extract.xlsx"
 DOC_ROOT = COMPARABLES / "Winnipeg" / "Apartments-Multi-family"
-OUT_DIR = pathlib.Path(r"D:\Dropbox\SharedInfo\AppMarketData\ApartmentComps")
+OUT_DIR = pathlib.Path(r"D:\Dropbox\SharedInfo\AppMarketData\AppMarketData-Internal\ApartmentComps")
 OUT_FILE = "apartment_comps.json"
 
 # Sheets of the DB workbook read for Winnipeg, with the property type of

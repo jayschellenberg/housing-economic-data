@@ -4,7 +4,7 @@
  *
  * The data is one file, yardi.json, written by
  * Yardi-Rental/ingest/parse_yardi.py and published to
- * SharedInfo\AppMarketData\RentalData. The user nominates that folder once;
+ * SharedInfo\AppMarketData\AppMarketData-Internal\RentalData. The user nominates that folder once;
  * the browser keeps a handle, stores the parsed JSON in IndexedDB
  * ('hed-yardi') and re-reads the file on the next visit when its
  * modification time changed. Nothing is uploaded and the site ships none of it.

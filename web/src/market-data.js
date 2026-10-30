@@ -27,7 +27,7 @@
  * it is never opened when the whole AppMarketData folder is connected.
  */
 
-import { APP_MARKET_DATA } from './app-market-data.js';
+import { appMarketDataChildren } from './app-market-data.js';
 import { createFolderStore, fsAccessSupported, storeAvailable, directoryPermission } from './local-folder-store.js';
 import { announceSources } from './market-data-channel.js';
 // The tab stores are in the main bundle already; the two dashboards' stores
@@ -85,16 +85,21 @@ async function childDirectory(dir, name) {
 
 /**
  * The `folder` subfolder reachable from a connected folder, or null. Accepts
- * the subfolder itself, a folder holding it (AppMarketData, or a folder the
- * viewer gathered shared subfolders into), or a folder holding AppMarketData.
+ * the subfolder itself, a folder holding it (a tier folder such as
+ * AppMarketData-Internal, or a folder the viewer gathered shared subfolders
+ * into), or a folder holding tier folders or AppMarketData, two levels deep:
+ * SharedInfo > AppMarketData > AppMarketData-Internal > Zoning.
  */
-export async function findSourceFolder(root, folder) {
+export async function findSourceFolder(root, folder, depth = 2) {
   if (!root) return null;
   if (same(root.name, folder)) return root;
   const direct = await childDirectory(root, folder);
-  if (direct) return direct;
-  const amd = same(root.name, APP_MARKET_DATA) ? null : await childDirectory(root, APP_MARKET_DATA);
-  return amd ? childDirectory(amd, folder) : null;
+  if (direct || depth <= 0) return direct;
+  for (const amd of await appMarketDataChildren(root)) {
+    const found = await findSourceFolder(amd, folder, depth - 1);
+    if (found) return found;
+  }
+  return null;
 }
 
 async function sameEntry(a, b) {

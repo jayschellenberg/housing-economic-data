@@ -4,7 +4,7 @@
  *
  * The data is one file, brokerage.json, written by
  * Brokerage-Reports/ingest/parse_brokerage.py and published to
- * SharedInfo\AppMarketData\BrokerageReports. The user nominates that folder
+ * SharedInfo\AppMarketData\AppMarketData-External\BrokerageReports. The user nominates that folder
  * once; the browser keeps a handle, stores the parsed JSON in IndexedDB
  * ('hed-brokerage') and re-reads the file on the next visit when its
  * modification time changed. Nothing is uploaded and the site ships none of it.

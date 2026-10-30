@@ -1,7 +1,7 @@
 @echo off
 REM Apartment Income & Expenses tab: rebuild apartment_comps.json from the
 REM two workbooks in D:\Dropbox\Appraisal\Comparables (the comps database and
-REM Apartment Docs Extract.xlsx) into SharedInfo\AppMarketData\ApartmentComps.
+REM Apartment Docs Extract.xlsx) into SharedInfo\AppMarketData\AppMarketData-Internal\ApartmentComps.
 REM Run after editing either workbook; no AI, takes seconds. The tab picks the
 REM new file up on its next visit (or "Reload folder").
 REM

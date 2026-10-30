@@ -5,7 +5,7 @@
  *
  * NO RENTALS.CA DATA SHIPS WITH THE SITE. RentalsCa/ingest/run.bat collects
  * the reports from the Internet Archive, parses them into rentalsca.json and
- * publishes it to SharedInfo\AppMarketData\RentalData; the user nominates
+ * publishes it to SharedInfo\AppMarketData\AppMarketData-Internal\RentalData; the user nominates
  * that folder here and the browser reads it locally (rentalsca-store.js).
  *
  * Laid out like the Yardi Rental tab: a month picker that also ends the

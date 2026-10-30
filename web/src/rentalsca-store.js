@@ -4,7 +4,7 @@
  *
  * The data is one file, rentalsca.json, written by
  * RentalsCa/ingest/parse_rentalsca.py and published to
- * SharedInfo\AppMarketData\RentalData (beside Yardi's yardi.json). The user
+ * SharedInfo\AppMarketData\AppMarketData-Internal\RentalData (beside Yardi's yardi.json). The user
  * nominates that folder once; the browser keeps a handle, stores the parsed
  * JSON in IndexedDB ('hed-rentalsca') and re-reads the file on the next visit
  * when its modification time changed. Nothing is uploaded and the site ships

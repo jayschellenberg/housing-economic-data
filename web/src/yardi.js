@@ -6,7 +6,7 @@
  *
  * NO YARDI DATA SHIPS WITH THE SITE (the report is copyrighted). The PDFs are
  * parsed by Yardi-Rental/ingest/parse_yardi.py into yardi.json and published
- * to SharedInfo\AppMarketData\RentalData; the user nominates that folder here
+ * to SharedInfo\AppMarketData\AppMarketData-Internal\RentalData; the user nominates that folder here
  * and the browser reads it locally (yardi-store.js).
  *
  * Laid out like the Johnson Report tab: a sidebar quarter (edition) picker

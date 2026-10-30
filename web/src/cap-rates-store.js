@@ -4,7 +4,7 @@
  *
  * The data is one file, cap_rates.json, written by
  * Cap-Rates/ingest/parse_cap_rates.py and published to
- * SharedInfo\AppMarketData\CapRates. The user nominates that folder once; the browser
+ * SharedInfo\AppMarketData\AppMarketData-External\CapRates. The user nominates that folder once; the browser
  * keeps a handle, stores the parsed JSON in IndexedDB ('hed-cap-rates') and
  * re-reads the file on the next visit when its modification time changed.
  * Nothing is uploaded and the site ships none of it.

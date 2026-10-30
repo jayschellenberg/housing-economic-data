@@ -3,7 +3,7 @@
  * browser.
  *
  * The data is one file, apartment_comps.json, written by
- * scripts/apartment_comps.py (build) to SharedInfo\AppMarketData\ApartmentComps
+ * scripts/apartment_comps.py (build) to SharedInfo\AppMarketData\AppMarketData-Internal\ApartmentComps
  * from the appraiser's comps database and the extracted listings, pro formas
  * and CIMs. The CIMs are brokers' confidential material, so none of it ships
  * with the site: the user nominates the folder once, the browser keeps a
