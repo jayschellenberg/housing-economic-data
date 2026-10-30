@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated": "2026-10-29T23:04:58Z",
+  "generated": "2026-10-30T11:03:26Z",
   "groups": [
     {
       "group": "mortgage_market",
@@ -24,25 +24,25 @@
       "latestDate": "2026-09-01"
     },
     {
-      "group": "prices",
-      "file": "prices.json",
-      "seriesCount": 62,
-      "recordCount": 28058,
-      "latestDate": "2026-09-01"
+      "group": "derived",
+      "file": "derived.json",
+      "seriesCount": 12,
+      "recordCount": 23196,
+      "latestDate": "2026-10-28"
     },
     {
-      "group": "supply",
-      "file": "supply.json",
-      "seriesCount": 31,
-      "recordCount": 3224,
-      "latestDate": "2026-08-01"
+      "group": "ag_finance",
+      "file": "ag_finance.json",
+      "seriesCount": 24,
+      "recordCount": 192,
+      "latestDate": "2023-01-01"
     },
     {
-      "group": "demand",
-      "file": "demand.json",
-      "seriesCount": 89,
-      "recordCount": 25573,
-      "latestDate": "2026-09-01"
+      "group": "ag_inputs",
+      "file": "ag_inputs.json",
+      "seriesCount": 20,
+      "recordCount": 1960,
+      "latestDate": "2026-04-01"
     },
     {
       "group": "ag_land",
@@ -59,32 +59,11 @@
       "latestDate": "2026-08-01"
     },
     {
-      "group": "ag_inputs",
-      "file": "ag_inputs.json",
-      "seriesCount": 20,
-      "recordCount": 1960,
-      "latestDate": "2026-04-01"
-    },
-    {
       "group": "ag_structure",
       "file": "ag_structure.json",
       "seriesCount": 36,
       "recordCount": 292,
       "latestDate": "2021-01-01"
-    },
-    {
-      "group": "ag_finance",
-      "file": "ag_finance.json",
-      "seriesCount": 24,
-      "recordCount": 192,
-      "latestDate": "2023-01-01"
-    },
-    {
-      "group": "construction_cost",
-      "file": "construction_cost.json",
-      "seriesCount": 58,
-      "recordCount": 6326,
-      "latestDate": "2026-07-01"
     },
     {
       "group": "commercial_leasing",
@@ -94,6 +73,20 @@
       "latestDate": "2026-04-01"
     },
     {
+      "group": "construction_cost",
+      "file": "construction_cost.json",
+      "seriesCount": 58,
+      "recordCount": 6326,
+      "latestDate": "2026-07-01"
+    },
+    {
+      "group": "demand",
+      "file": "demand.json",
+      "seriesCount": 89,
+      "recordCount": 25573,
+      "latestDate": "2026-09-01"
+    },
+    {
       "group": "distress",
       "file": "distress.json",
       "seriesCount": 20,
@@ -101,11 +94,18 @@
       "latestDate": "2026-08-01"
     },
     {
-      "group": "derived",
-      "file": "derived.json",
-      "seriesCount": 12,
-      "recordCount": 23196,
-      "latestDate": "2026-10-28"
+      "group": "prices",
+      "file": "prices.json",
+      "seriesCount": 62,
+      "recordCount": 28058,
+      "latestDate": "2026-09-01"
+    },
+    {
+      "group": "supply",
+      "file": "supply.json",
+      "seriesCount": 31,
+      "recordCount": 3224,
+      "latestDate": "2026-08-01"
     }
   ],
   "totalSeries": 523,
