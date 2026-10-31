@@ -14,6 +14,17 @@ export function oxford(items) {
   return `${x.slice(0, -1).join(', ')}, and ${x[x.length - 1]}`;
 }
 
+/**
+ * A list of use names (matching R/narrative.R use_list): when a name itself
+ * contains commas ("care home, family day care home") items are separated by
+ * semicolons so each name reads as one.
+ */
+export function useList(items) {
+  const x = items.filter(Boolean).map(s => s.replace(/\s*;\s*/g, ', '));
+  if (x.length < 2 || !x.some(s => s.includes(','))) return oxford(x);
+  return `${x.slice(0, -1).join('; ')}; and ${x[x.length - 1]}`;
+}
+
 /** Permitted uses an appraiser may name: principal (no accessory/mixed-use qualifier). */
 export function nameableUses(zone) {
   return (zone?.uses || []).filter(u => u.status === 'P' && !u.qualifier);
@@ -47,7 +58,7 @@ export function usesSentence(zone, selected, selectedCond = []) {
     s = `The permitted use within the current zoning designation is ${proseList(chosen)[0]}.`;
   } else if (chosen.length) {
     const more = chosen.length < pool.length;
-    s = `Some permitted uses within the current zoning designation include ${oxford(proseList(chosen))}${more ? ', among others' : ''}.`;
+    s = `Some permitted uses within the current zoning designation include ${useList(proseList(chosen))}${more ? ', among others' : ''}.`;
   } else if (allCond) {
     s = 'All uses listed for this zone are conditional uses.';
   } else if (!hasPerm) {
@@ -57,7 +68,7 @@ export function usesSentence(zone, selected, selectedCond = []) {
   }
   if (condChosen.length) {
     const more = condChosen.length < condPool.length;
-    s += ` ${allCond ? 'They include' : 'Conditional uses include'} ${oxford(proseList(condChosen))}${more ? ', among others' : ''}.`;
+    s += ` ${allCond ? 'They include' : 'Conditional uses include'} ${useList(proseList(condChosen))}${more ? ', among others' : ''}.`;
   } else if (hasCond && !allCond) {
     s += ' There are several conditional uses as well.';
   }
