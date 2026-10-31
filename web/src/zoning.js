@@ -241,7 +241,9 @@ function renderFolderBody() {
 }
 
 function renderMuniPicker() {
-  const list = [...munis()].sort((a, b) => a.label.localeCompare(b.label));
+  // alphabetical by name, ignoring the "RM of / Town of / City of" prefix
+  const bare = (m) => m.label.replace(/^(RM|Rural Municipality|Town|City|Village|Municipality|LGD) of /i, '');
+  const list = [...munis()].sort((a, b) => bare(a).localeCompare(bare(b)) || a.label.localeCompare(b.label));
   ui.$muni.innerHTML = list.map(m => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.label)}</option>`).join('');
   ui.$muni.disabled = !list.length;
   if (list.some(m => m.id === ui.prefs.muni)) ui.$muni.value = ui.prefs.muni;
@@ -290,6 +292,7 @@ function renderZone() {
       <header class="chart-title">${escapeHtml(m.label)} — Zoning By-law ${escapeHtml(m.bylaw_no)}</header>
       <p class="chart-sub">${escapeHtml(`'${z.code}' ${z.name}`)}${m.consolidated_to ? ` · consolidated to ${escapeHtml(m.consolidated_to)}` : ''}</p>
       <p class="text-sm" data-role="currency-text"></p>
+      ${m.note ? `<p class="text-sm mt-2 rounded border border-amber-300 bg-amber-50 text-amber-900 px-2 py-1" data-role="muni-note"><strong>Note:</strong> ${escapeHtml(m.note)}</p>` : ''}
     </section>
     <section class="chart-card cmhc-indicator-card" data-role="designation">
       <header class="chart-title">Zoning designation</header>
