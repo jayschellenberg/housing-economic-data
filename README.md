@@ -279,9 +279,11 @@ data:highways`); re-run only if the road network or CSD boundaries change.
 
 Its "Services and amenities" paragraph is the one manual input: a **Services
 checklist** under the narrative (municipalities only) where the appraiser ticks
-what the community has; the rubric in `web/src/service-tier.js` (amenity list +
-tier rules: full-service regional centre / full-service / limited-service /
-minimal-service) makes the call and writes the sentence, naming the nearest
+which of five things the community has; the rubric in `web/src/service-tier.js`
+makes the call (full-service = grocery store, bank or credit union, medical
+clinic and a school to Grade 12; regional centre = those plus a hospital and a
+population of 5,000+; limited = some of the four; minimal = none) and writes
+the sentence, naming the nearest
 larger centre for whatever is missing. Ticks are saved per municipality in the
 browser (localStorage) only — nothing is published. Rural POI data is too patchy
 to automate this; the definitions are the asset.
