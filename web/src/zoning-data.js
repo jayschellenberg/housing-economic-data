@@ -50,7 +50,8 @@ export function usesSentence(zone, selected, selectedCond = []) {
   const chosen = pool.filter(u => selected.includes(u.name));
   const condPool = nameableConditional(zone);
   const condChosen = condPool.filter(u => selectedCond.includes(u.name));
-  const hasCond = (zone?.uses || []).some(u => u.status === 'C');
+  // only principal conditional uses make "several conditional uses" true (matches R/narrative.R)
+  const hasCond = (zone?.uses || []).some(u => u.status === 'C' && u.qualifier !== 'accessory_only');
   const hasPerm = (zone?.uses || []).some(u => u.status === 'P');
   const allCond = !hasPerm && hasCond;
   let s;

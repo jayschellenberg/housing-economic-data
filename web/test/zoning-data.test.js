@@ -147,6 +147,11 @@ describe('uses sentence edge cases', () => {
     expect(usesSentence(z, [])).toBe('All uses listed for this zone are conditional uses.');
     expect(usesSentence(z, [], ['Kennel'])).toBe('All uses listed for this zone are conditional uses. They include kennel, among others.');
   });
+  it('does not claim conditional uses when the only ones are accessory', () => {
+    const z = { uses: [{ name: 'Dwelling', prose: 'dwelling', status: 'P', qualifier: null },
+      { name: 'Home Industry', prose: 'home industry', status: 'C', qualifier: 'accessory_only' }] };
+    expect(usesSentence(z, ['Dwelling'])).toBe('The permitted use within the current zoning designation is dwelling.');
+  });
   it('handles a zone with no uses', () => {
     expect(usesSentence({ uses: [] }, [])).toBe('The by-law lists no uses for this zone.');
   });
