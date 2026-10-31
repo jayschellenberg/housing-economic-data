@@ -208,3 +208,80 @@ describe('buildCensusNarrative — general prose', () => {
     expect(bullets(b)).not.toMatch(/Services and amenities/);
   });
 });
+
+describe('buildCensusNarrative — Winnipeg mode', () => {
+  const dm = {
+    uid: 'WPG_NB:Daniel McIntyre', level: 'WPG_Nbhd', name: 'Daniel McIntyre',
+    trends: { '2021': trend(9500) },
+    demo: { '2021': { median_hh_income: 52000, median_dwelling_val: 220000, median_rent: 900 } },
+  };
+  const wpgCity = {
+    uid: '4611040', level: 'CSD', name: 'Winnipeg (CY)',
+    trends: { '2016': trend(705244), '2021': trend(749607) },
+    demo: { '2021': { median_hh_income: 80000, median_dwelling_val: 330000, median_rent: 1100 } },
+  };
+  const ctx = { areas: { 'WPG_NB:Daniel McIntyre': {
+    sides: {
+      north: { name: 'Notre Dame Avenue', kind: 'street' }, east: { name: 'Arlington Street', kind: 'street' },
+      south: { name: 'Portage Avenue', kind: 'street' }, west: null,
+    },
+    through: ['Ellice Avenue', 'Sargent Avenue'],
+    near: [{ name: 'Sherbrook Street', dir: 'west', m: 350 }, { name: 'St. James Street', dir: 'east', m: 900 }],
+    rivers: [{ name: 'the Assiniboine River', m: 450 }],
+    downtown: { km: 3.2, dir: 'west' },
+  } } };
+  // Sector counts in sectors order; only two sectors so the shares are easy.
+  const sectors = [{ code: '62', label: 'Health care and social assistance' }, { code: '44-45', label: 'Retail trade' }];
+  const industry = { sectors, regions: [
+    { uid: dm.uid, data: { '2021': { labourForce: 100, counts: [60, 40], commute: { total: 90, withinCsd: 88, otherCsdSameCd: 0, otherCd: 2, otherProv: 0 } } } },
+    { uid: wpgCity.uid, data: { '2021': { labourForce: 1000, counts: [300, 700] } } },
+  ] };
+  const build = (over = {}) => buildCensusNarrative({ subject: dm, benchmarks: [wpgCity, manitoba], years: YEARS,
+    period: '2021', industry, wpgContext: ctx, ...over });
+
+  it('places the neighbourhood: downtown, boundaries, arterials, rivers', () => {
+    const t = paras(build().blocks);
+    expect(t).toContain('Daniel McIntyre lies about 3 km west of downtown Winnipeg.');
+    expect(t).toContain('It is bounded by Notre Dame Avenue to the north, Arlington Street to the east and Portage Avenue to the south.');
+    expect(t).toContain('Ellice Avenue and Sargent Avenue run through the neighbourhood, which lies just west of Sherbrook Street and east of St. James Street.');
+    expect(t).toContain('It is close to the Assiniboine River.');
+  });
+  it('a feature holding two sides reads once, and boundary rivers are not repeated', () => {
+    const c = structuredClone(ctx);
+    const a = c.areas[dm.uid];
+    a.sides = { north: { name: 'the Red River', kind: 'river' }, east: { name: 'the Red River', kind: 'river' }, south: { name: 'Main Street', kind: 'street' }, west: null };
+    a.rivers = [{ name: 'the Red River', m: 0 }]; a.through = []; a.near = [];
+    const t = paras(build({ wpgContext: c }).blocks);
+    expect(t).toContain('It is bounded by the Red River to the north and east and Main Street to the south.');
+    expect(t).not.toContain('close to the Red River');
+  });
+  it('reads employment against the city, without commuting or services', () => {
+    const nar = build();
+    const t = paras(nar.blocks);
+    expect(nar.blocks.some(b => b.type === 'heading' && b.text === 'Employment')).toBe(true);
+    expect(t).toContain('Employed residents work mainly in health care and retail.');
+    expect(t).toContain('Compared with the city as a whole, residents are notably more concentrated in health care.');
+    expect(t).not.toMatch(/commut|work locally|service centre/);
+  });
+  it('uses Winnipeg stubs and drops the location stub once context exists', () => {
+    expect(bullets(build().blocks)).not.toContain('Location:');
+    expect(bullets(build().blocks)).toContain('Zoning and land use');
+    expect(bullets(build({ wpgContext: null }).blocks)).toContain('Location: [boundary streets');
+    expect(bullets(build().blocks)).not.toContain('Major employers');
+  });
+  it('joins same-direction comparisons with "and", not "but"', () => {
+    expect(paras(build().blocks)).toContain('rents are well below the Winnipeg level and below the provincial level');
+  });
+  it('groups nearby arterials in the same direction', () => {
+    const c = structuredClone(ctx);
+    c.areas[dm.uid].through = [];
+    c.areas[dm.uid].near = [{ name: 'Portage Avenue', dir: 'north', m: 450 }, { name: 'Broadway', dir: 'north', m: 700 }];
+    expect(paras(build({ wpgContext: c }).blocks)).toContain('The neighbourhood lies north of Portage Avenue and Broadway.');
+    c.areas[dm.uid].near = [{ name: 'Disraeli Freeway', dir: 'north', m: 900 }];
+    expect(paras(build({ wpgContext: c }).blocks)).toContain('The neighbourhood lies north of the Disraeli Freeway.');
+  });
+  it('lands downtown areas without a distance', () => {
+    const c = structuredClone(ctx); c.areas[dm.uid].downtown = { km: 0.8, dir: 'north' };
+    expect(paras(build({ wpgContext: c }).blocks)).toContain('Daniel McIntyre lies in or next to downtown Winnipeg.');
+  });
+});

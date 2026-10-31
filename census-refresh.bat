@@ -35,9 +35,13 @@ if errorlevel 1 echo [census-refresh] Census Profile (r/12) did not fully comple
 
 REM --- Labour force by industry (NAICS sectors, 2021 + 2016; needs CM_API_KEY) -
 REM Feeds the Census Profile narrative's "Employment by industry" paragraph.
-REM Standard levels only; add CENSUS_INDUSTRY_WPG=1 to also aggregate the
-REM Winnipeg neighbourhoods from DAs (costs ~1,130 regions of daily quota).
+REM Includes the Winnipeg neighbourhoods / clusters / community areas, which
+REM the narrative's Winnipeg mode needs (aggregated from ~1,130 City DAs; the
+REM DA download is cached, so only a cold cache costs daily quota). Running
+REM without CENSUS_INDUSTRY_WPG=1 would drop them from the committed file.
+set CENSUS_INDUSTRY_WPG=1
 Rscript r/26_census_industry.R
+set CENSUS_INDUSTRY_WPG=
 if errorlevel 1 echo [census-refresh] Labour force by industry (r/26) did not complete - set CM_API_KEY and/or re-run later (quota).
 
 REM --- WPG cluster/CA history (City of Winnipeg downloads, no key) ------------
