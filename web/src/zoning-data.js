@@ -183,6 +183,16 @@ export function currencyVerdict(muni, features) {
   return { status, inForce, newAmendments };
 }
 
+// --- reliability -------------------------------------------------------------
+
+// A municipality's `note` flags by-law content that needs checking; `verify_zones`
+// lists the zones it covers ('all' = the whole by-law, the default for a bare note).
+export function verifyApplies(muni, code) {
+  if (!muni?.note) return false;
+  const zones = muni.verify_zones?.length ? muni.verify_zones : ['all'];
+  return zones.includes('all') || zones.includes(code);
+}
+
 export function currencyMessage(muni, v, checked) {
   const when = checked ? ` (checked ${checked})` : '';
   switch (v.status) {
