@@ -124,34 +124,55 @@ describe('buildCensusNarrative — general prose', () => {
     expect(paras(buildCensusNarrative({ subject: single, benchmarks: [manitoba], years: YEARS, period: '2021' }).blocks)).toBe('');
   });
 
-  describe('economy (census_industry.json)', () => {
-    // 4 sectors is enough to exercise top-3 + standouts.
+  describe('local economy (census_industry.json)', () => {
+    // 4 sectors is enough to exercise top-3, drivers and the service-centre read.
     const sectors = [{ code: '11', label: 'Agriculture, forestry, fishing and hunting' }, { code: '31-33', label: 'Manufacturing' },
       { code: '44-45', label: 'Retail trade' }, { code: '62', label: 'Health care and social assistance' }];
-    const industry = { years: ['2021', '2016'], sectors, regions: [
-      { uid: '4602044', name: 'Steinbach (CY)', level: 'CSD', data: { 2021: { labourForce: 1000, notApplicable: 10, counts: [50, 300, 250, 400] } } },
-      { uid: '46', name: 'Manitoba', level: 'PR', data: { 2021: { labourForce: 10000, notApplicable: 100, counts: [400, 1500, 3100, 5000] } } },
-    ] };
-    const { blocks: b, industryTable } = buildCensusNarrative({ subject: steinbach, benchmarks: [manitoba, wpgCma], years: YEARS, period: '2021', industry });
+    const prov = { uid: '46', name: 'Manitoba', level: 'PR', data: { 2021: { labourForce: 10000, notApplicable: 100, counts: [400, 1500, 3100, 5000] } } };
+    const ind = (counts, commute = null) => ({ years: ['2021', '2016'], sectors, regions: [
+      { uid: '4602044', name: 'Steinbach (CY)', level: 'CSD', data: { 2021: { labourForce: 1000, notApplicable: 10, counts, commute } } }, prov] });
+    const commute = (withinCsd, otherCsdSameCd, otherCd) => ({ total: 100, withinCsd, otherCsdSameCd, otherCd, otherProv: 0 });
+    const run = (industry, extra = {}) => buildCensusNarrative({ subject: steinbach, benchmarks: [manitoba, wpgCma], years: YEARS, period: '2021', industry, ...extra });
+    const { blocks: b, industryTable } = run(ind([50, 300, 250, 400]));
 
-    it('names leading sectors and standouts in words', () => {
-      // manufacturing LQ = 30/15 = 2.0 (standout); agriculture 5/4 = 1.25 (under LQ_MIN)
-      expect(paras(b)).toContain('Employment is led by health care, manufacturing and retail; manufacturing is notably more prominent than across the province.');
+    it('names leading sectors and the standout drivers in words', () => {
+      // manufacturing LQ = 30/15 = 2.0 (driver); agriculture 5/4 = 1.25 (under LQ_MIN)
+      expect(paras(b)).toContain('Employment is led by health care, manufacturing and retail. ' +
+        'The local economy leans on manufacturing, which is notably more prominent than across the province.');
+    });
+    it('says diversified when nothing stands out; omits without data', () => {
+      expect(paras(run(ind([40, 150, 310, 500])).blocks))
+        .toContain('No single sector stands out relative to the province; the employment base is broadly diversified.');
+      const r = run(ind([50, 300, 250, 400]), { period: '2016' });
+      expect(paras(r.blocks)).not.toContain('Employment');
+      expect(r.industryTable).toBeNull();
+    });
+    it('reads where residents work from commuting', () => {
+      const near = { csd: { '4602044': { through: [], nearby: [], wpgKm: 34, wpgDir: 'southeast' } } };
+      const far  = { csd: { '4602044': { through: [], nearby: [], wpgKm: 200, wpgDir: 'west' } } };
+      expect(paras(run(ind([50, 300, 250, 400], commute(70, 20, 10))).blocks))
+        .toContain('Most employed residents work within the community, so it functions as a local employment centre');
+      expect(paras(run(ind([50, 300, 250, 400], commute(50, 10, 40)), { highways: near }).blocks))
+        .toContain('About half of employed residents work locally, and much of the rest commute out of the region, largely toward Winnipeg.');
+      expect(paras(run(ind([50, 300, 250, 400], commute(20, 10, 70)), { highways: far }).blocks))
+        .toContain('Most employed residents commute out of the region for work, so the community functions partly as a bedroom community.');
+      expect(paras(run(ind([50, 300, 250, 400], commute(10, 70, 20))).blocks))
+        .toContain('Most employed residents work in neighbouring communities within the region rather than locally.');
+    });
+    it('reads a service-centre role only when residents also work locally', () => {
+      // retail + health = 90% vs the province's 81%: +9 points over SERVICE_EXCESS.
+      expect(paras(run(ind([20, 80, 400, 500], commute(70, 20, 10))).blocks)).toContain('role as a service centre for the surrounding area');
+      expect(paras(run(ind([20, 80, 400, 500], commute(20, 10, 70))).blocks)).not.toContain('service centre');
+    });
+    it('adds named employers from local inputs and drops the employer stub', () => {
+      const r = run(ind([50, 300, 250, 400]), { services: { checked: [], employers: ['District hospital', ' School division ', ''] } });
+      expect(paras(r.blocks)).toContain('Major local employers include District hospital and School division.');
+      expect(bullets(r.blocks)).not.toMatch(/Major employers/);
+      expect(bullets(b)).toMatch(/^Major employers/);
     });
     it('keeps the industry table with exact shares', () => {
       expect(industryTable.rows[0]).toEqual({ area: 'Labour force aged 15+', values: ['1,000', '10,000', '**'] });
       expect(industryTable.rows[1]).toEqual({ area: '62 Health care and social assistance', values: ['40.0%', '50.0%', '**'] });
-    });
-    it('swaps the economic-base stub for a major-employers stub', () => {
-      expect(b.find(x => x.type === 'bullet').text).toMatch(/^Major employers/);
-    });
-    it('says diversified when nothing stands out; omits without data', () => {
-      const flat = { ...industry, regions: [{ ...industry.regions[0], data: { 2021: { labourForce: 1000, counts: [40, 150, 310, 500] } } }, industry.regions[1]] };
-      expect(paras(buildCensusNarrative({ subject: steinbach, benchmarks: [manitoba], years: YEARS, period: '2021', industry: flat }).blocks))
-        .toContain('a broadly diversified mix.');
-      const r = buildCensusNarrative({ subject: steinbach, benchmarks: [manitoba], years: YEARS, period: '2016', industry });
-      expect(paras(r.blocks)).not.toContain('Employment');
-      expect(r.industryTable).toBeNull();
     });
   });
 
@@ -161,15 +182,14 @@ describe('buildCensusNarrative — general prose', () => {
 
     it('rounds the Winnipeg distance to 5 km and names only the PTHs', () => {
       const t = run(hw({ through: ['PTH 12', 'PTH 52', 'PR 311'], nearby: [{ route: 'PR 303', km: 2.5, dir: 'south' }], wpgKm: 34, wpgDir: 'southeast' }));
-      expect(t).toContain('Steinbach is located roughly 35 km southeast of Winnipeg.');
-      expect(t).toContain('Steinbach is served by PTH 12 and PTH 52.');
+      expect(t).toContain('Steinbach is located roughly 35 km southeast of Winnipeg and is served by PTH 12 and PTH 52.');
       expect(t).not.toContain('PR 303');
     });
     it('handles adjoining, nearby-only and fly-in cases', () => {
       expect(run(hw({ through: ['PTH 1', 'PTH 12', 'PR 206'], nearby: [], wpgKm: 0, wpgDir: 'east' })))
-        .toContain('Steinbach adjoins the City of Winnipeg to the east.');
+        .toContain('Steinbach adjoins the City of Winnipeg to the east and is served by PTH 1 and PTH 12.');
       expect(run(hw({ through: [], nearby: [{ route: 'PR 210', km: 1, dir: 'west' }, { route: 'PTH 59', km: 4, dir: 'west' }], wpgKm: 58, wpgDir: 'southeast' })))
-        .toContain('PTH 59 passes nearby.');
+        .toContain('Steinbach is located roughly 60 km southeast of Winnipeg. PTH 59 passes nearby.');
       expect(run(hw({ through: [], nearby: [], wpgKm: 400, wpgDir: 'north' })))
         .toContain('reached by air, water or winter road');
     });

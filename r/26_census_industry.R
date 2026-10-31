@@ -1,8 +1,10 @@
 #!/usr/bin/env Rscript
 # =============================================================================
-# r/26_census_industry.R — Labour force by industry (NAICS sectors) from the
-# 2021 and 2016 Censuses, for the Census Profile tab's community-profile
-# narrative (economic-base paragraph + "labour force by industry" table).
+# r/26_census_industry.R — Labour force by industry (NAICS sectors) and
+# commuting destination from the 2021 and 2016 Censuses, for the Census Profile
+# tab's community-profile narrative (economy paragraph + "labour force by
+# industry" table). Commuting says whether residents work locally or travel out —
+# an employment centre vs a bedroom community.
 #
 # RUN-ONCE / MANUAL, like r/12: needs a CensusMapper key (CM_API_KEY), which CI
 # does not have, so it is NOT in `data:all` or the GitHub Actions refresh. Run
@@ -24,7 +26,8 @@
 #
 # Output: web/public/data/housing/census_industry.json
 #   { years, sectors:[{code,label}], regions:[{uid,name,level,
-#       data:{ "<year>": { labourForce, notApplicable, counts:[20 ints] } }}] }
+#       data:{ "<year>": { labourForce, notApplicable, counts:[20 ints],
+#                          commute:{ total, withinCsd, otherCsdSameCd, otherCd, otherProv } } }}] }
 #   `counts` are ordered like `sectors`; labourForce = "All industries" total
 #   (the share denominator), notApplicable = "Industry – not applicable".
 # =============================================================================
@@ -83,9 +86,13 @@ SECTORS <- data.frame(
 )
 VECTORS <- list(
   `2021` = list(dataset = "CA21", total = "v_CA21_6600", na = "v_CA21_6603", all = "v_CA21_6606",
-                sectors = sprintf("v_CA21_%d", seq(6609, by = 3, length.out = 20))),
+                sectors = sprintf("v_CA21_%d", seq(6609, by = 3, length.out = 20)),
+                # Commuting destination (employed 15+ with a usual place of work):
+                # total, within own CSD, other CSD same CD, other CD, other province.
+                commute = c("v_CA21_7617", "v_CA21_7620", "v_CA21_7623", "v_CA21_7626", "v_CA21_7629")),
   `2016` = list(dataset = "CA16", total = "v_CA16_5693", na = "v_CA16_5696", all = "v_CA16_5699",
-                sectors = sprintf("v_CA16_%d", seq(5702, by = 3, length.out = 20)))
+                sectors = sprintf("v_CA16_%d", seq(5702, by = 3, length.out = 20)),
+                commute = c("v_CA16_5777", "v_CA16_5780", "v_CA16_5783", "v_CA16_5786", "v_CA16_5789"))
 )
 
 MB_PR  <- "46"
@@ -104,9 +111,10 @@ to_rows <- function(df, v, uid_col = "GeoUID") {
                     labourForce = vec_col(df, v$all), notApplicable = vec_col(df, v$na),
                     stringsAsFactors = FALSE)
   for (i in seq_along(v$sectors)) out[[paste0("s", i)]] <- vec_col(df, v$sectors[[i]])
+  for (i in seq_along(v$commute)) out[[paste0("c", i)]] <- vec_col(df, v$commute[[i]])
   out
 }
-vec_list <- function(v) c(v$total, v$na, v$all, v$sectors)
+vec_list <- function(v) c(v$total, v$na, v$all, v$sectors, v$commute)
 
 fetch_level <- function(year, level, prs) {
   v <- VECTORS[[year]]
@@ -159,7 +167,7 @@ if (nzchar(Sys.getenv("CENSUS_INDUSTRY_WPG", ""))) {
     m <- match(wpg_da$uid, as.character(lk$DA_UID))
     wpg_da$CommunityArea <- lk$CommunityArea[m]; wpg_da$Cluster <- lk$Cluster[m]; wpg_da$Neighbourhood <- lk$Neighbourhood[m]
     wj <- wpg_da[!is.na(wpg_da$CommunityArea), ]
-    cnt_cols <- c("labourForce", "notApplicable", paste0("s", seq_len(20)))
+    cnt_cols <- c("labourForce", "notApplicable", paste0("s", seq_len(20)), paste0("c", 1:5))
     agg <- function(group_col, tag, prefix) {
       out <- list()
       for (g in sort(unique(wj[[group_col]]))) {
@@ -184,7 +192,11 @@ round_or_na <- function(x) if (is.null(x) || is.na(x)) NA else round(as.numeric(
 year_block <- function(r) list(
   labourForce   = round_or_na(r$labourForce),
   notApplicable = round_or_na(r$notApplicable),
-  counts        = lapply(seq_len(20), function(i) round_or_na(r[[paste0("s", i)]]))
+  counts        = lapply(seq_len(20), function(i) round_or_na(r[[paste0("s", i)]])),
+  # Where employed residents with a usual place of work commute to.
+  commute       = list(total          = round_or_na(r$c1), withinCsd = round_or_na(r$c2),
+                       otherCsdSameCd = round_or_na(r$c3), otherCd   = round_or_na(r$c4),
+                       otherProv      = round_or_na(r$c5))
 )
 
 regions <- list()

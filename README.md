@@ -259,7 +259,8 @@ Areas 2/3 as benchmarks, with a Word download; `web/src/census-narrative.js`,
 see `docs/neighbourhood-narrative-plan.md`). Its "Employment by industry"
 paragraph and table come from `r/26_census_industry.R` → 
 `web/public/data/housing/census_industry.json`: labour force aged 15+ by the 20
-NAICS sectors, 2021 + 2016, for PR/CMA/CD (MB/SK/AB/BC) and every Manitoba
+NAICS sectors plus commuting destination (works in own municipality / elsewhere
+in the census division / elsewhere in the province), 2021 + 2016, for PR/CMA/CD (MB/SK/AB/BC) and every Manitoba
 CSD. Same CensusMapper key and run-once rules as `r/12`; it is in
 `census-refresh.bat`. Set `CENSUS_INDUSTRY_WPG=1` to also aggregate the Winnipeg
 Community Areas / Clusters / Neighbourhoods from the 1,130 City DAs (2021 only —

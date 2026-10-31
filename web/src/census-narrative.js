@@ -159,7 +159,8 @@ export function industryStats(industry, uid, period) {
     code: sec.code, label: sec.label, count: num(d.counts[i]) ?? 0,
     share: (num(d.counts[i]) ?? 0) / lf * 100,
   }));
-  return { year: period, labourForce: lf, shares, byCode: new Map(shares.map(x => [x.code, x])) };
+  return { year: period, labourForce: lf, shares, byCode: new Map(shares.map(x => [x.code, x])),
+           commute: d.commute ?? null };
 }
 
 // ---- sentences ---------------------------------------------------------------
@@ -188,9 +189,12 @@ function compareAll(value, benchmarks, key) {
 function locationGrowthPara(s, benchmarks, hw) {
   const parts = [];
   if (hw?.wpgKm != null) {
-    parts.push(hw.wpgKm === 0
-      ? `${s.name} adjoins the City of Winnipeg to the ${hw.wpgDir}.`
-      : `${s.name} is located roughly ${Math.max(5, Math.round(hw.wpgKm / 5) * 5)} km ${hw.wpgDir} of Winnipeg.`);
+    // "… is located roughly 75 km northeast of Winnipeg and is served by PTH 11."
+    const where = hw.wpgKm === 0
+      ? `${s.name} adjoins the City of Winnipeg to the ${hw.wpgDir}`
+      : `${s.name} is located roughly ${Math.max(5, Math.round(hw.wpgKm / 5) * 5)} km ${hw.wpgDir} of Winnipeg`;
+    const roads = accessClause(hw);
+    parts.push(roads?.startsWith('is ') ? `${where} and ${roads}.` : `${where}.${roads ? ` ${roads}` : ''}`);
   }
   if (s.rateLong != null) {
     const span = s.rateLongYears === 5 ? 'Between the last two censuses' : `Over the past ${spanWords(s.rateLongYears)} years`;
@@ -274,32 +278,95 @@ function housingIncomePara(s, benchmarks) {
 
 const sectorName = (x) => SECTOR_SHORT[x.code] || x.label.toLowerCase();
 
-// Leading sectors plus any standout vs the province — named, never quantified.
-function economySentence(ind, benchmarks) {
-  if (!ind) return null;
-  const top = ind.shares.slice().sort((a, b) => b.share - a.share).slice(0, 3);
-  let t = `Employment is led by ${joinAnd(top.map(sectorName))}`;
-  const prov = benchmarks.find(b => b.level === 'PR' && b.industry);
-  if (prov) {
-    // Most concentrated first, at most two.
-    const over = ind.shares
-      .map(x => ({ ...x, lq: prov.industry.byCode.get(x.code)?.share > 0 ? x.share / prov.industry.byCode.get(x.code).share : 0 }))
-      .filter(x => x.lq >= LQ_MIN && x.share >= LQ_SHARE_MIN)
-      .sort((a, b) => b.lq - a.lq).slice(0, 2).map(sectorName);
-    t += over.length
-      ? `; ${joinAnd(over)} ${over.length > 1 ? 'are' : 'is'} notably more prominent than across the province`
-      : ', a broadly diversified mix';
+// How a standout sector reads as a local economic driver.
+const SECTOR_DRIVER = {
+  '11': 'agriculture', '21': 'mining and resource extraction',
+  '22': 'hydro-electric and other utility operations', '23': 'construction',
+  '31-33': 'manufacturing', '41': 'wholesale distribution', '48-49': 'transportation and trucking',
+  '61': 'education', '62': 'health care', '91': 'government and public administration',
+  tourism: 'tourism and recreation',
+};
+// Community-serving sectors: a concentration here, with most residents working
+// locally, reads as a service-centre role for the surrounding area.
+const SERVICE_CODES = ['44-45', '61', '62', '91'];
+export const SERVICE_EXCESS = 5;        // percentage points above the province
+
+// Commuting bands (share of employed residents with a usual place of work who
+// work within their own municipality).
+export const COMMUTE_LOCAL = 60;
+export const COMMUTE_SPLIT = 40;
+export const WPG_COMMUTE_KM = 60;       // "largely toward Winnipeg" only within this distance
+
+// The local economy, in words: leading sectors, the standout drivers vs the
+// province, a service-centre read, where residents work, and named employers
+// when the appraiser has supplied them.
+function economyPara(s, ind, benchmarks, { hw = null, employers = [] } = {}) {
+  const parts = [];
+  if (ind) {
+    const top = ind.shares.slice().sort((a, b) => b.share - a.share).slice(0, 3);
+    parts.push(`Employment is led by ${joinAnd(top.map(sectorName))}.`);
+
+    const prov = benchmarks.find(b => b.level === 'PR' && b.industry);
+    if (prov) {
+      const pshare = (code) => prov.industry.byCode.get(code)?.share ?? 0;
+      const over = ind.shares
+        .map(x => ({ ...x, lq: pshare(x.code) > 0 ? x.share / pshare(x.code) : 0 }))
+        .filter(x => x.lq >= LQ_MIN && x.share >= LQ_SHARE_MIN)
+        .sort((a, b) => b.lq - a.lq);
+      // Accommodation/food and arts/recreation read together as tourism.
+      const drivers = [];
+      for (const x of over) {
+        const key = (x.code === '71' || x.code === '72') ? 'tourism' : x.code;
+        const phrase = SECTOR_DRIVER[key] || sectorName(x);
+        if (!drivers.includes(phrase)) drivers.push(phrase);
+      }
+      if (drivers.length) {
+        parts.push(`The local economy leans on ${joinAnd(drivers.slice(0, 2))}, ` +
+          `${drivers.length > 1 ? 'both' : 'which is'} notably more prominent than across the province.`);
+      } else {
+        parts.push('No single sector stands out relative to the province; the employment base is broadly diversified.');
+      }
+      const svc = (byCode) => SERVICE_CODES.reduce((sum, c) => sum + (byCode.get(c)?.share ?? 0), 0);
+      const c = ind.commute;
+      const local = c?.total > 0 ? c.withinCsd / c.total * 100 : null;
+      if (svc(ind.byCode) - svc(prov.industry.byCode) >= SERVICE_EXCESS && local != null && local >= COMMUTE_SPLIT) {
+        parts.push('Its concentration in health care, retail, education and public administration is consistent with a role as a service centre for the surrounding area.');
+      }
+    }
+
+    // Where employed residents work.
+    const c = ind.commute;
+    if (c?.total > 0) {
+      const local = c.withinCsd / c.total * 100;
+      const outRegion = (c.otherCd + c.otherProv) / c.total * 100;
+      const sameRegion = c.otherCsdSameCd / c.total * 100;
+      const towardWpg = hw?.wpgKm != null && hw.wpgKm <= WPG_COMMUTE_KM ? ', largely toward Winnipeg' : '';
+      if (local >= COMMUTE_LOCAL) {
+        parts.push('Most employed residents work within the community, so it functions as a local employment centre rather than a commuter community.');
+      } else if (local >= COMMUTE_SPLIT) {
+        parts.push(outRegion >= sameRegion
+          ? `About half of employed residents work locally, and much of the rest commute out of the region${towardWpg}.`
+          : 'About half of employed residents work locally, and much of the rest work in neighbouring communities.');
+      } else if (outRegion >= sameRegion) {
+        parts.push(`Most employed residents commute out of the region for work${towardWpg}, so the community functions partly as a bedroom community.`);
+      } else {
+        parts.push('Most employed residents work in neighbouring communities within the region rather than locally.');
+      }
+    }
   }
-  return t + '.';
+  if (employers.length) parts.push(`Major local employers include ${joinAnd(employers)}.`);
+  return parts.length ? parts.join(' ') : null;
 }
 
 // Main highways only — PTHs through the municipality, else what passes nearby.
-function accessSentence(s, hw) {
+// Returns a predicate ("is served by …") to join onto the location sentence, or
+// a standalone sentence when nothing passes through.
+function accessClause(hw) {
   if (!hw) return null;
   const through = hw.through || [], nearby = hw.nearby || [];
   const pth = through.filter(r => r.startsWith('PTH'));
-  if (pth.length) return `${s.name} is served by ${joinAnd(pth.slice(0, 4))}${pth.length > 4 ? ', among other provincial highways' : ''}.`;
-  if (through.length) return `${s.name} is served by ${joinAnd(through.slice(0, 2))}.`;
+  if (pth.length) return `is served by ${joinAnd(pth.slice(0, 4))}${pth.length > 4 ? ', among other provincial highways' : ''}`;
+  if (through.length) return `is served by ${joinAnd(through.slice(0, 2))}`;
   const near = nearby.find(n => n.route.startsWith('PTH')) || nearby[0];
   if (near) return `${near.route} passes nearby.`;
   return 'There is no all-weather provincial road access; the community is reached by air, water or winter road.';
@@ -309,7 +376,8 @@ function accessSentence(s, hw) {
 // subject/benchmarks are census_profile regions; `years` the censusYears array;
 // `period` the selected demographics census; `industry` / `highways` the
 // (optional) parsed census_industry.json / mb_csd_highways.json; `services`
-// the appraiser's checklist. Returns { blocks, table, industryTable, stats }.
+// the appraiser's local inputs ({ checked, nearest, employers }).
+// Returns { blocks, table, industryTable, stats }.
 export function buildCensusNarrative({ subject, benchmarks = [], years, period, industry = null, highways = null, services = null }) {
   const s = regionStats(subject, { years, period });
   const sInd = industryStats(industry, subject?.uid, period);
@@ -329,7 +397,9 @@ export function buildCensusNarrative({ subject, benchmarks = [], years, period, 
   const push = (heading, text) => { if (text) blocks.push({ type: 'heading', text: heading }, { type: 'para', text }); };
   push('Location and growth', locationGrowthPara(s, bm, sHw));
   push('Housing and income', housingIncomePara(s, bm));
-  push('Economy and access', [economySentence(sInd, bm), accessSentence(s, sHw)].filter(Boolean).join(' ') || null);
+  // Named employers are local knowledge the appraiser types in (Local inputs).
+  const employers = (services?.employers || []).map(e => String(e).trim()).filter(Boolean);
+  push('Local economy', economyPara(s, sInd, bm, { hw: sHw, employers }));
   // Services come from the appraiser's checklist (service-tier.js rubric), not data.
   const svcText = services?.checked?.length ? servicesPara(s.name, services.checked, services.nearest) : null;
   push('Services and amenities', svcText);
@@ -339,8 +409,8 @@ export function buildCensusNarrative({ subject, benchmarks = [], years, period, 
   // data covers it.
   blocks.push({ type: 'heading', text: 'Appraiser notes (to complete)' });
   for (const stub of [
-    sInd
-      ? 'Major employers: [name the principal employers behind the sector mix above]'
+    employers.length ? null
+      : sInd ? 'Major employers: [name the principal local employers — enter them under Local inputs below]'
       : 'Economic base and major employers: [agriculture / manufacturing / tourism / services — name the principal employers]',
     svcText ? null : 'Services and amenities: [full-service / limited-service — tick the services checklist below to fill this in]',
     sHw ? null : 'Location and access: [where the community sits relative to Winnipeg; highways serving it]',
