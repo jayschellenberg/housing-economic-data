@@ -406,9 +406,9 @@ export async function initCensus() {
         </div>
         <div class="text-sm text-neutral-800 leading-relaxed mt-2 max-w-3xl">${body}</div>
         ${tableHtml}
-        <p class="text-xs text-neutral-500 mt-2">Auto-written from the census figures above; Areas 2 and 3 serve as the benchmarks.${
-          nar.industryTable ? ' Industry shares are of the labour force aged 15+ (NAICS sectors); "× the provincial share" is a location quotient.' : ''}${
-          highways && subject.level === 'CSD' ? ` Highways: Manitoba Road Network 2023 — "nearby" is a closest approach within ${escapeHtml(String(highways.nearbyKm))} km; the Winnipeg distance is boundary to boundary, not driving distance.` : ''} Growth, income and value wording follows fixed ratio bands so it reads the same across reports — edit freely after download. The appraiser-notes bullets are left for local knowledge.</p>
+        <p class="text-xs text-neutral-500 mt-2">Auto-written from the census figures above, in general terms; the tables carry the numbers. Areas 2 and 3 serve as the benchmarks. Growth is read from the annual rate over the census span; incomes, values and rents use broad bands ("below", "broadly in line with"…) so the wording reads the same across reports.${
+          nar.industryTable ? ' Industry shares are of the labour force aged 15+ (NAICS sectors).' : ''}${
+          highways && subject.level === 'CSD' ? ' Highways: Manitoba Road Network 2023; the Winnipeg distance is to the city limits, rounded to 5 km, not driving distance.' : ''} Edit freely after download; the appraiser-notes bullets are left for local knowledge.</p>
       </section>`;
 
     $narr.querySelector('#census-narrative-docx')?.addEventListener('click', async () => {
@@ -428,7 +428,7 @@ export async function initCensus() {
     });
   }
 
-  // ---- Services checklist (service-tier.js rubric) -----------------------
+  // ---- Local inputs: major employers + services checklist ----------------
   // Manual input for the narrative's "Services and amenities" paragraph —
   // rural POI data is too patchy to automate, so the appraiser ticks what the
   // municipality has and the rubric makes the full/limited-service call.
@@ -455,8 +455,11 @@ export async function initCensus() {
       </fieldset>`).join('');
     $svc.innerHTML = `
       <section class="cmhc-table-block">
-        <div class="cmhc-table-title">Services checklist — ${escapeHtml(subject.name)}</div>
-        <p class="text-xs text-neutral-500 mt-1 mb-2">Tick what the municipality has; the rubric classes it and writes the "Services and amenities" paragraph above. Saved in this browser per municipality.</p>
+        <div class="cmhc-table-title">Local inputs — ${escapeHtml(subject.name)}</div>
+        <p class="text-xs text-neutral-500 mt-1 mb-2">Local knowledge the census can't supply. Saved in this browser per municipality.</p>
+        <label class="block text-sm mb-3">Major local employers <span class="text-neutral-500">(one per line or comma-separated; added to the "Local economy" paragraph)</span>
+          <textarea id="census-svc-employers" rows="2" placeholder="e.g. district hospital, school division, processing plant" class="mt-1 w-full border border-neutral-300 rounded px-2 py-1">${escapeHtml((st.employers || []).join('\n'))}</textarea></label>
+        <div class="text-sm font-semibold mb-1">Services checklist <span class="font-normal text-neutral-500">— tick what the municipality has; the rubric classes it and writes the "Services and amenities" paragraph</span></div>
         <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2">${groups}</div>
         <div class="flex flex-wrap items-center gap-2 mt-3 text-sm">
           <label>Nearest larger centre: <input id="census-svc-nearest" type="text" value="${escapeHtml(st.nearest?.name || '')}" placeholder="e.g. Steinbach" class="border border-neutral-300 rounded px-2 py-0.5 w-40"/></label>
@@ -475,6 +478,8 @@ export async function initCensus() {
           const km = Number($svc.querySelector('#census-svc-km').value);
           return name ? { name, km: Number.isFinite(km) && km > 0 ? km : null } : null;
         })(),
+        employers: $svc.querySelector('#census-svc-employers').value
+          .split(/[\n,;]+/).map(x => x.trim()).filter(Boolean),
       };
       saveServices(subject.uid, v);
       // Re-render the narrative only; the checklist keeps its own DOM/focus
@@ -487,8 +492,9 @@ export async function initCensus() {
     $svc.querySelectorAll('input[type=checkbox]').forEach(el => el.addEventListener('change', persist));
     $svc.querySelector('#census-svc-nearest').addEventListener('change', persist);
     $svc.querySelector('#census-svc-km').addEventListener('change', persist);
+    $svc.querySelector('#census-svc-employers').addEventListener('change', persist);
     $svc.querySelector('#census-svc-clear').addEventListener('click', () => {
-      saveServices(subject.uid, { checked: [], nearest: null });
+      saveServices(subject.uid, { checked: [], nearest: null, employers: [] });
       renderServices(subject);
       if (lastNarrativeArgs) renderNarrative(lastNarrativeArgs.subject, lastNarrativeArgs.others, lastNarrativeArgs.period);
     });
