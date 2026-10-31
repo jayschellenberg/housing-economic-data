@@ -35,6 +35,9 @@ export function nameableConditional(zone) {
   return (zone?.uses || []).filter(u => u.status === 'C' && !u.qualifier);
 }
 
+/** A use name that takes a plural verb ("livestock operations are"), matching R/narrative.R is_plural. */
+export const isPlural = (name) => /[^su]s\)?$/.test(name);
+
 const proseList = (list) => list.map(u => u.prose || u.name.toLowerCase()).sort((a, b) => a.localeCompare(b));
 
 /**
@@ -57,7 +60,10 @@ export function usesSentence(zone, selected, selectedCond = []) {
   let s;
   // an overlay that only changes figures, or only takes uses away, has no uses sentence
   if (zone?.category === 'overlay' && !hasPerm && !hasCond) return '';
-  if (chosen.length === 1 && pool.length === 1) {
+  const prose = (u) => u.prose || u.name.toLowerCase();
+  if (zone?.category === 'overlay' && chosen.length) {
+    s = `Within the overlay, permitted uses include ${useList(proseList(chosen))}${chosen.length < pool.length ? ', among others' : ''}.`;
+  } else if (chosen.length === 1 && pool.length === 1) {
     s = `The permitted use within the current zoning designation is ${proseList(chosen)[0]}.`;
   } else if (chosen.length) {
     const more = chosen.length < pool.length;
@@ -66,7 +72,8 @@ export function usesSentence(zone, selected, selectedCond = []) {
     // name the overlay's conditional uses in one sentence (matches R/narrative.R)
     if (condChosen.length) {
       const more = condChosen.length < condPool.length;
-      return `Within the overlay, ${useList(proseList(condChosen))}${more ? ', among others,' : ''} ${condChosen.length === 1 ? 'is a conditional use' : 'are conditional uses'}.`;
+      const verb = condChosen.length > 1 ? 'are conditional uses' : isPlural(prose(condChosen[0])) ? 'are a conditional use' : 'is a conditional use';
+    return `Within the overlay, ${useList(proseList(condChosen))}${more ? ', among others,' : ''} ${verb}.`;
     }
     return 'The uses the overlay lists are all conditional uses.';
   } else if (allCond) {
@@ -80,7 +87,16 @@ export function usesSentence(zone, selected, selectedCond = []) {
     const more = condChosen.length < condPool.length;
     s += ` ${allCond ? 'They include' : 'Conditional uses include'} ${useList(proseList(condChosen))}${more ? ', among others' : ''}.`;
   } else if (hasCond && !allCond) {
-    s += ' There are several conditional uses as well.';
+    // one principal conditional use is not "several" (matches R/narrative.R)
+    const pc = [...new Set((zone?.uses || []).filter(u => u.status === 'C' && u.qualifier !== 'accessory_only').map(u => u.name))];
+    const one = pc.length === 1 ? zone.uses.find(u => u.status === 'C' && u.name === pc[0]) : null;
+    if (one && zone.uses.some(u => u.status === 'P' && u.name === one.name)) {
+      s += ` Larger ${prose(one)} ${isPlural(prose(one)) ? 'are' : 'is'} a conditional use.`;
+    } else if (one) {
+      s += ` There is also one conditional use: ${prose(one)}.`;
+    } else {
+      s += ' There are several conditional uses as well.';
+    }
   }
   return s;
 }
