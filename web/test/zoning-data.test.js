@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  oxford, usesSentence, narrativeParagraphs, nameableConditional, formatValue, bulkRows,
+  oxford, useList, usesSentence, narrativeParagraphs, nameableConditional, formatValue, bulkRows,
   currencyVerdict, currencyMessage, currencyQueryUrl, normBylaw, zoneShortName, zoneDescription,
 } from '../src/zoning-data.js';
 
@@ -149,5 +149,10 @@ describe('uses sentence edge cases', () => {
   });
   it('handles a zone with no uses', () => {
     expect(usesSentence({ uses: [] }, [])).toBe('The by-law lists no uses for this zone.');
+  });
+  it('separates use names that contain commas with semicolons', () => {
+    expect(useList(['care home, family day care home', 'school'])).toBe('care home, family day care home; and school');
+    expect(useList(['a', 'b', 'c'])).toBe('a, b, and c');
+    expect(useList(['offices; banks', 'x', 'y'])).toBe('offices, banks; x; and y');
   });
 });
