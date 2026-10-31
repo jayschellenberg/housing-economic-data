@@ -62,6 +62,13 @@ export function usesSentence(zone, selected, selectedCond = []) {
   } else if (chosen.length) {
     const more = chosen.length < pool.length;
     s = `Some permitted uses within the current zoning designation include ${useList(proseList(chosen))}${more ? ', among others' : ''}.`;
+  } else if (allCond && zone?.category === 'overlay') {
+    // name the overlay's conditional uses in one sentence (matches R/narrative.R)
+    if (condChosen.length) {
+      const more = condChosen.length < condPool.length;
+      return `Within the overlay, ${useList(proseList(condChosen))}${more ? ', among others,' : ''} ${condChosen.length === 1 ? 'is a conditional use' : 'are conditional uses'}.`;
+    }
+    return 'The uses the overlay lists are all conditional uses.';
   } else if (allCond) {
     s = 'All uses listed for this zone are conditional uses.';
   } else if (!hasPerm) {
@@ -189,7 +196,7 @@ export function currencyQueryUrl(service, muniNo) {
 /** "Central Commercial Zone": the zone's name, with "Zone" added when the by-law's name lacks it. */
 export function zoneShortName(zone) {
   const name = String(zone?.name || '').trim();
-  return /\b(zone|district)$/i.test(name) ? name : `${name} Zone`;
+  return /\b(zone|district|overlay|area|areas|pod)$/i.test(name) ? name : `${name} Zone`;
 }
 
 /** "The Central Commercial Zone provides for ..." from the by-law's intent clause. */

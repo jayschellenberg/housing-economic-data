@@ -161,6 +161,14 @@ describe('uses sentence edge cases', () => {
     expect(usesSentence(ov, [])).toBe('');
     expect(narrativeParagraphs(ov, [])).toEqual(['This overlay protects the corridor.', 'b', 'Within the overlay, gas bar is not permitted.']);
   });
+  it('names an all-conditional overlay\'s ticked uses; overlay names take no "Zone"', () => {
+    const ov = { category: 'overlay', uses: [
+      { name: 'Car Wash', prose: 'car wash', status: 'C', qualifier: null },
+      { name: 'Truck Stop', prose: 'truck stop', status: 'C', qualifier: null }] };
+    expect(usesSentence(ov, [], ['Car Wash'])).toBe('Within the overlay, car wash, among others, is a conditional use.');
+    expect(usesSentence(ov, [])).toBe('The uses the overlay lists are all conditional uses.');
+    expect(zoneShortName({ name: 'Pembina Connection Zoning District Overlay' })).toBe('Pembina Connection Zoning District Overlay');
+  });
   it('separates use names that contain commas with semicolons', () => {
     expect(useList(['care home, family day care home', 'school'])).toBe('care home, family day care home; and school');
     expect(useList(['a', 'b', 'c'])).toBe('a, b, and c');
