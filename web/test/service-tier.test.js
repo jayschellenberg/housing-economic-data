@@ -28,15 +28,13 @@ describe('classifyServices', () => {
 });
 
 describe('servicesPara', () => {
-  it('full-service names the four and the hospital dependency', () => {
+  it('full-service implies the four — only the hospital dependency is named', () => {
     expect(servicesPara('Niverville', CORE, { name: 'Steinbach', km: 25 }, { pop: 5900 })).toBe(
-      'Niverville is a full-service community, with a grocery store, a bank or credit union, a medical clinic ' +
-      'and a school to Grade 12. Residents look to Steinbach (about 25 km away) for hospital services.');
+      'Niverville is a full-service community. Residents look to Steinbach (about 25 km away) for hospital services.');
   });
-  it('regional centres carry no dependency clause', () => {
+  it('regional centres carry no amenity list or dependency clause', () => {
     expect(servicesPara('Steinbach', [...CORE, 'hospital'], null, { pop: 17800 })).toBe(
-      'Steinbach is a full-service regional centre, with a grocery store, a bank or credit union, a medical clinic, ' +
-      'a school to Grade 12 and a hospital.');
+      'Steinbach is a full-service regional centre.');
   });
   it('limited-service names the gaps', () => {
     expect(servicesPara('Hamlet', ['grocery', 'school_hs'], { name: 'Selkirk' })).toBe(

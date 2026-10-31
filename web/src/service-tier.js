@@ -74,9 +74,11 @@ const joinAnd = (arr) => arr.length <= 1 ? arr.join('')
 export function servicesPara(name, checkedKeys, nearest = null, { pop = null } = {}) {
   const { tier, checked } = classifyServices(checkedKeys, { pop });
   if (!checked.size) return null;
+  // "Full-service" already implies the four (and "regional centre" the
+  // hospital), so only a limited-service place spells out what it has.
   const present = AMENITIES.filter(a => checked.has(a.key)).map(a => a.prose);
   let text = `${name} is a ${tier.label}`;
-  if (present.length) text += `, with ${joinAnd(present)}`;
+  if (tier.key === 'limited' && present.length) text += `, with ${joinAnd(present)}`;
   text += '.';
   if (tier.key === 'regional') return text;
   const where = nearest?.name ? `${nearest.name}${nearest.km ? ` (about ${nearest.km} km away)` : ''}` : 'the nearest larger centre';
