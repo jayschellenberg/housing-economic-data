@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   oxford, useList, usesSentence, narrativeParagraphs, nameableConditional, formatValue, bulkRows,
-  currencyVerdict, currencyMessage, currencyQueryUrl, normBylaw, zoneShortName, zoneDescription,
+  currencyVerdict, currencyMessage, currencyQueryUrl, normBylaw, zoneShortName, zoneDescription, verifyApplies,
 } from '../src/zoning-data.js';
 
 const zone = {
@@ -182,5 +182,16 @@ describe('uses sentence edge cases', () => {
     expect(useList(['care home, family day care home', 'school'])).toBe('care home, family day care home; and school');
     expect(useList(['a', 'b', 'c'])).toBe('a, b, and c');
     expect(useList(['offices; banks', 'x', 'y'])).toBe('offices, banks; x; and y');
+  });
+});
+
+describe('verifyApplies', () => {
+  it('flags the listed zones, the whole by-law for "all" or a bare note, and nothing without a note', () => {
+    const m = { note: 'Lot area unreadable.', verify_zones: ['RS', 'MB'] };
+    expect(verifyApplies(m, 'RS')).toBe(true);
+    expect(verifyApplies(m, 'CH')).toBe(false);
+    expect(verifyApplies({ note: 'Scan.', verify_zones: ['all'] }, 'CH')).toBe(true);
+    expect(verifyApplies({ note: 'Scan.' }, 'CH')).toBe(true);
+    expect(verifyApplies({ verify_zones: ['RS'] }, 'RS')).toBe(false);
   });
 });
