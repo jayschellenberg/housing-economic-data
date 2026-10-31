@@ -448,7 +448,13 @@ export async function initCensus() {
     if (subject.level !== 'CSD') { $svc.innerHTML = ''; return; }
     const st = loadServices(subject.uid);
     const checked = new Set(st.checked);
-    const { tier, missing } = classifyServices(checked);
+    // Latest census population — the regional-centre test needs 5,000+.
+    const pop = (() => {
+      const t = subject.trends || {};
+      const y = Object.keys(t).filter(k => t[k]?.population > 0).sort().pop();
+      return y ? t[y].population : null;
+    })();
+    const { tier, missing } = classifyServices(checked, { pop });
     const groups = AMENITY_GROUPS.map(g => `
       <fieldset class="min-w-0"><legend class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-1">${escapeHtml(g.group)}</legend>
         ${g.items.map(a => `<label class="flex items-center gap-1.5 text-sm"><input type="checkbox" data-key="${escapeHtml(a.key)}" ${checked.has(a.key) ? 'checked' : ''}/> ${escapeHtml(a.label)}</label>`).join('')}
@@ -459,7 +465,7 @@ export async function initCensus() {
         <p class="text-xs text-neutral-500 mt-1 mb-2">Local knowledge the census can't supply. Saved in this browser per municipality.</p>
         <label class="block text-sm mb-3">Major local employers <span class="text-neutral-500">(one per line or comma-separated; added to the "Local economy" paragraph)</span>
           <textarea id="census-svc-employers" rows="2" placeholder="e.g. district hospital, school division, processing plant" class="mt-1 w-full border border-neutral-300 rounded px-2 py-1">${escapeHtml((st.employers || []).join('\n'))}</textarea></label>
-        <div class="text-sm font-semibold mb-1">Services checklist <span class="font-normal text-neutral-500">— tick what the municipality has; the rubric classes it and writes the "Services and amenities" paragraph</span></div>
+        <div class="text-sm font-semibold mb-1">Services checklist <span class="font-normal text-neutral-500">— full-service = all four; a regional centre also has a hospital and 5,000+ people. Writes the "Services and amenities" paragraph</span></div>
         <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2">${groups}</div>
         <div class="flex flex-wrap items-center gap-2 mt-3 text-sm">
           <label>Nearest larger centre: <input id="census-svc-nearest" type="text" value="${escapeHtml(st.nearest?.name || '')}" placeholder="e.g. Steinbach" class="border border-neutral-300 rounded px-2 py-0.5 w-40"/></label>
@@ -485,7 +491,7 @@ export async function initCensus() {
       // Re-render the narrative only; the checklist keeps its own DOM/focus
       // except for the rubric-call line, which needs the new classification.
       if (lastNarrativeArgs) renderNarrative(lastNarrativeArgs.subject, lastNarrativeArgs.others, lastNarrativeArgs.period);
-      const { tier: t2, missing: m2 } = classifyServices(v.checked);
+      const { tier: t2, missing: m2 } = classifyServices(v.checked, { pop });
       $svc.querySelector('p.text-sm.mt-2').innerHTML = `<strong>Rubric call:</strong> ${escapeHtml(t2.label)}${
         m2.length ? ` <span class="text-neutral-500">— next tier needs ${escapeHtml(m2.join('; '))}</span>` : ''}`;
     };
