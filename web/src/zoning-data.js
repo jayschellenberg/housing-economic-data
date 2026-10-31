@@ -54,6 +54,8 @@ export function usesSentence(zone, selected, selectedCond = []) {
   const hasPerm = (zone?.uses || []).some(u => u.status === 'P');
   const allCond = !hasPerm && hasCond;
   let s;
+  // an overlay that only changes figures, or only takes uses away, has no uses sentence
+  if (zone?.category === 'overlay' && !hasPerm && !hasCond) return '';
   if (chosen.length === 1 && pool.length === 1) {
     s = `The permitted use within the current zoning designation is ${proseList(chosen)[0]}.`;
   } else if (chosen.length) {
@@ -75,16 +77,17 @@ export function usesSentence(zone, selected, selectedCond = []) {
   return s;
 }
 
-/** Full narrative as paragraphs: intent, uses, bulk, parking. */
+/** Full narrative as paragraphs: intent, uses, bulk, parking, overlay. */
 export function narrativeParagraphs(zone, selected, selectedCond = []) {
   const n = zone?.narrative || {};
-  return [n.intent, usesSentence(zone, selected, selectedCond), n.bulk, n.parking].filter(Boolean);
+  return [n.intent, usesSentence(zone, selected, selectedCond), n.bulk, n.parking, n.overlay].filter(Boolean);
 }
 
 // --- bulk table ---------------------------------------------------------------
 
 export const ATTRIBUTE_LABELS = {
   min_site_area: 'Minimum site area',
+  min_site_area_per_unit: 'Site area per dwelling unit',
   min_site_width: 'Minimum site width',
   min_site_depth: 'Minimum site depth',
   setback_front: 'Front yard',

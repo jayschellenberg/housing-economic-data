@@ -150,6 +150,12 @@ describe('uses sentence edge cases', () => {
   it('handles a zone with no uses', () => {
     expect(usesSentence({ uses: [] }, [])).toBe('The by-law lists no uses for this zone.');
   });
+  it('gives an overlay without listed uses no uses sentence, and appends the overlay paragraph', () => {
+    const ov = { category: 'overlay', uses: [{ name: 'Gas Bar', prose: 'gas bar', status: 'X', qualifier: null }],
+      narrative: { intent: 'This overlay protects the corridor.', bulk: 'b', overlay: 'Within the overlay, gas bar is not permitted.' } };
+    expect(usesSentence(ov, [])).toBe('');
+    expect(narrativeParagraphs(ov, [])).toEqual(['This overlay protects the corridor.', 'b', 'Within the overlay, gas bar is not permitted.']);
+  });
   it('separates use names that contain commas with semicolons', () => {
     expect(useList(['care home, family day care home', 'school'])).toBe('care home, family day care home; and school');
     expect(useList(['a', 'b', 'c'])).toBe('a, b, and c');
