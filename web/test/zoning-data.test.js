@@ -39,8 +39,9 @@ describe('usesSentence', () => {
     expect(s).toContain('general retail store, hotel/motel, and service station.');
     expect(s).not.toContain('among others');
   });
-  it('handles nothing ticked', () => {
-    expect(usesSentence({ uses: [] }, [])).toBe('The zone lists no permitted uses other than accessory and utility uses.');
+  it('handles nothing ticked when the zone has permitted uses', () => {
+    const z = { uses: [{ name: 'Hotel', prose: 'hotel', status: 'P', qualifier: null }, { name: 'Motel', prose: 'motel', status: 'P', qualifier: null }] };
+    expect(usesSentence(z, [])).toBe('The zone lists no permitted uses other than accessory and utility uses.');
   });
 });
 
@@ -133,5 +134,20 @@ describe('conditional uses', () => {
     expect(usesSentence(z, ['Hotel / Motel'], ['Single Room Occupancy'])).toMatch(/ Conditional uses include single room occupancy, among others\.$/);
     expect(usesSentence(z, ['Hotel / Motel'], ['Single Room Occupancy', 'Planned Unit Development']))
       .toMatch(/ Conditional uses include planned unit development and single room occupancy\.$/);
+  });
+});
+
+describe('uses sentence edge cases', () => {
+  it('names a single permitted use as "the permitted use"', () => {
+    const z = { uses: [{ name: 'Public Utility Services', prose: 'public utility services', status: 'P', qualifier: null }] };
+    expect(usesSentence(z, ['Public Utility Services'])).toBe('The permitted use within the current zoning designation is public utility services.');
+  });
+  it('says so when every listed use is conditional', () => {
+    const z = { uses: [{ name: 'Utilities', prose: 'utilities', status: 'C', qualifier: null }, { name: 'Kennel', prose: 'kennel', status: 'C', qualifier: null }] };
+    expect(usesSentence(z, [])).toBe('All uses listed for this zone are conditional uses.');
+    expect(usesSentence(z, [], ['Kennel'])).toBe('All uses listed for this zone are conditional uses. They include kennel, among others.');
+  });
+  it('handles a zone with no uses', () => {
+    expect(usesSentence({ uses: [] }, [])).toBe('The by-law lists no uses for this zone.');
   });
 });
