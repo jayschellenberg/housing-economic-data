@@ -406,9 +406,9 @@ export async function initCensus() {
         </div>
         <div class="text-sm text-neutral-800 leading-relaxed mt-2 max-w-3xl">${body}</div>
         ${tableHtml}
-        <p class="text-xs text-neutral-500 mt-2">Auto-written from the census figures above; Areas 2 and 3 serve as the benchmarks.${
-          nar.industryTable ? ' Industry shares are of the labour force aged 15+ (NAICS sectors); "× the provincial share" is a location quotient.' : ''}${
-          highways && subject.level === 'CSD' ? ` Highways: Manitoba Road Network 2023 — "nearby" is a closest approach within ${escapeHtml(String(highways.nearbyKm))} km; the Winnipeg distance is boundary to boundary, not driving distance.` : ''} Growth, income and value wording follows fixed ratio bands so it reads the same across reports — edit freely after download. The appraiser-notes bullets are left for local knowledge.</p>
+        <p class="text-xs text-neutral-500 mt-2">Auto-written from the census figures above, in general terms; the tables carry the numbers. Areas 2 and 3 serve as the benchmarks. Growth is read from the annual rate over the census span; incomes, values and rents use broad bands ("below", "broadly in line with"…) so the wording reads the same across reports.${
+          nar.industryTable ? ' Industry shares are of the labour force aged 15+ (NAICS sectors).' : ''}${
+          highways && subject.level === 'CSD' ? ' Highways: Manitoba Road Network 2023; the Winnipeg distance is to the city limits, rounded to 5 km, not driving distance.' : ''} Edit freely after download; the appraiser-notes bullets are left for local knowledge.</p>
       </section>`;
 
     $narr.querySelector('#census-narrative-docx')?.addEventListener('click', async () => {

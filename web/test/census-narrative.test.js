@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildCensusNarrative, regionStats, ratioPhrase, growthWord, proseName } from '../src/census-narrative.js';
+import { buildCensusNarrative, regionStats, ratioPhrase, growthPhrase, proseName } from '../src/census-narrative.js';
 
 const YEARS = ['2006', '2011', '2016', '2021'];
 
@@ -23,6 +23,8 @@ const manitoba = {
   demo: { '2021': { median_hh_income: 79500, median_dwelling_val: 304000, median_rent: 1040 },
           '2016': { median_hh_income: {}, median_dwelling_val: 275473, median_rent: 868 } },
 };
+// Only 2016–2021 trends here, so its growth rate covers a different span than
+// Steinbach's 15 years and is left out of the growth comparison.
 const wpgCma = {
   uid: '46602', level: 'CMA', name: 'Winnipeg (CMA)',
   trends: { '2016': trend(778489), '2021': trend(834678) },
@@ -30,11 +32,12 @@ const wpgCma = {
 };
 
 const paras = (blocks) => blocks.filter(b => b.type === 'para').map(b => b.text).join('\n');
+const bullets = (blocks) => blocks.filter(b => b.type === 'bullet').map(b => b.text).join('\n');
 
 describe('ladders', () => {
-  it('ratio phrases', () => {
-    expect(ratioPhrase(1.0)).toBe('roughly in line with');
-    expect(ratioPhrase(0.91)).toBe('modestly below');
+  it('ratio phrases use broad bands', () => {
+    expect(ratioPhrase(1.0)).toBe('broadly in line with');
+    expect(ratioPhrase(0.9)).toBe('below');
     expect(ratioPhrase(0.6)).toBe('well below');
     expect(ratioPhrase(1.3)).toBe('well above');
   });
@@ -43,19 +46,21 @@ describe('ladders', () => {
     expect(proseName('Winnipeg (CMA)')).toBe('Winnipeg CMA');
     expect(proseName('Daniel McIntyre')).toBe('Daniel McIntyre');
   });
-  it('growth words', () => {
-    expect(growthWord(12.5)).toBe('growing rapidly');
-    expect(growthWord(0.2)).toBe('stable');
-    expect(growthWord(-3)).toBe('contracting');
+  it('growth phrases from the annual rate', () => {
+    expect(growthPhrase(3)).toBe('grown strongly');
+    expect(growthPhrase(1)).toBe('grown steadily');
+    expect(growthPhrase(0.2)).toBe('remained essentially stable');
+    expect(growthPhrase(-1)).toBe('declined');
   });
 });
 
 describe('regionStats', () => {
-  it('computes latest and long-run change and shares', () => {
+  it('computes changes, annual rates and shares', () => {
     const s = regionStats(steinbach, { years: YEARS, period: '2021' });
-    expect(s.pop).toBe(17806);
     expect(s.chg5).toBeCloseTo(12.49, 1);
     expect(s.chg15).toBeCloseTo(60.9, 1);
+    expect(s.rateLong).toBeCloseTo(3.22, 1);
+    expect(s.rateLongYears).toBe(15);
     expect(s.ownerShare).toBeCloseTo(61.7, 1);
     expect(s.post2000).toBeCloseTo(47.4, 1);
     expect(s.types.shares[0].key).toBe('single_detached');
@@ -64,57 +69,63 @@ describe('regionStats', () => {
     const r = { name: 'X', level: 'CMA', trends: { '2011': trend(0), '2021': trend(100) }, demo: { '2021': { median_hh_income: {} } } };
     const s = regionStats(r, { years: YEARS, period: '2021' });
     expect(s.chg5).toBeNull();
+    expect(s.rateLong).toBeNull();
     expect(s.hhIncome).toBeNull();
+  });
+  it('caps the dwelling-mix year at the selected period', () => {
+    expect(regionStats(steinbach, { years: YEARS, period: '2016' }).types).toBeNull();   // fixture has 2021 types only
   });
 });
 
-describe('buildCensusNarrative', () => {
+describe('buildCensusNarrative — general prose', () => {
   const { blocks, table } = buildCensusNarrative({ subject: steinbach, benchmarks: [manitoba, wpgCma], years: YEARS, period: '2021' });
   const text = paras(blocks);
 
-  it('reads growth against both benchmarks', () => {
-    expect(text).toContain('population of 17,806 at the 2021 Census, a change of +12.5% from 2016 and +60.9% since 2006');
-    expect(text).toContain('growing rapidly, faster than the provincial figure (+5.0%) and faster than Winnipeg CMA\'s (+7.2%)');
+  it('never states population counts, dollar figures or percentages', () => {
+    expect(text).not.toMatch(/17,806|\$\d|\d%/);
   });
-  it('contrasts a contracting subject with its benchmarks instead of pacing it', () => {
+  it('reads long-run growth against benchmarks covering the same span', () => {
+    expect(text).toContain('Over the past fifteen years, the population has grown strongly, faster than the province.');
+  });
+  it('contrasts a declining subject with growing benchmarks', () => {
     const shrinking = { ...steinbach, name: 'Oldtown', trends: { '2016': trend(10000), '2021': trend(9500) } };
     const { blocks: b } = buildCensusNarrative({ subject: shrinking, benchmarks: [manitoba], years: YEARS, period: '2021' });
-    expect(paras(b)).toContain('the community is contracting, while the provincial figure grew +5.0% over the same period.');
+    expect(paras(b)).toContain('Between the last two censuses, the population has declined, while the province continued to grow.');
   });
-  it('caps the dwelling-mix year at the selected period', () => {
-    const s = regionStats(steinbach, { years: YEARS, period: '2016' });
-    expect(s.types).toBeNull();      // the fixture only carries type counts for 2021
+  it('flags a latest census that runs against a stable long-run trend', () => {
+    const dip = { ...steinbach, name: 'Lakeside', trends: { '2006': trend(1000), '2016': trend(1080), '2021': trend(1050) } };
+    const { blocks: b } = buildCensusNarrative({ subject: dip, benchmarks: [], years: YEARS, period: '2021' });
+    expect(paras(b)).toContain('the population has remained essentially stable, with a slight decline in the most recent census period.');
   });
-  it('reads income and values with the ratio ladder', () => {
-    expect(text).toContain('Median household income was $72,500 in 2020, modestly below the provincial figure ($79,500) and below Winnipeg CMA\'s ($83,000).');
-    expect(text).toContain('median value of owner-occupied dwellings was $300,000 at the 2021 Census, roughly in line with the provincial figure ($304,000) and below Winnipeg CMA\'s ($348,000).');
-    expect(text).toContain('Median monthly rent was $1,010');
+  it('groups incomes, values and rents that read the same', () => {
+    expect(text).toContain('Household incomes are below the provincial and Winnipeg CMA levels, ' +
+      'while home values and rents are broadly in line with the provincial level but below the Winnipeg CMA level.');
   });
-  it('describes the housing stock', () => {
-    expect(text).toContain('mainly single-detached houses (55% of occupied dwellings in 2021), with apartments and duplex units making up 29%');
-    expect(text).toContain('comparatively new stock: about 47% of dwellings were built after 2000 and 9% before 1961');
-    expect(text).toContain('Owner-occupancy stands at 62%.');
-  });
-  it('includes appraiser stubs and a supporting table', () => {
-    expect(blocks.filter(b => b.type === 'bullet')).toHaveLength(3);
-    expect(table.columns).toEqual(['Steinbach', 'Manitoba', 'Winnipeg CMA']);
-    expect(table.rows[0].values).toEqual(['17,806', '1,342,153', '834,678']);
-    expect(table.rows[3].values[0]).toBe('$72,500');
+  it('describes the housing mix and age in words', () => {
+    expect(text).toContain('Housing is largely owner-occupied and consists of a mix of single-family homes and multi-unit dwellings.');
+    expect(text).toContain('Much of the stock has been built since 2000.');
   });
   it('keeps tables and prose in Area 1/2/3 order', () => {
     const r = buildCensusNarrative({ subject: steinbach, benchmarks: [wpgCma, manitoba], years: YEARS, period: '2021' });
     expect(r.table.columns).toEqual(['Steinbach', 'Winnipeg CMA', 'Manitoba']);
-    expect(r.table.rows[0].values).toEqual(['17,806', '834,678', '1,342,153']);
-    expect(paras(r.blocks)).toContain('faster than Winnipeg CMA\'s (+7.2%) and faster than the provincial figure (+5.0%)');
+    expect(paras(r.blocks)).toContain('Household incomes are below the Winnipeg CMA and provincial levels');
   });
-  it('drops benchmark clauses when the benchmark is missing, never printing **', () => {
+  it('supporting table carries the numbers but no population count', () => {
+    expect(table.columns).toEqual(['Steinbach', 'Manitoba', 'Winnipeg CMA']);
+    expect(table.rows.map(r => r.area)).not.toContain('Population (2021)');
+    expect(table.rows[0]).toEqual({ area: 'Population change, 2016–2021', values: ['+12.5%', '+5.0%', '+7.2%'] });
+    expect(table.rows[2].values[0]).toBe('$72,500');
+  });
+  it('drops sentences without data, never printing **', () => {
     const { blocks: b16 } = buildCensusNarrative({ subject: steinbach, benchmarks: [manitoba], years: YEARS, period: '2016' });
-    const t16 = paras(b16);
-    expect(t16).not.toContain('**');
-    expect(t16).not.toContain('Median household income');     // subject has no 2016 demo at all
+    expect(paras(b16)).not.toContain('**');
+    expect(paras(b16)).not.toContain('Household incomes');     // subject has no 2016 demo at all
+    const single = { name: 'Newtown', level: 'CSD', trends: { '2021': trend(900) }, demo: {} };
+    expect(paras(buildCensusNarrative({ subject: single, benchmarks: [manitoba], years: YEARS, period: '2021' }).blocks)).toBe('');
   });
-  describe('industry (census_industry.json)', () => {
-    // 4 sectors is enough to exercise top-3 + location quotients.
+
+  describe('economy (census_industry.json)', () => {
+    // 4 sectors is enough to exercise top-3 + standouts.
     const sectors = [{ code: '11', label: 'Agriculture, forestry, fishing and hunting' }, { code: '31-33', label: 'Manufacturing' },
       { code: '44-45', label: 'Retail trade' }, { code: '62', label: 'Health care and social assistance' }];
     const industry = { years: ['2021', '2016'], sectors, regions: [
@@ -122,65 +133,51 @@ describe('buildCensusNarrative', () => {
       { uid: '46', name: 'Manitoba', level: 'PR', data: { 2021: { labourForce: 10000, notApplicable: 100, counts: [400, 1500, 3100, 5000] } } },
     ] };
     const { blocks: b, industryTable } = buildCensusNarrative({ subject: steinbach, benchmarks: [manitoba, wpgCma], years: YEARS, period: '2021', industry });
-    const t = paras(b);
 
-    it('names the top three sectors and the over-represented ones vs the province', () => {
-      expect(t).toContain('In 2021 the largest employment sectors for Steinbach\'s labour force of 1,000 were health care and social assistance (40%), manufacturing (30%) and retail trade (25%).');
-      // manufacturing LQ = 30/15 = 2.0 (over); health 40/50 = 0.8; retail 25/31 = 0.8; agriculture 5/4 = 1.25 (under LQ_MIN)
-      expect(t).toContain('Relative to the province, manufacturing (2.0× the provincial share) is notably over-represented');
+    it('names leading sectors and standouts in words', () => {
+      // manufacturing LQ = 30/15 = 2.0 (standout); agriculture 5/4 = 1.25 (under LQ_MIN)
+      expect(paras(b)).toContain('Employment is led by health care, manufacturing and retail; manufacturing is notably more prominent than across the province.');
     });
-    it('builds the industry table sorted by subject share, ** for benchmarks without data', () => {
-      expect(industryTable.columns).toEqual(['Steinbach', 'Manitoba', 'Winnipeg CMA']);
+    it('keeps the industry table with exact shares', () => {
       expect(industryTable.rows[0]).toEqual({ area: 'Labour force aged 15+', values: ['1,000', '10,000', '**'] });
       expect(industryTable.rows[1]).toEqual({ area: '62 Health care and social assistance', values: ['40.0%', '50.0%', '**'] });
     });
     it('swaps the economic-base stub for a major-employers stub', () => {
       expect(b.find(x => x.type === 'bullet').text).toMatch(/^Major employers/);
     });
-    it('omits the paragraph and table when the period has no industry data', () => {
-      const r = buildCensusNarrative({ subject: steinbach, benchmarks: [manitoba], years: YEARS, period: '2016', industry });
-      expect(paras(r.blocks)).not.toContain('employment sectors');
-      expect(r.industryTable).toBeNull();
-    });
-    it('says diversified when nothing clears the LQ bar', () => {
+    it('says diversified when nothing stands out; omits without data', () => {
       const flat = { ...industry, regions: [{ ...industry.regions[0], data: { 2021: { labourForce: 1000, counts: [40, 150, 310, 500] } } }, industry.regions[1]] };
       expect(paras(buildCensusNarrative({ subject: steinbach, benchmarks: [manitoba], years: YEARS, period: '2021', industry: flat }).blocks))
-        .toContain('broadly diversified');
+        .toContain('a broadly diversified mix.');
+      const r = buildCensusNarrative({ subject: steinbach, benchmarks: [manitoba], years: YEARS, period: '2016', industry });
+      expect(paras(r.blocks)).not.toContain('Employment');
+      expect(r.industryTable).toBeNull();
     });
   });
 
-  describe('highways (mb_csd_highways.json)', () => {
-    const highways = { nearbyKm: 15, csd: {
-      '4602044': { through: ['PTH 12', 'PTH 52'], nearby: [{ route: 'PR 311', km: 0.8, dir: 'north' }, { route: 'PR 303', km: 2.5, dir: 'south' },
-        { route: 'PR 206', km: 6.3, dir: 'west' }, { route: 'PR 210', km: 7.1, dir: 'northeast' }], wpgKm: 34, wpgDir: 'southeast' },
-    } };
-    const run = (hw, subj = steinbach) => paras(buildCensusNarrative({ subject: subj, benchmarks: [manitoba], years: YEARS, period: '2021', highways: hw }).blocks);
+  describe('location and access (mb_csd_highways.json)', () => {
+    const hw = (rec) => ({ csd: { '4602044': rec } });
+    const run = (h, subj = steinbach) => paras(buildCensusNarrative({ subject: subj, benchmarks: [], years: YEARS, period: '2021', highways: h }).blocks);
 
-    it('lists through routes, the three nearest others and the Winnipeg distance', () => {
-      expect(run(highways)).toContain('Steinbach is served by PTH 12 and PTH 52, which pass through the municipality. ' +
-        'PR 311 (under 1 km north), PR 303 (about 3 km south) and PR 206 (about 6 km west) are also within easy reach. ' +
-        'The community lies about 34 km southeast of the Winnipeg city limits.');
+    it('rounds the Winnipeg distance to 5 km and names only the PTHs', () => {
+      const t = run(hw({ through: ['PTH 12', 'PTH 52', 'PR 311'], nearby: [{ route: 'PR 303', km: 2.5, dir: 'south' }], wpgKm: 34, wpgDir: 'southeast' }));
+      expect(t).toContain('Steinbach is located roughly 35 km southeast of Winnipeg.');
+      expect(t).toContain('Steinbach is served by PTH 12 and PTH 52.');
+      expect(t).not.toContain('PR 303');
     });
-    it('drops the roadways stub when the data is present, keeps it otherwise', () => {
-      const withHw = buildCensusNarrative({ subject: steinbach, benchmarks: [], years: YEARS, period: '2021', highways }).blocks;
-      expect(withHw.filter(b => b.type === 'bullet').map(b => b.text).join()).not.toMatch(/Access and roadways/);
-      const without = buildCensusNarrative({ subject: steinbach, benchmarks: [], years: YEARS, period: '2021', highways: null }).blocks;
-      expect(without.filter(b => b.type === 'bullet').map(b => b.text).join()).toMatch(/Access and roadways/);
+    it('handles adjoining, nearby-only and fly-in cases', () => {
+      expect(run(hw({ through: ['PTH 1', 'PTH 12', 'PR 206'], nearby: [], wpgKm: 0, wpgDir: 'east' })))
+        .toContain('Steinbach adjoins the City of Winnipeg to the east.');
+      expect(run(hw({ through: [], nearby: [{ route: 'PR 210', km: 1, dir: 'west' }, { route: 'PTH 59', km: 4, dir: 'west' }], wpgKm: 58, wpgDir: 'southeast' })))
+        .toContain('PTH 59 passes nearby.');
+      expect(run(hw({ through: [], nearby: [], wpgKm: 400, wpgDir: 'north' })))
+        .toContain('reached by air, water or winter road');
     });
-    it('collapses long through lists to PTHs plus a provincial-road count', () => {
-      const big = { csd: { '4602044': { through: ['PTH 1', 'PTH 12', 'PR 206', 'PR 207', 'PR 212', 'PR 213', 'PR 215'], nearby: [], wpgKm: 0, wpgDir: 'east' } } };
-      const t = run(big);
-      expect(t).toContain('is served by PTH 1 and PTH 12 and 5 provincial roads, which pass through the municipality.');
-      expect(t).toContain('The municipality adjoins the City of Winnipeg, lying to its east.');
-    });
-    it('handles no-through and no-road municipalities', () => {
-      expect(run({ csd: { '4602044': { through: [], nearby: [{ route: 'PTH 59', km: 1.1, dir: 'west' }], wpgKm: 58, wpgDir: 'southeast' } } }))
-        .toContain('No provincial highway passes through Steinbach; the nearest is PTH 59 (about 1 km west).');
-      expect(run({ csd: { '4602044': { through: [], nearby: [], wpgKm: 400, wpgDir: 'north' } } }))
-        .toContain('access is by air, water or winter road');
-    });
-    it('ignores highways for non-CSD subjects', () => {
-      expect(run({ csd: { '46': { through: ['PTH 1'], nearby: [] } } }, manitoba)).not.toContain('is served by');
+    it('drops the location stub when covered, keeps it otherwise; ignores non-CSD subjects', () => {
+      const covered = buildCensusNarrative({ subject: steinbach, benchmarks: [], years: YEARS, period: '2021', highways: hw({ through: [], nearby: [], wpgKm: 30, wpgDir: 'east' }) }).blocks;
+      expect(bullets(covered)).not.toMatch(/Location and access/);
+      expect(bullets(buildCensusNarrative({ subject: steinbach, benchmarks: [], years: YEARS, period: '2021' }).blocks)).toMatch(/Location and access/);
+      expect(run({ csd: { '46': { through: ['PTH 1'], nearby: [] } } }, manitoba)).not.toContain('served by');
     });
   });
 
@@ -188,12 +185,6 @@ describe('buildCensusNarrative', () => {
     const svc = { checked: ['grocery', 'school_k8', 'munioffice'], nearest: { name: 'Steinbach', km: 20 } };
     const { blocks: b } = buildCensusNarrative({ subject: steinbach, benchmarks: [], years: YEARS, period: '2021', services: svc });
     expect(paras(b)).toContain('Steinbach is a limited-service community');
-    expect(b.filter(x => x.type === 'bullet').map(x => x.text).join()).not.toMatch(/Services and amenities/);
-  });
-
-  it('still writes a sentence when only one census is available', () => {
-    const r = { name: 'Newtown', level: 'CSD', trends: { '2021': trend(900) }, demo: {} };
-    const { blocks: b } = buildCensusNarrative({ subject: r, benchmarks: [manitoba], years: YEARS, period: '2021' });
-    expect(paras(b)).toContain('earlier census counts are not published');
+    expect(bullets(b)).not.toMatch(/Services and amenities/);
   });
 });

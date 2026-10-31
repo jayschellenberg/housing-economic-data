@@ -1,64 +1,79 @@
 /*
- * Census narrative — turns a census_profile.json region (plus one or more
- * benchmark regions) into the ordered text blocks of an appraisal-report
- * "community profile" paragraph set: growth, income, dwelling values, housing
- * stock, and appraiser-note stubs. Pure functions, no DOM — census.js renders
- * the blocks on screen and hands the same blocks to exportNarrativeToWord.
+ * Census narrative — turns a census_profile.json region (plus benchmark
+ * regions) into a short, general appraisal-report "community profile": where
+ * the community is and how it is trending, its housing and incomes relative to
+ * the benchmarks, and its economy and access. Pure functions, no DOM — census.js
+ * renders the blocks on screen and hands the same blocks to the Word export.
  *
- * Phase 1 of docs/neighbourhood-narrative-plan.md: census-only, no new data.
- * Every sentence degrades gracefully — a missing value drops the sentence (or
- * the benchmark clause) rather than printing "**" into prose.
+ * Deliberately GENERAL (Jason, 2026-10-31): the prose characterises, the tables
+ * beneath carry the numbers. No population counts (his reports always include
+ * population tables), no exact percentages or dollar figures, distances rounded
+ * to 5 km. Every sentence degrades gracefully — a missing value drops the
+ * clause rather than printing "**" into prose.
  *
- * The thresholds below are the whole "voice" of the tool; keep them in these
- * tables rather than inline so the wording stays repeatable across reports.
+ * The bands below are the whole "voice" of the tool; keep them in these tables
+ * rather than inline so the wording stays repeatable across reports.
  */
 
 import { miss, fInt, fUsd } from './format.js';
 import { servicesPara } from './service-tier.js';
 
 // Subject ÷ benchmark ratio → phrase. Ordered high → low; first match wins.
+// Wide bands on purpose: the prose should say "below", not split hairs.
 export const RATIO_LADDER = [
-  { min: 1.25, phrase: 'well above' },
-  { min: 1.10, phrase: 'above' },
-  { min: 1.03, phrase: 'modestly above' },
-  { min: 0.97, phrase: 'roughly in line with' },
-  { min: 0.90, phrase: 'modestly below' },
-  { min: 0.75, phrase: 'below' },
+  { min: 1.15, phrase: 'well above' },
+  { min: 1.05, phrase: 'above' },
+  { min: 0.95, phrase: 'broadly in line with' },
+  { min: 0.85, phrase: 'below' },
   { min: -Infinity, phrase: 'well below' },
 ];
 
-// Latest inter-census population change (%) → trajectory word.
+// Long-run population change as an ANNUAL rate (% per year, so a 5-year and a
+// 15-year span read on the same scale) → trajectory phrase.
 export const GROWTH_CLASSES = [
-  { min: 10,        word: 'growing rapidly' },
-  { min: 3,         word: 'growing' },
-  { min: 1,         word: 'growing modestly' },
-  { min: -1,        word: 'stable' },
-  { min: -Infinity, word: 'contracting' },
+  { min: 2,         phrase: 'grown strongly' },
+  { min: 0.9,       phrase: 'grown steadily' },
+  { min: 0.4,       phrase: 'grown modestly' },
+  { min: -0.4,      phrase: 'remained essentially stable' },
+  { min: -Infinity, phrase: 'declined' },
 ];
-// Subject minus benchmark (percentage points) → relative clause.
-export const RELATIVE_BAND = 2;
+// Subject minus benchmark annual rate (percentage points) → faster / in line / slower.
+export const RELATIVE_BAND = 0.5;
 
-// Structural-type keys → prose labels (plural, for "X% were apartments").
-const TYPE_LABELS = {
-  single_detached: 'single-detached houses',
-  apt_lt5:         'apartments in buildings under five storeys',
-  apt_ge5:         'apartments in buildings of five or more storeys',
-  semi_detached:   'semi-detached houses',
-  row_house:       'row houses',
-  apt_duplex:      'duplex units',
-  movable:         'movable dwellings',
-  other_attached:  'other attached dwellings',
-};
+// Location quotient = subject share ÷ provincial share. A sector is named as a
+// standout when it is both concentrated (LQ ≥ LQ_MIN) and material (share ≥
+// LQ_SHARE_MIN %), so a 1%-of-labour-force sector never headlines.
+export const LQ_MIN = 1.5;
+export const LQ_SHARE_MIN = 4;
+
+// Structural-type keys (trend counts) used for the dwelling mix.
+const TYPE_KEYS = ['single_detached', 'apt_lt5', 'apt_ge5', 'semi_detached', 'row_house',
+                   'apt_duplex', 'movable', 'other_attached'];
 const APT_KEYS = ['apt_lt5', 'apt_ge5', 'apt_duplex'];
 const BUILT_POST_2000 = ['built_2001_2005', 'built_2006_2010', 'built_2011_2015', 'built_2016_2021'];
+
+// Short sector names for prose, by NAICS code.
+const SECTOR_SHORT = {
+  '11': 'agriculture', '21': 'mining and oil and gas', '22': 'utilities', '23': 'construction',
+  '31-33': 'manufacturing', '41': 'wholesale trade', '44-45': 'retail', '48-49': 'transportation',
+  '51': 'information and culture', '52': 'finance and insurance', '53': 'real estate',
+  '54': 'professional services', '55': 'management of companies', '56': 'administrative services',
+  '61': 'education', '62': 'health care', '71': 'arts and recreation', '72': 'accommodation and food services',
+  '81': 'other services', '91': 'public administration',
+};
 
 const num = (v) => (miss(v) ? null : Number(v));
 // Census zeros for population/households mean "not published" (e.g. Steinbach
 // CA 2011), never a real empty area — treat them as missing too.
 const pos = (v) => { const n = num(v); return n != null && n > 0 ? n : null; };
 
-export const ratioPhrase = (ratio) => RATIO_LADDER.find(l => ratio >= l.min).phrase;
-export const growthWord  = (pct)   => GROWTH_CLASSES.find(g => pct >= g.min).word;
+export const ratioPhrase  = (ratio) => RATIO_LADDER.find(l => ratio >= l.min).phrase;
+export const growthPhrase = (rate)  => GROWTH_CLASSES.find(g => rate >= g.min).phrase;
+
+// Compound annual rate (% per year) between two counts `years` apart.
+const annual = (from, to, years) =>
+  (from > 0 && to > 0 && years > 0) ? (Math.pow(to / from, 1 / years) - 1) * 100 : null;
+const spanWords = (n) => ({ 5: 'five', 10: 'ten', 15: 'fifteen', 20: 'twenty' }[n] || String(n));
 
 const fPct1s = (v) => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1)}%`;   // signed, typographic minus
 const fPct0  = (v) => `${Math.round(v)}%`;
@@ -77,9 +92,10 @@ export const proseName = (name) => String(name ?? '')
 // Join ["a", "b", "c"] → "a, b and c".
 const joinAnd = (arr) => arr.length <= 1 ? arr.join('')
   : `${arr.slice(0, -1).join(', ')} and ${arr[arr.length - 1]}`;
+const capitalise = (t) => t.charAt(0).toUpperCase() + t.slice(1);
 
 // ---- stats -----------------------------------------------------------------
-// Everything the sentences and the table need, computed once per region.
+// Everything the sentences and the tables need, computed once per region.
 export function regionStats(region, { years, period }) {
   const t = region?.trends || {};
   const d = region?.demo?.[period] || null;
@@ -91,14 +107,14 @@ export function regionStats(region, { years, period }) {
   const chg = (a, b) => (a && b && a !== b) ? (pop(b) - pop(a)) / pop(a) * 100 : null;
 
   // Dwelling mix from the latest census at or before the selected period that
-  // carries type counts, so the stock paragraph matches the period's demographics.
+  // carries type counts, so the housing sentence matches the period's demographics.
   const typeY = [...years].reverse().find(y => Number(y) <= Number(period) &&
-    Object.keys(TYPE_LABELS).some(k => num(t[y]?.[k]) != null)) ?? null;
+    TYPE_KEYS.some(k => num(t[y]?.[k]) != null)) ?? null;
   let types = null;
   if (typeY) {
-    const total = Object.keys(TYPE_LABELS).reduce((s, k) => s + (num(t[typeY][k]) || 0), 0);
+    const total = TYPE_KEYS.reduce((s, k) => s + (num(t[typeY][k]) || 0), 0);
     if (total > 0) {
-      const shares = Object.keys(TYPE_LABELS).map(k => ({ key: k, share: (num(t[typeY][k]) || 0) / total * 100 }))
+      const shares = TYPE_KEYS.map(k => ({ key: k, share: (num(t[typeY][k]) || 0) / total * 100 }))
         .sort((a, b) => b.share - a.share);
       types = { year: typeY, shares, aptShare: APT_KEYS.reduce((s, k) => s + (num(t[typeY][k]) || 0), 0) / total * 100 };
     }
@@ -116,6 +132,11 @@ export function regionStats(region, { years, period }) {
     pop: pop(lastY), popYear: lastY,
     chg5: chg(prevY, lastY), chg5From: prevY,
     chg15: chg(firstY, lastY), chg15From: firstY,
+    // Annualised rates for the prose: long run (earliest → latest census) and
+    // the latest inter-census period.
+    rateLong: (firstY && lastY && firstY !== lastY) ? annual(pop(firstY), pop(lastY), lastY - firstY) : null,
+    rateLongYears: (firstY && lastY) ? lastY - firstY : null,
+    rateLatest: (prevY && lastY) ? annual(pop(prevY), pop(lastY), lastY - prevY) : null,
     hhIncome: num(d?.median_hh_income),
     dwellingVal: num(d?.median_dwelling_val),
     rent: num(d?.median_rent),
@@ -126,99 +147,8 @@ export function regionStats(region, { years, period }) {
   };
 }
 
-// ---- sentences ---------------------------------------------------------------
-// `benchmarks` = [{ stats, label }] in the order they should be mentioned
-// (province first by convention: "below the provincial figure and well under
-// Winnipeg's").
-function compareClause(value, benchmarks, key) {
-  const parts = [];
-  for (const b of benchmarks) {
-    const bv = b.stats[key];
-    if (value == null || bv == null || bv <= 0) continue;
-    parts.push(`${ratioPhrase(value / bv)} ${b.label} (${fUsd(bv)})`);
-  }
-  return joinAnd(parts);
-}
-
-function growthPara(s, benchmarks) {
-  if (s.chg5 == null) {
-    return s.pop != null
-      ? `${s.name} had a population of ${fInt(s.pop)} at the ${s.popYear} Census; earlier census counts are not published for this area, so a growth trend cannot be read.`
-      : null;
-  }
-  let text = `${s.name} had a population of ${fInt(s.pop)} at the ${s.popYear} Census, ` +
-    `a change of ${fPct1s(s.chg5)} from ${s.chg5From}`;
-  if (s.chg15 != null && s.chg15From !== s.chg5From) text += ` and ${fPct1s(s.chg15)} since ${s.chg15From}`;
-  text += `. On this basis the community is ${growthWord(s.chg5)}`;
-  // A growing subject is paced against each benchmark; a stable/contracting
-  // one is contrasted with it ("while the province grew +5.0%") since "more
-  // slowly than" makes no sense for a shrinking area.
-  const growing = s.chg5 >= 1;
-  const rel = benchmarks.map(b => {
-    const bc = b.stats.chg5;
-    if (bc == null) return null;
-    if (!growing) return `${b.label.replace(/'s$/, '')} ${bc >= 1 ? 'grew' : bc <= -1 ? 'contracted' : 'was stable at'} ${fPct1s(bc)}`;
-    const diff = s.chg5 - bc;
-    const how = diff > RELATIVE_BAND ? 'faster than' : diff < -RELATIVE_BAND ? 'more slowly than' : 'at a similar pace to';
-    return `${how} ${b.label} (${fPct1s(bc)})`;
-  }).filter(Boolean);
-  if (rel.length) text += growing ? `, ${joinAnd(rel)} over the same period` : `, while ${joinAnd(rel)} over the same period`;
-  return text + '.';
-}
-
-function incomePara(s, benchmarks, period) {
-  if (s.hhIncome == null) return null;
-  let text = `Median household income was ${fUsd(s.hhIncome)} in ${incomeYear(period)}`;
-  const cmp = compareClause(s.hhIncome, benchmarks, 'hhIncome');
-  if (cmp) text += `, ${cmp}`;
-  return text + '.';
-}
-
-function valuePara(s, benchmarks, period) {
-  if (s.dwellingVal == null) return null;
-  let text = `The median value of owner-occupied dwellings was ${fUsd(s.dwellingVal)} at the ${period} Census`;
-  const cmp = compareClause(s.dwellingVal, benchmarks, 'dwellingVal');
-  if (cmp) text += `, ${cmp}`;
-  text += '.';
-  if (s.rent != null) {
-    let r = ` Median monthly rent was ${fUsd(s.rent)}`;
-    const rc = compareClause(s.rent, benchmarks, 'rent');
-    if (rc) r += `, ${rc}`;
-    text += r + '.';
-  }
-  return text;
-}
-
-function stockPara(s) {
-  const parts = [];
-  if (s.types) {
-    const top = s.types.shares[0];
-    const lead = top.share >= 60 ? 'predominantly' : top.share >= 40 ? 'mainly' : 'mixed, led by';
-    let t = `The housing stock is ${lead} ${TYPE_LABELS[top.key]} (${fPct0(top.share)} of occupied dwellings in ${s.types.year})`;
-    if (top.key !== 'apt_lt5' && top.key !== 'apt_ge5' && s.types.aptShare >= 5)
-      t += `, with apartments and duplex units making up ${fPct0(s.types.aptShare)}`;
-    parts.push(t + '.');
-  }
-  if (s.post2000 != null || s.pre1961 != null) {
-    const bits = [];
-    if (s.post2000 != null) bits.push(`about ${fPct0(s.post2000)} of dwellings were built after 2000`);
-    if (s.pre1961 != null) bits.push(`${fPct0(s.pre1961)} before 1961`);
-    const era = s.post2000 >= 40 ? 'a comparatively new stock' : s.pre1961 >= 35 ? 'an older stock' : 'a stock of mixed age';
-    parts.push(`The area has ${era}: ${bits.join(' and ')}.`);
-  }
-  if (s.ownerShare != null) parts.push(`Owner-occupancy stands at ${fPct0(s.ownerShare)}.`);
-  return parts.length ? parts.join(' ') : null;
-}
-
-// ---- industry (census_industry.json, r/26) -----------------------------------
-// Location quotient = subject share ÷ benchmark share. A sector counts as
-// "over-represented" when it is both concentrated (LQ ≥ LQ_MIN) and material
-// (share ≥ LQ_SHARE_MIN %), so a 1%-of-labour-force sector never headlines.
-export const LQ_MIN = 1.5;
-export const LQ_SHARE_MIN = 4;
-
 // Labour-force shares by sector for one region at the selected census, or
-// null when the file lacks that region/year (the paragraph is then omitted —
+// null when the file lacks that region/year (the sentence is then omitted —
 // no substituting 2021 for a 2016 read).
 export function industryStats(industry, uid, period) {
   const r = industry?.regions?.find(x => x.uid === uid);
@@ -232,73 +162,154 @@ export function industryStats(industry, uid, period) {
   return { year: period, labourForce: lf, shares, byCode: new Map(shares.map(x => [x.code, x])) };
 }
 
-const sectorProse = (label) => label.charAt(0).toLowerCase() + label.slice(1);
+// ---- sentences ---------------------------------------------------------------
+// Benchmarks are named generally: the province is "the province" /
+// "provincial"; anything else by its prose name ("the Winnipeg CMA").
+const isMetro = (name) => / (CMA|CA)$/.test(name);
+const bmNoun = (b) => b.level === 'PR' ? 'the province' : (isMetro(b.name) ? `the ${b.name}` : b.name);
+const bmAdj  = (b) => b.level === 'PR' ? 'provincial' : b.name;
+// "the provincial and Winnipeg CMA levels" / "the provincial level"
+const levelsOf = (bs) => `the ${joinAnd(bs.map(bmAdj))} level${bs.length > 1 ? 's' : ''}`;
 
-function industryPara(s, ind, benchmarks) {
-  if (!ind) return null;
-  const top = ind.shares.slice().sort((a, b) => b.share - a.share).slice(0, 3);
-  let text = `In ${ind.year} the largest employment sectors for ${s.name}'s labour force of ${fInt(ind.labourForce)} were ` +
-    joinAnd(top.map(x => `${sectorProse(x.label)} (${fPct0(x.share)})`)) + '.';
-  // Over-representation is read against the provincial benchmark only — the
-  // province is the natural reference for an economic-base call.
-  const prov = benchmarks.find(b => b.level === 'PR' && b.industry);
-  if (prov) {
-    const over = ind.shares
-      .map(x => ({ ...x, lq: prov.industry.byCode.get(x.code)?.share > 0 ? x.share / prov.industry.byCode.get(x.code).share : null }))
-      .filter(x => x.lq != null && x.lq >= LQ_MIN && x.share >= LQ_SHARE_MIN)
-      .sort((a, b) => b.lq - a.lq).slice(0, 3);
-    if (over.length) {
-      text += ` Relative to the province, ${joinAnd(over.map(x => `${sectorProse(x.label)} (${x.lq.toFixed(1)}× the provincial share)`))} ` +
-        `${over.length > 1 ? 'are' : 'is'} notably over-represented, which points to the community's economic base.`;
-    } else {
-      text += ' No sector is markedly over-represented relative to the province; the employment mix is broadly diversified.';
-    }
-  }
-  return text;
+// One comparison clause for a metric across all benchmarks: a single phrase
+// when every benchmark reads the same ("below the provincial and Winnipeg CMA
+// levels"), otherwise one phrase per benchmark.
+function compareAll(value, benchmarks, key) {
+  if (value == null) return null;
+  const parts = benchmarks.filter(b => b.stats[key] > 0)
+    .map(b => ({ b, phrase: ratioPhrase(value / b.stats[key]) }));
+  if (!parts.length) return null;
+  if (parts.every(p => p.phrase === parts[0].phrase)) return `${parts[0].phrase} ${levelsOf(parts.map(p => p.b))}`;
+  const each = parts.map(p => `${p.phrase} ${levelsOf([p.b])}`);
+  return each.length === 2 ? `${each[0]} but ${each[1]}` : joinAnd(each);
 }
 
-// ---- highways (mb_csd_highways.json, r/27) -----------------------------------
-// Municipalities (CSD level) only — the file is keyed by CSDUID. Lists every
-// route through the municipality (PTHs in full; provincial roads collapsed to a
-// count past THROUGH_MAX) and the nearest NEARBY_MAX others, then the
-// boundary distance and direction from Winnipeg.
-export const THROUGH_MAX = 6;
-export const NEARBY_MAX = 3;
+// Where the community sits and how its population has trended — no counts.
+function locationGrowthPara(s, benchmarks, hw) {
+  const parts = [];
+  if (hw?.wpgKm != null) {
+    parts.push(hw.wpgKm === 0
+      ? `${s.name} adjoins the City of Winnipeg to the ${hw.wpgDir}.`
+      : `${s.name} is located roughly ${Math.max(5, Math.round(hw.wpgKm / 5) * 5)} km ${hw.wpgDir} of Winnipeg.`);
+  }
+  if (s.rateLong != null) {
+    const span = s.rateLongYears === 5 ? 'Between the last two censuses' : `Over the past ${spanWords(s.rateLongYears)} years`;
+    let t = `${span}, the population has ${growthPhrase(s.rateLong)}`;
+    // Flag a latest census that runs against the long-run trend.
+    if (s.rateLongYears > 5 && s.rateLatest != null) {
+      if (s.rateLong >= -0.4 && s.rateLatest <= -0.4) t += ', with a slight decline in the most recent census period';
+      else if (s.rateLong < 0.4 && s.rateLatest >= 0.9) t += ', with renewed growth in the most recent census period';
+    }
+    const rel = benchmarks.map(b => {
+      // Like with like: the benchmark's rate over the subject's span.
+      const br = b.stats.rateLongYears === s.rateLongYears ? b.stats.rateLong
+        : (s.rateLongYears === 5 ? b.stats.rateLatest : null);
+      if (br == null) return null;
+      const diff = s.rateLong - br;
+      return { b, br, how: diff > RELATIVE_BAND ? 'faster than' : diff < -RELATIVE_BAND ? 'more slowly than' : 'in line with' };
+    }).filter(Boolean);
+    if (rel.length) {
+      if (s.rateLong < 0.4) {
+        // Stable / declining subject: contrast rather than pace it.
+        const growers = rel.filter(r => r.br >= 0.4).map(r => bmNoun(r.b));
+        if (growers.length) t += `, while ${joinAnd(growers)} continued to grow`;
+      } else if (rel.every(r => r.how === rel[0].how)) {
+        t += `, ${rel[0].how} ${joinAnd(rel.map(r => bmNoun(r.b)))}`;
+      } else {
+        t += `, ${joinAnd(rel.map(r => `${r.how} ${bmNoun(r.b)}`))}`;
+      }
+    }
+    parts.push(t + '.');
+  }
+  return parts.length ? parts.join(' ') : null;
+}
 
-const kmPhrase = (km) => km < 1 ? 'under 1 km' : `about ${Math.round(km)} km`;
+// Incomes, home values and rents vs the benchmarks, then the housing mix.
+function housingIncomePara(s, benchmarks) {
+  const parts = [];
+  const metrics = [
+    { key: 'hhIncome',    noun: 'household incomes', v: s.hhIncome },
+    { key: 'dwellingVal', noun: 'home values',       v: s.dwellingVal },
+    { key: 'rent',        noun: 'rents',             v: s.rent },
+  ].map(m => ({ ...m, clause: compareAll(m.v, benchmarks, m.key) })).filter(m => m.clause);
+  if (metrics.length) {
+    // Group metrics that read the same: "Household incomes and home values are
+    // below …, while rents are broadly in line with …".
+    const groups = [];
+    for (const m of metrics) {
+      const g = groups.find(x => x.clause === m.clause);
+      if (g) g.nouns.push(m.noun); else groups.push({ clause: m.clause, nouns: [m.noun] });
+    }
+    const clauses = groups.map(g => `${joinAnd(g.nouns)} are ${g.clause}`);
+    const sentence = clauses.length === 1 ? clauses[0]
+      : clauses.length === 2 ? `${clauses[0]}, while ${clauses[1]}`
+      : `${clauses.slice(0, -1).join(', ')}, and ${clauses[clauses.length - 1]}`;
+    parts.push(capitalise(sentence) + '.');
+  }
 
-function highwaysPara(s, hw) {
+  // "Housing is mostly owner-occupied and consists mainly of single-family
+  // homes, with a modest apartment component."
+  const tenure = s.ownerShare == null ? null
+    : s.ownerShare >= 65 ? 'mostly owner-occupied' : s.ownerShare >= 50 ? 'largely owner-occupied'
+    : 'split between owners and renters';
+  let mix = null;
+  if (s.types) {
+    const sd = s.types.shares.find(x => x.key === 'single_detached')?.share ?? 0;
+    mix = sd >= 60 ? 'mainly of single-family homes'
+      : sd >= 40 ? 'of a mix of single-family homes and multi-unit dwellings'
+      : 'mainly of multi-unit dwellings';
+    if (sd >= 60 && s.types.aptShare >= 25) mix += ', with a significant apartment component';
+    else if (sd >= 60 && s.types.aptShare >= 10) mix += ', with a modest apartment component';
+  }
+  if (tenure && mix) parts.push(`Housing is ${tenure} and consists ${mix}.`);
+  else if (tenure) parts.push(`Housing is ${tenure}.`);
+  else if (mix) parts.push(`Housing consists ${mix}.`);
+
+  if (s.post2000 != null && s.post2000 >= 40) parts.push('Much of the stock has been built since 2000.');
+  else if (s.pre1961 != null && s.pre1961 >= 35) parts.push('Much of the stock predates 1961.');
+  else if (s.post2000 != null && s.post2000 < 15) parts.push('There has been relatively little recent construction.');
+  else if (s.post2000 != null || s.pre1961 != null) parts.push('The stock is a mix of older and newer construction.');
+  return parts.length ? parts.join(' ') : null;
+}
+
+const sectorName = (x) => SECTOR_SHORT[x.code] || x.label.toLowerCase();
+
+// Leading sectors plus any standout vs the province — named, never quantified.
+function economySentence(ind, benchmarks) {
+  if (!ind) return null;
+  const top = ind.shares.slice().sort((a, b) => b.share - a.share).slice(0, 3);
+  let t = `Employment is led by ${joinAnd(top.map(sectorName))}`;
+  const prov = benchmarks.find(b => b.level === 'PR' && b.industry);
+  if (prov) {
+    // Most concentrated first, at most two.
+    const over = ind.shares
+      .map(x => ({ ...x, lq: prov.industry.byCode.get(x.code)?.share > 0 ? x.share / prov.industry.byCode.get(x.code).share : 0 }))
+      .filter(x => x.lq >= LQ_MIN && x.share >= LQ_SHARE_MIN)
+      .sort((a, b) => b.lq - a.lq).slice(0, 2).map(sectorName);
+    t += over.length
+      ? `; ${joinAnd(over)} ${over.length > 1 ? 'are' : 'is'} notably more prominent than across the province`
+      : ', a broadly diversified mix';
+  }
+  return t + '.';
+}
+
+// Main highways only — PTHs through the municipality, else what passes nearby.
+function accessSentence(s, hw) {
   if (!hw) return null;
   const through = hw.through || [], nearby = hw.nearby || [];
-  const parts = [];
-  if (through.length) {
-    const pth = through.filter(r => r.startsWith('PTH'));
-    const listed = through.length <= THROUGH_MAX ? through : pth.slice(0, THROUGH_MAX);
-    const rest = through.length - listed.length;
-    let t = `${s.name} is served by ${joinAnd(listed)}`;
-    if (rest > 0) t += ` and ${rest} provincial road${rest > 1 ? 's' : ''}`;
-    t += `, which pass${listed.length + rest === 1 ? 'es' : ''} through the municipality`;
-    parts.push(t + '.');
-    if (nearby.length) parts.push(`${joinAnd(nearby.slice(0, NEARBY_MAX).map(n => `${n.route} (${kmPhrase(n.km)} ${n.dir})`))} ${nearby.length > 1 ? 'are' : 'is'} also within easy reach.`);
-  } else if (nearby.length) {
-    parts.push(`No provincial highway passes through ${s.name}; the nearest ${nearby.length > 1 ? 'are' : 'is'} ` +
-      joinAnd(nearby.slice(0, NEARBY_MAX).map(n => `${n.route} (${kmPhrase(n.km)} ${n.dir})`)) + '.');
-  } else {
-    parts.push(`No provincial trunk highway or provincial road reaches ${s.name}; access is by air, water or winter road.`);
-  }
-  if (hw.wpgKm != null) {
-    parts.push(hw.wpgKm === 0
-      ? `The municipality adjoins the City of Winnipeg, lying to its ${hw.wpgDir}.`
-      : `The community lies about ${hw.wpgKm} km ${hw.wpgDir} of the Winnipeg city limits.`);
-  }
-  return parts.join(' ');
+  const pth = through.filter(r => r.startsWith('PTH'));
+  if (pth.length) return `${s.name} is served by ${joinAnd(pth.slice(0, 4))}${pth.length > 4 ? ', among other provincial highways' : ''}.`;
+  if (through.length) return `${s.name} is served by ${joinAnd(through.slice(0, 2))}.`;
+  const near = nearby.find(n => n.route.startsWith('PTH')) || nearby[0];
+  if (near) return `${near.route} passes nearby.`;
+  return 'There is no all-weather provincial road access; the community is reached by air, water or winter road.';
 }
 
 // ---- public API ----------------------------------------------------------------
 // subject/benchmarks are census_profile regions; `years` the censusYears array;
 // `period` the selected demographics census; `industry` / `highways` the
-// (optional) parsed census_industry.json / mb_csd_highways.json.
-// Returns { blocks, table, industryTable, stats }.
+// (optional) parsed census_industry.json / mb_csd_highways.json; `services`
+// the appraiser's checklist. Returns { blocks, table, industryTable, stats }.
 export function buildCensusNarrative({ subject, benchmarks = [], years, period, industry = null, highways = null, services = null }) {
   const s = regionStats(subject, { years, period });
   const sInd = industryStats(industry, subject?.uid, period);
@@ -307,9 +318,7 @@ export function buildCensusNarrative({ subject, benchmarks = [], years, period, 
   // the tables keep.
   const bm = benchmarks.filter(Boolean).map(r => {
     const stats = regionStats(r, { years, period });
-    // "Manitoba" reads as "the provincial figure"; everything else by name + possessive.
-    const label = r.level === 'PR' ? 'the provincial figure' : `${stats.name}'s`;
-    return { stats, label, name: stats.name, level: r.level, industry: industryStats(industry, r.uid, period) };
+    return { stats, name: stats.name, level: r.level, industry: industryStats(industry, r.uid, period) };
   });
 
   const blocks = [
@@ -318,12 +327,9 @@ export function buildCensusNarrative({ subject, benchmarks = [], years, period, 
         (bm.length ? ` · benchmarks: ${bm.map(b => b.name).join(', ')}` : '') },
   ];
   const push = (heading, text) => { if (text) blocks.push({ type: 'heading', text: heading }, { type: 'para', text }); };
-  push('Population and growth', growthPara(s, bm));
-  push('Income', incomePara(s, bm, period));
-  push('Dwelling values', valuePara(s, bm, period));
-  push('Housing stock', stockPara(s));
-  push('Employment by industry', industryPara(s, sInd, bm));
-  push('Access and roadways', highwaysPara(s, sHw));
+  push('Location and growth', locationGrowthPara(s, bm, sHw));
+  push('Housing and income', housingIncomePara(s, bm));
+  push('Economy and access', [economySentence(sInd, bm), accessSentence(s, sHw)].filter(Boolean).join(' ') || null);
   // Services come from the appraiser's checklist (service-tier.js rubric), not data.
   const svcText = services?.checked?.length ? servicesPara(s.name, services.checked, services.nearest) : null;
   push('Services and amenities', svcText);
@@ -337,10 +343,11 @@ export function buildCensusNarrative({ subject, benchmarks = [], years, period, 
       ? 'Major employers: [name the principal employers behind the sector mix above]'
       : 'Economic base and major employers: [agriculture / manufacturing / tourism / services — name the principal employers]',
     svcText ? null : 'Services and amenities: [full-service / limited-service — tick the services checklist below to fill this in]',
-    sHw ? null : 'Access and roadways: [provincial highways serving the community; distance and direction to Winnipeg]',
+    sHw ? null : 'Location and access: [where the community sits relative to Winnipeg; highways serving it]',
   ].filter(Boolean)) blocks.push({ type: 'bullet', text: stub });
 
-  // Supporting figures — the table the prose interprets.
+  // Supporting figures — the numbers behind the prose. No population count:
+  // Jason's reports carry their own population tables.
   const cols = [s, ...bm.map(b => b.stats)];
   const row = (label, f) => ({ area: label, values: cols.map(c => f(c)) });
   const pct1 = (v) => v == null ? '**' : fPct1s(v);
@@ -349,9 +356,8 @@ export function buildCensusNarrative({ subject, benchmarks = [], years, period, 
     title: `Supporting figures — ${cols.map(c => c.name).join(' vs ')}`,
     columns: cols.map(c => c.name),
     rows: [
-      row(`Population (${s.popYear || 'latest'})`, c => fInt(c.pop)),
-      row('Change, latest inter-census period', c => pct1(c.chg5)),
-      row('Change since earliest census shown', c => pct1(c.chg15)),
+      row(`Population change, ${s.chg5From || 'prior'}–${s.popYear || 'latest'}`, c => pct1(c.chg5)),
+      row(`Population change, ${s.chg15From || 'earliest'}–${s.popYear || 'latest'}`, c => pct1(c.chg15)),
       row(`Median household income (${incomeYear(period)})`, c => fUsd(c.hhIncome)),
       row(`Median dwelling value (${period})`, c => fUsd(c.dwellingVal)),
       row(`Median monthly rent (${period})`, c => fUsd(c.rent)),

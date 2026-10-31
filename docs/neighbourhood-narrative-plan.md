@@ -125,3 +125,12 @@ On-screen render + Download Word via `exportNarrativeToWord`, with the numbers t
 1. Tab placement: new "Narrative" tab vs a Narrative section on the Census Profile tab (recommended: section on Census Profile, since pickers and comparators already exist there).
 2. Growth / ratio thresholds and the exact phrase ladder — defaults will be proposed; a sample paragraph from a past report would let the wording match Jay's report voice.
 3. Whether the rural read includes median rent and tenure, or stays at growth / income / value.
+
+## Revision 2026-10-31 — general voice
+
+Jason: the first drafts were too precise. The prose now characterises and the tables carry the numbers:
+
+- No population counts in the prose (his reports always carry population tables); the supporting table keeps only the population-change rows.
+- No exact percentages or dollar figures in the prose. Incomes, home values and rents use broad bands (well above / above / broadly in line with / below / well below), grouped when they read the same.
+- Growth reads from the annual rate over the census span (grown strongly / steadily / modestly / remained essentially stable / declined), with a note when the latest census runs the other way.
+- Three short paragraphs: Location and growth (Winnipeg distance rounded to 5 km), Housing and income, Economy and access (leading sectors plus any standout in words; main PTHs only).
