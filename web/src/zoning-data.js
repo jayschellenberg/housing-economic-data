@@ -40,17 +40,25 @@ export function usesSentence(zone, selected, selectedCond = []) {
   const condPool = nameableConditional(zone);
   const condChosen = condPool.filter(u => selectedCond.includes(u.name));
   const hasCond = (zone?.uses || []).some(u => u.status === 'C');
+  const hasPerm = (zone?.uses || []).some(u => u.status === 'P');
+  const allCond = !hasPerm && hasCond;
   let s;
-  if (chosen.length) {
+  if (chosen.length === 1 && pool.length === 1) {
+    s = `The permitted use within the current zoning designation is ${proseList(chosen)[0]}.`;
+  } else if (chosen.length) {
     const more = chosen.length < pool.length;
     s = `Some permitted uses within the current zoning designation include ${oxford(proseList(chosen))}${more ? ', among others' : ''}.`;
+  } else if (allCond) {
+    s = 'All uses listed for this zone are conditional uses.';
+  } else if (!hasPerm) {
+    s = 'The by-law lists no uses for this zone.';
   } else {
     s = 'The zone lists no permitted uses other than accessory and utility uses.';
   }
   if (condChosen.length) {
     const more = condChosen.length < condPool.length;
-    s += ` Conditional uses include ${oxford(proseList(condChosen))}${more ? ', among others' : ''}.`;
-  } else if (hasCond) {
+    s += ` ${allCond ? 'They include' : 'Conditional uses include'} ${oxford(proseList(condChosen))}${more ? ', among others' : ''}.`;
+  } else if (hasCond && !allCond) {
     s += ' There are several conditional uses as well.';
   }
   return s;
