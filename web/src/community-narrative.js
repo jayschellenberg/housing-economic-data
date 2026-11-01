@@ -10,6 +10,7 @@
 // dollars or percentages in the prose.
 
 import { growthPhrase, joinAnd } from './census-narrative.js';
+import { classifyServices, servicesPara } from './service-tier.js';
 
 // "Hanover (RM)" → "the RM of Hanover". Unorganized divisions and reserves read
 // as their own name.
@@ -89,11 +90,36 @@ const ITEMS = {
 };
 const listItems = (f, group) => ITEMS[group].filter(([k]) => count(f, k) > 0).map(([k, one, many]) => (count(f, k) > 1 ? many : one));
 
+// Service tier (service-tier.js, the Census Profile checklist's rule) ticked
+// from the data instead of by hand: grocery, bank and clinic from
+// OpenStreetMap, a school to Grade 12 from Manitoba Education's directory
+// (r/33 `school_hs`). A hospital counts as the medical clinic too — rural
+// health centres hold the physicians' clinic. OSM gaps can understate a tier,
+// so the tab shows what was found under "Service level".
+export function communityServices(c) {
+  const f = c.facilities || {};
+  const keys = [];
+  if (count(f, 'grocery')) keys.push('grocery');
+  if (count(f, 'bank')) keys.push('bank');
+  if (count(f, 'clinic') || count(f, 'hospital')) keys.push('clinic');
+  if (count(f, 'school_hs')) keys.push('school_hs');
+  if (count(f, 'hospital')) keys.push('hospital');
+  return { keys, ...classifyServices(keys, { pop: c.census?.pop21 ?? null }) };
+}
+
 export const SCHOOL_NAMED = 2;
 function facilitiesPara(c) {
   const f = c.facilities || {};
   const parts = [];
-  const schools = [].concat(Array.isArray(f.school) ? f.school : []);
+  // Lead with the tier; it also says where residents go for what is missing.
+  const svc = communityServices(c);
+  const s = c.service;
+  const nearest = s?.name && s.km <= SERVICE_MAX_KM ? { name: s.name, km: Math.round(s.km) } : null;
+  parts.push(servicesPara(c.name, svc.keys.length ? svc.keys : ['none'], nearest, { pop: c.census?.pop21 ?? null }));
+  // High schools from the provincial directory first (OSM often lacks them).
+  const key = (n) => n.toLowerCase().replace(/school|[^a-z]/g, '');
+  const schools = [...(Array.isArray(f.school_hs) ? f.school_hs : []), ...(Array.isArray(f.school) ? f.school : [])]
+    .filter((n, i, all) => all.findIndex(m => key(m) === key(n)) === i);
   const nSchool = count(f, 'school');
   if (schools.length) {
     const named = schools.slice(0, SCHOOL_NAMED);
@@ -111,14 +137,7 @@ function facilitiesPara(c) {
   if (community.length) parts.push(`Community facilities include ${joinAnd(community)}.`);
   const commercial = listItems(f, 'commercial');
   if (commercial.length) parts.push(`Commercial services include ${joinAnd(commercial)}.`);
-  // Where residents go for what the community lacks.
-  const s = c.service;
-  const near = s?.name && s.km <= SERVICE_MAX_KM ? `${s.name}, ${kmWords(s.km)} to the ${s.dir}` : null;
-  if (!count(f, 'grocery') && near) {
-    parts.push(commercial.length ? `For groceries and most other shopping, residents travel to ${near}.`
-      : `There are few local commercial services; residents rely on ${near}, for shopping and most services.`);
-  }
-  return parts.length ? parts.join(' ') : null;
+  return parts.join(' ');
 }
 
 /**
@@ -139,8 +158,30 @@ export function buildCommunityNarrative(c, muni) {
   push('Community facilities', facilitiesPara(c));
   blocks.push({ type: 'heading', text: 'Appraiser notes (to complete)' });
   blocks.push({ type: 'bullet', text: 'Character: [general feel, typical housing and condition of the community]' });
-  if (!facilitiesPara(c)) blocks.push({ type: 'bullet', text: 'Facilities: [none found in OpenStreetMap — describe local services, if any]' });
-  return { blocks, flags: communityFlags(c) };
+  if (!Object.keys(c.facilities || {}).length) blocks.push({ type: 'bullet', text: 'Facilities: [none found in OpenStreetMap — describe local services, if any]' });
+  const svc = communityServices(c);
+  return { blocks, flags: communityFlags(c), tier: svc.tier.key, tables: [serviceTable(c, svc)] };
+}
+
+// What the service level was read from — the tab's "Supporting figures".
+export function serviceTable(c, svc = communityServices(c)) {
+  const f = c.facilities || {};
+  const has = (k) => svc.checked.has(k);
+  const yes = (k, names) => (has(k) ? (names?.length ? names.join('; ') : 'Yes') : 'Not found');
+  const named = (k) => (Array.isArray(f[k]) ? f[k] : []);
+  const row = (area, value, source) => ({ area, values: [value, source] });
+  return {
+    title: `Service level: ${svc.tier.label}`,
+    columns: ['Found', 'Source'],
+    rows: [
+      row('Grocery store', yes('grocery'), 'OpenStreetMap'),
+      row('Bank or credit union', yes('bank'), 'OpenStreetMap'),
+      row('Medical clinic (or hospital)', yes('clinic'), 'OpenStreetMap'),
+      row('School to Grade 12', yes('school_hs', named('school_hs')), 'Manitoba Education school directory'),
+      row('Hospital', yes('hospital', named('hospital')), 'OpenStreetMap'),
+      row('Population, 2021', c.census?.pop21 != null ? c.census.pop21.toLocaleString('en-CA') : '**', 'Statistics Canada'),
+    ],
+  };
 }
 
 // Things the appraiser must check before relying on the write-up.

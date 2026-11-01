@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildCommunityNarrative, muniPhrase, kmWords, communitiesSentence, communityFlags } from '../src/community-narrative.js';
+import { buildCommunityNarrative, muniPhrase, kmWords, communitiesSentence, communityFlags, communityServices } from '../src/community-narrative.js';
 
 const paras = (blocks) => blocks.filter(b => b.type === 'para').map(b => b.text).join('\n');
 const base = {
@@ -47,9 +47,25 @@ describe('community narrative', () => {
     expect(t).toContain('Kleefeld School serves the community.');
     expect(t).toContain('Community facilities include churches, a community hall and an arena or rink.');
     expect(t).toContain('Commercial services include a convenience or general store and a gas station.');
-    expect(t).toContain('For groceries and most other shopping, residents travel to Steinbach, about 15 km to the east.');
-    const bare = paras(buildCommunityNarrative(base, 'Hanover (RM)').blocks);
-    expect(bare).toContain('There are few local commercial services; residents rely on Steinbach, about 15 km to the east, for shopping and most services.');
+    expect(t).toMatch(/^Kleefeld is a minimal-service community\. Residents look to Steinbach \(about \d+ km away\) for day-to-day services\./m);
+  });
+
+  it('rates the service level with the Census Profile rule', () => {
+    const tier = (facilities, census = null) => communityServices({ ...base, facilities, census }).tier.key;
+    expect(tier({})).toBe('minimal');
+    expect(tier({ grocery: 1, school_hs: ['Green Valley School'] })).toBe('limited');
+    // A hospital stands in for the medical clinic.
+    expect(tier({ grocery: 2, bank: 1, hospital: ['Gimli Community Health Centre'], school_hs: ['Gimli High School'] })).toBe('full');
+    expect(tier({ grocery: 8, bank: 6, clinic: 6, hospital: ['Bethesda Regional Health Centre'], school_hs: ['Steinbach Regional Secondary School'] },
+      { pop21: 17589 })).toBe('regional');
+    const nar = buildCommunityNarrative({ ...base, facilities: { grocery: 1, school_hs: ['Green Valley School'] } }, 'Hanover (RM)');
+    expect(nar.tier).toBe('limited');
+    expect(paras(nar.blocks)).toContain('Kleefeld is a limited-service community, with a grocery store and a school to Grade 12.');
+    expect(paras(nar.blocks)).toMatch(/Residents look to Steinbach \(about \d+ km away\) for banking, medical and hospital services\./);
+    const tbl = nar.tables[0];
+    expect(tbl.title).toBe('Service level: limited-service community');
+    expect(tbl.rows.find(r => r.area === 'School to Grade 12').values[0]).toBe('Green Valley School');
+    expect(tbl.rows.find(r => r.area === 'Bank or credit union').values[0]).toBe('Not found');
   });
 
   it('flags names that need checking and lists the overview communities', () => {
