@@ -201,7 +201,7 @@ function setupTabs(initial, onActivate) {
   // link as active and one menu bar (#nav-housing / #nav-local) at a time;
   // everything not listed here is Housing & Economic Data. Within a bar the
   // tabs sit in category menus (index.html, nav-menus.js).
-  const TAB_GROUP = { johnson: 'local', yardi: 'local', rentalsca: 'local', rentcompare: 'local', aptcomps: 'local', fcc: 'local', brokerage: 'local', caprates: 'local', capvsint: 'local', discount: 'local', altus: 'local', zoning: 'local', rental: 'local', commercial: 'local' };
+  const TAB_GROUP = { johnson: 'local', yardi: 'local', rentalsca: 'local', rentcompare: 'local', aptcomps: 'local', fcc: 'local', parade: 'local', brokerage: 'local', caprates: 'local', capvsint: 'local', discount: 'local', altus: 'local', zoning: 'local', rental: 'local', commercial: 'local' };
   const groupOf = (name) => TAB_GROUP[name] || 'housing';
 
   function showGroup(group) {

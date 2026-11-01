@@ -1,8 +1,10 @@
 /*
- * Parade of Homes tab — MHBA Parade of Homes magazine listings (2012-present),
- * distilled through the Parade-Of-Homes pipeline into a snapshot shipped
- * under web/public/parade/. Follows the altus-costs pattern: all data on
- * the site, no folder picker. Charts are the shared indicator cards
+ * Parade of Homes tab (Local Data) — MHBA Parade of Homes magazine listings
+ * (2012-present), distilled through the Parade-Of-Homes pipeline, whose
+ * publish_shared.py writes parade_of_homes.json to
+ * AppMarketData-External\ParadeOfHomes. Follows the FCC Farmland pattern: the
+ * viewer picks that folder (or the AppMarketData strip finds it) and the site
+ * ships none of the data (parade-store.js). Charts are the shared indicator cards
  * (buildIndicatorCard), so they read like every other tab's: subtitle with
  * range and source, legend beside the plot, hover tip, data table, and
  * legend entries that switch lines off and on.
@@ -18,8 +20,13 @@ import { downloadCardPng } from './png-export.js';
 import { getFirm } from './firm.js';
 import { escapeHtml } from './escape.js';
 import { getPref, setPref } from './prefs.js';
+import {
+  fsAccessSupported, storeAvailable, directoryPermission,
+  pickDirectory, getSavedDirectory,
+  importFromDirectory, importFromFileList, checkForUpdates, getData, getManifest, clearParade,
+} from './parade-store.js';
+import { onSourcesUpdated } from './market-data-channel.js';
 
-const BASE_URL = './parade';
 const PREF_KEY = 'parade.v1';
 
 const SCOPES = [
@@ -80,23 +87,136 @@ export async function initParade() {
     $realNote: document.getElementById('po-real-note'),
     $from:     document.getElementById('po-year-from'),
     $to:       document.getElementById('po-year-to'),
-    manifest:  null,
+    $status:   document.getElementById('po-folder-status'),
+    $folderError: document.getElementById('po-folder-error'),
+    $pick:     document.getElementById('po-pick-folder'),
+    $pickFallback: document.getElementById('po-pick-fallback'),
+    $rescan:   document.getElementById('po-rescan'),
+    $clear:    document.getElementById('po-clear'),
+    $folderToggle: document.getElementById('po-folder-toggle'),
+    $folderBody: document.getElementById('po-folder-body'),
+    $empty:    document.getElementById('po-empty'),
+    data:      null,       // parade_of_homes.json from the store
     datasets:  new Map(),  // "scope_basis" → { priceTrends, sizeTrends, ... }
     prefs:     loadPrefs(),
   };
-
-  try {
-    const r = await fetch(`${BASE_URL}/MANIFEST.json`);
-    if (!r.ok) throw new Error(`MANIFEST.json HTTP ${r.status}`);
-    ui.manifest = await r.json();
-  } catch (err) {
-    ui.$error.textContent = `Could not load the Parade of Homes snapshot (${err.message}).`;
-    ui.$error.hidden = false;
+  if (!storeAvailable()) {
+    showFolderError('This browser cannot store the Parade of Homes data locally (IndexedDB is unavailable).');
     return;
   }
-
+  wireFolder();
   wireSidebar();
+  await loadFromStore();
+  // Refill when the Local Data strip loads this tab from AppMarketData.
+  onSourcesUpdated(['parade'], async () => { await loadFromStore(); await maybeAutoRefresh(); });
+  await maybeAutoRefresh();
+}
+
+// --- Folder ------------------------------------------------------------------
+
+function showFolderError(msg) {
+  ui.$folderError.textContent = msg || '';
+  ui.$folderError.hidden = !msg;
+}
+function setStatus(text) { ui.$status.textContent = text; }
+
+function wireFolder() {
+  const { $pick, $pickFallback, $rescan, $clear } = ui;
+  if (fsAccessSupported()) {
+    $pick.hidden = false; $pickFallback.hidden = true;
+    $pick.addEventListener('click', async () => {
+      showFolderError('');
+      try { await runImport(await pickDirectory(), { force: true }); }
+      catch (err) { if (err?.name !== 'AbortError') showFolderError(err?.message || String(err)); }
+    });
+    $rescan.addEventListener('click', async () => {
+      showFolderError('');
+      const handle = await getSavedDirectory();
+      if (!handle) { showFolderError('No folder is saved yet — choose the ParadeOfHomes folder first.'); return; }
+      if ((await directoryPermission(handle, { request: true })) !== 'granted') { showFolderError('Access to the saved folder was not granted.'); return; }
+      try { await runImport(handle, { force: true }); } catch (err) { showFolderError(err?.message || String(err)); }
+    });
+  } else {
+    $pick.hidden = true; $pickFallback.hidden = false; $rescan.hidden = true;
+    $pickFallback.addEventListener('change', async () => {
+      showFolderError('');
+      try {
+        setStatus('Reading…');
+        const summary = await importFromFileList($pickFallback.files);
+        await loadFromStore();
+        setStatus(summaryText(summary));
+      } catch (err) { showFolderError(err?.message || String(err)); }
+      finally { $pickFallback.value = ''; }
+    });
+  }
+  $clear.addEventListener('click', async () => {
+    await clearParade();
+    await loadFromStore();
+  });
+  ui.$folderToggle.addEventListener('click', () => {
+    ui.prefs = savePrefs({ folderCollapsed: !ui.prefs.folderCollapsed });
+    renderFolderBody();
+  });
+}
+
+async function runImport(handle, { force = false } = {}) {
+  setStatus('Reading folder…');
+  const summary = await importFromDirectory(handle, { force });
+  await loadFromStore();
+  setStatus(summaryText(summary));
+}
+
+function summaryText(s) {
+  if (!s) return noDataText();
+  const when = s.imported_at ? new Date(s.imported_at).toLocaleString('en-CA') : '';
+  return `Parade listings through ${s.latestIssue || 'the latest issue'}, read ${when}; ` +
+    (s.no_handle ? 'held in this browser only. Re-pick the folder to load an update.'
+                 : 'held in this browser only. The folder is re-checked each visit.');
+}
+function noDataText() {
+  return 'No Parade of Homes data is published with this site. Choose the firm\'s ParadeOfHomes folder ' +
+    '(published by the Parade-Of-Homes pipeline). The data stays in this browser — it is not uploaded.';
+}
+
+async function loadFromStore() {
+  ui.data = (await getData()) || null;
+  ui.datasets = new Map();
+  ui.$clear.hidden = !ui.data;
+  setStatus(ui.data ? summaryText(await getManifest()) : noDataText());
+  renderFolderBody();
   render();
+}
+
+async function maybeAutoRefresh() {
+  if (!fsAccessSupported()) return;
+  const handle = await getSavedDirectory();
+  if (!handle) return;
+  const perm = await directoryPermission(handle);
+  if (perm === 'granted') {
+    const upd = await checkForUpdates(handle);
+    if (upd?.changed) { try { await runImport(handle); } catch (err) { showFolderError(err?.message || String(err)); } }
+    return;
+  }
+  if (perm === 'prompt') {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'text-xs underline text-accent-600 ml-1';
+    btn.textContent = ui.data ? 'Check the saved folder for an update' : 'Re-open the saved folder';
+    btn.addEventListener('click', async () => {
+      btn.remove();
+      if ((await directoryPermission(handle, { request: true })) !== 'granted') { showFolderError('Access to the saved folder was not granted.'); return; }
+      try { await runImport(handle); } catch (err) { showFolderError(err?.message || String(err)); }
+    });
+    ui.$status.appendChild(btn);
+  }
+}
+
+function renderFolderBody() {
+  const collapsed = !!ui.data && !!ui.prefs.folderCollapsed;
+  ui.$folderBody.hidden = collapsed;
+  ui.$folderToggle.hidden = !ui.data;
+  ui.$folderToggle.textContent = collapsed ? 'Show' : 'Hide';
+  ui.$folderToggle.setAttribute('aria-expanded', String(!collapsed));
 }
 
 function scopeKey() {
@@ -108,16 +228,17 @@ function basisKey() {
   return b;
 }
 
-// Load the four CSVs for one scope_basis combination the first time it is
-// needed, then cache. Returns parsed arrays by role.
-async function loadDataset(scope, basis) {
+// Parse the CSVs of one scope_basis view the first time it is needed, then
+// cache. Returns parsed arrays by role.
+function loadDataset(scope, basis) {
   const key = `${scope}_${basis}`;
   if (ui.datasets.has(key)) return ui.datasets.get(key);
-  const parsers = await Promise.all(CSV_FILES.map(async (name) => {
-    const r = await fetch(`${BASE_URL}/${key}/${name}`);
-    if (!r.ok) throw new Error(`${name}: HTTP ${r.status}`);
-    return parseCsv(await r.text());
-  }));
+  const files = ui.data.views?.[key];
+  if (!files) throw new Error(`the file has no ${key} view`);
+  const parsers = CSV_FILES.map((name) => {
+    if (typeof files[name] !== 'string') throw new Error(`${name} is missing; re-run the Parade-Of-Homes publish`);
+    return parseCsv(files[name]);
+  });
   const [priceTrends, sizeTrends, psfByStyle, sizeByStyle,
          upgradeByYear, garageMix, indexCmp, styleMix, lotTrends,
          keywordTrends, builderActivity, hoodCmp, builderPos, featureTrends] = parsers;
@@ -185,32 +306,36 @@ function fillYearPickers(years) {
   return { from, to };
 }
 
-async function render() {
+function render() {
   const scope = scopeKey();
   const basis = basisKey();
   const scopeLabel = SCOPES.find(s => s.key === scope).label;
   const basisLabel = BASES.find(b => b.key === basis).label;
   ui.$realNote.hidden = basis !== 'real';
-  // A newer render may start while this one awaits its CSVs; only the latest draws.
-  const token = ui.renderToken = (ui.renderToken || 0) + 1;
+  ui.$empty.hidden = !!ui.data;
+  for (const $sel of [ui.$from, ui.$to]) $sel.disabled = !ui.data;
+  if (!ui.data) {
+    ui.$grid.replaceChildren();
+    ui.$headline.textContent = '';
+    ui.$error.hidden = true;
+    return;
+  }
 
   let ds;
   try {
-    ds = await loadDataset(scope, basis);
+    ds = loadDataset(scope, basis);
   } catch (err) {
-    if (token !== ui.renderToken) return;
     ui.$grid.replaceChildren();
-    ui.$error.textContent = `Could not load the ${scope}/${basis} snapshot (${err.message}).`;
+    ui.$error.textContent = `Could not read the ${scope}/${basis} view (${err.message}).`;
     ui.$error.hidden = false;
     return;
   }
-  if (token !== ui.renderToken) return;
   ui.$error.hidden = true;
 
   const years = [...new Set(ds.priceTrends.map(r => r.year))].sort((a, b) => a - b);
   const { from, to } = fillYearPickers(years);
 
-  const latest = ui.manifest.latestIssue || '';
+  const latest = ui.data.latestIssue || '';
   ui.$headline.innerHTML = `New-home listings pulled from MHBA Parade of Homes magazines, Spring and Fall issues ` +
     `from ${years[0]} through ${latest || years[years.length - 1]}, ${escapeHtml(scopeLabel)}. ` +
     `Figures below are shown in <strong>${escapeHtml(basisLabel.toLowerCase())}</strong> dollars; use the sidebar to switch.`;
