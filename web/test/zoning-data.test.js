@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   oxford, useList, usesSentence, narrativeParagraphs, nameableConditional, formatValue, bulkRows,
-  currencyVerdict, currencyMessage, currencyQueryUrl, normBylaw, zoneShortName, zoneDescription,
+  currencyVerdict, currencyMessage, currencyQueryUrl, normBylaw, zoneShortName, zoneDescription, verifyApplies,
 } from '../src/zoning-data.js';
 
 const zone = {
@@ -32,7 +32,7 @@ describe('oxford', () => {
 describe('usesSentence', () => {
   it('names the ticked uses alphabetically and adds "among others" when some are left out', () => {
     expect(usesSentence(zone, ['Service Station', 'Hotel / Motel'])).toBe(
-      'Some permitted uses within the current zoning designation include hotel/motel and service station, among others. There are several conditional uses as well.');
+      'Some permitted uses within the current zoning designation include hotel/motel and service station, among others. There is also one conditional use: kennel.');
   });
   it('omits "among others" when every nameable use is ticked; accessory-only uses do not count', () => {
     const s = usesSentence(zone, ['Hotel / Motel', 'Retail Store, General', 'Service Station']);
@@ -169,9 +169,29 @@ describe('uses sentence edge cases', () => {
     expect(usesSentence(ov, [])).toBe('The uses the overlay lists are all conditional uses.');
     expect(zoneShortName({ name: 'Pembina Connection Zoning District Overlay' })).toBe('Pembina Connection Zoning District Overlay');
   });
+  it('words overlay uses as "within the overlay", and the same use permitted small and conditional large', () => {
+    const ov = { category: 'overlay', uses: [
+      { name: 'Livestock Operations', prose: 'livestock operations', status: 'P', qualifier: null },
+      { name: 'Livestock Operations', prose: 'livestock operations', status: 'C', qualifier: null }] };
+    expect(usesSentence(ov, ['Livestock Operations'])).toBe(
+      'Within the overlay, permitted uses include livestock operations. Larger livestock operations are a conditional use.');
+    const lb = { category: 'overlay', uses: [{ name: 'Livestock Operations', prose: 'livestock operations', status: 'C', qualifier: null }] };
+    expect(usesSentence(lb, [], ['Livestock Operations'])).toBe('Within the overlay, livestock operations are a conditional use.');
+  });
   it('separates use names that contain commas with semicolons', () => {
     expect(useList(['care home, family day care home', 'school'])).toBe('care home, family day care home; and school');
     expect(useList(['a', 'b', 'c'])).toBe('a, b, and c');
     expect(useList(['offices; banks', 'x', 'y'])).toBe('offices, banks; x; and y');
+  });
+});
+
+describe('verifyApplies', () => {
+  it('flags the listed zones, the whole by-law for "all" or a bare note, and nothing without a note', () => {
+    const m = { note: 'Lot area unreadable.', verify_zones: ['RS', 'MB'] };
+    expect(verifyApplies(m, 'RS')).toBe(true);
+    expect(verifyApplies(m, 'CH')).toBe(false);
+    expect(verifyApplies({ note: 'Scan.', verify_zones: ['all'] }, 'CH')).toBe(true);
+    expect(verifyApplies({ note: 'Scan.' }, 'CH')).toBe(true);
+    expect(verifyApplies({ verify_zones: ['RS'] }, 'RS')).toBe(false);
   });
 });
