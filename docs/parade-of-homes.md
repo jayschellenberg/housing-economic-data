@@ -1,39 +1,36 @@
 # Parade of Homes tab — data refresh
 
-The "Parade of Homes" tab under **Local Data** reads a static snapshot of
-the [Parade-Of-Homes](D:\Dropbox\ClaudeCode\$Projects%20in%20Progress\Parade-Of-Homes)
-pipeline output shipped with the site under
-[`web/public/parade/`](../web/public/parade/).
+The "Parade of Homes" tab under **Local Data** reads one file,
+`parade_of_homes.json`, from the firm's shared Dropbox folder
 
-Nothing in this repo generates the Parade data. To pick up a new issue:
+    D:\Dropbox\SharedInfo\AppMarketData\AppMarketData-External\ParadeOfHomes\
 
-1. Run the pipeline in the Parade-Of-Homes project
-   (`./run_pipeline.sh`, or at minimum `Rscript analyze_parade.R`).
-   That writes `analysis_output/<scope>_<basis>/` and
-   `analysis_output/<scope>_<basis>/appraiser/`.
-2. From this repo's root, run the snapshot copy script:
+like the other Local Data tabs (`web/src/parade-store.js`): the viewer picks
+that folder, or the AppMarketData strip under the Local Data bar finds it,
+and the browser keeps the data in IndexedDB (`hed-parade`), re-reading the
+file when it changes. Nothing ships with the site (until November 2026 a
+snapshot lived in `web/public/parade/`).
 
-   ```powershell
-   pwsh scripts/copy-parade-snapshot.ps1
-   ```
+Nothing in this repo generates the Parade data. To pick up a new issue, run
+the pipeline in the
+[Parade-Of-Homes](D:\Dropbox\ClaudeCode\$Projects%20in%20Progress\Parade-Of-Homes)
+project (`./run_pipeline.sh`). Its step 3b runs `publish_shared.py`, which
+bundles fourteen CSVs per scope × basis (`winnipeg_nominal`, `winnipeg_real`,
+`all_nominal`, `all_real`) from `analysis_output/<view>/` and
+`analysis_output/<view>/appraiser/` into `parade_of_homes.json` (CSV text keyed
+by file name, plus the latest issue label and disclosures) and writes
+`README.txt` and `last_updated.json` beside it. After running
+`Rscript analyze_parade.R` on its own, run `python publish_shared.py` by hand.
+No commit or deploy is needed here.
 
-   Override the source with `-ParadeDir <path>` if the Parade project
-   lives elsewhere.
-3. Commit the updated `web/public/parade/` files and deploy as usual.
+Publish after **every** pipeline run, including re-extractions of old issues.
+The October 2026 spike in median home size (Spring 2022 reading 2,082 sq ft)
+came from a snapshot copied before a fuller re-extraction: 2021–22 issues then
+had only 25–30 Winnipeg listings each, against 62–77 after.
 
-The script copies fourteen CSVs per scope × basis
-(`winnipeg_nominal`, `winnipeg_real`, `all_nominal`, `all_real`) and
-rewrites `web/public/parade/MANIFEST.json` with the new build date and the
-latest Parade issue label.
+## Files bundled
 
-Re-run the copy script after **every** pipeline run, including re-extractions
-of old issues. The October 2026 spike in median home size (Spring 2022 reading
-2,082 sq ft) came from a snapshot copied before a fuller re-extraction:
-2021–22 issues then had only 25–30 Winnipeg listings each, against 62–77 after.
-
-## Files shipped
-
-Per scope × basis folder:
+Per scope × basis view:
 
 | File | What it feeds |
 | --- | --- |

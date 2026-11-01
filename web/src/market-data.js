@@ -37,6 +37,7 @@ import * as johnsonStore from './johnson-store.js';
 import * as yardiStore from './yardi-store.js';
 import * as rentalsCaStore from './rentalsca-store.js';
 import * as fccStore from './fcc-store.js';
+import * as paradeStore from './parade-store.js';
 import * as brokerageStore from './brokerage-store.js';
 import * as zoningStore from './zoning-store.js';
 import * as aptCompsStore from './apartment-comps-store.js';
@@ -62,6 +63,8 @@ export const SOURCES = [
     load: async () => rentalsCaStore, hasData: hasFolderData },
   { id: 'fcc',        label: 'FCC Farmland', folder: 'FCCFarmland',
     load: async () => fccStore, hasData: hasFolderData },
+  { id: 'parade',     label: 'Parade of Homes', folder: 'ParadeOfHomes',
+    load: async () => paradeStore, hasData: hasFolderData },
   { id: 'brokerage',  label: 'Brokerage Reports', folder: 'BrokerageReports',
     load: async () => brokerageStore, hasData: hasFolderData },
   { id: 'zoning',     label: 'Zoning (Experimental)', folder: 'Zoning',
