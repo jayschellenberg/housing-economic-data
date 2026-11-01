@@ -66,7 +66,7 @@ other tab is Housing.
 | Secondary Rental | CMHC Srms (condo / secondary) for surveyed centres | `r/06` |
 | Housing Starts | CMHC Scss starts / completions | `r/05` |
 | Housing Stock | Census dwelling type / age / condition + choropleth map | `r/07`–`r/10`, `r/12b`, `r/20` |
-| Census Profile | Population & dwelling trends + annual estimates + demographics + community-profile narrative + choropleth map | `r/12`, `r/12b`, `r/20`, `r/26`, `r/27` (run-once); `r/23` (monthly) |
+| Census Profile | Population & dwelling trends + annual estimates + demographics + community-profile narrative + choropleth map | `r/12`, `r/12b`, `r/20`, `r/26`, `r/27`, `r/29` (run-once); `r/23` (monthly) |
 | Affordability | Royal-LePage-style affordability factor + choropleth map | `r/16`, `r/18`, census, `r/20` |
 | Current Snapshot / Market Indicators | BoC / StatsCan / OSB economic indicators, incl. CPI inflation (headline, core, shelter, annual average), (Cap vs Interest moved to its own Local Data tab) | `r/10`,`r/11`,`r/13`,`r/14`,`r/17` |
 | Cap Rates vs Interest | The Cap vs Interest chart — BoC overnight target and GoC yields with Winnipeg cap-rate overlays from the Cap Rates tab's local data (Local Data group) | BoC shard + `Cap-Rates` project |
@@ -262,10 +262,24 @@ paragraph and table come from `r/26_census_industry.R` →
 NAICS sectors plus commuting destination (works in own municipality / elsewhere
 in the census division / elsewhere in the province), 2021 + 2016, for PR/CMA/CD (MB/SK/AB/BC) and every Manitoba
 CSD. Same CensusMapper key and run-once rules as `r/12`; it is in
-`census-refresh.bat`. Set `CENSUS_INDUSTRY_WPG=1` to also aggregate the Winnipeg
+`census-refresh.bat`. `CENSUS_INDUSTRY_WPG=1` also aggregates the Winnipeg
 Community Areas / Clusters / Neighbourhoods from the 1,130 City DAs (2021 only —
-most of a free-tier daily quota, resumable through the shared cache). The
-narrative simply omits the paragraph for any area/period the file lacks.
+most of a free-tier daily quota on a cold cache, resumable through the shared
+cache). The committed file includes them and `census-refresh.bat` sets the flag;
+running r/26 without it drops them. The narrative simply omits the paragraph
+for any area/period the file lacks.
+
+For **Winnipeg** subjects (neighbourhood / cluster / community area) the
+narrative switches to Winnipeg mode: a "Location" paragraph (downtown distance
+and direction, boundary street per side, arterials through and nearby, rivers)
+from `r/29_build_wpg_nbhd_context.R` → `web/public/data/geo/wpg_nbhd_context.json`,
+and an "Employment" paragraph that reads residents' sectors against the city
+(no commuting or service-centre read). r/29 samples each City of Winnipeg
+neighbourhood / cluster / community-area boundary every 25 m and names each
+side after the nearest street (City Road Network), rail line or river
+(OpenStreetMap, © OpenStreetMap contributors, ODbL); arterials come from the
+curated `r/lib/wpg_arterials.csv` (the City's road data has no road class — edit
+the list freely). Needs sf; run-once; downloads cached under `r/lib/cache/geo/`.
 
 Its "Access and roadways" paragraph (municipalities only) comes from
 `r/27_build_csd_highways.R` → `web/public/data/geo/mb_csd_highways.json`:

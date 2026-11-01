@@ -27,6 +27,7 @@ import { loadPopulationEstimates } from './population-estimates.js';
 import { buildCensusNarrative } from './census-narrative.js';
 import { loadCensusIndustry } from './census-industry.js';
 import { loadCsdHighways } from './csd-highways.js';
+import { loadWpgNbhdContext } from './wpg-nbhd-context.js';
 import { AMENITY_GROUPS, classifyServices } from './service-tier.js';
 
 // Geography levels, in dropdown group order.
@@ -198,8 +199,8 @@ export async function initCensus() {
   // popEst (annual-estimates chart), industry and highways (narrative
   // paragraphs) are optional garnish — census profile data is the hard
   // requirement, so a missing file for any of them must not block init.
-  const [data, popEst, industry, highways] = await Promise.all([
-    loadCensusProfile(), loadPopulationEstimates(), loadCensusIndustry(), loadCsdHighways()]);
+  const [data, popEst, industry, highways, wpgContext] = await Promise.all([
+    loadCensusProfile(), loadPopulationEstimates(), loadCensusIndustry(), loadCsdHighways(), loadWpgNbhdContext()]);
   if (!data || !Array.isArray(data.regions)) {
     $tables.innerHTML = '<p class="text-sm text-red-700">Census profile data not found. Run r/12_census_profile.R.</p>';
     return;
@@ -373,7 +374,7 @@ export async function initCensus() {
     if (!$narr) return;
     const benchmarks = others;   // selection order (Area 2, then 3) for prose and tables
     lastNarrativeArgs = { subject, others, period };
-    const nar = buildCensusNarrative({ subject, benchmarks, years, period, industry, highways,
+    const nar = buildCensusNarrative({ subject, benchmarks, years, period, industry, highways, wpgContext,
                                        services: subject.level === 'CSD' ? loadServices(subject.uid) : null });
     lastNarrative = nar;
 
@@ -408,7 +409,8 @@ export async function initCensus() {
         ${tableHtml}
         <p class="text-xs text-neutral-500 mt-2">Auto-written from the census figures above, in general terms; the tables carry the numbers. Areas 2 and 3 serve as the benchmarks. Growth is read from the annual rate over the census span; incomes, values and rents use broad bands ("below", "broadly in line with"…) so the wording reads the same across reports.${
           nar.industryTable ? ' Industry shares are of the labour force aged 15+ (NAICS sectors).' : ''}${
-          highways && subject.level === 'CSD' ? ' Highways: Manitoba Road Network 2023; the Winnipeg distance is to the city limits, rounded to 5 km, not driving distance.' : ''} Edit freely after download; the appraiser-notes bullets are left for local knowledge.</p>
+          highways && subject.level === 'CSD' ? ' Highways: Manitoba Road Network 2023; the Winnipeg distance is to the city limits, rounded to 5 km, not driving distance.' : ''}${
+          wpgContext && subject.level.startsWith('WPG_') ? ' Location: City of Winnipeg neighbourhood boundaries and road network, OpenStreetMap rivers and rail (© OpenStreetMap contributors), and a curated list of major streets; downtown distance is from Portage and Main, straight-line.' : ''} Edit freely after download; the appraiser-notes bullets are left for local knowledge.</p>
       </section>`;
 
     $narr.querySelector('#census-narrative-docx')?.addEventListener('click', async () => {
