@@ -19,7 +19,7 @@ import { escapeHtml } from './escape.js';
 import { getPref, setPref } from './prefs.js';
 import {
   nameableUses, nameableConditional, narrativeParagraphs, bulkRows, formatValue, ATTRIBUTE_LABELS,
-  currencyVerdict, currencyMessage, currencyQueryUrl, zoneShortName, zoneDescription,
+  currencyVerdict, currencyMessage, currencyQueryUrl, zoneShortName, zoneDescription, verifyApplies,
 } from './zoning-data.js';
 import {
   storeAvailable, fsAccessSupported, pickDirectory, getSavedDirectory, directoryPermission,
@@ -244,7 +244,7 @@ function renderMuniPicker() {
   // alphabetical by name, ignoring the "RM of / Town of / City of" prefix
   const bare = (m) => m.label.replace(/^(RM|Rural Municipality|Town|City|Village|Municipality|LGD) of /i, '');
   const list = [...munis()].sort((a, b) => bare(a).localeCompare(bare(b)) || a.label.localeCompare(b.label));
-  ui.$muni.innerHTML = list.map(m => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.label)}</option>`).join('');
+  ui.$muni.innerHTML = list.map(m => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.label)}${m.note ? ' ⚠ verify' : ''}</option>`).join('');
   ui.$muni.disabled = !list.length;
   if (list.some(m => m.id === ui.prefs.muni)) ui.$muni.value = ui.prefs.muni;
 }
@@ -253,7 +253,7 @@ function renderZonePicker() {
   const m = currentMuni();
   // alphabetical by code; numeric parts compare as numbers (RG, RG-1, RG-2; M1, M2)
   const zones = [...(m?.zones || [])].sort((a, b) => a.code.localeCompare(b.code, 'en', { numeric: true }));
-  ui.$zone.innerHTML = zones.map(z => `<option value="${escapeHtml(z.code)}">${escapeHtml(`${z.code} – ${z.name}${z.category === 'overlay' && !/overlay/i.test(z.name) ? ' (overlay)' : ''}`)}</option>`).join('');
+  ui.$zone.innerHTML = zones.map(z => `<option value="${escapeHtml(z.code)}">${escapeHtml(`${z.code} – ${z.name}${z.category === 'overlay' && !/overlay/i.test(z.name) ? ' (overlay)' : ''}${verifyApplies(m, z.code) ? ' ⚠ verify' : ''}`)}</option>`).join('');
   ui.$zone.disabled = !zones.length;
   if (zones.some(z => z.code === ui.prefs.zone)) ui.$zone.value = ui.prefs.zone;
 }
@@ -279,6 +279,13 @@ function renderToggles($box, $count, list, selected, onChange) {
   $count.textContent = `${pool.filter(u => sel.has(u.name)).length} of ${pool.length} named`;
 }
 
+// Red, unmissable: this zone's figures come from a by-law copy or clause known to be unreliable.
+function verifyBanner(note) {
+  return `<div class="text-sm my-2 rounded border-2 border-red-500 bg-red-50 text-red-900 px-3 py-2" data-role="verify" role="alert">
+    <p class="font-bold uppercase tracking-wide">⚠ Verify before relying on this zone</p>
+    <p class="mt-1">${escapeHtml(note)}</p></div>`;
+}
+
 function renderZone() {
   const z = currentZone();
   ui.$empty.hidden = !!ui.data;
@@ -292,7 +299,7 @@ function renderZone() {
       <header class="chart-title">${escapeHtml(m.label)} — Zoning By-law ${escapeHtml(m.bylaw_no)}</header>
       <p class="chart-sub">${escapeHtml(`'${z.code}' ${z.name}`)}${m.consolidated_to ? ` · consolidated to ${escapeHtml(m.consolidated_to)}` : ''}</p>
       <p class="text-sm" data-role="currency-text"></p>
-      ${m.note ? `<p class="text-sm mt-2 rounded border border-amber-300 bg-amber-50 text-amber-900 px-2 py-1" data-role="muni-note"><strong>Note:</strong> ${escapeHtml(m.note)}</p>` : ''}
+      ${m.note ? (verifyApplies(m, z.code) ? verifyBanner(m.note) : `<p class="text-sm mt-2 rounded border border-amber-300 bg-amber-50 text-amber-900 px-2 py-1" data-role="muni-note"><strong>Note (other zones in this by-law):</strong> ${escapeHtml(m.note)}</p>`) : ''}
     </section>
     <section class="chart-card cmhc-indicator-card" data-role="designation">
       <header class="chart-title">Zoning designation</header>
@@ -312,6 +319,7 @@ function renderZone() {
     <section class="chart-card cmhc-indicator-card" data-role="narrative">
       <header class="chart-title">Zoning narrative</header>
       <p class="chart-sub">Ticking uses in the sidebar rewrites the permitted-uses sentence. Edit freely before copying.</p>
+      ${verifyApplies(m, z.code) ? verifyBanner(m.note) : ''}
       <textarea data-role="text" rows="12" class="w-full border border-neutral-300 rounded p-2 text-sm leading-relaxed font-serif"></textarea>
       <p class="text-xs text-neutral-500" data-role="edited-note" hidden>Edited by hand — use selections no longer update the text. <button type="button" class="underline" data-role="regen">Regenerate</button></p>
       <div class="chart-actions">
@@ -465,6 +473,7 @@ async function exportWord(text) {
     { type: 'heading', text: 'Zoning' },
     ...text.split(/\n\s*\n/).map(t => t.trim()).filter(Boolean).map(t => ({ type: 'para', text: t })),
   ];
+  if (verifyApplies(m, z.code)) blocks.push({ type: 'meta', text: `VERIFY BEFORE RELYING (not for the report): ${m.note}` });
   if (verdict) blocks.push({ type: 'meta', text: `Reviewer note (not for the report): ${currencyMessage(m, verdict, verdict.checked)}` });
   const safe = `${m.id}_${z.code}`.replace(/[^A-Za-z0-9_-]/g, '');
   await exportNarrativeToWord(blocks, {
