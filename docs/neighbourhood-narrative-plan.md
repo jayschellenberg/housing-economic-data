@@ -150,3 +150,20 @@ The 23-box draft checklist is replaced by five boxes. Jason: "if there's a groce
 | Minimal-service community | "None of these" ticked |
 
 Nothing ticked = not filled in (the appraiser stub stays). Missing items become "Residents look to <nearest centre> for banking / medical / high-school / hospital services". Ticks saved under the old checklist are ignored.
+
+## 2026-11-01 — Neighbourhood (Experimental) tab
+
+Jason asked for a separate Local Data tab, Zoning-style, holding the narratives
+pre-written in two layers: Winnipeg cluster → neighbourhood, and municipality →
+community ("RM of Hanover, then Blumenort or Kleefeld"), with as many of the
+smaller communities pre-written as possible, using the town and village map
+sheets (`D:\Dropbox\Appraisal\Maps\$Town and Village Maps 2026`, 482 names) as
+the list. His choices: small communities get location + facilities (census
+figures when they have them); hand edits are saved to the shared folder;
+Winnipeg uses the 23 neighbourhood clusters; data reads from AppMarketData
+(Internal tier). Build: r/33 (community facts) →
+`web/scripts/build-neighbourhood.mjs`. See the README section "Neighbourhood
+(Experimental)".
+
+Same session: r/27's Winnipeg distance now runs from the municipality's main
+town (ranked by 2021 Census population), named in the prose when it differs.

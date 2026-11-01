@@ -79,6 +79,7 @@ other tab is Housing.
 | Brokerage Reports | Winnipeg office, industrial, retail and hotel figures (vacancy / availability, asking rents, absorption, supply, construction; hotel occupancy, ADR, RevPAR) as published in Capital Group, Colliers, CBRE, CBRE Hotels and Avison Young market reports, one line per publisher, never averaged; plus Newmark V&A's Canadian investment rates (discount rate / IRR, reversion and terminal cap, going-in cap, rent and expense growth for Calgary, Edmonton, Montreal, Toronto, Vancouver and the Canada average, 2021 to mid-2025; overall cap rates from 2006 and investor momentum ratios from its Canadian Investment Trends Survey) — Newmark has no Winnipeg coverage; read from a folder on the user's own disk | `Brokerage-Reports/ingest/parse_brokerage.py` (separate project) |
 | Cap Rates | Winnipeg cap-rate ranges by property type and class (Colliers, CBRE, Cushman & Wakefield), quarterly, read from a folder on the user's own disk | `Cap-Rates/ingest/parse_cap_rates.py` (separate project) |
 | Zoning | Appraisal zoning narratives per municipality and zone (intent, permitted uses chosen by the appraiser, bulk requirements) with the full use lists and bulk table cited to PDF pages, a live by-law currency check against Manitoba Zoning By-Laws open data, Copy / Word export; read from `SharedInfo\AppMarketData\AppMarketData-Internal\Zoning` on the user's own disk (shared only with chosen users; nothing published) | `zoning-narrative/R/export.R` (separate project) |
+| Neighbourhood (Experimental) | Pre-written neighbourhood and community narratives in two layers — Winnipeg neighbourhood cluster → neighbourhood, and Manitoba municipality → community (Blumenort, Kleefeld …, from the town and village map sheets) — one editable box per section, Copy / Word; saved edits go back into the folder's `edits/` subfolder for everyone using it; read from `SharedInfo\AppMarketData\AppMarketData-Internal\Neighbourhood` (nothing published) | `r/27`, `r/33`, then `web/scripts/build-neighbourhood.mjs` (see below) |
 | Parade of Homes | Winnipeg (and all-Manitoba) new-home listings distilled from MHBA Parade of Homes magazines, 2012–present: median base price, $/sq ft by style, home size, upgrade spend and a Parade-vs-CPI index chart, with nominal / real dollar and scope toggles. Snapshot ships with the site in `web/public/parade/`; see [`docs/parade-of-homes.md`](docs/parade-of-homes.md) for how to refresh after each pipeline run. | `Parade-Of-Homes` project (`run_pipeline.sh`), then `scripts/copy-parade-snapshot.ps1` here |
 | MB Economic Update | Auto narrative report (economy + HPI + outlook) — **parked, hidden from the nav** (see Parked features) | `r/15`, `r/16` |
 
@@ -110,6 +111,47 @@ downtown/suburban classes. The section listens for the Cap Rates tab's
 is not shard-backed it is rendered by its own module rather than the catalog loop;
 `cap_vs_interest` appears in `displayGroups` only so the sidebar toggle and jump link pick it
 up.
+
+### Neighbourhood (Experimental) (Local Data)
+
+Two drop-downs: an **area** (a Winnipeg neighbourhood cluster, or a Manitoba
+municipality) whose overview always shows, and an optional **neighbourhood or
+community** inside it, shown above the overview. Overviews and Winnipeg
+neighbourhoods are the Census Profile narrative (same code, same data,
+benchmarks Winnipeg CMA + Manitoba); municipality overviews add a
+"Communities" sentence. Communities get their own write-up from
+`web/src/community-narrative.js`: location against the municipality's main
+town and Winnipeg, highways, 2016–2021 growth and seasonal dwellings when the
+community is a census designated place or population centre, OpenStreetMap
+facilities (schools, health care, churches, halls, rinks, stores, fuel …) and
+the service centre residents rely on (the census population centre of 1,000+
+with the lowest distance ÷ √population, Winnipeg excluded).
+
+Build (run-once; re-run when the census, OSM or the map-sheet list changes):
+
+```
+Rscript r/27_build_csd_highways.R          # main towns + highways
+Rscript r/33_build_mb_communities.R        # → web/scripts/data/mb_communities.json
+npm --prefix web run data:neighbourhood    # → AppMarketData-Internal\Neighbourhood\neighbourhood.json
+```
+
+r/33 reads the community list from the map PDFs in
+`D:\Dropbox\Appraisal\Maps\$Town and Village Maps 2026` (override with
+`COMMUNITY_MAPS_DIR`), geocodes each name with the Canadian Geographical Names
+Database (OpenStreetMap as fallback), and when two Manitoba settlements share a
+name picks the one in the municipality the sheet's title block names
+("R. M. OF HANOVER"). Names still ambiguous carry a red "Verify" banner in the
+tab. Caches under `r/lib/cache/geo/` (CGNDB lookups, Overpass facilities,
+StatCan tables). The build script takes an output folder argument or
+`NEIGHBOURHOOD_OUT`.
+
+Edits: each write-up's changed sections are saved as one small JSON file in
+`Neighbourhood\edits\` (written through the browser's folder access, which
+asks for write permission on the first save; Chrome / Edge only). The file
+keeps the generated text it replaced, so after a rebuild the tab flags edits
+whose underlying text has since changed ("Reviewed — but the generated text has
+changed since") and shows the new text for comparison. Rebuilding never
+touches `edits/`.
 
 ### Rental Dashboard and Commercial Dashboard (sub-apps)
 
@@ -308,9 +350,15 @@ the **Manitoba Road Network 2023** (Manitoba Transportation and Infrastructure
 via the Manitoba GeoPortal, Manitoba Open Data Licence; cached under
 `r/lib/cache/geo/`) filtered to PTH + PR routes, dissolved by signed number and
 intersected with the shipped `mb_csd.geojson` — routes through each CSD,
-routes within 15 km (distance + compass direction), and the boundary distance
-and direction from Winnipeg. No key; run-once (`npm --prefix web run
-data:highways`); re-run only if the road network or CSD boundaries change.
+routes within 15 km (distance + compass direction), and the distance and
+direction from Winnipeg. That distance is straight-line from the municipality's
+**main town** to the city limits ("measured from Elm Creek" in the prose when
+the town's name differs): the most populous OpenStreetMap place inside it, or
+in a town / village / city it surrounds, ranked by 2021 Census population
+(`r/lib/statcan_places.R`: designated places 98-10-0012 and population centres
+98-10-0011, from www150); `CENTRE_OVERRIDE` holds hand corrections. No key;
+run-once (`npm --prefix web run data:highways`); re-run only if the road
+network or CSD boundaries change.
 
 Its "Services and amenities" paragraph is the one manual input: a **Services
 checklist** under the narrative (municipalities only) where the appraiser ticks
