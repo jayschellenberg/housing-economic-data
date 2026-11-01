@@ -37,7 +37,8 @@
 #   { source, licence, generatedAt,
 #     areas: { "<uid>": { sides:{north,east,south,west}: {name,kind}|null,
 #                         through:[name], near:[{name, dir, m}],
-#                         rivers:[{name, m}], downtown:{km, dir} } } }
+#                         rivers:[{name, m}], downtown:{km, dir},
+#                         cluster?, communityArea?, district? } } }
 #   uids match census_profile.json: WPG_NB:<name>, WPG_CL:<name>, WPG_CA:<name>.
 # ---------------------------------------------------------------------------
 
@@ -263,6 +264,28 @@ for (a in seq_len(nrow(areas))) {
     sides = sides, through = as.list(through), near = near, rivers = rv,
     downtown = list(km = round(sqrt(sum((cen - dt_xy)^2)) / 1000, 1), dir = compass8(dt_xy, cen)))
   if (a %% 25 == 0) message("  ", a, "/", nrow(areas))
+}
+
+# --- Hierarchy + informal district ------------------------------------------
+# Neighbourhood -> cluster -> community area from the address index (r/25
+# derived it once from the City's polygons); the informal district ("Winnipeg's
+# West End") from the curated r/lib/wpg_districts.csv — edit freely.
+hier <- fromJSON(file.path(geo_dir, "wpg_address_index.json"))$areas
+hier <- hier[!is.na(hier[, 1]), , drop = FALSE]
+cl_cca <- unique(hier[, 2:3, drop = FALSE])
+districts <- read.csv(file.path(repo_root, "r", "lib", "wpg_districts.csv"), stringsAsFactors = FALSE)
+for (uid in names(out)) {
+  nm <- sub("^WPG_[A-Z]+:", "", uid)
+  if (startsWith(uid, "WPG_NB:")) {
+    i <- match(nm, hier[, 1])
+    out[[uid]]$cluster       <- if (is.na(i)) NULL else hier[i, 2]
+    out[[uid]]$communityArea <- if (is.na(i)) NULL else hier[i, 3]
+    d <- districts$district[match(nm, districts$neighbourhood)]
+    if (!is.na(d)) out[[uid]]$district <- d
+  } else if (startsWith(uid, "WPG_CL:")) {
+    i <- match(nm, cl_cca[, 1])
+    if (!is.na(i)) out[[uid]]$communityArea <- cl_cca[i, 2]
+  }
 }
 
 res <- list(

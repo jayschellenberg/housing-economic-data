@@ -213,12 +213,13 @@ describe('buildCensusNarrative — Winnipeg mode', () => {
   const dm = {
     uid: 'WPG_NB:Daniel McIntyre', level: 'WPG_Nbhd', name: 'Daniel McIntyre',
     trends: { '2021': trend(9500) },
-    demo: { '2021': { median_hh_income: 52000, median_dwelling_val: 220000, median_rent: 900 } },
+    demo: { '2021': { median_hh_income: 52000, median_dwelling_val: 220000, median_rent: 900, median_age: 36.5,
+      period_total: 100, built_1960: 75 } },
   };
   const wpgCity = {
     uid: '4611040', level: 'CSD', name: 'Winnipeg (CY)',
     trends: { '2016': trend(705244), '2021': trend(749607) },
-    demo: { '2021': { median_hh_income: 80000, median_dwelling_val: 330000, median_rent: 1100 } },
+    demo: { '2021': { median_hh_income: 80000, median_dwelling_val: 330000, median_rent: 1100, median_age: 38.8 } },
   };
   const ctx = { areas: { 'WPG_NB:Daniel McIntyre': {
     sides: {
@@ -229,6 +230,7 @@ describe('buildCensusNarrative — Winnipeg mode', () => {
     near: [{ name: 'Sherbrook Street', dir: 'west', m: 350 }, { name: 'St. James Street', dir: 'east', m: 900 }],
     rivers: [{ name: 'the Assiniboine River', m: 450 }],
     downtown: { km: 3.2, dir: 'west' },
+    cluster: 'Downtown West', communityArea: 'Downtown', district: "Winnipeg's West End",
   } } };
   // Sector counts in sectors order; only two sectors so the shares are easy.
   const sectors = [{ code: '62', label: 'Health care and social assistance' }, { code: '44-45', label: 'Retail trade' }];
@@ -239,10 +241,11 @@ describe('buildCensusNarrative — Winnipeg mode', () => {
   const build = (over = {}) => buildCensusNarrative({ subject: dm, benchmarks: [wpgCity, manitoba], years: YEARS,
     period: '2021', industry, wpgContext: ctx, ...over });
 
-  it('places the neighbourhood: downtown, boundaries, arterials, rivers', () => {
+  it('places the neighbourhood: city part + cluster, boundaries, district, arterials, rivers', () => {
     const t = paras(build().blocks);
-    expect(t).toContain('Daniel McIntyre lies about 3 km west of downtown Winnipeg.');
-    expect(t).toContain('It is bounded by Notre Dame Avenue to the north, Arlington Street to the east and Portage Avenue to the south.');
+    expect(t).toContain('Daniel McIntyre is in west-central Winnipeg, within the Downtown West neighbourhood cluster. ' +
+      'The neighbourhood is bounded by Notre Dame Avenue to the north, Arlington Street to the east and Portage Avenue to the south. ' +
+      "It forms part of Winnipeg's West End and lies about 3 km west of downtown.");
     expect(t).toContain('Ellice Avenue and Sargent Avenue run through the neighbourhood, which lies just west of Sherbrook Street and east of St. James Street.');
     expect(t).toContain('It is close to the Assiniboine River.');
   });
@@ -252,7 +255,7 @@ describe('buildCensusNarrative — Winnipeg mode', () => {
     a.sides = { north: { name: 'the Red River', kind: 'river' }, east: { name: 'the Red River', kind: 'river' }, south: { name: 'Main Street', kind: 'street' }, west: null };
     a.rivers = [{ name: 'the Red River', m: 0 }]; a.through = []; a.near = [];
     const t = paras(build({ wpgContext: c }).blocks);
-    expect(t).toContain('It is bounded by the Red River to the north and east and Main Street to the south.');
+    expect(t).toContain('The neighbourhood is bounded by the Red River to the north and east and Main Street to the south.');
     expect(t).not.toContain('close to the Red River');
   });
   it('reads employment against the city, without commuting or services', () => {
@@ -282,6 +285,39 @@ describe('buildCensusNarrative — Winnipeg mode', () => {
   });
   it('lands downtown areas without a distance', () => {
     const c = structuredClone(ctx); c.areas[dm.uid].downtown = { km: 0.8, dir: 'north' };
-    expect(paras(build({ wpgContext: c }).blocks)).toContain('Daniel McIntyre lies in or next to downtown Winnipeg.');
+    const t = paras(build({ wpgContext: c }).blocks);
+    expect(t).toContain('Daniel McIntyre is in central Winnipeg, within the Downtown West neighbourhood cluster.');
+    expect(t).toContain("It forms part of Winnipeg's West End, next to downtown.");
+    c.areas[dm.uid].district = 'downtown Winnipeg';
+    expect(paras(build({ wpgContext: c }).blocks)).toContain('It forms part of downtown Winnipeg.');
+    delete c.areas[dm.uid].district;
+    expect(paras(build({ wpgContext: c }).blocks)).toContain('It lies in or next to downtown Winnipeg.');
+  });
+  it('names outer areas by part of the city, and no district means a plain downtown distance', () => {
+    const c = structuredClone(ctx);
+    Object.assign(c.areas[dm.uid], { downtown: { km: 9.4, dir: 'northwest' }, district: undefined });
+    const t = paras(build({ wpgContext: c }).blocks);
+    expect(t).toContain('Daniel McIntyre is in the northwest portion of Winnipeg, within the Downtown West neighbourhood cluster.');
+    expect(t).toContain('It lies about 9 km northwest of downtown Winnipeg.');
+  });
+  it('inner diagonals read as central; outer cardinals as the northern portion etc.', () => {
+    const c = structuredClone(ctx);
+    c.areas[dm.uid].downtown = { km: 3, dir: 'southwest' };
+    expect(paras(build({ wpgContext: c }).blocks)).toContain('Daniel McIntyre is in central Winnipeg,');
+    c.areas[dm.uid].downtown = { km: 7, dir: 'north' };
+    expect(paras(build({ wpgContext: c }).blocks)).toContain('Daniel McIntyre is in the northern portion of Winnipeg,');
+  });
+  it('keeps population growth out of Location and in Demographics', () => {
+    const nar = build({ subject: { ...dm, trends: { '2016': trend(9000), '2021': trend(9500) } } });
+    const after = (h) => nar.blocks[nar.blocks.findIndex(b => b.text === h) + 1].text;
+    expect(after('Location')).not.toMatch(/population/);
+    expect(after('Demographics and housing')).toMatch(/^Between the last two censuses, the population has grown/);
+  });
+  it('opens demographics with age, then values and the age of the stock', () => {
+    const nar = build();
+    expect(nar.blocks.some(b => b.type === 'heading' && b.text === 'Demographics and housing')).toBe(true);
+    const t = paras(nar.blocks);
+    expect(t).toMatch(/The local population is slightly younger than Winnipeg( and the province)?/);
+    expect(t).toContain('The housing stock is generally older, with most homes built in 1960 or earlier.');
   });
 });

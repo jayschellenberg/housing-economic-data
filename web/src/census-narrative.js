@@ -140,6 +140,7 @@ export function regionStats(region, { years, period }) {
     hhIncome: num(d?.median_hh_income),
     dwellingVal: num(d?.median_dwelling_val),
     rent: num(d?.median_rent),
+    medianAge: num(d?.median_age),
     ownerShare: share('owner', 'tenure_total'),
     pre1961: share('built_1960', 'period_total'),
     post2000,
@@ -200,15 +201,35 @@ const areaNoun = (level) => level === 'WPG_Nbhd' ? 'neighbourhood' : 'area';
 // that take an article in prose.
 const withArticle = (name) => /^the /.test(name) || !/(Freeway|Corridor|Expressway)$/.test(name) ? name : `the ${name}`;
 
+// Part of the city from the downtown distance + direction: "central
+// Winnipeg", "west-central Winnipeg", "the northwest portion of Winnipeg".
+// Inner diagonals read as plain "central" — the downtown sentence that
+// follows gives the direction.
+export const CENTRAL_KM = 2;
+export const INNER_KM = 5;
+const CARDINAL_ADJ = { north: 'northern', east: 'eastern', south: 'southern', west: 'western' };
+export function cityPart(dt) {
+  if (dt?.km == null || !dt.dir) return null;
+  if (dt.km < CENTRAL_KM) return 'central Winnipeg';
+  if (dt.km < INNER_KM) return SIDES.includes(dt.dir) ? `${dt.dir}-central Winnipeg` : 'central Winnipeg';
+  return `the ${CARDINAL_ADJ[dt.dir] || dt.dir} portion of Winnipeg`;
+}
+
+// Jason's report order: where in the city and which cluster, the four
+// boundaries (north, east, south, west), then the informal district and how
+// it sits relative to downtown.
 export function wpgLocation(s, ctx, level) {
   if (!ctx) return null;
   const parts = [];
   const noun = areaNoun(level);
   const dt = ctx.downtown;
-  if (dt?.km != null) {
-    parts.push(dt.km < 1.5
-      ? `${s.name} lies in or next to downtown Winnipeg.`
-      : `${s.name} lies about ${Math.round(dt.km)} km ${dt.dir} of downtown Winnipeg.`);
+  const part = cityPart(dt);
+  const parent = level === 'WPG_Nbhd' && ctx.cluster && ctx.cluster !== s.name
+    ? `the ${ctx.cluster} neighbourhood cluster`
+    : level === 'WPG_Cluster' && ctx.communityArea && ctx.communityArea !== s.name
+      ? `the ${ctx.communityArea} community area` : null;
+  if (part || parent) {
+    parts.push(`${s.name} is ${[part && `in ${part}`, parent && `within ${parent}`].filter(Boolean).join(', ')}.`);
   }
   // Boundaries, one clause per named side; a feature holding two sides reads
   // once ("the Red River to the north and east").
@@ -221,8 +242,17 @@ export function wpgLocation(s, ctx, level) {
       if (g) g.dirs.push(d); else groups.push({ name: nm, dirs: [d] });
     }
     const clauses = groups.map(g => `${g.name} to the ${joinAnd(g.dirs)}`);
-    parts.push(`It is bounded by ${joinAnd(clauses)}.`);
+    parts.push(`The ${noun} is bounded by ${joinAnd(clauses)}.`);
   }
+  // Informal district ("Winnipeg's West End") and the downtown relationship.
+  const district = ctx.district || null;
+  const nextToDt = dt?.km != null && dt.km < 1.5;
+  const fromDt = dt?.km != null && dt.dir ? `about ${Math.max(1, Math.round(dt.km))} km ${dt.dir} of downtown` : null;
+  if (district === 'downtown Winnipeg') parts.push('It forms part of downtown Winnipeg.');
+  else if (district) parts.push(nextToDt ? `It forms part of ${district}, next to downtown.`
+    : fromDt ? `It forms part of ${district} and lies ${fromDt}.` : `It forms part of ${district}.`);
+  else if (nextToDt) parts.push('It lies in or next to downtown Winnipeg.');
+  else if (fromDt) parts.push(`It lies ${fromDt} Winnipeg.`);
   // Arterials through and nearby.
   const through = [].concat(ctx.through || []).map(withArticle);
   const near = (ctx.near || []).slice(0, 2);
@@ -248,7 +278,7 @@ export function wpgLocation(s, ctx, level) {
 }
 
 // Where the community sits and how its population has trended — no counts.
-function locationGrowthPara(s, benchmarks, hw, wpgText = null) {
+function locationGrowthPara(s, benchmarks, hw, wpgText = null, wpg = false) {
   const parts = [];
   if (wpgText) parts.push(wpgText);
   if (hw?.wpgKm != null) {
@@ -259,6 +289,14 @@ function locationGrowthPara(s, benchmarks, hw, wpgText = null) {
     const roads = accessClause(hw);
     parts.push(roads?.startsWith('is ') ? `${where} and ${roads}.` : `${where}.${roads ? ` ${roads}` : ''}`);
   }
+  const growth = wpg ? null : growthSentence(s, benchmarks);
+  if (growth) parts.push(growth);
+  return parts.length ? parts.join(' ') : null;
+}
+
+// How the population has trended against the benchmarks — no counts.
+function growthSentence(s, benchmarks) {
+  const parts = [];
   if (s.rateLong != null) {
     const span = s.rateLongYears === 5 ? 'Between the last two censuses' : `Over the past ${spanWords(s.rateLongYears)} years`;
     let t = `${span}, the population has ${growthPhrase(s.rateLong)}`;
@@ -291,9 +329,36 @@ function locationGrowthPara(s, benchmarks, hw, wpgText = null) {
   return parts.length ? parts.join(' ') : null;
 }
 
+// Median-age gap (subject minus benchmark, years) → phrase. Winnipeg mode
+// opens its demographics with it, as Jason's reports do.
+export const AGE_BANDS = [
+  { min: 3,         phrase: 'noticeably older than' },
+  { min: 1,         phrase: 'slightly older than' },
+  { min: -1,        phrase: 'similar in age to' },
+  { min: -3,        phrase: 'slightly younger than' },
+  { min: -Infinity, phrase: 'noticeably younger than' },
+];
+function ageSentence(s, benchmarks) {
+  if (s.medianAge == null) return null;
+  const parts = benchmarks.filter(b => b.stats.medianAge != null)
+    .map(b => ({ b, phrase: AGE_BANDS.find(x => s.medianAge - b.stats.medianAge >= x.min).phrase }));
+  if (!parts.length) return null;
+  const groups = [];
+  for (const p of parts) {
+    const g = groups.find(x => x.phrase === p.phrase);
+    if (g) g.nouns.push(bmNoun(p.b)); else groups.push({ phrase: p.phrase, nouns: [bmNoun(p.b)] });
+  }
+  const text = groups.length === 1 ? `${groups[0].phrase} ${joinAnd(groups[0].nouns)} overall`
+    : groups.map(g => `${g.phrase} ${joinAnd(g.nouns)}`).join(' but ');
+  return `The local population is ${text}.`;
+}
+
 // Incomes, home values and rents vs the benchmarks, then the housing mix.
-function housingIncomePara(s, benchmarks) {
+// Winnipeg mode opens with the population trend and age (Location there is
+// purely where the area sits), as in Jason's demographic comments.
+function housingIncomePara(s, benchmarks, { wpg = false } = {}) {
   const parts = [];
+  if (wpg) for (const t of [growthSentence(s, benchmarks), ageSentence(s, benchmarks)]) if (t) parts.push(t);
   const metrics = [
     { key: 'hhIncome',    noun: 'household incomes', v: s.hhIncome },
     { key: 'dwellingVal', noun: 'home values',       v: s.dwellingVal },
@@ -332,7 +397,9 @@ function housingIncomePara(s, benchmarks) {
   else if (tenure) parts.push(`Housing is ${tenure}.`);
   else if (mix) parts.push(`Housing consists ${mix}.`);
 
-  if (s.post2000 != null && s.post2000 >= 40) parts.push('Much of the stock has been built since 2000.');
+  if (wpg && s.pre1961 != null && s.pre1961 >= 50) parts.push('The housing stock is generally older, with most homes built in 1960 or earlier.');
+  else if (wpg && s.post2000 != null && s.post2000 >= 50) parts.push('The housing stock is generally newer, with most homes built since 2000.');
+  else if (s.post2000 != null && s.post2000 >= 40) parts.push('Much of the stock has been built since 2000.');
   else if (s.pre1961 != null && s.pre1961 >= 35) parts.push('Much of the stock predates 1961.');
   else if (s.post2000 != null && s.post2000 < 15) parts.push('There has been relatively little recent construction.');
   else if (s.post2000 != null || s.pre1961 != null) parts.push('The stock is a mix of older and newer construction.');
@@ -489,8 +556,8 @@ export function buildCensusNarrative({ subject, benchmarks = [], years, period, 
         (bm.length ? ` · benchmarks: ${bm.map(b => b.name).join(', ')}` : '') },
   ];
   const push = (heading, text) => { if (text) blocks.push({ type: 'heading', text: heading }, { type: 'para', text }); };
-  push(isWpg ? 'Location' : 'Location and growth', locationGrowthPara(s, bm, sHw, wpgText));
-  push('Housing and income', housingIncomePara(s, bm));
+  push(isWpg ? 'Location' : 'Location and growth', locationGrowthPara(s, bm, sHw, wpgText, isWpg));
+  push(isWpg ? 'Demographics and housing' : 'Housing and income', housingIncomePara(s, bm, { wpg: isWpg }));
   // Named employers are local knowledge the appraiser types in (Local inputs).
   const employers = isWpg ? [] : (services?.employers || []).map(e => String(e).trim()).filter(Boolean);
   push(isWpg ? 'Employment' : 'Local economy', economyPara(s, sInd, bm, { hw: sHw, employers, wpg: isWpg }));
