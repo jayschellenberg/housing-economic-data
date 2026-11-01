@@ -102,12 +102,7 @@ On-screen render + Download Word via `exportNarrativeToWord`, with the numbers t
 
   Draft tiers — a community takes the first tier whose every requirement it meets:
 
-  | Tier | Requires (all of) |
-  |---|---|
-  | Full-service regional centre | full-line grocery; pharmacy; bank/credit union; K–8 school; high school; medical clinic; hospital/ER; municipal office; RCMP; hardware/farm supply *or* big-box; hotel *or* restaurant |
-  | Full-service community | full-line grocery; pharmacy *or* bank; K–8 school; high school; medical clinic; municipal office; fire hall |
-  | Limited-service community | grocery *or* convenience/general store; K–8 school; municipal office *or* clinic *or* post office |
-  | Minimal-service community | anything less (hamlet / bedroom community) |
+  ~~Draft 23-item rubric~~ — **replaced 2026-10-31 by Jason's four-item rule** (see below).
 
   The paragraph names the services present, and for anything below regional adds "Residents look to <nearest centre> (about N km away) for high-school / hospital / full grocery services" based on what is unticked.
 
@@ -135,3 +130,16 @@ Jason: the first drafts were too precise. The prose now characterises and the ta
 - Growth reads from the annual rate over the census span (grown strongly / steadily / modestly / remained essentially stable / declined), with a note when the latest census runs the other way.
 - Three short paragraphs: Location and growth (Winnipeg distance rounded to 5 km, main PTHs only), Housing and income, Local economy.
 - Local economy (Jason: "a bit more about local economic drivers and major employers"): leading sectors; standout drivers vs the province named in words (utilities read as hydro-electric operations, accommodation + recreation as tourism); a service-centre read when health/retail/education/public administration run ≥ 5 points above the province and most residents work locally; where residents work, from the census commuting-destination question (r/26 now pulls it: local employment centre / about half local / mostly commute out, toward Winnipeg when within 60 km / mostly work in neighbouring communities); and **major employers typed in by the appraiser** under "Local inputs" (saved per municipality in the browser — employers are local knowledge, not data).
+
+## Revision 2026-10-31 — service tiers (Jason's rule)
+
+The 23-box draft checklist is replaced by five boxes. Jason: "if there's a grocery store, financial institution, a medical clinic, and a school, those are probably the main things"; the school must go to Grade 12; a hospital alone is not enough for a regional centre (some small places have one), so population gates it.
+
+| Tier | Requires |
+|---|---|
+| Full-service regional centre | all four + hospital + population ≥ 5,000 (latest census) |
+| Full-service community | grocery store, bank or credit union, medical clinic, school to Grade 12 |
+| Limited-service community | some but not all four |
+| Minimal-service community | "None of these" ticked |
+
+Nothing ticked = not filled in (the appraiser stub stays). Missing items become "Residents look to <nearest centre> for banking / medical / high-school / hospital services". Ticks saved under the old checklist are ignored.

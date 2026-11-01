@@ -401,7 +401,7 @@ export function buildCensusNarrative({ subject, benchmarks = [], years, period, 
   const employers = (services?.employers || []).map(e => String(e).trim()).filter(Boolean);
   push('Local economy', economyPara(s, sInd, bm, { hw: sHw, employers }));
   // Services come from the appraiser's checklist (service-tier.js rubric), not data.
-  const svcText = services?.checked?.length ? servicesPara(s.name, services.checked, services.nearest) : null;
+  const svcText = services?.checked?.length ? servicesPara(s.name, services.checked, services.nearest, { pop: s.pop }) : null;
   push('Services and amenities', svcText);
 
   // Enrichment stubs — the judgement layer the tool deliberately leaves to the
