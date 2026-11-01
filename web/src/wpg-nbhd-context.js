@@ -6,14 +6,16 @@
 // r/29_build_wpg_nbhd_context.R from City of Winnipeg open data, OpenStreetMap
 // rivers/rail and the curated r/lib/wpg_arterials.csv. Land use from current
 // zoning (category shares + commercial corridors) comes from
-// r/30_build_wpg_nbhd_landuse.R and is merged in as `landuse` per area.
+// r/30_build_wpg_nbhd_landuse.R and is merged in as `landuse` per area; the
+// OurWinnipeg designation, housing vintage, schools and hospitals from
+// r/31_build_wpg_nbhd_character.R as `character`.
 // Consumed only by the Census Profile tab's community-profile narrative
 // (WPG_* subjects).
 //
 // Resolves to the parsed JSON ({ areas:{ uid:{ sides, through, near, rivers,
-// downtown, landuse? } } }) or null when the context file is missing or
+// downtown, landuse?, character? } } }) or null when the context file is missing or
 // unparseable — the narrative then keeps its appraiser-note stubs. A missing
-// land-use file just leaves `landuse` off.
+// land-use / character file just leaves that key off.
 
 let promise = null;
 
@@ -21,10 +23,12 @@ const getJson = (url) => fetch(url).then((r) => (r.ok ? r.json() : null)).catch(
 
 export async function loadWpgNbhdContext() {
   if (!promise) {
-    promise = Promise.all([getJson('./data/geo/wpg_nbhd_context.json'), getJson('./data/geo/wpg_nbhd_landuse.json')])
-      .then(([ctx, lu]) => {
-        if (ctx?.areas && lu?.areas) {
-          for (const [uid, v] of Object.entries(lu.areas)) if (ctx.areas[uid]) ctx.areas[uid].landuse = v;
+    promise = Promise.all(['context', 'landuse', 'character'].map(k => getJson(`./data/geo/wpg_nbhd_${k}.json`)))
+      .then(([ctx, ...extras]) => {
+        if (ctx?.areas) {
+          ['landuse', 'character'].forEach((key, i) => {
+            for (const [uid, v] of Object.entries(extras[i]?.areas || {})) if (ctx.areas[uid]) ctx.areas[uid][key] = v;
+          });
         }
         return ctx ?? null;
       })

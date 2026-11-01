@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildCensusNarrative, regionStats, ratioPhrase, growthPhrase, proseName, landUsePara } from '../src/census-narrative.js';
+import { buildCensusNarrative, regionStats, ratioPhrase, growthPhrase, proseName, landUsePara, planPara, schoolsHealthPara, vintageSentence } from '../src/census-narrative.js';
 
 const YEARS = ['2006', '2011', '2016', '2021'];
 
@@ -266,6 +266,22 @@ describe('buildCensusNarrative — Winnipeg mode', () => {
     expect(t).toContain('Compared with the city as a whole, residents are notably more concentrated in health care.');
     expect(t).not.toMatch(/commut|work locally|service centre/);
   });
+  it('adds vintage, development plan and schools from the character file', () => {
+    const c = structuredClone(ctx);
+    c.areas[dm.uid].character = { structure: { mature: 1 }, vintage: { p25: 1907, p50: 1911, p75: 1922, units: 2600 },
+      schools: ['General Wolfe School', 'Daniel McIntyre Collegiate Institute'], nearestHospital: { name: 'Health Sciences Centre', km: 0.6 } };
+    const nar = build({ wpgContext: c });
+    const t = paras(nar.blocks);
+    expect(t).toContain('The bulk of the housing stock was built between 1907 and 1922.');
+    expect(t).not.toContain('generally older');
+    expect(t).toContain('Daniel McIntyre is designated a Mature Community');
+    expect(t).toContain('Schools within the neighbourhood include Daniel McIntyre Collegiate Institute and General Wolfe School.');
+    const heads = nar.blocks.filter(b => b.type === 'heading').map(b => b.text);
+    expect(heads.indexOf('Development plan and life cycle')).toBeGreaterThan(heads.indexOf('Demographics and housing'));
+    expect(heads).toContain('Schools and health care');
+    expect(bullets(nar.blocks)).toContain('Character: [general feel');
+    expect(bullets(nar.blocks)).not.toContain('Schools and character');
+  });
   it('uses Winnipeg stubs and drops the location stub once context exists', () => {
     expect(bullets(build().blocks)).not.toContain('Location:');
     expect(bullets(build().blocks)).toContain('Zoning and land use');
@@ -349,5 +365,43 @@ describe('landUsePara (Winnipeg zoning)', () => {
     expect(landUsePara('G', lu({ sf: 0.85, com: 0.1 }), 'WPG_Cluster')).toContain('There is some commercial zoning within the area.');
     expect(landUsePara('H', lu([]), 'WPG_Nbhd')).toBeNull();
     expect(landUsePara('H', null, 'WPG_Nbhd')).toBeNull();
+  });
+});
+
+describe('Winnipeg character (plan, vintage, schools)', () => {
+  it('vintage reads the middle half of homes by year built', () => {
+    expect(vintageSentence({ p25: 1962, p75: 1971 })).toBe('The bulk of the housing stock was built between 1962 and 1971.');
+    expect(vintageSentence({ p25: 2011, p75: 2011 })).toBe('The bulk of the housing stock was built in 2011.');
+    expect(vintageSentence(null)).toBeNull();
+  });
+  it('designation + life-cycle stage', () => {
+    expect(planPara('A', { structure: { mature: 1 } }, 'WPG_Nbhd')).toBe(
+      "Under the City's OurWinnipeg development plan (Complete Communities Direction Strategy), A is designated a Mature Community, " +
+      "one of the city's older, established neighbourhoods. The neighbourhood is in the stable stage of its life cycle, " +
+      'with change coming mainly through infill and redevelopment.');
+    expect(planPara('B', { structure: { recent: 1 }, vintage: { p75: 2022 } }, 'WPG_Nbhd', { year: 2026 }))
+      .toContain('remains in the growth stage of its life cycle');
+    expect(planPara('B', { structure: { recent: 1 }, vintage: { p75: 1975 } }, 'WPG_Nbhd', { year: 2026 }))
+      .toContain('largely built out and in the stable stage');
+    expect(planPara('C', { structure: { new: 0.9 } }, 'WPG_Nbhd')).toContain('early growth stage');
+  });
+  it('mixed areas span designations with no single stage', () => {
+    const t = planPara('D', { structure: { rural: 0.58, recent: 0.33, mature: 0.09 } }, 'WPG_CA');
+    expect(t).toBe("Under the City's OurWinnipeg development plan (Complete Communities Direction Strategy), D spans Rural and Agricultural lands and Recent Communities.");
+  });
+  it('names mixed-use centres and redevelopment sites', () => {
+    const t = planPara('E', { structure: { employment: 0.9 }, centres: ['Polo Park Area'], sites: ['Sugar Beet Lands'] }, 'WPG_Nbhd');
+    expect(t).toContain('The plan identifies the Polo Park area as a Regional Mixed Use Centre.');
+    expect(t).toContain('The Sugar Beet Lands are a designated Major Redevelopment Site.');
+    expect(planPara('F', { structure: { mature: 1 }, sites: ['Palliser'] }, 'WPG_Nbhd')).toContain('The Palliser site is a designated Major Redevelopment Site.');
+    expect(planPara('G', { structure: [] }, 'WPG_Nbhd')).toBeNull();
+  });
+  it('schools (high schools first) and hospitals', () => {
+    expect(schoolsHealthPara({ schools: ['A School', 'B School', 'C Collegiate', 'D School'], nearestHospital: { name: 'Grace Hospital', km: 4.5 } }, 'WPG_Nbhd')).toBe(
+      'Schools within the neighbourhood include C Collegiate, A School and B School, among others. The nearest hospital is Grace Hospital, about 5 km away.');
+    expect(schoolsHealthPara({ schools: ['A School'], hospitals: ['Health Sciences Centre'], nearestHospital: { name: 'Health Sciences Centre', km: 0.2 } }, 'WPG_Cluster')).toBe(
+      'A School is located within the area. Health Sciences Centre is located within the area.');
+    expect(schoolsHealthPara({ nearestHospital: { name: 'X', km: 0.4 } }, 'WPG_Nbhd')).toBe('The nearest hospital is X, less than 1 km away.');
+    expect(schoolsHealthPara(null, 'WPG_Nbhd')).toBeNull();
   });
 });

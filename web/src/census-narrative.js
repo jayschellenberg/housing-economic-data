@@ -356,7 +356,7 @@ function ageSentence(s, benchmarks) {
 // Incomes, home values and rents vs the benchmarks, then the housing mix.
 // Winnipeg mode opens with the population trend and age (Location there is
 // purely where the area sits), as in Jason's demographic comments.
-function housingIncomePara(s, benchmarks, { wpg = false } = {}) {
+function housingIncomePara(s, benchmarks, { wpg = false, vintage = null } = {}) {
   const parts = [];
   if (wpg) for (const t of [growthSentence(s, benchmarks), ageSentence(s, benchmarks)]) if (t) parts.push(t);
   const metrics = [
@@ -397,13 +397,24 @@ function housingIncomePara(s, benchmarks, { wpg = false } = {}) {
   else if (tenure) parts.push(`Housing is ${tenure}.`);
   else if (mix) parts.push(`Housing consists ${mix}.`);
 
-  if (wpg && s.pre1961 != null && s.pre1961 >= 50) parts.push('The housing stock is generally older, with most homes built in 1960 or earlier.');
+  const vt = wpg ? vintageSentence(vintage) : null;
+  if (vt) parts.push(vt);
+  else if (wpg && s.pre1961 != null && s.pre1961 >= 50) parts.push('The housing stock is generally older, with most homes built in 1960 or earlier.');
   else if (wpg && s.post2000 != null && s.post2000 >= 50) parts.push('The housing stock is generally newer, with most homes built since 2000.');
   else if (s.post2000 != null && s.post2000 >= 40) parts.push('Much of the stock has been built since 2000.');
   else if (s.pre1961 != null && s.pre1961 >= 35) parts.push('Much of the stock predates 1961.');
   else if (s.post2000 != null && s.post2000 < 15) parts.push('There has been relatively little recent construction.');
   else if (s.post2000 != null || s.pre1961 != null) parts.push('The stock is a mix of older and newer construction.');
   return parts.length ? parts.join(' ') : null;
+}
+
+// Primary vintage from the assessment roll: the middle half of homes by year
+// built (dwelling-weighted 25th–75th percentile). Houses, duplexes, row housing
+// and condos only — the roll has no year built for rental apartment blocks.
+export function vintageSentence(v) {
+  if (!v?.p25 || !v?.p75) return null;
+  return v.p25 === v.p75 ? `The bulk of the housing stock was built in ${v.p25}.`
+    : `The bulk of the housing stock was built between ${v.p25} and ${v.p75}.`;
 }
 
 const sectorName = (x) => SECTOR_SHORT[x.code] || x.label.toLowerCase();
@@ -560,6 +571,96 @@ export function landUsePara(name, lu, level) {
   return parts.length ? parts.join(' ') : null;
 }
 
+// OurWinnipeg (Complete Communities Direction Strategy) urban structure, read
+// as the area's life-cycle stage. Shares are of the area's land.
+export const PLAN_SINGLE = 0.75;      // one designation covering this share names the area
+export const PLAN_LIFE = 0.5;         // ...and this share gives it a life-cycle stage
+export const PLAN_PART = 0.15;        // a designation worth naming in a mixed area
+export const GROWTH_YEARS = 8;        // a Recent Community whose 75th-pct year built is this recent is still growing
+const PLAN_ONE = {
+  downtown: 'part of Downtown', mature: 'a Mature Community', recent: 'a Recent Community',
+  new: 'a New Community', rural: 'Rural and Agricultural land', employment: 'Employment Lands',
+  airport: 'part of the Airport Area',
+};
+const PLAN_MANY = {
+  downtown: 'Downtown', mature: 'Mature Communities', recent: 'Recent Communities', new: 'New Communities',
+  rural: 'Rural and Agricultural lands', employment: 'Employment Lands', airport: 'the Airport Area',
+};
+const PLAN_GLOSS = {
+  mature: (noun) => `one of the city's older, established ${noun}s`,
+  recent: (noun) => `one of the suburban ${noun}s developed since the 1950s`,
+  new: () => 'planned for new, comprehensively planned development',
+  employment: () => 'set aside for industrial and business uses',
+  rural: () => 'beyond the areas planned for urban development',
+};
+const SITE_NAME = {
+  'Palliser': 'the Palliser site', 'Ravelston and Plessis': 'the Ravelston and Plessis site',
+  'Public Markets': 'the Public Markets site', 'Old Southwood Golf Course': 'the former Southwood Golf Course',
+  'Tuxedo/Lafarge Lands': 'the Tuxedo/Lafarge lands', 'South Point Douglas': 'South Point Douglas',
+  'The Waters Urban Village': 'The Waters Urban Village', 'Kapyong Barracks': 'the former Kapyong Barracks',
+};
+const siteName = (n) => SITE_NAME[n] || (/^the /i.test(n) ? n : `the ${n}`);
+const centreName = (n) => 'the ' + n.replace(/ \(emerging\)$/, '').replace(/ Area$/, ' area')
+  .replace(/\bAve W\b/, 'Avenue West').replace(/\bRd\b/, 'Road');
+export function planPara(name, ch, level, { year = new Date().getFullYear() } = {}) {
+  const st = ch?.structure;
+  if (!st || Array.isArray(st)) return null;
+  const ranked = Object.entries(st).filter(([k]) => PLAN_ONE[k]).sort((a, b) => b[1] - a[1]);
+  if (!ranked.length || ranked[0][1] < 0.25) return null;
+  const [top, topShare] = ranked[0];
+  const noun = areaNoun(level);
+  const lead = "Under the City's OurWinnipeg development plan (Complete Communities Direction Strategy), ";
+  const parts = [];
+  if (topShare >= PLAN_SINGLE) {
+    const gloss = PLAN_GLOSS[top] ? `, ${PLAN_GLOSS[top](noun)}` : '';
+    parts.push(`${lead}${name} is designated ${PLAN_ONE[top]}${gloss}.`);
+  } else {
+    const span = ranked.filter(([, v]) => v >= PLAN_PART).map(([k]) => PLAN_MANY[k]);
+    parts.push(span.length > 1 ? `${lead}${name} spans ${joinAnd(span)}.` : `${lead}${name} falls mainly within ${span[0]}.`);
+  }
+  // Life-cycle stage from the designation (and, for Recent Communities,
+  // whether building is still under way) — only when one designation holds
+  // most of the area.
+  const p75 = ch.vintage?.p75;
+  if (topShare < PLAN_LIFE) { /* mixed: no single stage */ }
+  else if (top === 'new') parts.push('It is in the early growth stage of its life cycle.');
+  else if (top === 'recent' && p75 && p75 >= year - GROWTH_YEARS) parts.push(`With much of its housing built in recent years, the ${noun} remains in the growth stage of its life cycle.`);
+  else if (top === 'recent') parts.push(`The ${noun} is largely built out and in the stable stage of its life cycle.`);
+  else if (top === 'mature') parts.push(`The ${noun} is in the stable stage of its life cycle, with change coming mainly through infill and redevelopment.`);
+  const centres = [].concat(ch.centres || []).map(centreName);
+  if (centres.length) parts.push(`The plan identifies ${joinAnd(centres)} as ${centres.length > 1 ? 'Regional Mixed Use Centres' : 'a Regional Mixed Use Centre'}.`);
+  const sites = [].concat(ch.sites || []).map(siteName);
+  const plural = sites.length > 1 || /Lands$/i.test(sites[0] || '');
+  if (sites.length) parts.push(`${capitalise(joinAnd(sites))} ${plural ? 'are' : 'is'} ${sites.length > 1 ? '' : 'a '}designated Major Redevelopment Site${sites.length > 1 ? 's' : ''}.`);
+  return parts.join(' ');
+}
+
+// Schools (OpenStreetMap) and hospitals inside the area, else the nearest
+// acute-care hospital. Up to SCHOOL_NAMES named, high schools first.
+export const SCHOOL_NAMES = 3;
+const HIGH_SCHOOL = /Collegiate|High School|Collège|Secondary/i;
+export function schoolsHealthPara(ch, level) {
+  if (!ch) return null;
+  const noun = areaNoun(level);
+  const parts = [];
+  const schools = [].concat(ch.schools || []);
+  if (schools.length) {
+    const ordered = [...schools.filter(n => HIGH_SCHOOL.test(n)), ...schools.filter(n => !HIGH_SCHOOL.test(n))];
+    const named = ordered.slice(0, SCHOOL_NAMES);
+    parts.push(schools.length === 1 ? `${named[0]} is located within the ${noun}.`
+      : schools.length > SCHOOL_NAMES ? `Schools within the ${noun} include ${joinAnd(named)}, among others.`
+      : `Schools within the ${noun} include ${joinAnd(named)}.`);
+  }
+  const hospitals = [].concat(ch.hospitals || []);
+  if (hospitals.length) parts.push(`${joinAnd(hospitals)} ${hospitals.length > 1 ? 'are' : 'is'} located within the ${noun}.`);
+  const nh = ch.nearestHospital;
+  if (nh?.name && !hospitals.includes(nh.name)) {
+    const dist = nh.km < 1 ? 'less than 1 km away' : `about ${Math.round(nh.km)} km away`;
+    parts.push(`The nearest hospital is ${nh.name}, ${dist}.`);
+  }
+  return parts.length ? parts.join(' ') : null;
+}
+
 // Main highways only — PTHs through the municipality, else what passes nearby.
 // Returns a predicate ("is served by …") to join onto the location sentence, or
 // a standalone sentence when nothing passes through.
@@ -601,9 +702,13 @@ export function buildCensusNarrative({ subject, benchmarks = [], years, period, 
   ];
   const push = (heading, text) => { if (text) blocks.push({ type: 'heading', text: heading }, { type: 'para', text }); };
   push(isWpg ? 'Location' : 'Location and growth', locationGrowthPara(s, bm, sHw, wpgText, isWpg));
-  push(isWpg ? 'Demographics and housing' : 'Housing and income', housingIncomePara(s, bm, { wpg: isWpg }));
+  const ch = sCtx?.character ?? null;
+  push(isWpg ? 'Demographics and housing' : 'Housing and income', housingIncomePara(s, bm, { wpg: isWpg, vintage: ch?.vintage }));
+  push('Development plan and life cycle', isWpg ? planPara(s.name, ch, subject.level) : null);
   const luText = isWpg ? landUsePara(s.name, sCtx?.landuse, subject.level) : null;
   push('Land use', luText);
+  const schoolText = isWpg ? schoolsHealthPara(ch, subject.level) : null;
+  push('Schools and health care', schoolText);
   // Named employers are local knowledge the appraiser types in (Local inputs).
   const employers = isWpg ? [] : (services?.employers || []).map(e => String(e).trim()).filter(Boolean);
   push(isWpg ? 'Employment' : 'Local economy', economyPara(s, sInd, bm, { hw: sHw, employers, wpg: isWpg }));
@@ -618,7 +723,8 @@ export function buildCensusNarrative({ subject, benchmarks = [], years, period, 
   const stubs = isWpg ? [
     wpgText ? null : 'Location: [boundary streets; nearby major thoroughfares; rivers]',
     luText ? null : 'Zoning and land use: [predominant zoning; commercial strips; parks and open space]',
-    'Schools and character: [schools serving the neighbourhood; general feel and condition of the area]',
+    schoolText ? 'Character: [general feel and condition of the area]'
+      : 'Schools and character: [schools serving the neighbourhood; general feel and condition of the area]',
   ] : [
     employers.length ? null
       : sInd ? 'Major employers: [name the principal local employers — enter them under Local inputs below]'
