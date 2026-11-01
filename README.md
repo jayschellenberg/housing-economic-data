@@ -127,6 +127,18 @@ facilities (schools, health care, churches, halls, rinks, stores, fuel …) and
 the service centre residents rely on (the census population centre of 1,000+
 with the lowest distance ÷ √population, Winnipeg excluded).
 
+Each community also gets a **service level** — the Census Profile checklist's
+rule (`web/src/service-tier.js`: grocery store, bank or credit union, medical
+clinic and a school to Grade 12 = full-service; plus a hospital and 5,000+
+people = regional centre; some = limited; none = minimal) ticked from the data:
+OpenStreetMap for the first three and hospitals (a hospital counts as the
+clinic), and Manitoba Education's "Schools in Manitoba" directory for Grade 12
+(`r/lib/mb_schools.R`: public division and First Nations schools by mailing
+town; independent and colony schools left out). It leads the facilities
+paragraph, shows as a badge and in the community drop-down, and "Supporting
+figures" lists what was and wasn't found. OpenStreetMap misses some clinics
+and credit unions, so a level can read low — check it.
+
 Build (run-once; re-run when the census, OSM or the map-sheet list changes):
 
 ```

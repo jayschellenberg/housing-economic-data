@@ -21,6 +21,8 @@
 #     (r/27) and the Manitoba Road Network 2023 cache r/27 downloads.
 #   - Facilities: OpenStreetMap via Overpass (© OpenStreetMap contributors,
 #     ODbL) — schools, churches, halls, rinks, stores, fuel, health care, etc.
+#   - Schools to Grade 12: Manitoba Education's "Schools in Manitoba"
+#     directory (r/lib/mb_schools.R), matched on the school's mailing town.
 #   - Statistics Canada 2021 Census population and dwelling counts for
 #     designated places (98-10-0012) and population centres (98-10-0011).
 #
@@ -33,7 +35,7 @@
 #   { generatedAt, communities: [ { id, name, csd, lon, lat, source, ambiguous,
 #       isCentre, centre:{name,km,dir}, wpg:{km,dir}, service:{name,km,dir},
 #       roads:{on:[…], near:{route,km,dir}}, census:{pop21,pop16,dwell,occ,kind},
-#       facilities:{ <group>: [names…] | count } } ] }
+#       facilities:{ <group>: [names…] | count, school_hs: [names…] } } ] }
 # ---------------------------------------------------------------------------
 
 suppressMessages({ library(sf); library(jsonlite) })
@@ -50,6 +52,7 @@ out_dir   <- file.path(repo_root, "web", "scripts", "data")
 dir.create(file.path(cache_dir, "cgndb"), recursive = TRUE, showWarnings = FALSE)
 dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 source(file.path(repo_root, "r", "lib", "statcan_places.R"))
+source(file.path(repo_root, "r", "lib", "mb_schools.R"))
 
 COMMUNITY_MAPS_DIR <- Sys.getenv("COMMUNITY_MAPS_DIR", "D:/Dropbox/Appraisal/Maps/$Town and Village Maps 2026")
 CRS_M     <- 26914
@@ -243,6 +246,11 @@ fac <- fac[!is.na(fac$group) & !is.na(fac$x), ]
 fac <- st_transform(st_as_sf(fac, coords = c("x", "y"), crs = 4326), CRS_M)
 NAMED <- c("school", "hospital", "care_home", "golf", "museum")
 message(sprintf("[33] %d facilities", nrow(fac)))
+# Public / First Nations schools that teach Grade 12, by mailing town (the
+# service-tier rubric's "school to Grade 12"; OSM has no grade levels).
+sch <- mb_school_directory(cache_dir, "housing-economic-data r/33")
+sch <- sch[sch$high %in% 12 & !is.na(sch$town), ]
+message(sprintf("[33] %d schools to Grade 12 in %d towns", nrow(sch), length(unique(sch$town))))
 
 # --- Census: designated places + population centres -----------------------------
 cen <- mb_place_populations(cache_dir, "housing-economic-data r/33")
@@ -276,6 +284,8 @@ for (i in seq_len(nrow(com))) {
     nm <- unique(na.omit(fi$name[fi$group == g]))
     facilities[[g]] <- if (g %in% NAMED && length(nm)) I(nm) else sum(fi$group == g)
   }
+  hs <- sch$name[fold(sch$town) %in% fold(c(com$name[i], lookup[match(com$name[i], names_raw)]))]
+  if (length(hs)) facilities$school_hs <- I(sort(unique(hs)))
   # Main town of the municipality (from r/27) — distance and direction.
   ci <- centre_pt(uid)
   centre <- NULL; is_centre <- FALSE

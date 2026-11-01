@@ -217,7 +217,7 @@ function renderItemPicker() {
   const items = a?.items || [];
   const noun = a?.kind === 'wpg' ? 'neighbourhood' : 'community';
   ui.$item.innerHTML = `<option value="${OVERVIEW}">${items.length ? `Overview only — choose a ${noun}` : 'Overview only'}</option>` +
-    items.map(i => `<option value="${escapeHtml(i.id)}">${escapeHtml(i.name)}${mark(i.id)}</option>`).join('');
+    items.map(i => `<option value="${escapeHtml(i.id)}">${escapeHtml(i.name)}${i.tier ? ` · ${TIER_SHORT[i.tier]}` : ''}${mark(i.id)}</option>`).join('');
   ui.$item.disabled = !items.length;
   ui.$item.value = items.some(i => i.id === ui.prefs.item) ? ui.prefs.item : OVERVIEW;
 }
@@ -231,11 +231,15 @@ function renderContent() {
   if (!a) return;
   const item = currentItem();
   // The focus write-up first when one is chosen; the area overview under it.
-  if (item) ui.$main.appendChild(card({ id: item.id, title: item.name, blocks: item.blocks, flags: item.flags, tables: item.tables,
+  if (item) ui.$main.appendChild(card({ id: item.id, title: item.name, blocks: item.blocks, flags: item.flags, tables: item.tables, tier: item.tier,
     sub: `${a.kind === 'wpg' ? 'Neighbourhood' : 'Community'} in ${a.name}` }));
   ui.$main.appendChild(card({ id: a.id, title: a.name, blocks: a.overview.blocks, tables: a.overview.tables,
     sub: a.kind === 'wpg' ? 'Neighbourhood cluster overview' : 'Municipality overview' }));
 }
+
+// Community service level (community-narrative.js communityServices).
+const TIER_SHORT = { regional: 'regional centre', full: 'full-service', limited: 'limited-service', minimal: 'minimal-service' };
+const TIER_CLS = { regional: 'bg-blue-100 text-blue-800', full: 'bg-blue-50 text-blue-800', limited: 'bg-neutral-100 text-neutral-700', minimal: 'bg-neutral-100 text-neutral-500' };
 
 const STATUS = {
   generated: ['bg-neutral-100 text-neutral-700', 'Generated — not yet reviewed'],
@@ -243,7 +247,7 @@ const STATUS = {
   stale: ['bg-amber-100 text-amber-800', 'Reviewed — but the generated text has changed since'],
 };
 
-function card({ id, title, sub, blocks, flags = [], tables = [] }) {
+function card({ id, title, sub, blocks, flags = [], tables = [], tier = null }) {
   const meta = blocks.find(b => b.type === 'meta')?.text || '';
   const applied = applyEdit(sectionsOf(blocks), ui.edits[id]);
   const edit = ui.edits[id];
@@ -255,6 +259,7 @@ function card({ id, title, sub, blocks, flags = [], tables = [] }) {
     <header class="chart-title">${escapeHtml(title)}</header>
     <p class="chart-sub">${escapeHtml(sub)}${meta ? ` · ${escapeHtml(meta)}` : ''}</p>
     <p class="text-sm my-1"><span class="inline-block rounded px-2 py-0.5 text-xs font-semibold ${cls}">${escapeHtml(label)}</span>
+      ${TIER_SHORT[tier] ? `<span class="inline-block rounded px-2 py-0.5 text-xs font-semibold ${TIER_CLS[tier]}" title="Service level from the data found — see Supporting figures">${escapeHtml(TIER_SHORT[tier])}</span>` : ''}
       ${edit ? `<span class="text-xs text-neutral-500 ml-1">saved ${escapeHtml(new Date(edit.editedAt).toLocaleDateString('en-CA'))}${edit.by ? ` by ${escapeHtml(edit.by)}` : ''}</span>` : ''}</p>
     ${flags.map(f => `<div class="text-sm my-2 rounded border-2 border-red-500 bg-red-50 text-red-900 px-3 py-2" role="alert">
       <p class="font-bold uppercase tracking-wide">⚠ Verify</p><p class="mt-1">${escapeHtml(f)}</p></div>`).join('')}
