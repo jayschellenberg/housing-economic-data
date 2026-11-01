@@ -21,10 +21,16 @@
 # straight-line from the municipality's main town to the city limits, with
 # the bearing from Winnipeg; `adjoins` = the municipality touches the city.
 #
-# Main town: the highest-ranked OpenStreetMap place (city > town > village >
-# hamlet, then OSM population) inside the municipality or inside a town /
-# village enclaved by it — so a rural municipality measures from the service
-# town it surrounds (RM of Dauphin → Dauphin). No place → polygon centroid.
+# Main town: the most populous OpenStreetMap place (city / town / village /
+# hamlet) inside the municipality (not on a reserve within it) or inside a
+# town, village or city it surrounds —
+# so a rural municipality measures from the service town it encloses (RM of
+# Dauphin → Dauphin). "Surrounds" = the town lies inside the municipality's
+# outer ring or shares at least half its boundary with it (simplified
+# boundaries turn some holes into notches: Town of Morris). Population is the
+# 2021 Census count — the enclosed municipality's own, else a designated place
+# or population centre of that name (r/lib/statcan_places.R) — falling back to
+# OSM's population tag, then its place type. No place → polygon centroid.
 # Places come from Overpass (© OpenStreetMap contributors, ODbL), cached as
 # r/lib/cache/geo/mb_places.json — delete it to refresh.
 #
@@ -43,6 +49,7 @@ repo_root <- normalizePath(file.path(this_dir, ".."), mustWork = FALSE)
 cache_dir <- file.path(repo_root, "r", "lib", "cache", "geo")
 geo_dir   <- file.path(repo_root, "web", "public", "data", "geo")
 dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
+source(file.path(repo_root, "r", "lib", "statcan_places.R"))
 
 ROADS_URL  <- "https://geoportal.gov.mb.ca/api/download/v1/items/cb0d37e639ff4382be1033dfdfa962a8/geojson?layers=0"
 ROADS_FILE <- file.path(cache_dir, "mb_road_network_2023.geojson")
@@ -51,6 +58,12 @@ WPG_CSD    <- "4611040"
 CRS_M      <- 26914          # NAD83 / UTM 14N — metres, the source CRS
 PLACES_FILE <- file.path(cache_dir, "mb_places.json")
 PLACE_RANK  <- c(city = 4, town = 3, village = 2, hamlet = 1)
+# Stand-in population by OSM place type when no count is known.
+PLACE_POP   <- c(city = 5000, town = 800, village = 150, hamlet = 30)
+SHARED_EDGE <- 0.75    # share of a town's boundary on the municipality = surrounded by it
+# Hand corrections where the simplified boundaries put a town in the wrong
+# municipality: CSD id -> main town name (must be an OpenStreetMap place).
+CENTRE_OVERRIDE <- c("4608032" = "Treherne")    # Notre-Dame-de-Lourdes is in Lorne
 
 # --- Download (cached) ------------------------------------------------------
 if (!file.exists(ROADS_FILE) || file.size(ROADS_FILE) < 1e6) {
@@ -107,18 +120,67 @@ places$rank <- PLACE_RANK[places$place]
 places <- st_transform(st_as_sf(places, coords = c("lon", "lat"), crs = 4326), CRS_M)
 message(sprintf("[27] %d OpenStreetMap places", nrow(places)))
 
-# Enclaves: other CSDs lying inside this one's outer ring (a town an RM surrounds).
+# Enclaves: other CSDs inside this one's outer ring, or sharing at least
+# SHARED_EDGE of their boundary with it (a town an RM surrounds).
 filled <- st_sfc(lapply(st_geometry(csd), function(g)
   st_union(st_sfc(lapply(st_cast(st_sfc(g), "POLYGON"), function(p) st_polygon(p[1]))))[[1]]), crs = CRS_M)
 inner <- st_within(st_point_on_surface(st_geometry(csd)), filled)
-in_csd <- st_intersects(csd, places)
+rings <- st_cast(st_geometry(csd), "MULTILINESTRING")
+touch <- st_touches(csd)
+shared <- function(j, i) {     # share of CSD j's boundary that lies on CSD i
+  b <- st_intersection(rings[j], st_buffer(rings[i], 50))
+  if (!length(b)) return(0)
+  sum(as.numeric(st_length(b))) / as.numeric(st_length(rings[j]))
+}
+# 2021 Census populations: municipalities (census profile) and named places.
+fold <- function(x) gsub("[^a-z]", "", tolower(iconv(x, "UTF-8", "ASCII//TRANSLIT")))
+prof <- fromJSON(file.path(repo_root, "web", "public", "data", "housing", "census_profile.json"), simplifyVector = FALSE)$regions
+csd_pop <- unlist(lapply(prof, function(r) {
+  if (!identical(r$level, "CSD")) return(NULL)
+  p <- r$trends[["2021"]]$population
+  if (is.null(p)) NULL else setNames(as.numeric(p), r$uid)
+}))
+ctype <- setNames(vapply(prof, function(r) sub("^.*\\(([^)]+)\\)\\s*$", "\\1", r$name), ""),
+                  vapply(prof, function(r) r$uid, ""))[csd$id]
+urban <- which(ctype %in% c("T", "VL", "CY"))
+# Each place belongs to one municipality: a town / village / city polygon it
+# falls in, else the one it sits deepest inside (simplified neighbours overlap
+# a little at the line — Notre-Dame-de-Lourdes).
+hits_p <- st_intersects(places, csd)
+place_csd <- vapply(seq_len(nrow(places)), function(k) {
+  h <- hits_p[[k]]
+  if (length(h) <= 1) return(if (length(h)) h else NA_integer_)
+  u <- intersect(h, urban)
+  if (length(u)) return(u[1])
+  h[which.max(as.numeric(st_distance(places[k, ], rings[h])))]
+}, 1L)
+in_csd <- lapply(seq_len(nrow(csd)), function(i) which(place_csd == i))
+on_reserve <- unique(unlist(in_csd[which(ctype == "IRI")]))
+named <- mb_place_populations(cache_dir, "housing-economic-data r/27")
+named <- named[!is.na(named$pop21), ]
+named_pop <- tapply(named$pop21, fold(named$geo), max)
 centre_of <- function(i) {
-  own <- in_csd[[i]]
-  encl <- setdiff(which(vapply(inner, function(w) i %in% w, TRUE)), i)
+  ov <- CENTRE_OVERRIDE[csd$id[i]]
+  if (!is.na(ov)) return(places[places$name == ov, ][which.min(as.numeric(st_distance(places[places$name == ov, ], csd[i, ]))), ])
+  own <- if (identical(ctype[[i]], "IRI")) in_csd[[i]] else setdiff(in_csd[[i]], on_reserve)
+  # Unorganized territory serves no town, whatever lies inside it.
+  encl <- if (identical(ctype[[i]], "NO")) integer(0) else intersect(setdiff(which(vapply(inner, function(w) i %in% w, TRUE)), i), urban)
+  if (!identical(ctype[[i]], "NO"))
+    encl <- union(encl, Filter(function(j) shared(j, i) >= SHARED_EDGE, setdiff(intersect(touch[[i]], urban), encl)))
   cand <- unique(c(own, unlist(in_csd[encl])))
   if (!length(cand)) return(NULL)
   p <- places[cand, ]
-  p[order(-p$rank, -ifelse(is.na(p$pop), 0, p$pop), as.numeric(st_distance(p, cent[i]))), ][1, ]
+  # The enclosed municipality's own count for its namesake place.
+  home <- vapply(cand, function(k) {
+    j <- encl[vapply(encl, function(j) k %in% in_csd[[j]], TRUE)]
+    if (length(j) && fold(csd$name[j[1]]) == fold(places$name[k])) as.numeric(csd_pop[csd$id[j[1]]]) else NA_real_
+  }, 0)
+  pop <- ifelse(!is.na(home), home, named_pop[fold(p$name)])
+  pop <- ifelse(is.na(pop), p$pop, pop)
+  # A counted population always outranks a stand-in (OSM tags some hamlets "town").
+  known <- !is.na(pop)
+  pop <- ifelse(known, pop, PLACE_POP[p$place])
+  p[order(-known, -pop, -p$rank, as.numeric(st_distance(p, cent[i]))), ][1, ]
 }
 
 compass <- function(from, to) {
