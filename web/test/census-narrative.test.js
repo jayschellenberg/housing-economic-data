@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildCensusNarrative, regionStats, ratioPhrase, growthPhrase, proseName, landUsePara, planPara, schoolsHealthPara, vintageSentence } from '../src/census-narrative.js';
+import { buildCensusNarrative, regionStats, ratioPhrase, growthPhrase, proseName, landUsePara, planPara, schoolsHealthPara, vintageSentence, developmentPara } from '../src/census-narrative.js';
 
 const YEARS = ['2006', '2011', '2016', '2021'];
 
@@ -403,5 +403,30 @@ describe('Winnipeg character (plan, vintage, schools)', () => {
       'A School is located within the area. Health Sciences Centre is located within the area.');
     expect(schoolsHealthPara({ nearestHospital: { name: 'X', km: 0.4 } }, 'WPG_Nbhd')).toBe('The nearest hospital is X, less than 1 km away.');
     expect(schoolsHealthPara(null, 'WPG_Nbhd')).toBeNull();
+  });
+});
+
+describe('developmentPara (Winnipeg building permits)', () => {
+  const pm = (units, lost = 0, nonres = 0) => ({ units: { sf: 0, semi: 0, apt: 0, other: 0, ...units }, lost, nonres });
+  it('pace against households, with the kind of housing', () => {
+    expect(developmentPara(pm({ apt: 300, sf: 20 }), 1000)).toBe(
+      'Residential construction has been very active over the past five years, mostly apartment buildings.');
+    expect(developmentPara(pm({ sf: 30, apt: 30 }), 1000)).toBe(
+      'There has been steady residential construction over the past five years, including single-family homes and apartment buildings.');
+    expect(developmentPara(pm({ semi: 20 }), 1000)).toBe(
+      'There has been modest new residential construction over the past five years, mostly row housing and duplexes.');
+    expect(developmentPara(pm({ sf: 3 }), 1000)).toBe('There has been little new residential construction over the past five years.');
+  });
+  it('never names the "other" bucket', () => {
+    expect(developmentPara(pm({ other: 116, apt: 23 }), 775)).toBe('Residential construction has been very active over the past five years.');
+  });
+  it('demolitions and non-residential building', () => {
+    expect(developmentPara(pm({ sf: 8 }, 40), 3000)).toContain('Demolitions and conversions have removed more dwellings than were added.');
+    expect(developmentPara(pm({ apt: 100 }, 60), 1000)).toContain('Demolitions and conversions have offset part of the new construction.');
+    expect(developmentPara(pm({ apt: 100 }, 5, 4), 1000)).toContain('Several new non-residential buildings have also been built.');
+  });
+  it('needs permits and households', () => {
+    expect(developmentPara(null, 1000)).toBeNull();
+    expect(developmentPara(pm({ sf: 5 }), null)).toBeNull();
   });
 });
