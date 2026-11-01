@@ -516,6 +516,50 @@ function wpgEmploymentPara(ind, benchmarks) {
   return parts.join(' ');
 }
 
+// Winnipeg land use, from current zoning (r/30): the predominant character,
+// then commercial corridors vs residential interior, parks, institutions.
+// Shares are of zoned land; worded as zoning ("Based on current zoning, …"),
+// since zoning is the permitted use, not a land-use survey.
+export const PREDOMINANT = 0.5;      // a category (or group) holding this share names the area
+export const NOTABLE = 0.15;          // a secondary category worth a clause
+const LU_NOUN = { com: 'commercial', ind: 'industrial', park: 'parks and open space', inst: 'institutional',
+                  ag: 'agricultural', res: 'residential', dt: 'downtown mixed-use' };
+export function landUsePara(name, lu, level) {
+  const sh = lu?.shares;
+  if (!sh || Array.isArray(sh)) return null;
+  const g = (k) => sh[k] || 0;
+  const res = g('sf') + g('two') + g('mf') + g('rr');
+  const noun = areaNoun(level);
+  let lead;
+  if (g('dt') >= PREDOMINANT) lead = `${name} falls within the downtown zoning sectors, which provide for a mix of commercial, residential and institutional uses`;
+  else if (g('ag') + g('rr') >= PREDOMINANT) lead = `${name} is largely agricultural and rural residential, ahead of urban development`;
+  else if (g('ind') >= PREDOMINANT) lead = `${name} is largely industrial${g('com') >= NOTABLE ? ' and commercial' : ''}`;
+  else if (g('com') >= PREDOMINANT) lead = `${name} is largely commercial`;
+  else if (res >= PREDOMINANT) {
+    const sf = g('sf') / res, two = g('two') / res, mf = g('mf') / res;
+    lead = sf >= 0.7 ? `${name} is predominantly single-family residential`
+      : sf + two >= 0.7 ? `${name} is predominantly low-density residential, with single- and two-family zoning`
+      : mf >= 0.4 ? `${name} is predominantly residential, with a substantial multi-family component`
+      : `${name} is predominantly residential, with a mix of single-family, two-family and multi-family zoning`;
+    const extra = ['ind', 'com', 'inst'].filter(k => g(k) >= NOTABLE).map(k => LU_NOUN[k]);
+    if (extra.length) lead += ` and some ${joinAnd(extra)} land`;
+  } else {
+    const top = [['res', res], ...['com', 'ind', 'park', 'inst', 'ag', 'dt'].map(k => [k, g(k)])]
+      .filter(([, v]) => v >= NOTABLE).sort((a, b) => b[1] - a[1]).map(([k]) => LU_NOUN[k]);
+    lead = top.length >= 2 ? `${name} has a mix of ${joinAnd(top)} uses` : null;
+  }
+  const parts = lead ? [`Based on current zoning, ${lead}.`] : [];
+  const corridors = (lu.corridors || []).slice(0, 4).map(c => withArticle(c.name));
+  if (corridors.length) {
+    const interior = res >= PREDOMINANT ? ', while the interior blocks are predominantly residential' : '';
+    parts.push(`Commercial uses are concentrated along ${joinAnd(corridors)}${interior}.`);
+  } else if (g('com') >= 0.08 && !/commercial/.test(lead || '')) {
+    parts.push(`There is some commercial zoning within the ${noun}.`);
+  }
+  if (g('park') >= NOTABLE && g('ag') + g('rr') < PREDOMINANT) parts.push('Parks and open space make up a notable share of the land.');
+  return parts.length ? parts.join(' ') : null;
+}
+
 // Main highways only — PTHs through the municipality, else what passes nearby.
 // Returns a predicate ("is served by …") to join onto the location sentence, or
 // a standalone sentence when nothing passes through.
@@ -558,6 +602,8 @@ export function buildCensusNarrative({ subject, benchmarks = [], years, period, 
   const push = (heading, text) => { if (text) blocks.push({ type: 'heading', text: heading }, { type: 'para', text }); };
   push(isWpg ? 'Location' : 'Location and growth', locationGrowthPara(s, bm, sHw, wpgText, isWpg));
   push(isWpg ? 'Demographics and housing' : 'Housing and income', housingIncomePara(s, bm, { wpg: isWpg }));
+  const luText = isWpg ? landUsePara(s.name, sCtx?.landuse, subject.level) : null;
+  push('Land use', luText);
   // Named employers are local knowledge the appraiser types in (Local inputs).
   const employers = isWpg ? [] : (services?.employers || []).map(e => String(e).trim()).filter(Boolean);
   push(isWpg ? 'Employment' : 'Local economy', economyPara(s, sInd, bm, { hw: sHw, employers, wpg: isWpg }));
@@ -571,7 +617,7 @@ export function buildCensusNarrative({ subject, benchmarks = [], years, period, 
   blocks.push({ type: 'heading', text: 'Appraiser notes (to complete)' });
   const stubs = isWpg ? [
     wpgText ? null : 'Location: [boundary streets; nearby major thoroughfares; rivers]',
-    'Zoning and land use: [predominant zoning; commercial strips; parks and open space]',
+    luText ? null : 'Zoning and land use: [predominant zoning; commercial strips; parks and open space]',
     'Schools and character: [schools serving the neighbourhood; general feel and condition of the area]',
   ] : [
     employers.length ? null

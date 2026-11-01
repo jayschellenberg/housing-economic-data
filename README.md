@@ -66,7 +66,7 @@ other tab is Housing.
 | Secondary Rental | CMHC Srms (condo / secondary) for surveyed centres | `r/06` |
 | Housing Starts | CMHC Scss starts / completions | `r/05` |
 | Housing Stock | Census dwelling type / age / condition + choropleth map | `r/07`–`r/10`, `r/12b`, `r/20` |
-| Census Profile | Population & dwelling trends + annual estimates + demographics + community-profile narrative + choropleth map | `r/12`, `r/12b`, `r/20`, `r/26`, `r/27`, `r/29` (run-once); `r/23` (monthly) |
+| Census Profile | Population & dwelling trends + annual estimates + demographics + community-profile narrative + choropleth map | `r/12`, `r/12b`, `r/20`, `r/26`, `r/27`, `r/29`, `r/30` (run-once); `r/23` (monthly) |
 | Affordability | Royal-LePage-style affordability factor + choropleth map | `r/16`, `r/18`, census, `r/20` |
 | Current Snapshot / Market Indicators | BoC / StatsCan / OSB economic indicators, incl. CPI inflation (headline, core, shelter, annual average), (Cap vs Interest moved to its own Local Data tab) | `r/10`,`r/11`,`r/13`,`r/14`,`r/17` |
 | Cap Rates vs Interest | The Cap vs Interest chart — BoC overnight target and GoC yields with Winnipeg cap-rate overlays from the Cap Rates tab's local data (Local Data group) | BoC shard + `Cap-Rates` project |
@@ -280,6 +280,11 @@ side after the nearest street (City Road Network), rail line or river
 (OpenStreetMap, © OpenStreetMap contributors, ODbL); arterials come from the
 curated `r/lib/wpg_arterials.csv` (the City's road data has no road class — edit
 the list freely). Needs sf; run-once; downloads cached under `r/lib/cache/geo/`.
+A "Land use" paragraph comes from `r/30_build_wpg_nbhd_landuse.R` →
+`web/public/data/geo/wpg_nbhd_landuse.json`: share of zoned land by category
+(City Zoning By-law Parcels, current state — worded "Based on current zoning")
+and commercial corridors (a curated arterial with commercial zoning on the
+area's side along ≥ 35% of at least 400 m of frontage). Run-once, ~1 minute.
 
 Its "Access and roadways" paragraph (municipalities only) comes from
 `r/27_build_csd_highways.R` → `web/public/data/geo/mb_csd_highways.json`:
