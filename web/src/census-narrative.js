@@ -142,6 +142,7 @@ export function regionStats(region, { years, period }) {
     rent: num(d?.median_rent),
     medianAge: num(d?.median_age),
     ownerShare: share('owner', 'tenure_total'),
+    households: pos(d?.tenure_total),
     pre1961: share('built_1960', 'period_total'),
     post2000,
     types,
@@ -661,6 +662,38 @@ export function schoolsHealthPara(ch, level) {
   return parts.length ? parts.join(' ') : null;
 }
 
+// Recent development from building permits (last five years): new dwelling
+// units against the area's census households, what kind of housing they are,
+// demolitions / conversions, and new non-residential buildings.
+export const DEV_BANDS = [[15, 'Residential construction has been very active'],
+  [5, 'There has been steady residential construction'],
+  [1.5, 'There has been modest new residential construction']];
+export const DEV_MIX_MIN = 10;        // fewer new units = no "mainly …" clause
+export const DEV_NONRES = 3;          // new non-residential buildings worth a sentence
+const DEV_TYPE = { sf: 'single-family homes', semi: 'row housing and duplexes', apt: 'apartment buildings' };
+export function developmentPara(pm, households) {
+  if (!pm?.units || !households) return null;
+  const u = pm.units;
+  const created = (u.sf || 0) + (u.semi || 0) + (u.apt || 0) + (u.other || 0);
+  const rate = created / households * 100;
+  const band = DEV_BANDS.find(([min]) => rate >= min);
+  const parts = [];
+  let lead = band ? `${band[1]} over the past five years` : 'There has been little new residential construction over the past five years';
+  if (band && created >= DEV_MIX_MIN) {
+    // "other" (dormitories, rooming houses, mixed buildings) is never named.
+    const shares = Object.keys(DEV_TYPE).map(k => [k, (u[k] || 0) / created]).sort((a, b) => b[1] - a[1]);
+    const named = shares.filter(([, v]) => v >= 0.2).map(([k]) => DEV_TYPE[k]);
+    if (shares[0][1] >= 0.6) lead += `, mostly ${DEV_TYPE[shares[0][0]]}`;
+    else if (named.length >= 2) lead += `, including ${joinAnd(named)}`;
+  }
+  parts.push(lead + '.');
+  const lost = pm.lost || 0;
+  if (lost >= 10 && lost >= created) parts.push('Demolitions and conversions have removed more dwellings than were added.');
+  else if (lost >= 10 && lost >= created / 2) parts.push('Demolitions and conversions have offset part of the new construction.');
+  if ((pm.nonres || 0) >= DEV_NONRES) parts.push('Several new non-residential buildings have also been built.');
+  return parts.join(' ');
+}
+
 // Main highways only — PTHs through the municipality, else what passes nearby.
 // Returns a predicate ("is served by …") to join onto the location sentence, or
 // a standalone sentence when nothing passes through.
@@ -707,6 +740,7 @@ export function buildCensusNarrative({ subject, benchmarks = [], years, period, 
   push('Development plan and life cycle', isWpg ? planPara(s.name, ch, subject.level) : null);
   const luText = isWpg ? landUsePara(s.name, sCtx?.landuse, subject.level) : null;
   push('Land use', luText);
+  push('Recent development', isWpg ? developmentPara(sCtx?.permits, s.households) : null);
   const schoolText = isWpg ? schoolsHealthPara(ch, subject.level) : null;
   push('Schools and health care', schoolText);
   // Named employers are local knowledge the appraiser types in (Local inputs).

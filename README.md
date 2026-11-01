@@ -66,7 +66,7 @@ other tab is Housing.
 | Secondary Rental | CMHC Srms (condo / secondary) for surveyed centres | `r/06` |
 | Housing Starts | CMHC Scss starts / completions | `r/05` |
 | Housing Stock | Census dwelling type / age / condition + choropleth map | `r/07`–`r/10`, `r/12b`, `r/20` |
-| Census Profile | Population & dwelling trends + annual estimates + demographics + community-profile narrative + choropleth map | `r/12`, `r/12b`, `r/20`, `r/26`, `r/27`, `r/29`, `r/30`, `r/31` (run-once); `r/23` (monthly) |
+| Census Profile | Population & dwelling trends + annual estimates + demographics + community-profile narrative + choropleth map | `r/12`, `r/12b`, `r/20`, `r/26`, `r/27`, `r/29`, `r/30`, `r/31`, `r/32` (run-once); `r/23` (monthly) |
 | Affordability | Royal-LePage-style affordability factor + choropleth map | `r/16`, `r/18`, census, `r/20` |
 | Current Snapshot / Market Indicators | BoC / StatsCan / OSB economic indicators, incl. CPI inflation (headline, core, shelter, annual average), (Cap vs Interest moved to its own Local Data tab) | `r/10`,`r/11`,`r/13`,`r/14`,`r/17` |
 | Cap Rates vs Interest | The Cap vs Interest chart — BoC overnight target and GoC yields with Winnipeg cap-rate overlays from the Cap Rates tab's local data (Local Data group) | BoC shard + `Cap-Rates` project |
@@ -295,6 +295,12 @@ year built from the assessment roll (houses, duplexes, row housing and condos �
 the roll has no year built for rental apartment blocks; areas with fewer than 20
 residential lots are skipped); OpenStreetMap schools and hospitals, plus the
 nearest acute-care hospital (curated list in the script). Run-once, ~1 minute.
+A "Recent development" paragraph comes from `r/32_build_wpg_nbhd_permits.R` →
+`web/public/data/geo/wpg_nbhd_permits.json`: City Detailed Building Permit Data
+(it4w-cpf4) for the last five years — dwelling units created by building type,
+units lost to demolitions / changes of use, new non-residential buildings —
+read against 2021 census households (≥ 15% very active, ≥ 5% steady, ≥ 1.5%
+modest). Delete `r/lib/cache/geo/wpg_permits_recent.csv` and re-run to refresh.
 
 Its "Access and roadways" paragraph (municipalities only) comes from
 `r/27_build_csd_highways.R` → `web/public/data/geo/mb_csd_highways.json`:
