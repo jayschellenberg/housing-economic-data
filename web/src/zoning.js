@@ -19,7 +19,7 @@ import { escapeHtml } from './escape.js';
 import { getPref, setPref } from './prefs.js';
 import {
   nameableUses, nameableConditional, narrativeParagraphs, bulkRows, formatValue, ATTRIBUTE_LABELS,
-  currencyVerdict, currencyMessage, currencyQueryUrl, zoneShortName, zoneDescription, verifyApplies,
+  currencyVerdict, currencyMessage, currencyQueryUrl, zoneShortName, zoneDescription, verifyApplies, muniPickerLabel,
 } from './zoning-data.js';
 import {
   storeAvailable, fsAccessSupported, pickDirectory, getSavedDirectory, directoryPermission,
@@ -241,10 +241,10 @@ function renderFolderBody() {
 }
 
 function renderMuniPicker() {
-  // alphabetical by name, ignoring the "RM of / Town of / City of" prefix
-  const bare = (m) => m.label.replace(/^(RM|Rural Municipality|Town|City|Village|Municipality|LGD) of /i, '');
-  const list = [...munis()].sort((a, b) => bare(a).localeCompare(bare(b)) || a.label.localeCompare(b.label));
-  ui.$muni.innerHTML = list.map(m => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.label)}${m.note ? ' ⚠ verify' : ''}</option>`).join('');
+  // alphabetical by name: "Alonsa (RM)", "Beausejour (Town)"
+  const list = [...munis()].map(m => ({ m, text: muniPickerLabel(m.label) }))
+    .sort((a, b) => a.text.localeCompare(b.text));
+  ui.$muni.innerHTML = list.map(({ m, text }) => `<option value="${escapeHtml(m.id)}">${escapeHtml(text)}${m.note ? ' ⚠ verify' : ''}</option>`).join('');
   ui.$muni.disabled = !list.length;
   if (list.some(m => m.id === ui.prefs.muni)) ui.$muni.value = ui.prefs.muni;
 }

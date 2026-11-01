@@ -25,6 +25,17 @@ export function useList(items) {
   return `${x.slice(0, -1).join('; ')}; and ${x[x.length - 1]}`;
 }
 
+/**
+ * Picker label "Alonsa (RM)" from "RM of Alonsa": name first, type in brackets, so the
+ * list reads alphabetically. A trailing "(former RM of Clanwilliam)" joins the type.
+ */
+export function muniPickerLabel(label) {
+  const m = String(label ?? '').match(/^(RM|Rural Municipality|Town|City|Village|Municipality|LGD) of (.+?)(?: \((.+)\))?$/i);
+  if (!m) return String(label ?? '');
+  const type = /^Rural Municipality$/i.test(m[1]) ? 'RM' : m[1];
+  return `${m[2]} (${m[3] ? `${type}, ${m[3]}` : type})`;
+}
+
 /** Permitted uses an appraiser may name: principal (no accessory/mixed-use qualifier). */
 export function nameableUses(zone) {
   return (zone?.uses || []).filter(u => u.status === 'P' && !u.qualifier);

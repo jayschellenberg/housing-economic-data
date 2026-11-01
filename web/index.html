@@ -32,7 +32,7 @@
              title="Rental, housing, census and economic data">Housing &amp; Economic Data</a>
           <a id="group-link-local" href="#caprates" data-group="local"
              class="cmhc-group-link"
-             title="Cap Rates, Cap Rates vs Interest, Market Discount Rates, Multifamily (Yardi Rental, Rentals.ca, Rent Comparison by Source, Rental Dashboard), Commercial (Johnson Report, Altus Costs, Brokerage Reports, Commercial Dashboard), FCC Farmland, Zoning, Neighbourhood (Experimental)">Local Data</a>
+             title="Cap Rates, Cap Rates vs Interest, Market Discount Rates, Multifamily (Yardi Rental, Rentals.ca, Rent Comparison by Source, Rental Dashboard), Commercial (Johnson Report, Altus Costs, Brokerage Reports, Commercial Dashboard), FCC Farmland, Zoning (Experimental), Neighbourhood (Experimental)">Local Data</a>
         </nav>
         <!-- Signs every indicator chart's caption, and so every PNG exported from
              one (see firm.js). The only place it is set; saved per browser once
@@ -74,7 +74,6 @@
           <button type="button" id="tab-btn-starts" class="cmhc-menu-item" data-tab="starts">Housing Starts</button>
           <button type="button" id="tab-btn-housing" class="cmhc-menu-item" data-tab="housing">Housing Stock</button>
           <button type="button" id="tab-btn-affordability" class="cmhc-menu-item" data-tab="affordability">Affordability</button>
-          <button type="button" id="tab-btn-parade" class="cmhc-menu-item" data-tab="parade">Parade of Homes</button>
         </div>
       </div>
       <!-- Economy & People tabs sit on the bar itself (no menu). -->
@@ -125,7 +124,8 @@
         </div>
       </div>
       <button type="button" id="tab-btn-fcc" class="cmhc-tab" data-tab="fcc">FCC Farmland</button>
-      <button type="button" id="tab-btn-zoning" class="cmhc-tab" data-tab="zoning">Zoning</button>
+      <button type="button" id="tab-btn-parade" class="cmhc-tab" data-tab="parade">Parade of Homes</button>
+      <button type="button" id="tab-btn-zoning" class="cmhc-tab" data-tab="zoning">Zoning (Experimental)</button>
       <button type="button" id="tab-btn-neighbourhood" class="cmhc-tab" data-tab="neighbourhood">Neighbourhood (Experimental)</button>
     </nav>
     <!-- One folder pick for every Local Data tab (market-data-bar.js). Shown
@@ -2149,13 +2149,37 @@
 
     <!-- ============================================================
          Parade of Homes tab — Winnipeg (and all-Manitoba) new-home listings
-         distilled from MHBA Parade of Homes magazines, 2012–present. Figures
-         ship with the site as a snapshot under web/public/parade/, refreshed
-         with scripts/copy-parade-snapshot.ps1 after each Parade pipeline run.
-         Prices are listing-reported house-only (land excluded), ex-GST.
+         distilled from MHBA Parade of Homes magazines, 2012–present. Local
+         Data: read from AppMarketData-External\ParadeOfHomes\parade_of_homes.json
+         (published by the Parade-Of-Homes pipeline), never shipped with the
+         site. Prices are listing-reported house-only (land excluded), ex-GST.
          ============================================================ -->
     <div id="tab-panel-parade" class="grid md:grid-cols-[320px_1fr] min-h-[calc(100vh-110px)]" role="tabpanel" aria-labelledby="tab-btn-parade" hidden>
       <aside class="bg-white border-r border-neutral-200 p-4 space-y-4 overflow-y-auto" aria-label="Parade of Homes filters">
+        <section>
+          <div class="flex items-center justify-between mb-2">
+            <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Data folder</h2>
+            <button id="po-folder-toggle" type="button" class="text-xs underline text-neutral-600" aria-controls="po-folder-body" aria-expanded="true" hidden>Hide</button>
+          </div>
+          <p id="po-folder-status" class="text-xs text-neutral-600 mb-2"></p>
+          <p id="po-folder-error" class="text-xs text-red-700 mb-2" hidden></p>
+          <div id="po-folder-body">
+          <div class="space-y-2">
+            <button id="po-pick-folder" type="button"
+              class="w-full text-sm bg-accent-500 hover:bg-accent-600 text-white rounded px-3 py-1.5">
+              Choose folder
+            </button>
+            <input id="po-pick-fallback" type="file" webkitdirectory multiple hidden
+              class="block w-full text-xs file:mr-2 file:rounded file:border file:border-neutral-300 file:bg-white file:px-2 file:py-1 file:text-xs" />
+            <div class="flex gap-3 text-xs">
+              <button id="po-rescan" type="button" class="underline text-neutral-600">Reload folder</button>
+              <button id="po-clear" type="button" class="underline text-neutral-600" hidden>Disconnect</button>
+            </div>
+          </div>
+          <p class="text-xs text-neutral-500 mt-2">Pick the firm's shared <code>AppMarketData</code> folder or its <code>ParadeOfHomes</code> subfolder. Read locally, never uploaded.</p>
+          </div>
+        </section>
+
         <section>
           <h2 class="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Scope</h2>
           <div id="po-scope" class="grid gap-1 text-sm" role="radiogroup" aria-label="Scope">
@@ -2187,11 +2211,16 @@
         </section>
 
         <section class="pt-2 border-t border-neutral-200">
-          <p class="text-xs text-neutral-500">Snapshot built from the Parade-Of-Homes pipeline. See <code>docs/parade-of-homes.md</code> for how to refresh.</p>
+          <p class="text-xs text-neutral-500">Published by the Parade-Of-Homes pipeline after each run. See <code>docs/parade-of-homes.md</code> for how to refresh.</p>
         </section>
       </aside>
 
       <main class="p-4 space-y-4 overflow-x-hidden">
+        <p id="po-empty" class="text-sm text-neutral-600 max-w-2xl" hidden>
+          No Parade of Homes data is loaded. Choose the firm's shared <code>AppMarketData</code> folder or its
+          <code>ParadeOfHomes</code> subfolder (published by <code>run_pipeline.sh</code> in the Parade-Of-Homes project).
+          The charts render from that folder in this browser only.
+        </p>
         <p id="po-error" class="text-sm text-red-700" hidden></p>
         <p id="po-headline" class="text-sm text-neutral-700 max-w-3xl"></p>
         <section id="po-chart-grid" class="grid md:grid-cols-2 gap-4 items-start"></section>
