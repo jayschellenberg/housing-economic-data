@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildCensusNarrative, regionStats, ratioPhrase, growthPhrase, proseName } from '../src/census-narrative.js';
+import { buildCensusNarrative, regionStats, ratioPhrase, growthPhrase, proseName, landUsePara } from '../src/census-narrative.js';
 
 const YEARS = ['2006', '2011', '2016', '2021'];
 
@@ -319,5 +319,35 @@ describe('buildCensusNarrative — Winnipeg mode', () => {
     const t = paras(nar.blocks);
     expect(t).toMatch(/The local population is slightly younger than Winnipeg( and the province)?/);
     expect(t).toContain('The housing stock is generally older, with most homes built in 1960 or earlier.');
+  });
+});
+
+describe('landUsePara (Winnipeg zoning)', () => {
+  const lu = (shares, corridors = []) => ({ shares, corridors });
+  it('residential with commercial corridors and a residential interior', () => {
+    expect(landUsePara('Daniel McIntyre', lu({ sf: 0.35, two: 0.3, mf: 0.15, com: 0.12, park: 0.08 },
+      [{ name: 'Sargent Avenue' }, { name: 'Notre Dame Avenue' }, { name: 'Sherbrook Street' }]), 'WPG_Nbhd')).toBe(
+      'Based on current zoning, Daniel McIntyre is predominantly low-density residential, with single- and two-family zoning. ' +
+      'Commercial uses are concentrated along Sargent Avenue, Notre Dame Avenue and Sherbrook Street, ' +
+      'while the interior blocks are predominantly residential.');
+  });
+  it('names the residential mix', () => {
+    expect(landUsePara('A', lu({ sf: 0.8, park: 0.2 }), 'WPG_Nbhd')).toBe(
+      'Based on current zoning, A is predominantly single-family residential. Parks and open space make up a notable share of the land.');
+    expect(landUsePara('B', lu({ sf: 0.2, two: 0.1, mf: 0.4, inst: 0.3 }), 'WPG_Nbhd')).toBe(
+      'Based on current zoning, B is predominantly residential, with a substantial multi-family component and some institutional land.');
+  });
+  it('industrial, commercial, downtown, rural and mixed areas', () => {
+    expect(landUsePara('C', lu({ ind: 0.6, com: 0.2, sf: 0.2 }), 'WPG_Nbhd')).toMatch(/^Based on current zoning, C is largely industrial and commercial\./);
+    expect(landUsePara('D', lu({ dt: 0.9, park: 0.1 }), 'WPG_Nbhd')).toMatch(/falls within the downtown zoning sectors/);
+    expect(landUsePara('E', lu({ ag: 0.7, rr: 0.2 }), 'WPG_Nbhd')).toBe(
+      'Based on current zoning, E is largely agricultural and rural residential, ahead of urban development.');
+    expect(landUsePara('F', lu({ ind: 0.4, com: 0.32, sf: 0.28 }), 'WPG_Nbhd')).toBe(
+      'Based on current zoning, F has a mix of industrial, commercial and residential uses.');
+  });
+  it('some commercial without a corridor; nothing without shares', () => {
+    expect(landUsePara('G', lu({ sf: 0.85, com: 0.1 }), 'WPG_Cluster')).toContain('There is some commercial zoning within the area.');
+    expect(landUsePara('H', lu([]), 'WPG_Nbhd')).toBeNull();
+    expect(landUsePara('H', null, 'WPG_Nbhd')).toBeNull();
   });
 });

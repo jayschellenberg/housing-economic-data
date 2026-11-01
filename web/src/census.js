@@ -410,7 +410,7 @@ export async function initCensus() {
         <p class="text-xs text-neutral-500 mt-2">Auto-written from the census figures above, in general terms; the tables carry the numbers. Areas 2 and 3 serve as the benchmarks. Growth is read from the annual rate over the census span; incomes, values and rents use broad bands ("below", "broadly in line with"…) so the wording reads the same across reports.${
           nar.industryTable ? ' Industry shares are of the labour force aged 15+ (NAICS sectors).' : ''}${
           highways && subject.level === 'CSD' ? ' Highways: Manitoba Road Network 2023; the Winnipeg distance is to the city limits, rounded to 5 km, not driving distance.' : ''}${
-          wpgContext && subject.level.startsWith('WPG_') ? ' Location: City of Winnipeg neighbourhood boundaries and road network, OpenStreetMap rivers and rail (© OpenStreetMap contributors), and a curated list of major streets; downtown distance is from Portage and Main, straight-line.' : ''} Edit freely after download; the appraiser-notes bullets are left for local knowledge.</p>
+          wpgContext && subject.level.startsWith('WPG_') ? ' Location: City of Winnipeg neighbourhood boundaries and road network, OpenStreetMap rivers and rail (© OpenStreetMap contributors), and a curated list of major streets; downtown distance is from Portage and Main, straight-line. Land use: City of Winnipeg zoning by-law parcels (current zoning — the permitted use, not a land-use survey).' : ''} Edit freely after download; the appraiser-notes bullets are left for local knowledge.</p>
       </section>`;
 
     $narr.querySelector('#census-narrative-docx')?.addEventListener('click', async () => {
