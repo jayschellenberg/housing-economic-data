@@ -1,0 +1,7 @@
+# Hand corrections to the OpenStreetMap facilities in mb_communities.json, applied by
+# build-neighbourhood.mjs. action: add | remove. facility: the r/33 keys (grocery, bank,
+# clinic, hospital, school_hs, pharmacy, store, fuel, restaurant ...). name is optional.
+community,csd,facility,action,name,note
+Niverville,4602046,bank,add,,Credit union (Jason 2026-11-01)
+Grunthal,4602041,grocery,add,,Grocery store (Jason 2026-11-01)
+Kleefeld,4602041,grocery,add,,Grocery store (Jason 2026-11-01)

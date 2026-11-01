@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { buildCommunityNarrative, muniPhrase, kmWords, communitiesSentence, communityFlags, communityServices } from '../src/community-narrative.js';
+import { buildCommunityNarrative, muniPhrase, kmWords, communitiesSentence, communityFlags, communityServices,
+  applyCorrections, parseCorrectionsCsv } from '../src/community-narrative.js';
 
 const paras = (blocks) => blocks.filter(b => b.type === 'para').map(b => b.text).join('\n');
 const base = {
@@ -66,6 +67,36 @@ describe('community narrative', () => {
     expect(tbl.title).toBe('Service level: limited-service community');
     expect(tbl.rows.find(r => r.area === 'School to Grade 12').values[0]).toBe('Green Valley School');
     expect(tbl.rows.find(r => r.area === 'Bank or credit union').values[0]).toBe('Not found');
+  });
+
+  it('applies hand corrections over OpenStreetMap and cites them', () => {
+    const rows = parseCorrectionsCsv('# note\ncommunity,csd,facility,action,name,note\r\n' +
+      'Kleefeld,4602041,grocery,add,,"Grocery store, per Jason"\nKleefeld,4602041,fuel,remove,,\nNowhere,,bank,add,,\n');
+    expect(rows[0]).toMatchObject({ community: 'Kleefeld', facility: 'grocery', action: 'add', note: 'Grocery store, per Jason' });
+    const src = [{ ...base, facilities: { fuel: 1, store: 2 } }];
+    const { communities, unmatched } = applyCorrections(src, rows);
+    expect(unmatched.map(r => r.community)).toEqual(['Nowhere']);
+    expect(communities[0].facilities).toEqual({ store: 2, grocery: 1 });
+    expect(src[0].facilities.fuel).toBe(1);                       // input left alone
+    const nar = buildCommunityNarrative(communities[0], 'Hanover (RM)');
+    expect(nar.tier).toBe('limited');
+    expect(nar.tables[0].rows.find(r => r.area === 'Grocery store').values).toEqual(['Yes', 'Local correction']);
+  });
+
+  it("borrows the municipality's commuting pattern, without numbers", () => {
+    const commute = { total: 5125, withinCsd: 1490, otherCsdSameCd: 2830, otherCd: 775, otherProv: 30 };
+    const nar = buildCommunityNarrative({ ...base, name: 'Blumenort' }, 'Hanover (RM)', { commute, commuteYear: '2021' });
+    const t = paras(nar.blocks);
+    expect(t).toContain('Like much of the RM of Hanover, Blumenort is largely a commuter community: most employed residents ' +
+      'commute outside the municipality for work, mainly to nearby Steinbach, with some travelling to Winnipeg.');
+    expect(t).not.toMatch(/%|5125/);
+    expect(nar.tables[1].rows.map(r => r.values[0])).toEqual(['29%', '55%', '15%', '1%']);
+    // Mostly local: nothing to say.
+    const local = buildCommunityNarrative(base, 'Gimli (RM)', { commute: { total: 100, withinCsd: 63, otherCsdSameCd: 11, otherCd: 26, otherProv: 0 } });
+    expect(local.blocks.some(b => b.text === 'Commuting')).toBe(false);
+    // Winnipeg the main destination, a mid-sized local share.
+    const split = paras(buildCommunityNarrative(base, 'Taché (RM)', { commute: { total: 100, withinCsd: 45, otherCsdSameCd: 5, otherCd: 50, otherProv: 0 } }).blocks);
+    expect(split).toContain('As across the RM of Taché, many employed residents commute outside the municipality for work, mainly to Winnipeg.');
   });
 
   it('flags names that need checking and lists the overview communities', () => {
