@@ -185,11 +185,19 @@ describe('buildCensusNarrative — general prose', () => {
       expect(t).toContain('Steinbach is located roughly 35 km southeast of Winnipeg and is served by PTH 12 and PTH 52.');
       expect(t).not.toContain('PR 303');
     });
+    it('names the main town the distance is measured from when it differs', () => {
+      expect(run(hw({ through: ['PTH 52'], nearby: [], wpgKm: 34, wpgDir: 'southeast', adjoins: false, centre: 'Mitchell' })))
+        .toContain('Steinbach is located roughly 35 km southeast of Winnipeg (measured from Mitchell) and is served by PTH 52.');
+      expect(run(hw({ through: ['PTH 52'], nearby: [], wpgKm: 34, wpgDir: 'southeast', adjoins: false, centre: 'Steinbach' })))
+        .not.toContain('measured from');
+    });
     it('handles adjoining, nearby-only and fly-in cases', () => {
       expect(run(hw({ through: ['PTH 1', 'PTH 12', 'PR 206'], nearby: [], wpgKm: 0, wpgDir: 'east' })))
         .toContain('Steinbach adjoins the City of Winnipeg to the east and is served by PTH 1 and PTH 12.');
       expect(run(hw({ through: [], nearby: [{ route: 'PR 210', km: 1, dir: 'west' }, { route: 'PTH 59', km: 4, dir: 'west' }], wpgKm: 58, wpgDir: 'southeast' })))
         .toContain('Steinbach is located roughly 60 km southeast of Winnipeg. PTH 59 passes nearby.');
+      expect(run(hw({ through: ['PTH 12'], nearby: [], wpgKm: 22, wpgDir: 'southeast', adjoins: true, centre: 'Mitchell' })))
+        .toContain('Steinbach adjoins the City of Winnipeg to the southeast and is served by PTH 12.');
       expect(run(hw({ through: [], nearby: [], wpgKm: 400, wpgDir: 'north' })))
         .toContain('reached by air, water or winter road');
     });
