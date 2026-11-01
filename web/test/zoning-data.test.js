@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   oxford, useList, usesSentence, narrativeParagraphs, nameableConditional, formatValue, bulkRows,
-  currencyVerdict, currencyMessage, currencyQueryUrl, normBylaw, zoneShortName, zoneDescription, verifyApplies,
+  currencyVerdict, currencyMessage, currencyQueryUrl, normBylaw, zoneShortName, zoneDescription, verifyApplies, muniPickerLabel,
 } from '../src/zoning-data.js';
 
 const zone = {
@@ -193,5 +193,16 @@ describe('verifyApplies', () => {
     expect(verifyApplies({ note: 'Scan.', verify_zones: ['all'] }, 'CH')).toBe(true);
     expect(verifyApplies({ note: 'Scan.' }, 'CH')).toBe(true);
     expect(verifyApplies({ verify_zones: ['RS'] }, 'RS')).toBe(false);
+  });
+});
+
+describe('muniPickerLabel', () => {
+  it('puts the name first and the type in brackets', () => {
+    expect(muniPickerLabel('RM of Alonsa')).toBe('Alonsa (RM)');
+    expect(muniPickerLabel('Town of Beausejour')).toBe('Beausejour (Town)');
+    expect(muniPickerLabel('Village of St. Pierre-Jolys')).toBe('St. Pierre-Jolys (Village)');
+    expect(muniPickerLabel('Municipality of Clanwilliam-Erickson (former Town of Erickson)'))
+      .toBe('Clanwilliam-Erickson (Municipality, former Town of Erickson)');
+    expect(muniPickerLabel('Winnipeg')).toBe('Winnipeg');
   });
 });

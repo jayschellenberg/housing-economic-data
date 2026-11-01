@@ -64,7 +64,7 @@ export const SOURCES = [
     load: async () => fccStore, hasData: hasFolderData },
   { id: 'brokerage',  label: 'Brokerage Reports', folder: 'BrokerageReports',
     load: async () => brokerageStore, hasData: hasFolderData },
-  { id: 'zoning',     label: 'Zoning', folder: 'Zoning',
+  { id: 'zoning',     label: 'Zoning (Experimental)', folder: 'Zoning',
     load: async () => zoningStore, hasData: hasFolderData },
   { id: 'aptcomps',   label: 'Apartment Income & Expenses', folder: 'ApartmentComps',
     load: async () => aptCompsStore, hasData: hasFolderData },
