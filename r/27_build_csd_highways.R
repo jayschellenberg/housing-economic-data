@@ -18,12 +18,20 @@
 # mb_csd.geojson, reprojected to 26914) — "through" = the route crosses the
 # municipality; "nearby" = closest approach within NEARBY_KM, with distance and
 # compass direction from the municipality's centroid. Winnipeg distance is
-# boundary-to-boundary (0 = adjoins the city) plus the centroid bearing.
+# straight-line from the municipality's main town to the city limits, with
+# the bearing from Winnipeg; `adjoins` = the municipality touches the city.
+#
+# Main town: the highest-ranked OpenStreetMap place (city > town > village >
+# hamlet, then OSM population) inside the municipality or inside a town /
+# village enclaved by it — so a rural municipality measures from the service
+# town it surrounds (RM of Dauphin → Dauphin). No place → polygon centroid.
+# Places come from Overpass (© OpenStreetMap contributors, ODbL), cached as
+# r/lib/cache/geo/mb_places.json — delete it to refresh.
 #
 # Output: web/public/data/geo/mb_csd_highways.json
 #   { source, sourceUrl, licence, generatedAt, nearbyKm,
 #     csd: { "<CSDUID>": { through:["PTH 12", …], nearby:[{route, km, dir}],
-#                          wpgKm, wpgDir } } }
+#                          wpgKm, wpgDir, adjoins, centre } } }
 # ---------------------------------------------------------------------------
 
 suppressMessages({ library(sf); library(jsonlite) })
@@ -41,6 +49,8 @@ ROADS_FILE <- file.path(cache_dir, "mb_road_network_2023.geojson")
 NEARBY_KM  <- 15
 WPG_CSD    <- "4611040"
 CRS_M      <- 26914          # NAD83 / UTM 14N — metres, the source CRS
+PLACES_FILE <- file.path(cache_dir, "mb_places.json")
+PLACE_RANK  <- c(city = 4, town = 3, village = 2, hamlet = 1)
 
 # --- Download (cached) ------------------------------------------------------
 if (!file.exists(ROADS_FILE) || file.size(ROADS_FILE) < 1e6) {
@@ -79,6 +89,38 @@ wpg <- csd[csd$id == WPG_CSD, ]
 cent <- st_centroid(st_geometry(csd))
 wpg_cent <- st_centroid(st_geometry(wpg))
 
+# --- Main town per municipality (OpenStreetMap places) -----------------------
+if (!file.exists(PLACES_FILE) || file.size(PLACES_FILE) < 1e4) {
+  message("[27] Downloading OpenStreetMap places (Overpass)…")
+  q <- paste0('[out:json][timeout:120];area["ISO3166-2"="CA-MB"]->.mb;',
+              'node["place"~"^(city|town|village|hamlet)$"](area.mb);out;')
+  download.file(paste0("https://overpass-api.de/api/interpreter?data=", URLencode(q, reserved = TRUE)),
+                PLACES_FILE, mode = "wb", quiet = TRUE,
+                headers = c("User-Agent" = "housing-economic-data r/27"))
+}
+el <- fromJSON(PLACES_FILE)$elements
+places <- data.frame(name = el$tags$name, place = el$tags$place,
+                     pop = suppressWarnings(as.numeric(gsub("[^0-9]", "", el$tags$population))),
+                     lon = el$lon, lat = el$lat)
+places <- places[!is.na(places$name) & nzchar(places$name), ]
+places$rank <- PLACE_RANK[places$place]
+places <- st_transform(st_as_sf(places, coords = c("lon", "lat"), crs = 4326), CRS_M)
+message(sprintf("[27] %d OpenStreetMap places", nrow(places)))
+
+# Enclaves: other CSDs lying inside this one's outer ring (a town an RM surrounds).
+filled <- st_sfc(lapply(st_geometry(csd), function(g)
+  st_union(st_sfc(lapply(st_cast(st_sfc(g), "POLYGON"), function(p) st_polygon(p[1]))))[[1]]), crs = CRS_M)
+inner <- st_within(st_point_on_surface(st_geometry(csd)), filled)
+in_csd <- st_intersects(csd, places)
+centre_of <- function(i) {
+  own <- in_csd[[i]]
+  encl <- setdiff(which(vapply(inner, function(w) i %in% w, TRUE)), i)
+  cand <- unique(c(own, unlist(in_csd[encl])))
+  if (!length(cand)) return(NULL)
+  p <- places[cand, ]
+  p[order(-p$rank, -ifelse(is.na(p$pop), 0, p$pop), as.numeric(st_distance(p, cent[i]))), ][1, ]
+}
+
 compass <- function(from, to) {
   dx <- to[1] - from[1]; dy <- to[2] - from[2]
   ang <- (atan2(dx, dy) * 180 / pi + 360) %% 360      # bearing clockwise from north
@@ -110,14 +152,18 @@ for (i in seq_len(nrow(csd))) {
   }
   rec <- list(through = as.list(through), nearby = nearby)
   if (csd$id[i] != WPG_CSD) {
-    rec$wpgKm  <- round(wpg_d[i] / 1000)
-    rec$wpgDir <- compass(st_coordinates(wpg_cent)[1, 1:2], st_coordinates(cent[i])[1, 1:2])
+    town <- centre_of(i)
+    from <- if (is.null(town)) cent[i] else st_geometry(town)
+    rec$wpgKm   <- round(as.numeric(st_distance(from, wpg)[1, 1]) / 1000)
+    rec$wpgDir  <- compass(st_coordinates(wpg_cent)[1, 1:2], st_coordinates(from)[1, 1:2])
+    rec$adjoins <- wpg_d[i] < 1
+    if (!is.null(town)) rec$centre <- town$name
   }
   out[[as.character(csd$id[i])]] <- rec
 }
 
 payload <- list(
-  source      = "Manitoba Road Network 2023 (Manitoba Transportation and Infrastructure) via Manitoba GeoPortal",
+  source      = "Manitoba Road Network 2023 (Manitoba Transportation and Infrastructure) via Manitoba GeoPortal; main towns from OpenStreetMap (© OpenStreetMap contributors, ODbL)",
   sourceUrl   = "https://geoportal.gov.mb.ca/datasets/cb0d37e639ff4382be1033dfdfa962a8",
   licence     = "Manitoba Open Data Licence",
   generatedBy = "r/27_build_csd_highways.R",

@@ -54,7 +54,7 @@ const BUILT_POST_2000 = ['built_2001_2005', 'built_2006_2010', 'built_2011_2015'
 
 // Short sector names for prose, by NAICS code.
 const SECTOR_SHORT = {
-  '11': 'agriculture', '21': 'mining and oil and gas', '22': 'utilities', '23': 'construction',
+  '11': 'agriculture', '21': 'resource extraction', '22': 'utilities', '23': 'construction',
   '31-33': 'manufacturing', '41': 'wholesale trade', '44-45': 'retail', '48-49': 'transportation',
   '51': 'information and culture', '52': 'finance and insurance', '53': 'real estate',
   '54': 'professional services', '55': 'management of companies', '56': 'administrative services',
@@ -283,10 +283,12 @@ function locationGrowthPara(s, benchmarks, hw, wpgText = null, wpg = false) {
   const parts = [];
   if (wpgText) parts.push(wpgText);
   if (hw?.wpgKm != null) {
-    // "… is located roughly 75 km northeast of Winnipeg and is served by PTH 11."
-    const where = hw.wpgKm === 0
+    // "… is located roughly 50 km west of Winnipeg (measured from Elm Creek) and
+    // is served by PTH 2." Distance runs from the main town to the city limits.
+    const from = hw.centre && hw.centre !== s.name ? ` (measured from ${hw.centre})` : '';
+    const where = (hw.adjoins ?? hw.wpgKm === 0)
       ? `${s.name} adjoins the City of Winnipeg to the ${hw.wpgDir}`
-      : `${s.name} is located roughly ${Math.max(5, Math.round(hw.wpgKm / 5) * 5)} km ${hw.wpgDir} of Winnipeg`;
+      : `${s.name} is located roughly ${Math.max(5, Math.round(hw.wpgKm / 5) * 5)} km ${hw.wpgDir} of Winnipeg${from}`;
     const roads = accessClause(hw);
     parts.push(roads?.startsWith('is ') ? `${where} and ${roads}.` : `${where}.${roads ? ` ${roads}` : ''}`);
   }
@@ -423,7 +425,7 @@ const sectorName = (x) => SECTOR_SHORT[x.code] || x.label.toLowerCase();
 // How a standout sector reads as a local economic driver.
 const SECTOR_DRIVER = {
   '11': 'agriculture', '21': 'mining and resource extraction',
-  '22': 'hydro-electric and other utility operations', '23': 'construction',
+  '22': 'hydro-electric and utility operations', '23': 'construction',
   '31-33': 'manufacturing', '41': 'wholesale distribution', '48-49': 'transportation and trucking',
   '61': 'education', '62': 'health care', '91': 'government and public administration',
   tourism: 'tourism and recreation',
