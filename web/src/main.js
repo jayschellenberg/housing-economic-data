@@ -36,6 +36,7 @@ import { initBrokerage } from './brokerage.js';
 import { initRentCompare, refreshRentCompare } from './rent-compare.js';
 import { initCapVsInterestTab } from './cap-vs-interest-tab.js';
 import { initZoning } from './zoning.js';
+import { initNeighbourhood } from './neighbourhood.js';
 import { initMarketDataBar } from './market-data-bar.js';
 import { initNavMenus, syncNavMenus } from './nav-menus.js';
 import { wireChartDocExports } from './doc-image-export.js';
@@ -193,6 +194,7 @@ function setupTabs(initial, onActivate) {
     altus:      { btn: document.getElementById('tab-btn-altus'),      panel: document.getElementById('tab-panel-altus') },
     parade:     { btn: document.getElementById('tab-btn-parade'),     panel: document.getElementById('tab-panel-parade') },
     zoning:     { btn: document.getElementById('tab-btn-zoning'),     panel: document.getElementById('tab-panel-zoning') },
+    neighbourhood: { btn: document.getElementById('tab-btn-neighbourhood'), panel: document.getElementById('tab-panel-neighbourhood') },
     rental:     { btn: document.getElementById('tab-btn-rental'),     panel: document.getElementById('tab-panel-rental') },
     commercial: { btn: document.getElementById('tab-btn-commercial'), panel: document.getElementById('tab-panel-commercial') },
   };
@@ -201,7 +203,7 @@ function setupTabs(initial, onActivate) {
   // link as active and one menu bar (#nav-housing / #nav-local) at a time;
   // everything not listed here is Housing & Economic Data. Within a bar the
   // tabs sit in category menus (index.html, nav-menus.js).
-  const TAB_GROUP = { johnson: 'local', yardi: 'local', rentalsca: 'local', rentcompare: 'local', aptcomps: 'local', fcc: 'local', parade: 'local', brokerage: 'local', caprates: 'local', capvsint: 'local', discount: 'local', altus: 'local', zoning: 'local', rental: 'local', commercial: 'local' };
+  const TAB_GROUP = { johnson: 'local', yardi: 'local', rentalsca: 'local', rentcompare: 'local', aptcomps: 'local', fcc: 'local', parade: 'local', brokerage: 'local', caprates: 'local', capvsint: 'local', discount: 'local', altus: 'local', zoning: 'local', neighbourhood: 'local', rental: 'local', commercial: 'local' };
   const groupOf = (name) => TAB_GROUP[name] || 'housing';
 
   function showGroup(group) {
@@ -359,7 +361,7 @@ async function bootstrap() {
   const rawHash = hashTab in SUBAPP_TABS && SUBVIEW_RE.test(hashView || '') ? hashTab : fullHash;
   if (rawHash === hashTab && hashView) subappView[hashTab] = hashView;
   let initialTab = 'charts';
-  if (['charts', 'tables', 'compare', 'starts', 'secondary', 'housing', 'census', 'affordability', 'rtb', 'johnson', 'yardi', 'rentalsca', 'rentcompare', 'aptcomps', 'fcc', 'brokerage', 'caprates', 'capvsint', 'discount', 'altus', 'parade', 'zoning', 'rental', 'commercial', 'snapshot', 'indicators', 'construction', 'leasing', 'agriculture', 'economic'].includes(rawHash)) {
+  if (['charts', 'tables', 'compare', 'starts', 'secondary', 'housing', 'census', 'affordability', 'rtb', 'johnson', 'yardi', 'rentalsca', 'rentcompare', 'aptcomps', 'fcc', 'brokerage', 'caprates', 'capvsint', 'discount', 'altus', 'parade', 'zoning', 'neighbourhood', 'rental', 'commercial', 'snapshot', 'indicators', 'construction', 'leasing', 'agriculture', 'economic'].includes(rawHash)) {
     initialTab = rawHash;
   } else if (rawHash.startsWith('mi-section-')) {
     initialTab = 'indicators';
@@ -406,6 +408,7 @@ async function bootstrap() {
     altus:         once(() => initAltusCosts().catch(err => console.error('[altus-costs bootstrap]', err))),
     parade:        once(() => initParade().catch(err => console.error('[parade bootstrap]', err))),
     zoning:        once(() => initZoning().catch(err => console.error('[zoning bootstrap]', err))),
+    neighbourhood: once(() => initNeighbourhood().catch(err => console.error('[neighbourhood bootstrap]', err))),
     // The two sub-app tabs are same-origin pages in a frame; loading the
     // frame is the whole init, deferred to the first visit.
     rental:        once(() => loadSubapp('subapp-rental', subappView.rental)),

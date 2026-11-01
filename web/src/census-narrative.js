@@ -90,9 +90,9 @@ export const proseName = (name) => String(name ?? '')
   .replace(/\s*\([A-Z]{1,4}\)$/, '');
 
 // Join ["a", "b", "c"] → "a, b and c".
-const joinAnd = (arr) => arr.length <= 1 ? arr.join('')
+export const joinAnd = (arr) => arr.length <= 1 ? arr.join('')
   : `${arr.slice(0, -1).join(', ')} and ${arr[arr.length - 1]}`;
-const capitalise = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+export const capitalise = (t) => t.charAt(0).toUpperCase() + t.slice(1);
 
 // ---- stats -----------------------------------------------------------------
 // Everything the sentences and the tables need, computed once per region.
