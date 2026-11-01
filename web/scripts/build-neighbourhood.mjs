@@ -41,12 +41,16 @@ const { loadCsdHighways } = await import('../src/csd-highways.js');
 const { loadWpgNbhdContext } = await import('../src/wpg-nbhd-context.js');
 const { cleanName } = await import('../src/geography.js');
 const { buildCensusNarrative } = await import('../src/census-narrative.js');
-const { buildCommunityNarrative, communitiesSentence } = await import('../src/community-narrative.js');
+const { buildCommunityNarrative, communitiesSentence, applyCorrections, parseCorrectionsCsv } = await import('../src/community-narrative.js');
 
 const [data, industry, highways, wpgContext] = await Promise.all([
   loadCensusProfile(), loadCensusIndustry(), loadCsdHighways(), loadWpgNbhdContext()]);
 if (!data?.regions) throw new Error('census_profile.json not found under web/public/data/housing');
-const communities = JSON.parse(readFileSync(join(HERE, 'data', 'mb_communities.json'), 'utf8')).communities;
+// OSM facilities + the hand corrections (data/mb_community_corrections.csv).
+const fixes = parseCorrectionsCsv(readFileSync(join(HERE, 'data', 'mb_community_corrections.csv'), 'utf8'));
+const { communities, unmatched } = applyCorrections(
+  JSON.parse(readFileSync(join(HERE, 'data', 'mb_communities.json'), 'utf8')).communities, fixes);
+for (const r of unmatched) console.warn(`[neighbourhood] correction matches no community: ${r.community} (${r.csd || 'any CSD'})`);
 
 for (const r of data.regions) r.name = cleanName(r.name, r.level);
 const years = (data.censusYears || []).map(String);
@@ -76,7 +80,9 @@ const muniBase = (name) => name.replace(/\s*\([^)]+\)\s*$/, '');
 for (const m of data.regions.filter(r => r.level === 'CSD' && r.uid.startsWith('46') && r.uid !== WPG_CSD).sort(byName)) {
   // A town's own name is the overview, not a second-layer community.
   const mine = communities.filter(c => c.csd === m.uid && !(URBAN.test(m.name) && fold(c.name) === fold(muniBase(m.name))));
-  const items = mine.sort(byName).map(c => ({ id: c.id, name: c.name, ...buildCommunityNarrative(c, m.name) }));
+  const commute = industry?.regions?.find(x => x.uid === m.uid)?.data?.[period]?.commute ?? null;
+  const items = mine.sort(byName).map(c => ({ id: c.id, name: c.name,
+    ...buildCommunityNarrative(c, m.name, { commute, commuteYear: period }) }));
   const overview = census(m);
   const sentence = communitiesSentence(m.name, mine.map(c => c.name));
   if (sentence) {

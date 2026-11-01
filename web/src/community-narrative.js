@@ -8,8 +8,12 @@
 // shows in it, and 2021 Census counts when it is a designated place or
 // population centre. Same general voice as the census narrative: no counts,
 // dollars or percentages in the prose.
+//
+// OpenStreetMap misses things locals know (a credit union, the grocery store):
+// web/scripts/data/mb_community_corrections.csv adds or removes facilities by
+// hand, applied by applyCorrections() before the write-ups are built.
 
-import { growthPhrase, joinAnd } from './census-narrative.js';
+import { growthPhrase, joinAnd, COMMUTE_LOCAL, COMMUTE_SPLIT, WPG_COMMUTE_KM } from './census-narrative.js';
 import { classifyServices, servicesPara } from './service-tier.js';
 
 // "Hanover (RM)" → "the RM of Hanover". Unorganized divisions and reserves read
@@ -96,6 +100,43 @@ const listItems = (f, group) => ITEMS[group].filter(([k]) => count(f, k) > 0).ma
 // (r/33 `school_hs`). A hospital counts as the medical clinic too — rural
 // health centres hold the physicians' clinic. OSM gaps can understate a tier,
 // so the tab shows what was found under "Service level".
+// Hand corrections (mb_community_corrections.csv rows: community, csd,
+// facility, action add|remove, name, note) → copies of the matching records,
+// with `corrected` listing the facility keys touched (the service table cites
+// them as local knowledge). Returns the rows that matched no community.
+export function applyCorrections(communities, rows) {
+  const out = communities.map(c => ({ ...c, facilities: { ...(c.facilities || {}) } }));
+  const unmatched = [];
+  for (const r of rows) {
+    const c = out.find(x => x.name === r.community && (!r.csd || x.csd === r.csd));
+    if (!c) { unmatched.push(r); continue; }
+    const f = c.facilities;
+    const k = r.facility;
+    if (r.action === 'remove') {
+      if (Array.isArray(f[k]) && r.name) f[k] = f[k].filter(n => n !== r.name);
+      else delete f[k];
+      if (Array.isArray(f[k]) && !f[k].length) delete f[k];
+    } else if (Array.isArray(f[k]) || (r.name && !f[k])) {
+      f[k] = [...(f[k] || [])];
+      if (r.name && !f[k].includes(r.name)) f[k].push(r.name);
+    } else if (!count(f, k)) {
+      f[k] = 1;
+    }
+    c.corrected = [...new Set([...(c.corrected || []), k])];
+  }
+  return { communities: out, unmatched };
+}
+
+// Minimal CSV (quoted fields allowed, no embedded newlines; # lines are
+// comments) → objects keyed by the header row.
+export function parseCorrectionsCsv(text) {
+  const lines = String(text).replace(/^\uFEFF/, '').split(/\r?\n/).filter(l => l.trim() && !l.startsWith('#'));
+  const split = (l) => [...l.matchAll(/(?:"((?:[^"]|"")*)"|([^,]*))(?:,|$)/g)]
+    .slice(0, -1).map(m => (m[1] != null ? m[1].replace(/""/g, '"') : m[2]).trim());
+  const [head = [], ...body] = lines.map(split);
+  return body.map(v => Object.fromEntries(head.map((h, i) => [h, v[i] ?? ''])));
+}
+
 export function communityServices(c) {
   const f = c.facilities || {};
   const keys = [];
@@ -140,27 +181,70 @@ function facilitiesPara(c) {
   return parts.join(' ');
 }
 
+// Commuting is only published for the municipality, so a community borrows its
+// municipality's pattern ("Like much of the RM of Hanover …"), naming the
+// nearby service centre and Winnipeg as the destinations. Only said when most
+// of the municipality's workers leave it; a minor destination needs this share.
+export const COMMUTE_MINOR = 10;
+export function commutePara(c, muni, commute) {
+  if (!(commute?.total > 0)) return null;
+  const pct = (n) => (n || 0) / commute.total * 100;
+  const local = pct(commute.withinCsd);
+  if (local >= COMMUTE_LOCAL) return null;
+  const s = c.service;
+  const near = s?.name && s.name !== c.name && s.km <= SERVICE_MAX_KM ? `nearby ${s.name}` : 'neighbouring communities';
+  const far = c.wpg?.km != null && c.wpg.km <= WPG_COMMUTE_KM ? 'Winnipeg' : 'centres beyond the area';
+  const dest = [{ to: near, share: pct(commute.otherCsdSameCd) }, { to: far, share: pct(commute.otherCd) + pct(commute.otherProv) }]
+    .sort((a, b) => b.share - a.share);
+  const where = `mainly to ${dest[0].to}${dest[1].share >= COMMUTE_MINOR ? `, with some travelling to ${dest[1].to}` : ''}`;
+  return local < COMMUTE_SPLIT
+    ? `Like much of ${muniPhrase(muni)}, ${c.name} is largely a commuter community: most employed residents commute outside the municipality for work, ${where}.`
+    : `As across ${muniPhrase(muni)}, many employed residents commute outside the municipality for work, ${where}.`;
+}
+
+// Where the municipality's employed residents work — the commuting table.
+export function commuteTable(muni, commute, year) {
+  if (!(commute?.total > 0)) return null;
+  const pct = (n) => `${Math.round((n || 0) / commute.total * 100)}%`;
+  const row = (area, n) => ({ area, values: [pct(n)] });
+  return {
+    title: `Place of work: ${String(muni).replace(/\s*\([^)]+\)\s*$/, '')} residents, ${year} Census`,
+    columns: ['Share of commuters'],
+    rows: [
+      row('Within the municipality', commute.withinCsd),
+      row('Elsewhere in the census division', commute.otherCsdSameCd),
+      row('Elsewhere in Manitoba', commute.otherCd),
+      row('Outside Manitoba', commute.otherProv),
+    ],
+  };
+}
+
 /**
  * Narrative blocks for one community (same block shapes as census-narrative:
  * title / meta / heading / para / bullet).
  * @param {object} c    mb_communities.json record
  * @param {string} muni municipality display name, e.g. "Hanover (RM)"
+ * @param {object} [opts.commute] the municipality's census commute counts
+ *   (census_industry.json) and [opts.commuteYear] their census year
  */
-export function buildCommunityNarrative(c, muni) {
+export function buildCommunityNarrative(c, muni, { commute = null, commuteYear = '2021' } = {}) {
   const blocks = [
     { type: 'title', text: `${c.name} — community profile` },
     { type: 'meta', text: 'Location: Canadian Geographical Names Database / OpenStreetMap; facilities: OpenStreetMap' +
-        (c.census ? '; Statistics Canada 2021 Census' : '') },
+        (c.corrected?.length ? ' and local corrections' : '') +
+        (c.census ? '; Statistics Canada 2021 Census' : '') +
+        (commute?.total > 0 ? `; commuting: ${commuteYear} Census (municipality)` : '') },
   ];
   const push = (heading, text) => { if (text) blocks.push({ type: 'heading', text: heading }, { type: 'para', text }); };
   push('Location and access', locationPara(c, muni));
   push('Growth and housing', censusPara(c));
   push('Community facilities', facilitiesPara(c));
+  push('Commuting', commutePara(c, muni, commute));
   blocks.push({ type: 'heading', text: 'Appraiser notes (to complete)' });
   blocks.push({ type: 'bullet', text: 'Character: [general feel, typical housing and condition of the community]' });
   if (!Object.keys(c.facilities || {}).length) blocks.push({ type: 'bullet', text: 'Facilities: [none found in OpenStreetMap — describe local services, if any]' });
   const svc = communityServices(c);
-  return { blocks, flags: communityFlags(c), tier: svc.tier.key, tables: [serviceTable(c, svc)] };
+  return { blocks, flags: communityFlags(c), tier: svc.tier.key, tables: [serviceTable(c, svc), commuteTable(muni, commute, commuteYear)].filter(Boolean) };
 }
 
 // What the service level was read from — the tab's "Supporting figures".
@@ -169,16 +253,17 @@ export function serviceTable(c, svc = communityServices(c)) {
   const has = (k) => svc.checked.has(k);
   const yes = (k, names) => (has(k) ? (names?.length ? names.join('; ') : 'Yes') : 'Not found');
   const named = (k) => (Array.isArray(f[k]) ? f[k] : []);
+  const src = (k, dflt = 'OpenStreetMap') => (c.corrected?.includes(k) ? 'Local correction' : dflt);
   const row = (area, value, source) => ({ area, values: [value, source] });
   return {
     title: `Service level: ${svc.tier.label}`,
     columns: ['Found', 'Source'],
     rows: [
-      row('Grocery store', yes('grocery'), 'OpenStreetMap'),
-      row('Bank or credit union', yes('bank'), 'OpenStreetMap'),
-      row('Medical clinic (or hospital)', yes('clinic'), 'OpenStreetMap'),
-      row('School to Grade 12', yes('school_hs', named('school_hs')), 'Manitoba Education school directory'),
-      row('Hospital', yes('hospital', named('hospital')), 'OpenStreetMap'),
+      row('Grocery store', yes('grocery'), src('grocery')),
+      row('Bank or credit union', yes('bank'), src('bank')),
+      row('Medical clinic (or hospital)', yes('clinic'), src(c.corrected?.includes('hospital') ? 'hospital' : 'clinic')),
+      row('School to Grade 12', yes('school_hs', named('school_hs')), src('school_hs', 'Manitoba Education school directory')),
+      row('Hospital', yes('hospital', named('hospital')), src('hospital')),
       row('Population, 2021', c.census?.pop21 != null ? c.census.pop21.toLocaleString('en-CA') : '**', 'Statistics Canada'),
     ],
   };

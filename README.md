@@ -137,7 +137,16 @@ clinic), and Manitoba Education's "Schools in Manitoba" directory for Grade 12
 town; independent and colony schools left out). It leads the facilities
 paragraph, shows as a badge and in the community drop-down, and "Supporting
 figures" lists what was and wasn't found. OpenStreetMap misses some clinics
-and credit unions, so a level can read low — check it.
+and credit unions, so a level can read low — check it. Known gaps are fixed by
+hand in `web/scripts/data/mb_community_corrections.csv` (community, CSD,
+facility key, add/remove), which the build applies and the table cites as
+"Local correction".
+
+Commuting is only published by municipality, so when most of a
+municipality's workers leave it (2021 Census place of work), each of its
+communities gets a "Commuting" paragraph borrowing that pattern — mainly to
+the nearby service centre or to Winnipeg (within 60 km) — and a place-of-work
+table.
 
 Build (run-once; re-run when the census, OSM or the map-sheet list changes):
 
