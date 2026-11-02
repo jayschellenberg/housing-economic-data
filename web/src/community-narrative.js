@@ -94,19 +94,15 @@ const ITEMS = {
 };
 const listItems = (f, group) => ITEMS[group].filter(([k]) => count(f, k) > 0).map(([k, one, many]) => (count(f, k) > 1 ? many : one));
 
-// Service tier (service-tier.js, the Census Profile checklist's rule) ticked
-// from the data instead of by hand: grocery, bank and clinic from
-// OpenStreetMap, a school to Grade 12 from Manitoba Education's directory
-// (r/33 `school_hs`). A hospital counts as the medical clinic too — rural
-// health centres hold the physicians' clinic. OSM gaps can understate a tier,
-// so the tab shows what was found under "Service level".
 // Hand corrections (mb_community_corrections.csv rows: community, csd,
 // facility, action add|remove, name, note) → copies of the matching records,
 // with `corrected` listing the facility keys touched (the service table cites
-// them as local knowledge). Returns the rows that matched no community.
+// them as local knowledge). Also returns the rows that matched no community
+// and the adds the data already covers (safe to delete from the file).
 export function applyCorrections(communities, rows) {
   const out = communities.map(c => ({ ...c, facilities: { ...(c.facilities || {}) } }));
   const unmatched = [];
+  const redundant = [];
   for (const r of rows) {
     const c = out.find(x => x.name === r.community && (!r.csd || x.csd === r.csd));
     if (!c) { unmatched.push(r); continue; }
@@ -116,15 +112,17 @@ export function applyCorrections(communities, rows) {
       if (Array.isArray(f[k]) && r.name) f[k] = f[k].filter(n => n !== r.name);
       else delete f[k];
       if (Array.isArray(f[k]) && !f[k].length) delete f[k];
-    } else if (Array.isArray(f[k]) || (r.name && !f[k])) {
-      f[k] = [...(f[k] || [])];
-      if (r.name && !f[k].includes(r.name)) f[k].push(r.name);
-    } else if (!count(f, k)) {
+    } else if (r.name ? (Array.isArray(f[k]) && f[k].includes(r.name)) : count(f, k) > 0) {
+      redundant.push(r);
+      continue;
+    } else if (Array.isArray(f[k]) || r.name) {
+      f[k] = [...(Array.isArray(f[k]) ? f[k] : []), ...(r.name ? [r.name] : [])];
+    } else {
       f[k] = 1;
     }
     c.corrected = [...new Set([...(c.corrected || []), k])];
   }
-  return { communities: out, unmatched };
+  return { communities: out, unmatched, redundant };
 }
 
 // Minimal CSV (quoted fields allowed, no embedded newlines; # lines are
@@ -137,6 +135,13 @@ export function parseCorrectionsCsv(text) {
   return body.map(v => Object.fromEntries(head.map((h, i) => [h, v[i] ?? ''])));
 }
 
+// Service tier (service-tier.js, the Census Profile checklist's rule) ticked
+// from the data instead of by hand: grocery and bank from
+// OpenStreetMap, clinics and hospitals from OpenStreetMap and Statistics
+// Canada's Open Database of Healthcare Facilities, a school to Grade 12 from Manitoba Education's directory
+// (r/33 `school_hs`). A hospital counts as the medical clinic too — rural
+// health centres hold the physicians' clinic. OSM gaps can understate a tier,
+// so the tab shows what was found under "Service level".
 export function communityServices(c) {
   const f = c.facilities || {};
   const keys = [];
@@ -236,7 +241,7 @@ export function commuteTable(muni, commute, year) {
 export function buildCommunityNarrative(c, muni, { commute = null, commuteYear = '2021' } = {}) {
   const blocks = [
     { type: 'title', text: `${c.name} — community profile` },
-    { type: 'meta', text: 'Location: Canadian Geographical Names Database / OpenStreetMap; facilities: OpenStreetMap' +
+    { type: 'meta', text: 'Location: Canadian Geographical Names Database / OpenStreetMap; facilities: OpenStreetMap, Statistics Canada health facilities' +
         (c.corrected?.length ? ' and local corrections' : '') +
         (c.census ? '; Statistics Canada 2021 Census' : '') +
         (commute?.total > 0 ? `; commuting: ${commuteYear} Census (municipality)` : '') },
@@ -253,6 +258,7 @@ export function buildCommunityNarrative(c, muni, { commute = null, commuteYear =
   return { blocks, flags: communityFlags(c), tier: svc.tier.key, tables: [serviceTable(c, svc), commuteTable(muni, commute, commuteYear)].filter(Boolean) };
 }
 
+const HEALTH_SRC = 'OpenStreetMap; Statistics Canada health facilities';
 // What the service level was read from — the tab's "Supporting figures".
 export function serviceTable(c, svc = communityServices(c)) {
   const f = c.facilities || {};
@@ -267,9 +273,9 @@ export function serviceTable(c, svc = communityServices(c)) {
     rows: [
       row('Grocery store', yes('grocery'), src('grocery')),
       row('Bank or credit union', yes('bank'), src('bank')),
-      row('Medical clinic (or hospital)', yes('clinic'), src(c.corrected?.includes('hospital') ? 'hospital' : 'clinic')),
+      row('Medical clinic (or hospital)', yes('clinic'), src(c.corrected?.includes('hospital') ? 'hospital' : 'clinic', HEALTH_SRC)),
       row('School to Grade 12', yes('school_hs', named('school_hs')), src('school_hs', 'Manitoba Education school directory')),
-      row('Hospital', yes('hospital', named('hospital')), src('hospital')),
+      row('Hospital', yes('hospital', named('hospital')), src('hospital', HEALTH_SRC)),
       row('Population, 2021', c.census?.pop21 != null ? c.census.pop21.toLocaleString('en-CA') : '**', 'Statistics Canada'),
     ],
   };
