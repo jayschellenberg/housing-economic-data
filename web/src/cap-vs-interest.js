@@ -25,9 +25,12 @@
  * Both halves are resampled to monthly before plotting. The BoC records are
  * daily (~1,300 points per line over the default 5-year window) and cap rates
  * are quarterly, so without resampling every tooltip would land on a daily
- * rate observation and the cap-rate values would be unreadable. Monthly means
- * are also what the catalog already declares for these series
- * (`transform: monthly_mean`).
+ * rate observation and the cap-rate values would be unreadable. The bond
+ * yields become monthly means, as their catalog entries declare
+ * (`transform: monthly_mean`). The overnight target is a step series
+ * (`transform: step_forward_fill`) and takes the rate in effect at month end:
+ * averaging it would show a rate the BoC never set (Oct 2026: 2.26% for a
+ * 2.25% → 2.50% move on the 29th).
  *
  * Wiring: the section renders itself into the container it is given — the
  * Cap Rates vs Interest tab's #cvi-grid (cap-vs-interest-tab.js) — and
@@ -251,6 +254,23 @@ export function monthlyMean(records) {
     .map(([month, { total, n }]) => ({ date: `${month}-01`, value: total / n }));
 }
 
+/**
+ * Like monthlyMean, but each month keeps its last observation — the level in
+ * effect at month end, for step series such as the overnight target.
+ */
+export function monthlyLast(records) {
+  const last = new Map();
+  for (const r of records) {
+    if (!Number.isFinite(r.value)) continue;
+    const month = String(r.date).slice(0, 7);
+    const cur = last.get(month);
+    if (!cur || String(r.date) >= cur.date) last.set(month, { date: String(r.date), value: r.value });
+  }
+  return [...last.entries()]
+    .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+    .map(([month, { value }]) => ({ date: `${month}-01`, value }));
+}
+
 // --- Spread to the 10-year ---------------------------------------------------
 
 /**
@@ -397,7 +417,8 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', 
   const rateRecords = [];
   for (const s of rateMeta) {
     const own = shard.records.filter(r => r.id === s.id);
-    monthlyMean(own).forEach(p => rateRecords.push({ id: s.id, date: p.date, value: p.value }));
+    const resample = s.transform === 'step_forward_fill' ? monthlyLast : monthlyMean;
+    resample(own).forEach(p => rateRecords.push({ id: s.id, date: p.date, value: p.value }));
   }
 
   const section = document.createElement('section');
@@ -564,8 +585,8 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', 
         'benchmarks a cap rate is built off — and, when the Cap Rates folder is loaded, the average ' +
         'cap rate by property type on the same axis. The gap between a cap rate and the 5-year ' +
         'GoC is the risk premium the market is pricing; watching it widen or compress is the ' +
-        'point of putting the two on one chart. Rate lines are monthly means of the daily BoC ' +
-        'series; cap rates are the chosen firm’s published Low–High mid-points averaged ' +
+        'point of putting the two on one chart. Bond yields are monthly means of the daily BoC ' +
+        'series and the overnight target is the rate in effect at month end; cap rates are the chosen firm’s published Low–High mid-points averaged ' +
         'across that property type’s classes for the quarter (or across all firms). The ' +
         'cap-rate data is the same local file the Cap Rates tab reads and is not published with this site.',
     });

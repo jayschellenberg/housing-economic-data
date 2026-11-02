@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  capSeriesFromRows, capSpreads, spreadMarkers, rollingFrom, capVsInterestCaption, orderTypes, monthlyMean, capPublisher, ALL_FIRMS, DEFAULT_FIRM, KNOWN_TYPES, DEFAULT_OFF_TYPES,
+  capSeriesFromRows, capSpreads, spreadMarkers, rollingFrom, capVsInterestCaption, orderTypes, monthlyMean, monthlyLast, capPublisher, ALL_FIRMS, DEFAULT_FIRM, KNOWN_TYPES, DEFAULT_OFF_TYPES,
 } from '../src/cap-vs-interest.js';
 
 // Rows in the shape cap_rates.json carries (mid as a fraction), for two
@@ -90,6 +90,28 @@ describe('monthlyMean', () => {
     expect(monthlyMean([
       { date: '2026-01-02', value: null },
       { date: '2026-01-03', value: 2.0 },
+    ])).toEqual([{ date: '2026-01-01', value: 2.0 }]);
+  });
+});
+
+describe('monthlyLast', () => {
+  it('keeps the rate in effect at month end, not the average (Oct 2026 hike)', () => {
+    const out = monthlyLast([
+      { date: '2026-10-27', value: 2.25 },
+      { date: '2026-10-28', value: 2.25 },
+      { date: '2026-10-29', value: 2.5 },
+      { date: '2026-09-30', value: 2.25 },
+    ]);
+    expect(out).toEqual([
+      { date: '2026-09-01', value: 2.25 },
+      { date: '2026-10-01', value: 2.5 },
+    ]);
+  });
+
+  it('ignores non-finite values', () => {
+    expect(monthlyLast([
+      { date: '2026-01-02', value: 2.0 },
+      { date: '2026-01-03', value: null },
     ])).toEqual([{ date: '2026-01-01', value: 2.0 }]);
   });
 });
