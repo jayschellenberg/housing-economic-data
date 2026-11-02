@@ -57,6 +57,14 @@ for (const r of data.regions) r.name = cleanName(r.name, r.level);
 const years = (data.censusYears || []).map(String);
 const period = '2021';
 const byUid = new Map(data.regions.map(r => [r.uid, r]));
+// Border cities: Statistics Canada splits them ("Flin Flon (Part)"). Drop the
+// "(Part)" and say which province holds the rest — the census covers Manitoba's part only.
+const border = new Map();
+for (const r of data.regions.filter(x => x.level === 'CSD' && x.uid.startsWith('46') && / \(Part\)/.test(x.name))) {
+  const other = data.regions.find(o => o.level === 'CSD' && !o.uid.startsWith('46') && o.name === r.name);
+  if (other) border.set(r.uid, byUid.get(other.uid.slice(0, 2))?.name);
+  r.name = r.name.replace(' (Part)', '');
+}
 const benchmarks = [data.regions.find(r => r.level === 'CMA' && /^winnipeg/i.test(r.name)), byUid.get('46')];
 const WPG_CSD = '4611040';
 const URBAN = /\((T|VL|CY|LGD)\)$/;
@@ -93,6 +101,11 @@ for (const m of data.regions.filter(r => r.level === 'CSD' && r.uid.startsWith('
   const svc = self ? communityServices(self) : null;
   const overview = census(m, svc && { checked: serviceChecks(svc), nearest: serviceNearest(self) });
   if (svc) { overview.tier = svc.tier.key; overview.tables.push(serviceTable(self, svc)); }
+  if (border.get(m.uid)) {
+    const loc = overview.blocks.find(b => b.type === 'para');
+    loc.text += ` It sits on the ${border.get(m.uid)} border, and part of the community lies in ${border.get(m.uid)}; ` +
+      'the census figures here cover the Manitoba part only.';
+  }
   const sentence = communitiesSentence(m.name, mine.map(c => c.name));
   if (sentence) {
     const i = overview.blocks.findIndex(b => b.type === 'para');
