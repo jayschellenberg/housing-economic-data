@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  capSeriesFromRows, capSpreads, spreadMarkers, rollingFrom, spreadWindow, capVsInterestCaption, orderTypes, monthlyMean, capPublisher, ALL_FIRMS, DEFAULT_FIRM, KNOWN_TYPES, DEFAULT_OFF_TYPES,
+  capSeriesFromRows, capSpreads, spreadMarkers, rollingFrom, spreadWindow, averageSpreadBps, capVsInterestCaption, orderTypes, monthlyMean, capPublisher, ALL_FIRMS, DEFAULT_FIRM, KNOWN_TYPES, DEFAULT_OFF_TYPES,
 } from '../src/cap-vs-interest.js';
 
 // Rows in the shape cap_rates.json carries (mid as a fraction), for two
@@ -153,6 +153,14 @@ describe('rollingFrom', () => {
     expect(rollingFrom('2026-10-01', 15)).toBe('2011-11');   // Nov 2011 … Oct 2026 = 180 months
     expect(rollingFrom('2026-01-28', 15)).toBe('2011-02');
     expect(rollingFrom('2026-12-01', 1)).toBe('2026-01');
+  });
+});
+
+describe('averageSpreadBps', () => {
+  it('averages every quarter’s unrounded spread, in bps', () => {
+    const s = [{ cap: 5.5, bond: 3.0 }, { cap: 5.0, bond: 2.0 }, { cap: 6.0, bond: 3.255 }];
+    expect(averageSpreadBps(s)).toBe(275);     // (250 + 300 + 274.5) / 3 = 274.83
+    expect(averageSpreadBps([])).toBeNull();
   });
 });
 

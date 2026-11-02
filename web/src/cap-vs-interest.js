@@ -298,6 +298,12 @@ export function capSpreads(capPoints, bondMonthly) {
   return out.sort((a, b) => (a.date < b.date ? -1 : 1));
 }
 
+/** Mean spread in basis points over the quarters given (capSpreads rows), or null. */
+export function averageSpreadBps(spreads) {
+  if (!spreads?.length) return null;
+  return Math.round(spreads.reduce((a, s) => a + (s.cap - s.bond), 0) / spreads.length * 100);
+}
+
 const monthIndex = (date) => {
   const [y, m] = String(date).split('-').map(Number);
   return y * 12 + m;
@@ -678,6 +684,7 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', 
     });
     if (!spreads.length) return;
     const markers = spreadMarkers(spreads);
+    const avgBps = averageSpreadBps(spreads);
     const capLast = spreads[spreads.length - 1];
     const capMeta = {
       id: capId, provider: 'local', chartLabel: `${type} CR`, units: 'percent', frequency: 'quarterly',
@@ -708,7 +715,8 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', 
         'yield, in basis points (100 bps = 1 percentage point) — the premium over the long-term ' +
         'risk-free rate the market is pricing. Each quarter’s cap rate (the chosen firm’s ' +
         'published Low–High mid-points averaged across the type’s classes) is set against the ' +
-        'monthly mean of the daily 10-year yield for the quarter’s final month. Bars mark the ' +
+        'monthly mean of the daily 10-year yield for the quarter’s final month. The subtitle’s ' +
+        `average (${avgBps} bp) is the mean spread over every quarter shown. Bars mark the ` +
         `current spread (${listed('current')}), the two widest (${listed('high') || 'none'}) and the two ` +
         `narrowest (${listed('low') || 'none'}), each at least a year from the others, within the ` +
         `years shown — by default a rolling ${SPREAD_YEARS}-year window; the sidebar's "Spread chart years" ` +
@@ -718,7 +726,9 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', 
 
     card.render([...bondRecords, ...capRecords], [{ ...bondMeta, chartLabel: '10-Year GoC Bond Yield' }, capMeta], {
       rangePrefix: true,
-      subtitle: 'Spread = Cap Rate (CR) less 10-Year GoC Bond Yield',
+      // The average is over every quarter in the window, so it follows the
+      // year picker (Jason, 2026-11-02).
+      subtitle: `Spread = Cap Rate (CR) less 10-Year GoC Bond Yield; Average Spread: ${avgBps} bp`,
       dashedIds: [capId],
       seriesColours: {
         [SPREAD_BOND_ID]: RATE_COLOURS[SPREAD_BOND_ID],
