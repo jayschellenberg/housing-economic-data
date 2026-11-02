@@ -148,15 +148,21 @@ export function communityServices(c) {
   return { keys, ...classifyServices(keys, { pop: c.census?.pop21 ?? null }) };
 }
 
+// servicesPara inputs: the keys found ('none' when nothing was, so the
+// sentence still reads "minimal-service") and the centre to look to.
+export const serviceChecks = (svc) => (svc.keys.length ? svc.keys : ['none']);
+export function serviceNearest(c) {
+  const s = c.service;
+  return s?.name && s.name !== c.name && s.km <= SERVICE_MAX_KM ? { name: s.name, km: Math.round(s.km) } : null;
+}
+
 export const SCHOOL_NAMED = 2;
 function facilitiesPara(c) {
   const f = c.facilities || {};
   const parts = [];
   // Lead with the tier; it also says where residents go for what is missing.
   const svc = communityServices(c);
-  const s = c.service;
-  const nearest = s?.name && s.km <= SERVICE_MAX_KM ? { name: s.name, km: Math.round(s.km) } : null;
-  parts.push(servicesPara(c.name, svc.keys.length ? svc.keys : ['none'], nearest, { pop: c.census?.pop21 ?? null }));
+  parts.push(servicesPara(c.name, serviceChecks(svc), serviceNearest(c), { pop: c.census?.pop21 ?? null }));
   // High schools from the provincial directory first (OSM often lacks them).
   const key = (n) => n.toLowerCase().replace(/school|[^a-z]/g, '');
   const schools = [...(Array.isArray(f.school_hs) ? f.school_hs : []), ...(Array.isArray(f.school) ? f.school : [])]
