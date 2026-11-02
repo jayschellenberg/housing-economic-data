@@ -93,7 +93,17 @@ jobs:
               if git push origin HEAD:main; then pushed=true; break; fi
               echo "push rejected (attempt $attempt) — rebasing onto origin/main"
               git fetch origin main
-              git rebase origin/main || { echo "rebase conflict — aborting"; git rebase --abort || true; exit 1; }
+              # Another refresh (e.g. the weekly indicators run on a Monday that is the 2nd)
+              # may have rebuilt the same generated files meanwhile. Each run rebuilds
+              # them whole, so on conflict keep this run's entire file rather than
+              # hand-merging hunks of two different builds.
+              if ! git rebase origin/main; then
+                conflicted=$(git diff --name-only --diff-filter=U)
+                echo "rebase conflict in: $conflicted — keeping this run's versions"
+                { [ -n "$conflicted" ] && git checkout --theirs -- $conflicted && git add -- $conflicted \
+                    && GIT_EDITOR=true git rebase --continue; } \
+                  || { echo "rebase conflict — aborting"; git rebase --abort || true; exit 1; }
+              fi
             done
             [ "$pushed" = true ] || { echo "push failed after retries"; exit 1; }
           fi
