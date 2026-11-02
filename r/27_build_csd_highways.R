@@ -63,7 +63,8 @@ PLACE_POP   <- c(city = 5000, town = 800, village = 150, hamlet = 30)
 SHARED_EDGE <- 0.75    # share of a town's boundary on the municipality = surrounded by it
 # Hand corrections where the simplified boundaries put a town in the wrong
 # municipality: CSD id -> main town name (must be an OpenStreetMap place).
-CENTRE_OVERRIDE <- c("4608032" = "Treherne")    # Notre-Dame-de-Lourdes is in Lorne
+CENTRE_OVERRIDE <- c("4608032" = "Treherne",    # Notre-Dame-de-Lourdes is in Lorne
+                     "4621064" = "Flin Flon")    # Channing (a Flin Flon district) outranked the city
 
 # --- Download (cached) ------------------------------------------------------
 if (!file.exists(ROADS_FILE) || file.size(ROADS_FILE) < 1e6) {
