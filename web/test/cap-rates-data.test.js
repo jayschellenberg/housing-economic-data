@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   quarterKey, quarterList, typesPresent, subtypesFor, firmsFor, rowsUpTo, averageByClass, byFirm,
   rangeSeries, quarterTable, toCardInput, AVERAGE, breakGaps, nextQuarterEnd, averageByFirm, defaultYearFrom,
-  splitOfficeByLocation, collapseClasses, officeTotalsTable, officeByClassTable, combineTypes, previousQuarter, firmLabel, carriedNote,
+  splitOfficeByLocation, collapseClasses, officeTotalsTable, officeByClassTable, combineTypes, previousQuarter, firmLabel, carriedNote, lowRiseOnce,
 } from '../src/cap-rates-data.js';
 
 const row = (quarter, firm, type, subtype, low, high) => ({
@@ -162,6 +162,22 @@ describe('breakGaps', () => {
 });
 
 describe('averageByFirm', () => {
+  it('counts a low-rise figure carried as both (A) and (B) once', () => {
+    // Colliers 2023 Q2: High Rise 4.25-5.25, Low Rise 4.75-5.75 as (A) and (B) -> 5.00, not 5.08
+    const mf = [
+      row('2023 Q2', 'Colliers', 'Multi-Family', 'High Rise', 0.0425, 0.0525),
+      row('2023 Q2', 'Colliers', 'Multi-Family', 'Low Rise (A)', 0.0475, 0.0575),
+      row('2023 Q2', 'Colliers', 'Multi-Family', 'Low Rise (B)', 0.0475, 0.0575),
+      row('2023 Q2', 'CBRE', 'Multi-Family', 'Low Rise (A)', 0.045, 0.05),
+      row('2023 Q2', 'CBRE', 'Multi-Family', 'Low Rise (B)', 0.05, 0.055),
+    ];
+    const pts = averageByFirm(mf, 'Multi-Family');
+    expect(pts.find(p => p.line === 'Colliers').value).toBe(5);
+    expect(pts.find(p => p.line === 'CBRE').value).toBe(5);   // different (A)/(B) both kept: (4.75 + 5.25) / 2
+    expect(lowRiseOnce(mf)).toHaveLength(4);
+    // the per-class view still has both rows
+    expect(averageByClass(mf, 'Multi-Family').filter(p => p.line === 'Low Rise (B)')).toHaveLength(1);
+  });
   it('averages each firm\'s classes into one line per firm, in percent', () => {
     const pts = averageByFirm(ROWS, 'Industrial');
     // Colliers 2026 Q1: Class A 6.5 and Class B 6.75 -> 6.625 (rounded to 2 dp)

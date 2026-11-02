@@ -103,6 +103,26 @@ function mean(xs) {
   return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
 }
 
+/**
+ * Rows for averaging ACROSS classes: a firm's Low Rise (B) is dropped when it
+ * repeats that quarter's Low Rise (A) figure. Colliers and Cushman publish
+ * one low-rise figure, which the workbook carries as both (A) and (B);
+ * counted twice it outweighed High Rise (Jason, 2026-11-02). A genuinely
+ * different (B) stays. Per-class views keep both rows.
+ */
+export function lowRiseOnce(rows) {
+  const same = (a, b) => a.low === b.low && a.high === b.high && a.mid === b.mid;
+  const lowA = new Map();
+  for (const r of rows) {
+    if (r.type === 'Multi-Family' && r.subtype === 'Low Rise (A)') lowA.set(`${r.firm}\u0000${r.date}`, r);
+  }
+  return rows.filter(r => {
+    if (r.type !== 'Multi-Family' || r.subtype !== 'Low Rise (B)') return true;
+    const a = lowA.get(`${r.firm}\u0000${r.date}`);
+    return !(a && same(a, r));
+  });
+}
+
 /** { line: subtype, date, value } — mean of firm mid-points, in percent. */
 export function averageByClass(rows, type) {
   const groups = new Map();
@@ -130,11 +150,12 @@ export function combineTypes(rows, types, as) {
  * { line: firm, date, value } — each firm's overall cap rate for a property
  * type: the mean of ITS published class mid-points that quarter (Industrial
  * = Class A and B together; Office = all four classes), in percent. The
- * chart the appraiser keeps in Excel: one line per brokerage.
+ * chart the appraiser keeps in Excel: one line per brokerage. A low-rise
+ * figure carried as both (A) and (B) counts once (lowRiseOnce).
  */
 export function averageByFirm(rows, type) {
   const groups = new Map();
-  for (const r of rows) {
+  for (const r of lowRiseOnce(rows)) {
     if (r.type !== type || r.mid == null) continue;
     const key = `${r.firm}\u0000${r.date}`;
     (groups.get(key) || groups.set(key, []).get(key)).push(r.mid);

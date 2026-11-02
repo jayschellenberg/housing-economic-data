@@ -29,6 +29,12 @@ describe('capSeriesFromRows', () => {
     expect(Object.keys(types)).not.toContain('Retail');   // null mid dropped
   });
 
+  it('counts a low-rise figure carried as both (A) and (B) once', () => {
+    const mf = [['High Rise', 0.0475], ['Low Rise (A)', 0.0525], ['Low Rise (B)', 0.0525]]
+      .map(([subtype, mid]) => ({ date: '2023-06-30', firm: 'Colliers', type: 'Multi-Family', subtype, low: mid - 0.005, high: mid + 0.005, mid }));
+    expect(capSeriesFromRows(mf).types['Multi-Family'][0][1]).toBeCloseTo(5.0, 6);
+  });
+
   it('ignores other firms when one firm is chosen', () => {
     const { types } = capSeriesFromRows(ROWS, 'CBRE');
     expect(types.Office).toEqual([['2026-03-31', 7.5]]);
