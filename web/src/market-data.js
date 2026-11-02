@@ -46,6 +46,11 @@ import * as aptCompsStore from './apartment-comps-store.js';
 export { fsAccessSupported, storeAvailable };
 
 const hasFolderData = async (s) => Boolean(await s.getData());
+
+// checkForUpdates answers { changed: boolean } for one-file stores and
+// { changed: [files…] } for the multi-file ones (Johnson, the dashboards);
+// null when it cannot tell.
+export const fileChanged = (upd) => (Array.isArray(upd?.changed) ? upd.changed.length > 0 : upd?.changed === true);
 const hasDashboardData = async (s) => Boolean((await s.describeImport())?.present);
 
 /**
@@ -194,7 +199,9 @@ export async function syncSource(src, roots, { anyLocked = false } = {}) {
     }
   }
   if (!saved || !(await sameEntry(saved, sub))) await store.saveDirectory(sub);
-  if (await src.hasData(store)) return { status: 'loaded' };
+  // Data already held is re-read only when the folder's file has changed
+  // since (a republish); reconnecting used to keep the stale copy.
+  if (await src.hasData(store) && !fileChanged(await store.checkForUpdates?.(sub))) return { status: 'loaded' };
   try {
     await store.importFromDirectory(sub);
     return { status: 'loaded', imported: true };
