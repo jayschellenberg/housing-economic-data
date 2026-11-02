@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  capSeriesFromRows, capSpreads, spreadMarkers, rollingFrom, capVsInterestCaption, orderTypes, monthlyMean, capPublisher, ALL_FIRMS, DEFAULT_FIRM, KNOWN_TYPES, DEFAULT_OFF_TYPES,
+  capSeriesFromRows, capSpreads, spreadMarkers, rollingFrom, spreadWindow, capVsInterestCaption, orderTypes, monthlyMean, capPublisher, ALL_FIRMS, DEFAULT_FIRM, KNOWN_TYPES, DEFAULT_OFF_TYPES,
 } from '../src/cap-vs-interest.js';
 
 // Rows in the shape cap_rates.json carries (mid as a fraction), for two
@@ -147,5 +147,19 @@ describe('rollingFrom', () => {
     expect(rollingFrom('2026-10-01', 15)).toBe('2011-11');   // Nov 2011 … Oct 2026 = 180 months
     expect(rollingFrom('2026-01-28', 15)).toBe('2011-02');
     expect(rollingFrom('2026-12-01', 1)).toBe('2026-01');
+  });
+});
+
+describe('spreadWindow', () => {
+  it('defaults to the rolling 15 years through the latest month', () => {
+    expect(spreadWindow('2026-10-01', '', '')).toEqual({ monthFrom: '2011-11', monthTo: null });
+  });
+  it('takes whole picked years, and rolls back from a picked "to" year', () => {
+    expect(spreadWindow('2026-10-01', '2015', '2020')).toEqual({ monthFrom: '2015-01', monthTo: '2020-12' });
+    expect(spreadWindow('2026-10-01', '2018', '')).toEqual({ monthFrom: '2018-01', monthTo: null });
+    expect(spreadWindow('2026-10-01', '', '2020')).toEqual({ monthFrom: '2006-01', monthTo: '2020-12' });
+  });
+  it('swaps reversed years', () => {
+    expect(spreadWindow('2026-10-01', '2020', '2015')).toEqual({ monthFrom: '2015-01', monthTo: '2020-12' });
   });
 });
