@@ -102,6 +102,22 @@ export function rollingFrom(lastIso, years) {
   return `${Math.floor(idx / 12)}-${String((idx % 12) + 1).padStart(2, '0')}`;
 }
 
+/**
+ * The spread chart's window as { monthFrom, monthTo } ("YYYY-MM", monthTo null
+ * = through the latest data) from the year picker. A blank "from" year keeps
+ * the rolling window of `years` ending at "to" (or at `lastIso`); a blank "to"
+ * runs to the latest month. Reversed years are swapped.
+ */
+export function spreadWindow(lastIso, fromYear, toYear, years = SPREAD_YEARS) {
+  let from = Number(fromYear) || null;
+  let to = Number(toYear) || null;
+  if (from && to && from > to) [from, to] = [to, from];
+  const monthTo = to ? `${to}-12` : null;
+  const end = to ? `${to}-12-01` : lastIso;
+  const monthFrom = from ? `${from}-01` : (end ? rollingFrom(end, years) : null);
+  return { monthFrom, monthTo };
+}
+
 /** "2012-06-01" → "Q2 2012". */
 function quarterLabel(date) {
   const [y, m] = String(date).split('-').map(Number);
@@ -345,6 +361,15 @@ function controlsMarkup(inSidebar) {
         </div>
         <div data-role="cvi-types" class="grid gap-1 text-sm"></div>
       </section>
+      <section data-role="cvi-spread-years" class="space-y-1" hidden>
+        <h2 class="block ${title}${inSidebar ? ' mb-2' : ''}">Spread chart years</h2>
+        <div class="flex items-center gap-2 text-sm">
+          <select data-role="cvi-spread-from" aria-label="Spread chart from year" class="border border-neutral-300 rounded px-2 py-1 text-sm"></select>
+          <span>to</span>
+          <select data-role="cvi-spread-to" aria-label="Spread chart to year" class="border border-neutral-300 rounded px-2 py-1 text-sm"></select>
+        </div>
+        <p class="text-xs text-neutral-500">Years only, for the spread chart. "Auto" is the latest ${SPREAD_YEARS} years; "Latest" runs to the newest quarter.</p>
+      </section>
       <p data-role="cvi-status" class="text-xs text-neutral-600"></p>
     </div>
   `;
@@ -414,6 +439,9 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', 
   const $types  = ctl.querySelector('[data-role="cvi-types"]');
   const $bulk   = ctl.querySelector('[data-role="cvi-bulk"]');
   const $status = ctl.querySelector('[data-role="cvi-status"]');
+  const $spreadYears = ctl.querySelector('[data-role="cvi-spread-years"]');
+  const $spreadFrom  = ctl.querySelector('[data-role="cvi-spread-from"]');
+  const $spreadTo    = ctl.querySelector('[data-role="cvi-spread-to"]');
   const $cardGrid = section.querySelector('[data-role="cvi-card-grid"]');
   const $spreadGrid = section.querySelector('[data-role="cvi-spread-grid"]');
 
@@ -435,6 +463,13 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', 
     renderControls();
     renderCard();
   });
+
+  for (const [$sel, key] of [[$spreadFrom, 'spreadFrom'], [$spreadTo, 'spreadTo']]) {
+    $sel.addEventListener('change', () => {
+      prefs = savePrefs({ [key]: $sel.value || null });
+      renderCard();
+    });
+  }
 
   ctl.querySelector('[data-role="cvi-all"]').addEventListener('click', () => setAll(true));
   ctl.querySelector('[data-role="cvi-none"]').addEventListener('click', () => setAll(false));
@@ -599,7 +634,8 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', 
   }
 
   // The CBRE-style spread chart: one cap-rate type against the 10-year GoC
-  // over the latest 15 years, rolling (it ignores the tab's date range), with
+  // over the latest 15 years, rolling, or the years picked in its own year
+  // picker (it ignores the tab's date range), with
   // bars marking the spread at the current quarter and at the two widest and
   // two narrowest within that window. One overlay only: with several, the
   // bars would have no single line to measure from.
@@ -609,6 +645,7 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', 
     ui.spreadCard = null;
 
     const bondMeta = ui.rateMeta.find(s => s.id === SPREAD_BOND_ID);
+    $spreadYears.hidden = true;
     if (!bondMeta) return;
     if (capTypes.length !== 1) {
       const box = document.createElement('section');
@@ -625,10 +662,14 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', 
     const capId = `cap.${type}`;
     const bondRecords = ui.spreadBondRecords;
     const lastBond = bondRecords[bondRecords.length - 1]?.date;
-    const monthFrom = lastBond ? rollingFrom(lastBond, SPREAD_YEARS) : null;
+    const allSpreads = capSpreads(series.types[type], bondRecords);
+    fillSpreadYears(allSpreads);
+    const { monthFrom, monthTo } = spreadWindow(lastBond, $spreadFrom.value, $spreadTo.value);
     // Highs and lows are picked inside the window, so every bar is on screen.
-    const spreads = capSpreads(series.types[type], bondRecords)
-      .filter(s => !monthFrom || s.date.slice(0, 7) >= monthFrom);
+    const spreads = allSpreads.filter(s => {
+      const m = s.date.slice(0, 7);
+      return (!monthFrom || m >= monthFrom) && (!monthTo || m <= monthTo);
+    });
     if (!spreads.length) return;
     const markers = spreadMarkers(spreads);
     const capLast = spreads[spreads.length - 1];
@@ -644,7 +685,7 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', 
       chartId: 'cap_spread_10yr',
       fileStem: `cap_spread_10yr_${type.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`,
       lineWidth: 3.6,
-      title: `${type} Cap Rate Spread to 10-Year GoC Bond Yield`,
+      title: `${type} Cap Rate Spread to 10-Year Bond Yield`,
       sourceLabel: capVsInterestCaption([type], $firm.value),
       sourceInCaption: true,
       mirrorY: false,
@@ -664,8 +705,8 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', 
         'monthly mean of the daily 10-year yield for the quarter’s final month. Bars mark the ' +
         `current spread (${listed('current')}), the two widest (${listed('high') || 'none'}) and the two ` +
         `narrowest (${listed('low') || 'none'}), each at least a year from the others, within the ` +
-        `latest ${SPREAD_YEARS} years — this chart shows a rolling ${SPREAD_YEARS}-year window and does ` +
-        'not follow the date range. The cap-rate data is the ' +
+        `years shown — by default a rolling ${SPREAD_YEARS}-year window; the sidebar's "Spread chart years" ` +
+        'picker sets it, and the tab date range does not apply. The cap-rate data is the ' +
         'same local file the Cap Rates tab reads and is not published with this site.',
     });
 
@@ -678,11 +719,22 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', 
         ...(CAP_COLOURS[type] ? { [capId]: CAP_COLOURS[type] } : {}),
       },
       monthFrom: monthFrom || capRecords[0].date.slice(0, 7),
-      monthTo: null,
+      monthTo,
       extraMarks: () => spreadMarks(markers),
     });
     card.setOpenPanels(open);
     ui.spreadCard = card;
+  }
+
+  // The year picker spans the years this type has a spread for; a saved year
+  // outside that span falls back to Auto / Latest.
+  function fillSpreadYears(spreads) {
+    const years = [...new Set(spreads.map(s => Number(s.date.slice(0, 4))))];
+    for (const [$sel, key, blank] of [[$spreadFrom, 'spreadFrom', 'Auto'], [$spreadTo, 'spreadTo', 'Latest']]) {
+      $sel.replaceChildren(new Option(blank, ''), ...years.map(y => new Option(String(y), String(y))));
+      $sel.value = years.includes(Number(prefs[key])) ? String(prefs[key]) : '';
+    }
+    $spreadYears.hidden = years.length === 0;
   }
 
   async function loadRows() {
