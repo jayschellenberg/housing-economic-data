@@ -233,7 +233,7 @@ function renderContent() {
   // The focus write-up first when one is chosen; the area overview under it.
   if (item) ui.$main.appendChild(card({ id: item.id, title: item.name, blocks: item.blocks, flags: item.flags, tables: item.tables, tier: item.tier,
     sub: `${a.kind === 'wpg' ? 'Neighbourhood' : 'Community'} in ${a.name}` }));
-  ui.$main.appendChild(card({ id: a.id, title: a.name, blocks: a.overview.blocks, tables: a.overview.tables,
+  ui.$main.appendChild(card({ id: a.id, title: a.name, blocks: a.overview.blocks, tables: a.overview.tables, tier: a.overview.tier,
     sub: a.kind === 'wpg' ? 'Neighbourhood cluster overview' : 'Municipality overview' }));
 }
 

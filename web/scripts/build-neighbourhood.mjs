@@ -41,7 +41,8 @@ const { loadCsdHighways } = await import('../src/csd-highways.js');
 const { loadWpgNbhdContext } = await import('../src/wpg-nbhd-context.js');
 const { cleanName } = await import('../src/geography.js');
 const { buildCensusNarrative } = await import('../src/census-narrative.js');
-const { buildCommunityNarrative, communitiesSentence, applyCorrections, parseCorrectionsCsv } = await import('../src/community-narrative.js');
+const { buildCommunityNarrative, communitiesSentence, applyCorrections, parseCorrectionsCsv,
+  communityServices, serviceChecks, serviceNearest, serviceTable } = await import('../src/community-narrative.js');
 
 const [data, industry, highways, wpgContext] = await Promise.all([
   loadCensusProfile(), loadCensusIndustry(), loadCsdHighways(), loadWpgNbhdContext()]);
@@ -62,8 +63,8 @@ const URBAN = /\((T|VL|CY|LGD)\)$/;
 const fold = (s) => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, '');
 const byName = (a, b) => a.name.localeCompare(b.name);
 
-const census = (region) => {
-  const nar = buildCensusNarrative({ subject: region, benchmarks, years, period, industry, highways, wpgContext });
+const census = (region, services = null) => {
+  const nar = buildCensusNarrative({ subject: region, benchmarks, years, period, industry, highways, wpgContext, services });
   return { blocks: nar.blocks, tables: [nar.table, nar.industryTable].filter(Boolean) };
 };
 
@@ -76,14 +77,22 @@ for (const cl of data.regions.filter(r => r.level === 'WPG_Cluster').sort(byName
   groups.push({ id: cl.uid, name: cl.name, kind: 'wpg', overview: census(cl), items });
 }
 // Municipalities: overview → communities.
-const muniBase = (name) => name.replace(/\s*\([^)]+\)\s*$/, '');
+const muniBase = (name) => name.replace(/(\s*\([^)]+\))+\s*$/, '');   // "Flin Flon (Part) (CY)" → "Flin Flon"
 for (const m of data.regions.filter(r => r.level === 'CSD' && r.uid.startsWith('46') && r.uid !== WPG_CSD).sort(byName)) {
-  // A town's own name is the overview, not a second-layer community.
-  const mine = communities.filter(c => c.csd === m.uid && !(URBAN.test(m.name) && fold(c.name) === fold(muniBase(m.name))));
+  // A town's own name is the overview, not a second-layer community — its
+  // record still rates the town's service level for the overview.
+  // Enclave towns (Carman, Lac du Bonnet) can land in the surrounding RM on
+  // the simplified boundaries, so fall back to the same census division.
+  const isSelf = (c) => fold(c.name) === fold(muniBase(m.name));
+  const self = !URBAN.test(m.name) ? null : communities.find(c => c.csd === m.uid && isSelf(c))
+    || communities.find(c => !c.ambiguous && c.csd?.slice(0, 4) === m.uid.slice(0, 4) && isSelf(c)) || null;
+  const mine = communities.filter(c => c.csd === m.uid && c !== self);
   const commute = industry?.regions?.find(x => x.uid === m.uid)?.data?.[period]?.commute ?? null;
   const items = mine.sort(byName).map(c => ({ id: c.id, name: c.name,
     ...buildCommunityNarrative(c, m.name, { commute, commuteYear: period }) }));
-  const overview = census(m);
+  const svc = self ? communityServices(self) : null;
+  const overview = census(m, svc && { checked: serviceChecks(svc), nearest: serviceNearest(self) });
+  if (svc) { overview.tier = svc.tier.key; overview.tables.push(serviceTable(self, svc)); }
   const sentence = communitiesSentence(m.name, mine.map(c => c.name));
   if (sentence) {
     const i = overview.blocks.findIndex(b => b.type === 'para');

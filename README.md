@@ -140,7 +140,9 @@ figures" lists what was and wasn't found. OpenStreetMap misses some clinics
 and credit unions, so a level can read low — check it. Known gaps are fixed by
 hand in `web/scripts/data/mb_community_corrections.csv` (community, CSD,
 facility key, add/remove), which the build applies and the table cites as
-"Local correction".
+"Local correction". Town, village and city overviews (Niverville, Steinbach)
+get the same level from their own community record, in their "Services and
+amenities" paragraph, as a badge and in Supporting figures.
 
 Commuting is only published by municipality, so when most of a
 municipality's workers leave it (2021 Census place of work), each of its
