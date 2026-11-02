@@ -81,6 +81,10 @@ describe('community narrative', () => {
     const nar = buildCommunityNarrative(communities[0], 'Hanover (RM)');
     expect(nar.tier).toBe('limited');
     expect(nar.tables[0].rows.find(r => r.area === 'Grocery store').values).toEqual(['Yes', 'Local correction']);
+    // An add the data already has is reported, not cited.
+    const again = applyCorrections([{ ...base, facilities: { grocery: 1 } }], rows.slice(0, 1));
+    expect(again.redundant.map(r => r.facility)).toEqual(['grocery']);
+    expect(again.communities[0].corrected).toBeUndefined();
   });
 
   it("borrows the municipality's commuting pattern, without numbers", () => {

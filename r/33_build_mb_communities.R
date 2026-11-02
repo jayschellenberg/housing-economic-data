@@ -21,6 +21,8 @@
 #     (r/27) and the Manitoba Road Network 2023 cache r/27 downloads.
 #   - Facilities: OpenStreetMap via Overpass (© OpenStreetMap contributors,
 #     ODbL) — schools, churches, halls, rinks, stores, fuel, health care, etc.
+#   - Health care: Statistics Canada Open Database of Healthcare Facilities
+#     (ODHF v2, Open Government Licence – Canada) alongside OSM.
 #   - Schools to Grade 12: Manitoba Education's "Schools in Manitoba"
 #     directory (r/lib/mb_schools.R), matched on the school's mailing town.
 #   - Statistics Canada 2021 Census population and dwelling counts for
@@ -241,11 +243,33 @@ set(amen == "fuel", "fuel")
 set(amen %in% c("restaurant", "cafe", "fast_food", "bar", "pub"), "restaurant")
 set(amen == "bank", "bank")
 set(amen %in% c("kindergarten", "childcare"), "childcare")
-fac <- data.frame(group = grp, name = gv("name"), x = fx, y = fy)
+fac <- data.frame(group = grp, name = gv("name"), x = fx, y = fy, src = "osm")
 fac <- fac[!is.na(fac$group) & !is.na(fac$x), ]
 fac <- st_transform(st_as_sf(fac, coords = c("x", "y"), crs = 4326), CRS_M)
 NAMED <- c("school", "hospital", "care_home", "golf", "museum")
 message(sprintf("[33] %d facilities", nrow(fac)))
+# Health care from Statistics Canada's Open Database of Healthcare Facilities
+# (provincial lists; OSM misses many — Thompson General Hospital, most clinics).
+# Rural health centres and hospitals → hospital; medical and First Nations
+# clinics → clinic; pharmacies; personal care homes. Public-health offices,
+# vaccination sites and ambulance stations are left out.
+ODHF_URL  <- "https://www150.statcan.gc.ca/n1/pub/13-26-0001/2020001/zip/odhf_v2_geojson.zip"
+ODHF_FILE <- file.path(cache_dir, "odhf_v2.geojson")
+if (!file.exists(ODHF_FILE)) {
+  message("[33] Downloading the Open Database of Healthcare Facilities…")
+  zf <- tempfile(fileext = ".zip")
+  download.file(ODHF_URL, zf, mode = "wb", quiet = TRUE, headers = UA)
+  unzip(zf, files = "odhf_v2.geojson", exdir = cache_dir)
+}
+oh <- st_read(ODHF_FILE, quiet = TRUE)
+oh <- oh[oh$prov_terr == "MB", ]
+og <- ifelse(oh$source_class == "Rural Health Care Facility" & oh$type %in% c("Hospital", "Health Centre"), "hospital",
+      ifelse(oh$source_class == "Medical Clinic" | grepl("^First Nation Health Clinic", oh$source_class), "clinic",
+      ifelse(oh$source_class == "Pharmacy", "pharmacy",
+      ifelse(oh$source_class == "Personal Care Home", "care_home", NA_character_))))
+oh <- st_transform(st_sf(group = og, name = oh$name, src = "odhf", geometry = st_geometry(oh))[!is.na(og), ], CRS_M)
+fac <- rbind(fac, oh)
+message(sprintf("[33] %d health facilities from the ODHF", nrow(oh)))
 # Public / First Nations schools that teach Grade 12, by mailing town (the
 # service-tier rubric's "school to Grade 12"; OSM has no grade levels).
 sch <- mb_school_directory(cache_dir, "housing-economic-data r/33")
@@ -281,8 +305,11 @@ for (i in seq_len(nrow(com))) {
   fi <- fac[fd <= r_km, ]
   facilities <- list()
   for (g in sort(unique(fi$group))) {
-    nm <- unique(na.omit(fi$name[fi$group == g]))
-    facilities[[g]] <- if (g %in% NAMED && length(nm)) I(nm) else sum(fi$group == g)
+    fg <- fi[fi$group == g, ]
+    # OSM and the ODHF overlap: count the fuller list, name from the ODHF first.
+    nm <- unique(na.omit(fg$name[fg$src == "odhf"]))
+    if (!length(nm)) nm <- unique(na.omit(fg$name))
+    facilities[[g]] <- if (g %in% NAMED && length(nm)) I(nm) else max(table(fg$src))
   }
   hs <- sch$name[fold(sch$town) %in% fold(c(com$name[i], lookup[match(com$name[i], names_raw)]))]
   if (length(hs)) facilities$school_hs <- I(sort(unique(hs)))
@@ -326,7 +353,7 @@ out <- out[order(vapply(out, `[[`, "", "name"))]
 f <- file.path(out_dir, "mb_communities.json")
 payload <- list(
   source = paste("Community list: town and village map sheets; locations: Canadian Geographical Names Database",
-                 "(NRCan), OpenStreetMap; facilities: OpenStreetMap (© OpenStreetMap contributors, ODbL);",
+                 "(NRCan), OpenStreetMap; facilities: OpenStreetMap (© OpenStreetMap contributors, ODbL), Statistics Canada Open Database of Healthcare Facilities;",
                  "highways: Manitoba Road Network 2023; Statistics Canada 2021 Census (98-10-0011, 98-10-0012)"),
   generatedBy = "r/33_build_mb_communities.R", generatedAt = format(Sys.Date()),
   communities = out)

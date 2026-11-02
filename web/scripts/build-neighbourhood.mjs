@@ -49,8 +49,9 @@ const [data, industry, highways, wpgContext] = await Promise.all([
 if (!data?.regions) throw new Error('census_profile.json not found under web/public/data/housing');
 // OSM facilities + the hand corrections (data/mb_community_corrections.csv).
 const fixes = parseCorrectionsCsv(readFileSync(join(HERE, 'data', 'mb_community_corrections.csv'), 'utf8'));
-const { communities, unmatched } = applyCorrections(
+const { communities, unmatched, redundant } = applyCorrections(
   JSON.parse(readFileSync(join(HERE, 'data', 'mb_communities.json'), 'utf8')).communities, fixes);
+for (const r of redundant) console.log(`[neighbourhood] correction no longer needed (the data has it): ${r.community} ${r.facility}`);
 for (const r of unmatched) console.warn(`[neighbourhood] correction matches no community: ${r.community} (${r.csd || 'any CSD'})`);
 
 for (const r of data.regions) r.name = cleanName(r.name, r.level);
@@ -93,7 +94,9 @@ for (const m of data.regions.filter(r => r.level === 'CSD' && r.uid.startsWith('
   // the simplified boundaries, so fall back to the same census division.
   const isSelf = (c) => fold(c.name) === fold(muniBase(m.name));
   const self = !URBAN.test(m.name) ? null : communities.find(c => c.csd === m.uid && isSelf(c))
-    || communities.find(c => !c.ambiguous && c.csd?.slice(0, 4) === m.uid.slice(0, 4) && isSelf(c)) || null;
+    || communities.find(c => !c.ambiguous && c.csd?.slice(0, 4) === m.uid.slice(0, 4) && isSelf(c))
+    // …or a map sheet with a short name ("Portage") that is the city's own centre.
+    || communities.find(c => c.csd === m.uid && c.isCentre) || null;
   const mine = communities.filter(c => c.csd === m.uid && c !== self);
   const commute = industry?.regions?.find(x => x.uid === m.uid)?.data?.[period]?.commute ?? null;
   const items = mine.sort(byName).map(c => ({ id: c.id, name: c.name,
