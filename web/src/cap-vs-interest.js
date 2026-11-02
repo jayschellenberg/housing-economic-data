@@ -33,14 +33,18 @@
  * Cap Rates vs Interest tab's #cvi-grid (cap-vs-interest-tab.js) — and
  * re-renders on a date-range change through the exported
  * rerenderCapVsInterest(). It also re-reads the store when the Cap Rates tab
- * announces a fresh import (the 'hed:cap-rates-updated' window event).
+ * announces a fresh import (the 'hed:cap-rates-updated' window event), and
+ * on opening re-imports the saved folder itself when its file has changed.
  */
 
 import * as Plot from '@observablehq/plot';
 import { buildIndicatorCard, readOpenPanels } from './indicator-chart.js';
 import { seriesSources } from './indicator-sources.js';
 import { getPref, setPref } from './prefs.js';
-import { getData as getCapRatesData, storeAvailable } from './cap-rates-store.js';
+import {
+  getData as getCapRatesData, storeAvailable, fsAccessSupported, getSavedDirectory, directoryPermission,
+  checkForUpdates, importFromDirectory,
+} from './cap-rates-store.js';
 
 export const CAP_GROUP_ID = 'cap_vs_interest';
 export const CAP_RATES_UPDATED_EVENT = 'hed:cap-rates-updated';
@@ -755,10 +759,25 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', 
   ui.renderCard = renderCard;
   ui.refresh = refresh;
 
+  // The stored copy is only as fresh as the last Cap Rates tab visit, so
+  // re-read the saved folder here too when its cap_rates.json has changed.
+  // Only with permission already granted: asking needs a click, and the Cap
+  // Rates tab is where that button lives.
+  async function refreshFromFolder() {
+    if (!storeAvailable() || !fsAccessSupported()) return false;
+    try {
+      const handle = await getSavedDirectory();
+      if (!handle || (await directoryPermission(handle)) !== 'granted') return false;
+      if (!(await checkForUpdates(handle))?.changed) return false;
+      await importFromDirectory(handle);
+      return true;
+    } catch { return false; }
+  }
+
   // First paint without waiting on IndexedDB, then fill in the overlays.
   renderControls();
   renderCard();
-  refresh();
+  refresh().then(async () => { if (await refreshFromFolder()) refresh(); });
   // The Cap Rates tab announces a fresh import; pick it up without a reload.
   window.addEventListener(CAP_RATES_UPDATED_EVENT, () => { refresh(); });
 }
