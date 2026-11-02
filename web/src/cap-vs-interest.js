@@ -41,6 +41,7 @@ import * as Plot from '@observablehq/plot';
 import { buildIndicatorCard, readOpenPanels } from './indicator-chart.js';
 import { seriesSources } from './indicator-sources.js';
 import { getPref, setPref } from './prefs.js';
+import { lowRiseOnce } from './cap-rates-data.js';
 import {
   getData as getCapRatesData, storeAvailable, fsAccessSupported, getSavedDirectory, directoryPermission,
   checkForUpdates, importFromDirectory,
@@ -170,14 +171,15 @@ let ui = null;
  * For one firm: the mean of that firm's class mid-points within a (type,
  * quarter) — Office is all four downtown/suburban classes together, which is
  * how the earlier CSV path averaged "MajorType". For ALL_FIRMS: the mean of
- * every firm's class mid-points. Values come out in percent (0.0725 → 7.25),
+ * every firm's class mid-points. A low-rise figure carried as both Low Rise
+ * (A) and (B) counts once (lowRiseOnce). Values come out in percent (0.0725 → 7.25),
  * which is how every other percent series on this tab is stored.
  *
  * Returns { types: {[type]: [[iso, value], …]}, firstDate, lastDate }.
  */
 export function capSeriesFromRows(rows, firm = DEFAULT_FIRM) {
   const sums = new Map();      // `${type}\u0000${iso}` → { total, n }
-  for (const r of rows || []) {
+  for (const r of lowRiseOnce(rows || [])) {
     if (!r || typeof r.mid !== 'number' || !Number.isFinite(r.mid)) continue;
     if (firm !== ALL_FIRMS && r.firm !== firm) continue;
     if (!r.type || !r.date) continue;
