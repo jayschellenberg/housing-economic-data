@@ -68,9 +68,10 @@ describe('SOURCES', () => {
 });
 
 // A tab store stand-in that records what syncSource did to it.
-function fakeStore({ saved = null, data = null, fail = null } = {}) {
+function fakeStore({ saved = null, data = null, fail = null, update = null } = {}) {
   const s = {
     saved, data, imported: 0,
+    async checkForUpdates() { return update; },
     async getSavedDirectory() { return s.saved; },
     async saveDirectory(h) { s.saved = h; },
     async importFromDirectory(h) {
@@ -98,6 +99,18 @@ describe('syncSource', () => {
     expect(await syncSource(src(store), [amd])).toEqual({ status: 'loaded' });
     expect(store.saved).toBe(capRates);
     expect(store.imported).toBe(0);
+  });
+  it('re-imports a tab whose file changed since it was read', async () => {
+    const store = fakeStore({ data: { old: true }, update: { changed: true } });
+    expect(await syncSource(src(store), [amd])).toEqual({ status: 'loaded', imported: true });
+    expect(store.imported).toBe(1);
+  });
+  it('treats an empty changed-file list as unchanged', async () => {
+    const store = fakeStore({ data: { old: true }, update: { changed: [], count: 0 } });
+    expect(await syncSource(src(store), [amd])).toEqual({ status: 'loaded' });
+    expect(store.imported).toBe(0);
+    const multi = fakeStore({ data: { old: true }, update: { changed: ['2026-10.json'], count: 1 } });
+    expect((await syncSource(src(multi), [amd])).imported).toBe(true);
   });
   it('leaves a folder picked on the tab alone', async () => {
     const own = dir('CapRates', [], { perm: 'prompt' });
