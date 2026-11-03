@@ -178,6 +178,33 @@ com <- st_transform(st_as_sf(com, coords = c("lon", "lat"), crs = 4326, remove =
 message(sprintf("[33] located %d of %d; %d same-name places settled by the map sheet, %d still ambiguous",
                 nrow(com), length(names_raw), sum(com$resolved), sum(com$ambiguous)))
 com$csd <- csd_of(com$lon, com$lat)
+# The map sheet's title block names the municipality ("VILLAGE OF DUNNOTTAR").
+# Trust it over the point: a shoreline point can fall in Lake Winnipeg's
+# unorganized division, and Matlock / Ponemah are parts of Dunnottar that the
+# simplified boundary leaves in St. Andrews. Among municipalities within
+# SHEET_MUNI_KM that the sheet names: the one sharing the community's name,
+# else the current one if named, else the only one named. A point already in a
+# municipality carrying its name (Altona, Dauphin, Minitonas-Bowsman) stays —
+# older sheets name the surrounding RM, and the title text can be garbled.
+SHEET_MUNI_KM <- 15
+near_csd <- st_is_within_distance(com, csd, SHEET_MUNI_KM * 1000)
+moved <- character(0)
+for (i in seq_len(nrow(com))) {
+  if (grepl(fold(com$name[i]), fold(csd$name[csd$id == com$csd[i]]), fixed = TRUE)) next
+  sheet <- sheet_of(com$name[i])
+  if (is.na(sheet) || !length(near_csd[[i]])) next
+  ids <- csd$id[near_csd[[i]]]
+  named <- ids[vapply(ids, function(u) sheet_names_muni(sheet, u), TRUE)]
+  if (!length(named)) next
+  own <- named[fold(csd$name[match(named, csd$id)]) == fold(com$name[i])]
+  pick <- if (length(own)) own[1] else if (com$csd[i] %in% named) com$csd[i] else if (length(named) == 1) named else NA
+  if (!is.na(pick) && pick != com$csd[i]) {
+    moved <- c(moved, sprintf("%s: %s -> %s", com$name[i], csd$name[csd$id == com$csd[i]], csd$name[csd$id == pick]))
+    com$csd[i] <- pick
+  }
+}
+message(sprintf("[33] %d communities moved to the municipality their map sheet names%s", length(moved),
+                if (length(moved)) paste0(":\n  ", paste(moved, collapse = "\n  ")) else ""))
 
 places_sf <- st_transform(st_as_sf(places, coords = c("lon", "lat"), crs = 4326), CRS_M)
 centre_pt <- function(uid) {     # r/27's main town, located again by name
