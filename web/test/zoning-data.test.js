@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   oxford, useList, usesSentence, narrativeParagraphs, nameableConditional, pageRef, pageText, usesPages, sourceLine, untracedParts, categoryCounts, categoriesOf, pickByCategory, formatValue, bulkRows,
-  currencyVerdict, currencyMessage, currencyQueryUrl, normBylaw, zoneShortName, zoneDescription, verifyApplies, muniPickerLabel,
+  currencyVerdict, currencyMessage, currencyQueryUrl, normBylaw, zoneShortName, zoneDescription, verifyApplies, muniPickerLabel, formatPartialDate, pendingChip,
 } from '../src/zoning-data.js';
 
 const zone = {
@@ -273,5 +273,26 @@ describe('muniPickerLabel', () => {
     expect(muniPickerLabel('Municipality of Clanwilliam-Erickson (former Town of Erickson)'))
       .toBe('Clanwilliam-Erickson (Municipality, former Town of Erickson)');
     expect(muniPickerLabel('Winnipeg')).toBe('Winnipeg');
+  });
+});
+
+describe('pending replacement by-law', () => {
+  it('formats partial dates', () => {
+    expect(formatPartialDate('2026-05-13')).toBe('May 13, 2026');
+    expect(formatPartialDate('2025-06')).toBe('June 2025');
+    expect(formatPartialDate('2025')).toBe('2025');
+    expect(formatPartialDate('spring 2026')).toBe('spring 2026');
+    expect(formatPartialDate('2025-13')).toBe('2025-13');
+  });
+  it('builds the chip from municipality.pending', () => {
+    expect(pendingChip({ pending: { bylaw_no: '34-2026', stage: 'first reading', stage_date: '2026-05-13', detail: 'x' } }))
+      .toEqual({ label: 'New by-law pending: 34-2026', stage: 'first reading, May 13, 2026', detail: 'x' });
+    expect(pendingChip({ pending: { bylaw_no: '04-2025', stage: 'before the Municipal Board' } }))
+      .toEqual({ label: 'New by-law pending: 04-2025', stage: 'before the Municipal Board', detail: '' });
+  });
+  it('is null without a pending by-law', () => {
+    expect(pendingChip({})).toBeNull();
+    expect(pendingChip({ pending: null })).toBeNull();
+    expect(pendingChip(null)).toBeNull();
   });
 });

@@ -36,6 +36,35 @@ export function muniPickerLabel(label) {
   return `${m[2]} (${m[3] ? `${type}, ${m[3]}` : type})`;
 }
 
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+/** "2026-05-13" -> "May 13, 2026"; "2025-06" -> "June 2025"; "2025" -> "2025"; anything else as given. */
+export function formatPartialDate(s) {
+  const m = String(s ?? '').match(/^(\d{4})(?:-(\d{2})(?:-(\d{2}))?)?$/);
+  if (!m) return String(s ?? '');
+  const month = m[2] ? MONTHS[Number(m[2]) - 1] : '';
+  if (m[2] && !month) return String(s);
+  if (m[3]) return `${month} ${Number(m[3])}, ${m[1]}`;
+  return month ? `${month} ${m[1]}` : m[1];
+}
+
+/**
+ * The "New by-law pending" chip for a municipality whose replacement by-law is in
+ * progress (zoning.json municipality.pending: bylaw_no, stage, stage_date, detail):
+ * { label: "New by-law pending: 34-2026", stage: "first reading, May 13, 2026" }, or null.
+ * The table itself stays on the by-law in force.
+ */
+export function pendingChip(m) {
+  const p = m?.pending;
+  if (!p?.bylaw_no) return null;
+  const when = p.stage_date ? formatPartialDate(p.stage_date) : '';
+  return {
+    label: `New by-law pending: ${p.bylaw_no}`,
+    stage: [p.stage, when].filter(Boolean).join(', '),
+    detail: p.detail || '',
+  };
+}
+
 /** Permitted uses an appraiser may name: principal (no accessory/mixed-use qualifier). */
 export function nameableUses(zone) {
   return (zone?.uses || []).filter(u => u.status === 'P' && !u.qualifier);
