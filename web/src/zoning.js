@@ -18,7 +18,8 @@
 import { escapeHtml } from './escape.js';
 import { getPref, setPref } from './prefs.js';
 import {
-  nameableUses, nameableConditional, narrativeParagraphs, bulkRows, formatValue, ATTRIBUTE_LABELS,
+  nameableUses, nameableConditional, narrativeParagraphs, sourceLine, untracedParts, pageText,
+  categoryCounts, categoriesOf, pickByCategory, bulkRows, formatValue, ATTRIBUTE_LABELS,
   currencyVerdict, currencyMessage, currencyQueryUrl, zoneShortName, zoneDescription, verifyApplies, muniPickerLabel,
 } from './zoning-data.js';
 import {
@@ -59,8 +60,10 @@ export async function initZoning() {
     $muni: document.getElementById('zn-muni'),
     $zone: document.getElementById('zn-zone'),
     $uses: document.getElementById('zn-use-toggles'),
+    $useCats: document.getElementById('zn-use-cats'),
     $usesCount: document.getElementById('zn-use-count'),
     $cond: document.getElementById('zn-cond-toggles'),
+    $condCats: document.getElementById('zn-cond-cats'),
     $condCount: document.getElementById('zn-cond-count'),
     $empty: document.getElementById('zn-empty'),
     data: null,
@@ -260,8 +263,29 @@ function renderZonePicker() {
 
 function renderUseToggles() {
   const z = currentZone();
-  renderToggles(ui.$uses, ui.$usesCount, z ? nameableUses(z) : [], selectedUses(), setSelected);
-  renderToggles(ui.$cond, ui.$condCount, z ? nameableConditional(z) : [], selectedCond(), setSelectedCond);
+  const perm = z ? nameableUses(z) : [], cond = z ? nameableConditional(z) : [];
+  renderCategories(ui.$useCats, perm, selectedUses(), (cats) => setSelected(pickByCategory(perm, cats, 12)));
+  renderCategories(ui.$condCats, cond, selectedCond(), (cats) => setSelectedCond(pickByCategory(cond, cats, 6)));
+  renderToggles(ui.$uses, ui.$usesCount, perm, selectedUses(), setSelected);
+  renderToggles(ui.$cond, ui.$condCount, cond, selectedCond(), setSelectedCond);
+}
+
+/**
+ * Kinds of use (residential, retail, office, ...) present in the list; ticking one
+ * names its most common uses, unticking it drops them. A kind is shown ticked when
+ * any of its uses is named, so picking individual uses keeps the two in step.
+ */
+function renderCategories($box, list, selected, onChange) {
+  if (!$box) return;
+  const counts = categoryCounts(list);
+  if (!counts.length) { $box.innerHTML = '<p class="text-xs text-neutral-500">None listed.</p>'; return; }
+  const on = categoriesOf(list, selected);
+  $box.innerHTML = counts.map(({ cat, n }) => `
+    <label class="flex items-start gap-2"><input type="checkbox" data-cat="${escapeHtml(cat)}" ${on.has(cat) ? 'checked' : ''} class="mt-0.5">
+      <span>${escapeHtml(cat)} <span class="text-neutral-400 text-xs">(${n})</span></span></label>`).join('');
+  $box.querySelectorAll('input').forEach(cb => cb.addEventListener('change', () => {
+    onChange([...$box.querySelectorAll('input:checked')].map(x => x.dataset.cat));
+  }));
 }
 
 /** A checklist of use names; onChange receives the ticked names. */
@@ -314,12 +338,14 @@ function renderZone() {
         <textarea id="zn-description" rows="3" data-role="desc" class="flex-1 border border-neutral-300 rounded px-2 py-1 text-sm leading-relaxed font-serif">${escapeHtml(zoneDescription(z))}</textarea>
         <button type="button" data-copy="desc" class="text-xs border border-neutral-300 rounded px-2 py-1 bg-white hover:bg-neutral-50">Copy</button>
       </div>
-      <p class="text-xs text-neutral-400 mt-1">Intent clause: PDF page ${z.intent_page ?? '—'}.</p>
+      <p class="text-xs text-neutral-400 mt-1">Intent clause: page ${escapeHtml(pageText(z.intent_page, m.page_labels) || "—")}.</p>
     </section>
     <section class="chart-card cmhc-indicator-card" data-role="narrative">
       <header class="chart-title">Zoning narrative</header>
       <p class="chart-sub">Ticking uses in the sidebar rewrites the permitted-uses sentence. Edit freely before copying.</p>
       ${verifyApplies(m, z.code) ? verifyBanner(m.note) : ''}
+      <label class="flex items-center gap-2 text-sm mb-2"><input type="checkbox" data-role="cite"${ui.prefs.cite === false ? '' : ' checked'}> Include by-law page references</label>
+      ${untracedNote(z)}
       <textarea data-role="text" rows="12" class="w-full border border-neutral-300 rounded p-2 text-sm leading-relaxed font-serif"></textarea>
       <p class="text-xs text-neutral-500" data-role="edited-note" hidden>Edited by hand — use selections no longer update the text. <button type="button" class="underline" data-role="regen">Regenerate</button></p>
       <div class="chart-actions">
@@ -351,6 +377,10 @@ function wireNarrative() {
   const $text = $card.querySelector('[data-role="text"]');
   const $note = $card.querySelector('[data-role="edited-note"]');
   $text.addEventListener('input', () => { ui.edited = true; $note.hidden = false; });
+  $card.querySelector('[data-role="cite"]').addEventListener('change', (e) => {
+    ui.prefs = savePrefs({ cite: e.target.checked });
+    renderNarrative();
+  });
   $card.querySelector('[data-role="regen"]').addEventListener('click', () => { ui.edited = false; $note.hidden = true; renderNarrative(); });
   const $copy = $card.querySelector('[data-role="copy"]');
   $copy.addEventListener('click', async () => {
@@ -367,14 +397,27 @@ function renderNarrative() {
   const z = currentZone();
   const $text = ui.$main.querySelector('[data-role="narrative"] [data-role="text"]');
   if (!z || !$text || ui.edited) return;
-  $text.value = narrativeParagraphs(z, selectedUses(), selectedCond()).join('\n\n');
+  const cite = ui.prefs.cite !== false;
+  const paras = narrativeParagraphs(z, selectedUses(), selectedCond(), { cite, labels: currentMuni()?.page_labels });
+  if (cite && sourceLine(currentMuni())) paras.push(sourceLine(currentMuni()));
+  $text.value = paras.join('\n\n');
+}
+
+// A figure in the narrative that the faithfulness check (zoning-narrative R/cite.R)
+// could not find in the zone's table: say so, so it gets checked against the by-law.
+function untracedNote(z) {
+  const bad = untracedParts(z);
+  if (!bad.length) return '';
+  const label = { intent: 'intent', uses: 'uses', bulk: 'site requirements', parking: 'parking', overlay: 'overlay' };
+  return `<p class="text-sm my-2 rounded border border-amber-300 bg-amber-50 text-amber-900 px-2 py-1" data-role="untraced">
+    <strong>Check against the by-law:</strong> ${bad.map(b => `${escapeHtml(b.numbers.join(', '))} in the ${escapeHtml(label[b.part] || b.part)} paragraph`).join('; ')} could not be traced to the zone's table.</p>`;
 }
 
 function useList(list) {
   if (!list.length) return '<p class="text-sm text-neutral-500">None.</p>';
   return `<ul class="text-sm grid gap-0.5 sm:grid-cols-2">${list.map(u => {
     const tags = [u.qualifier === 'accessory_only' ? 'accessory only' : u.qualifier, u.note].filter(Boolean).join('; ');
-    return `<li>${escapeHtml(u.name)}${tags ? ` <span class="text-neutral-500">(${escapeHtml(tags)})</span>` : ''} <span class="text-neutral-400 text-xs">p.${u.page}</span></li>`;
+    return `<li>${escapeHtml(u.name)}${tags ? ` <span class="text-neutral-500">(${escapeHtml(tags)})</span>` : ''} <span class="text-neutral-400 text-xs">p. ${escapeHtml(pageText(u.page, currentMuni()?.page_labels))}</span></li>`;
   }).join('')}</ul>`;
 }
 
@@ -384,7 +427,7 @@ function renderUseTables(z) {
   const c = z.uses.filter(u => u.status === 'C').sort(byName);
   ui.$main.querySelector('[data-role="uses"]').innerHTML = `
     <header class="chart-title">Permitted and conditional uses</header>
-    <p class="chart-sub">As listed in the by-law, with the PDF page. Not-permitted uses are not shown.</p>
+    <p class="chart-sub">As listed in the by-law, with the by-law page ("PDF" where the page prints no number). Not-permitted uses are not shown.</p>
     <h3 class="text-sm font-semibold mt-2 mb-1">Permitted (${p.length})</h3>${useList(p)}
     <h3 class="text-sm font-semibold mt-3 mb-1">Conditional (${c.length})</h3>${useList(c)}`;
 }
@@ -396,11 +439,11 @@ function renderBulkTable(z) {
       <td>${escapeHtml(ATTRIBUTE_LABELS[r.attribute] || r.attribute)}</td>
       <td>${escapeHtml(formatValue(r))}</td>
       <td>${escapeHtml(r.note || '')}</td>
-      <td>${r.page ?? ''}</td></tr>`).join('');
+      <td>${escapeHtml(pageText(r.page, currentMuni()?.page_labels))}</td></tr>`).join('');
   const $card = ui.$main.querySelector('[data-role="bulk"]');
   $card.innerHTML = `
     <header class="chart-title">Bulk requirements</header>
-    <p class="chart-sub">Principal building. Figures as printed in the by-law (imperial first), with notes and the PDF page.</p>
+    <p class="chart-sub">Principal building. Figures as printed in the by-law (imperial first), with notes and the by-law page ("PDF" where the page prints no number).</p>
     <div class="cmhc-chart-table-scroll">
       <table class="cmhc-table cmhc-table-compact"><thead><tr>
         <th>Applies to</th><th>Requirement</th><th>Value</th><th>Note</th><th>Page</th>
@@ -409,7 +452,7 @@ function renderBulkTable(z) {
     <div class="chart-actions"><button type="button" data-role="copy">Copy table</button></div>`;
   const tsv = [['Applies to', 'Requirement', 'Value', 'Note', 'Page'].join('\t'),
     ...rows.map(r => [r.qualifier || 'all listed uses', ATTRIBUTE_LABELS[r.attribute] || r.attribute,
-      formatValue(r), r.note || '', r.page ?? ''].join('\t'))].join('\n');
+      formatValue(r), r.note || '', pageText(r.page, currentMuni()?.page_labels)].join('\t'))].join('\n');
   const $copy = $card.querySelector('[data-role="copy"]');
   $copy.addEventListener('click', async () => {
     try { await navigator.clipboard.writeText(tsv); $copy.textContent = 'Copied'; setTimeout(() => { $copy.textContent = 'Copy table'; }, 1500); }

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  oxford, useList, usesSentence, narrativeParagraphs, nameableConditional, formatValue, bulkRows,
+  oxford, useList, usesSentence, narrativeParagraphs, nameableConditional, pageRef, pageText, usesPages, sourceLine, untracedParts, categoryCounts, categoriesOf, pickByCategory, formatValue, bulkRows,
   currencyVerdict, currencyMessage, currencyQueryUrl, normBylaw, zoneShortName, zoneDescription, verifyApplies, muniPickerLabel,
 } from '../src/zoning-data.js';
 
@@ -57,6 +57,75 @@ describe('narrativeParagraphs', () => {
     const p = narrativeParagraphs(z, ['Hotel / Motel']);
     expect(p).toHaveLength(4);
     expect(p[3]).toMatch(/^Off-street parking/);
+  });
+});
+
+describe('page citations', () => {
+  const z = {
+    narrative: { intent: 'This zoning provides for commerce.', bulk: 'The minimum lot area is 15,000 square feet.' },
+    cites: { intent: { pages: [74] }, bulk: { pages: [77, 78, 80] } },
+    uses: [
+      { name: 'Hotel / Motel', prose: 'hotel/motel', status: 'P', qualifier: null, page: 75 },
+      { name: 'Retail Store', prose: 'retail store', status: 'P', qualifier: null, page: 76 },
+      { name: 'Car Wash', prose: 'car wash', status: 'C', qualifier: null, page: 76 },
+    ],
+  };
+  it('formats single pages, runs and gaps', () => {
+    expect(pageRef([82])).toBe('PDF p. 82');
+    expect(pageRef([68, 67, 82, 67])).toBe('PDF pp. 67–68, 82');
+    expect(pageRef([])).toBe('');
+  });
+  it('cites the named uses and where the conditional uses start', () => {
+    expect(usesPages(z, ['Hotel / Motel'])).toEqual([75, 76]);
+  });
+  it('appends page references only when asked', () => {
+    expect(narrativeParagraphs(z, ['Hotel / Motel'])[0]).toBe('This zoning provides for commerce.');
+    const p = narrativeParagraphs(z, ['Hotel / Motel'], [], { cite: true });
+    expect(p[0]).toBe('This zoning provides for commerce. (PDF p. 74)');
+    expect(p[1]).toMatch(/hotel\/motel.*\(PDF pp\. 75–76\)$/);
+    expect(p[2]).toBe('The minimum lot area is 15,000 square feet. (PDF pp. 77–78, 80)');
+  });
+  it('names the by-law in the source line', () => {
+    expect(sourceLine({ label: 'RM of Macdonald', bylaw_no: '10/25' }))
+      .toBe('Source: RM of Macdonald Zoning By-law 10/25.');
+  });
+  it('cites the page number printed on the by-law where there is one', () => {
+    const labels = { 77: '71', 78: '72', 80: '74', 90: '4-12', 91: '4-13' };
+    expect(pageRef([77, 78, 80], labels)).toBe('pp. 71–72, 74');
+    expect(pageRef([90, 91], labels)).toBe('pp. 4-12, 4-13');
+    expect(pageRef([77, 112], labels)).toBe('p. 71; PDF p. 112');
+    expect(pageText(77, labels)).toBe('71');
+    expect(pageText(112, labels)).toBe('PDF 112');
+    const p = narrativeParagraphs(z, ['Hotel / Motel'], [], { cite: true, labels: { 74: '68' } });
+    expect(p[0]).toBe('This zoning provides for commerce. (p. 68)');
+  });
+  it('lists parts with untraced numbers', () => {
+    expect(untracedParts(z)).toEqual([]);
+    expect(untracedParts({ cites: { bulk: { pages: [1], untraced: ['42'] } } })).toEqual([{ part: 'bulk', numbers: ['42'] }]);
+  });
+});
+
+describe('use categories', () => {
+  const list = [
+    { name: 'Retail Store', cat: 'Retail', freq: 40 },
+    { name: 'Convenience Store', cat: 'Retail', freq: 60 },
+    { name: 'Pawn Shop', cat: 'Retail', freq: 2 },
+    { name: 'Office', cat: 'Office', freq: 50 },
+    { name: 'Bank', cat: 'Office', freq: 10 },
+    { name: 'Public Utility', cat: 'Institutional & public', freq: 300, generic: true },
+    { name: 'Mystery Use', cat: undefined, freq: 1 },
+  ];
+  it('counts the kinds of use present, in a fixed order', () => {
+    expect(categoryCounts(list)).toEqual([
+      { cat: 'Retail', n: 3 }, { cat: 'Office', n: 2 }, { cat: 'Institutional & public', n: 1 }, { cat: 'Other', n: 1 }]);
+  });
+  it('takes the most common use of each ticked kind in turn, up to the cap', () => {
+    expect(pickByCategory(list, ['Office', 'Retail'], 3)).toEqual(['Convenience Store', 'Office', 'Retail Store']);
+    expect(pickByCategory(list, ['Retail'])).toEqual(['Convenience Store', 'Retail Store', 'Pawn Shop']);
+    expect(pickByCategory(list, [])).toEqual([]);
+  });
+  it('shows a kind as ticked when any of its uses is named', () => {
+    expect([...categoriesOf(list, ['Bank', 'Mystery Use'])].sort()).toEqual(['Office', 'Other']);
   });
 });
 

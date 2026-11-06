@@ -2477,8 +2477,12 @@
             <button id="zn-use-default" type="button" class="underline text-neutral-600">Most common</button>
             <button id="zn-use-none" type="button" class="underline text-neutral-600">None</button>
           </div>
-          <div id="zn-use-toggles" class="grid gap-1 text-sm max-h-96 overflow-y-auto border border-neutral-200 rounded p-2"></div>
-          <p class="text-xs text-neutral-500 mt-1">Permitted principal uses. "Most common" picks the twelve listed in the most zones across the parsed by-laws; "among others" is added when any are left out.</p>
+          <div id="zn-use-cats" class="grid gap-1 text-sm border border-neutral-200 rounded p-2"></div>
+          <details class="mt-1">
+            <summary class="text-xs text-neutral-600 cursor-pointer">Pick individual uses</summary>
+            <div id="zn-use-toggles" class="grid gap-1 text-sm max-h-96 overflow-y-auto border border-neutral-200 rounded p-2 mt-1"></div>
+          </details>
+          <p class="text-xs text-neutral-500 mt-1">Permitted principal uses. Tick the kinds of use to name; up to twelve are named, the most common of each kind first. "Most common" names the twelve listed in the most zones across the parsed by-laws; "among others" is added when any are left out.</p>
         </section>
 
         <section>
@@ -2490,8 +2494,12 @@
             <button id="zn-cond-all" type="button" class="underline text-neutral-600">All</button>
             <button id="zn-cond-none" type="button" class="underline text-neutral-600">None</button>
           </div>
-          <div id="zn-cond-toggles" class="grid gap-1 text-sm max-h-72 overflow-y-auto border border-neutral-200 rounded p-2"></div>
-          <p class="text-xs text-neutral-500 mt-1">None ticked: the narrative says "There are several conditional uses as well." Ticked: "Conditional uses include ...", with "among others" when any are left out.</p>
+          <div id="zn-cond-cats" class="grid gap-1 text-sm border border-neutral-200 rounded p-2"></div>
+          <details class="mt-1">
+            <summary class="text-xs text-neutral-600 cursor-pointer">Pick individual uses</summary>
+            <div id="zn-cond-toggles" class="grid gap-1 text-sm max-h-72 overflow-y-auto border border-neutral-200 rounded p-2 mt-1"></div>
+          </details>
+          <p class="text-xs text-neutral-500 mt-1">None ticked: the narrative says "There are several conditional uses as well." Ticked: "Conditional uses include ..." (up to six, the most common of each kind first), with "among others" when any are left out.</p>
         </section>
       </aside>
 
