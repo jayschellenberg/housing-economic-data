@@ -20,7 +20,7 @@ import { getPref, setPref } from './prefs.js';
 import {
   nameableUses, nameableConditional, narrativeParagraphs, sourceLine, untracedParts, pageText,
   categoryCounts, categoriesOf, pickByCategory, bulkRows, formatValue, ATTRIBUTE_LABELS,
-  currencyVerdict, currencyMessage, currencyQueryUrl, zoneShortName, zoneDescription, verifyApplies, muniPickerLabel,
+  currencyVerdict, currencyMessage, currencyQueryUrl, zoneShortName, zoneDescription, verifyApplies, muniPickerLabel, pendingChip,
 } from './zoning-data.js';
 import {
   storeAvailable, fsAccessSupported, pickDirectory, getSavedDirectory, directoryPermission,
@@ -247,7 +247,7 @@ function renderMuniPicker() {
   // alphabetical by name: "Alonsa (RM)", "Beausejour (Town)"
   const list = [...munis()].map(m => ({ m, text: muniPickerLabel(m.label) }))
     .sort((a, b) => a.text.localeCompare(b.text));
-  ui.$muni.innerHTML = list.map(({ m, text }) => `<option value="${escapeHtml(m.id)}">${escapeHtml(text)}${m.note ? ' ⚠ verify' : ''}</option>`).join('');
+  ui.$muni.innerHTML = list.map(({ m, text }) => `<option value="${escapeHtml(m.id)}">${escapeHtml(text)}${m.note ? ' ⚠ verify' : ''}${m.pending ? ' · new by-law pending' : ''}</option>`).join('');
   ui.$muni.disabled = !list.length;
   if (list.some(m => m.id === ui.prefs.muni)) ui.$muni.value = ui.prefs.muni;
 }
@@ -310,6 +310,16 @@ function verifyBanner(note) {
     <p class="mt-1">${escapeHtml(note)}</p></div>`;
 }
 
+// Amber, not red: the table is the by-law in force; a replacement is on its way.
+function pendingBlock(m) {
+  const c = pendingChip(m);
+  if (!c) return '';
+  return `<div class="text-sm mt-2 rounded border border-amber-400 bg-amber-50 text-amber-900 px-3 py-2" data-role="pending">
+    <p><span class="inline-block rounded px-2 py-0.5 text-xs font-semibold bg-amber-200 text-amber-900">⏳ ${escapeHtml(c.label)}</span>
+    ${c.stage ? `<span class="text-xs ml-1">(${escapeHtml(c.stage)})</span>` : ''}</p>
+    <p class="mt-1">${c.detail ? `${escapeHtml(c.detail)} ` : ''}This table is the by-law in force; check whether the new by-law has been adopted before relying on it.</p></div>`;
+}
+
 function renderZone() {
   const z = currentZone();
   ui.$empty.hidden = !!ui.data;
@@ -323,6 +333,7 @@ function renderZone() {
       <header class="chart-title">${escapeHtml(m.label)} — Zoning By-law ${escapeHtml(m.bylaw_no)}</header>
       <p class="chart-sub">${escapeHtml(`'${z.code}' ${z.name}`)}${m.consolidated_to ? ` · consolidated to ${escapeHtml(m.consolidated_to)}` : ''}</p>
       <p class="text-sm" data-role="currency-text"></p>
+      ${pendingBlock(m)}
       ${m.note ? (verifyApplies(m, z.code) ? verifyBanner(m.note) : `<p class="text-sm mt-2 rounded border border-amber-300 bg-amber-50 text-amber-900 px-2 py-1" data-role="muni-note"><strong>Note (other zones in this by-law):</strong> ${escapeHtml(m.note)}</p>`) : ''}
     </section>
     <section class="chart-card cmhc-indicator-card" data-role="designation">
@@ -518,6 +529,8 @@ async function exportWord(text) {
   ];
   if (verifyApplies(m, z.code)) blocks.push({ type: 'meta', text: `VERIFY BEFORE RELYING (not for the report): ${m.note}` });
   if (verdict) blocks.push({ type: 'meta', text: `Reviewer note (not for the report): ${currencyMessage(m, verdict, verdict.checked)}` });
+  const pend = pendingChip(m);
+  if (pend) blocks.push({ type: 'meta', text: `Reviewer note (not for the report): ${pend.label}${pend.stage ? ` (${pend.stage})` : ''}. ${pend.detail}`.trim() });
   const safe = `${m.id}_${z.code}`.replace(/[^A-Za-z0-9_-]/g, '');
   await exportNarrativeToWord(blocks, {
     filename: `zoning_${safe}_${new Date().toISOString().slice(0, 10)}.docx`,
