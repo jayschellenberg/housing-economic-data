@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   oxford, useList, usesSentence, narrativeParagraphs, nameableConditional, pageRef, pageText, usesPages, sourceLine, untracedParts, categoryCounts, categoriesOf, pickByCategory, formatValue, bulkRows,
   currencyVerdict, currencyMessage, currencyQueryUrl, normBylaw, zoneShortName, zoneDescription, verifyApplies, muniPickerLabel, formatPartialDate, pendingChip,
+  rowConfidence, worstConfidence, paragraphConfidence,
 } from '../src/zoning-data.js';
 
 const zone = {
@@ -294,5 +295,37 @@ describe('pending replacement by-law', () => {
     expect(pendingChip({})).toBeNull();
     expect(pendingChip({ pending: null })).toBeNull();
     expect(pendingChip(null)).toBeNull();
+  });
+});
+
+describe('confidence labels', () => {
+  const z = {
+    narrative: { intent: 'Intent.', bulk: 'Lot area is 15,000 square feet.', parking: 'One space.' },
+    uses: [
+      { name: 'Hotel', status: 'P', qualifier: null },
+      { name: 'Kennel', status: 'P', qualifier: null, conf: 'M', conf_why: 'read by eye from a scanned page' },
+      { name: 'Abattoir', status: 'C', qualifier: null, conf: 'L', conf_why: 'not found on its cited page' },
+    ],
+    cites: { intent: { pages: [3] }, bulk: { pages: [9], conf: 'M', why: ['misprint, OCR damage or an assumed unit noted'] },
+      parking: { pages: [12] }, uses: { pages: [5], conf: 'L', why: ['x'] } },
+  };
+  it('reads a row label, defaulting to High', () => {
+    expect(rowConfidence({}, z)).toEqual({ level: 'H', label: 'High', why: [] });
+    expect(rowConfidence(z.uses[1], z)).toEqual({ level: 'M', label: 'Medium', why: ['read by eye from a scanned page'] });
+  });
+  it('falls back to a zone-wide label', () => {
+    const zz = { conf: { conf: 'L', why: ['flagged for verification (see the red note)'] } };
+    expect(rowConfidence({}, zz)).toEqual({ level: 'L', label: 'Low', why: ['flagged for verification (see the red note)'] });
+  });
+  it('takes the lowest label and its reasons', () => {
+    const w = worstConfidence([{ level: 'H', why: [] }, { level: 'M', why: ['a'] }, { level: 'M', why: ['b', 'a'] }]);
+    expect(w).toEqual({ level: 'M', label: 'Medium', why: ['a', 'b'] });
+    expect(worstConfidence([])).toEqual({ level: 'H', label: 'High', why: [] });
+  });
+  it('labels paragraphs; uses follow the ticked uses', () => {
+    const p = paragraphConfidence(z, ['Hotel'], []);
+    expect(p.map(x => [x.part, x.level])).toEqual([['intent', 'H'], ['uses', 'H'], ['bulk', 'M'], ['parking', 'H']]);
+    expect(paragraphConfidence(z, ['Hotel', 'Kennel'], ['Abattoir']).find(x => x.part === 'uses'))
+      .toEqual({ part: 'uses', level: 'L', label: 'Low', why: ['not found on its cited page'] });
   });
 });

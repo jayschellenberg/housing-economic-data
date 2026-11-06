@@ -21,6 +21,7 @@ import {
   nameableUses, nameableConditional, narrativeParagraphs, sourceLine, untracedParts, pageText,
   categoryCounts, categoriesOf, pickByCategory, bulkRows, formatValue, ATTRIBUTE_LABELS,
   currencyVerdict, currencyMessage, currencyQueryUrl, zoneShortName, zoneDescription, verifyApplies, muniPickerLabel, pendingChip,
+  rowConfidence, worstConfidence, paragraphConfidence, CONF_LEGEND,
 } from './zoning-data.js';
 import {
   storeAvailable, fsAccessSupported, pickDirectory, getSavedDirectory, directoryPermission,
@@ -358,6 +359,7 @@ function renderZone() {
       <label class="flex items-center gap-2 text-sm mb-2"><input type="checkbox" data-role="cite"${ui.prefs.cite === false ? '' : ' checked'}> Include by-law page references</label>
       ${untracedNote(z)}
       <textarea data-role="text" rows="12" class="w-full border border-neutral-300 rounded p-2 text-sm leading-relaxed font-serif"></textarea>
+      <div class="text-sm mt-1" data-role="conf"></div>
       <p class="text-xs text-neutral-500" data-role="edited-note" hidden>Edited by hand — use selections no longer update the text. <button type="button" class="underline" data-role="regen">Regenerate</button></p>
       <div class="chart-actions">
         <button type="button" data-role="copy">Copy text</button>
@@ -412,6 +414,34 @@ function renderNarrative() {
   const paras = narrativeParagraphs(z, selectedUses(), selectedCond(), { cite, labels: currentMuni()?.page_labels });
   if (cite && sourceLine(currentMuni())) paras.push(sourceLine(currentMuni()));
   $text.value = paras.join('\n\n');
+  renderConfidence(z);
+}
+
+// --- Confidence labels (zoning-narrative R/confidence.R) -------------------------
+
+const CONF_CHIP = {
+  H: 'bg-green-100 text-green-800',
+  M: 'bg-amber-100 text-amber-800',
+  L: 'bg-red-100 text-red-800',
+};
+const PART_LABEL = { intent: 'Intent', uses: 'Uses', bulk: 'Site requirements', parking: 'Parking', overlay: 'Overlay' };
+
+function confChip(c, { short = false } = {}) {
+  const title = c.why.length ? `${c.label}: ${c.why.join('; ')}` : `${c.label}: found on its cited page`;
+  return `<span class="inline-block rounded px-1.5 py-0.5 text-xs font-semibold ${CONF_CHIP[c.level]}" title="${escapeHtml(title)}">${escapeHtml(short ? c.label[0] : c.label)}</span>`;
+}
+
+// one line per paragraph under the narrative: label + reasons (not part of the copied text)
+function renderConfidence(z) {
+  const $box = ui.$main.querySelector('[data-role="narrative"] [data-role="conf"]');
+  if (!$box) return;
+  const paras = paragraphConfidence(z, selectedUses(), selectedCond());
+  if (!paras.length) { $box.innerHTML = ''; return; }
+  const items = paras.map(p => `<li>${confChip(p)} ${escapeHtml(PART_LABEL[p.part] || p.part)}`
+    + `${p.why.length ? ` <span class="text-neutral-500">(${escapeHtml(p.why.join('; '))})</span>` : ''}</li>`).join('');
+  $box.innerHTML = `<p class="font-semibold mt-1 mb-0.5">Confidence by paragraph
+      <span class="text-xs font-normal text-neutral-500 underline decoration-dotted cursor-help" title="${escapeHtml(CONF_LEGEND)}">what the labels mean</span></p>
+    <ul class="grid gap-0.5">${items}</ul>`;
 }
 
 // A figure in the narrative that the faithfulness check (zoning-narrative R/cite.R)
@@ -424,11 +454,12 @@ function untracedNote(z) {
     <strong>Check against the by-law:</strong> ${bad.map(b => `${escapeHtml(b.numbers.join(', '))} in the ${escapeHtml(label[b.part] || b.part)} paragraph`).join('; ')} could not be traced to the zone's table.</p>`;
 }
 
-function useList(list) {
+function useList(list, { chips = true } = {}) {
   if (!list.length) return '<p class="text-sm text-neutral-500">None.</p>';
   return `<ul class="text-sm grid gap-0.5 sm:grid-cols-2">${list.map(u => {
     const tags = [u.qualifier === 'accessory_only' ? 'accessory only' : u.qualifier, u.note].filter(Boolean).join('; ');
-    return `<li>${escapeHtml(u.name)}${tags ? ` <span class="text-neutral-500">(${escapeHtml(tags)})</span>` : ''} <span class="text-neutral-400 text-xs">p. ${escapeHtml(pageText(u.page, currentMuni()?.page_labels))}</span></li>`;
+    const c = rowConfidence(u, currentZone());
+    return `<li>${escapeHtml(u.name)}${tags ? ` <span class="text-neutral-500">(${escapeHtml(tags)})</span>` : ''} <span class="text-neutral-400 text-xs">p. ${escapeHtml(pageText(u.page, currentMuni()?.page_labels))}</span>${!chips || c.level === 'H' ? '' : ` ${confChip(c, { short: true })}`}</li>`;
   }).join('')}</ul>`;
 }
 
@@ -436,11 +467,16 @@ function renderUseTables(z) {
   const byName = (a, b) => a.name.localeCompare(b.name);
   const p = z.uses.filter(u => u.status === 'P').sort(byName);
   const c = z.uses.filter(u => u.status === 'C').sort(byName);
+  // one label for the whole list when every use shares it (e.g. a zone under a red note)
+  const confs = [...p, ...c].map(u => rowConfidence(u, z));
+  const same = confs.length && confs.every(x => x.level === confs[0].level) && confs[0].level !== 'H';
+  const whole = same ? worstConfidence(confs) : null;
   ui.$main.querySelector('[data-role="uses"]').innerHTML = `
     <header class="chart-title">Permitted and conditional uses</header>
-    <p class="chart-sub">As listed in the by-law, with the by-law page ("PDF" where the page prints no number). Not-permitted uses are not shown.</p>
-    <h3 class="text-sm font-semibold mt-2 mb-1">Permitted (${p.length})</h3>${useList(p)}
-    <h3 class="text-sm font-semibold mt-3 mb-1">Conditional (${c.length})</h3>${useList(c)}`;
+    <p class="chart-sub">As listed in the by-law, with the by-law page ("PDF" where the page prints no number). Not-permitted uses are not shown. M / L mark a use with Medium or Low confidence (hover for the reason).</p>
+    ${whole ? `<p class="text-sm mt-1">${confChip(whole)} All uses in this zone <span class="text-neutral-500">(${escapeHtml(whole.why.join('; '))})</span></p>` : ''}
+    <h3 class="text-sm font-semibold mt-2 mb-1">Permitted (${p.length})</h3>${useList(p, { chips: !whole })}
+    <h3 class="text-sm font-semibold mt-3 mb-1">Conditional (${c.length})</h3>${useList(c, { chips: !whole })}`;
 }
 
 function renderBulkTable(z) {
@@ -450,15 +486,16 @@ function renderBulkTable(z) {
       <td>${escapeHtml(ATTRIBUTE_LABELS[r.attribute] || r.attribute)}</td>
       <td>${escapeHtml(formatValue(r))}</td>
       <td>${escapeHtml(r.note || '')}</td>
-      <td>${escapeHtml(pageText(r.page, currentMuni()?.page_labels))}</td></tr>`).join('');
+      <td>${escapeHtml(pageText(r.page, currentMuni()?.page_labels))}</td>
+      <td>${confChip(rowConfidence(r, z))}</td></tr>`).join('');
   const $card = ui.$main.querySelector('[data-role="bulk"]');
   $card.innerHTML = `
     <header class="chart-title">Bulk requirements</header>
-    <p class="chart-sub">Principal building. Figures as printed in the by-law (imperial first), with notes and the by-law page ("PDF" where the page prints no number).</p>
+    <p class="chart-sub">Principal building. Figures as printed in the by-law (imperial first), with notes, the by-law page ("PDF" where the page prints no number) and a confidence label (hover for the reason).</p>
     <div class="cmhc-chart-table-scroll">
       <table class="cmhc-table cmhc-table-compact"><thead><tr>
-        <th>Applies to</th><th>Requirement</th><th>Value</th><th>Note</th><th>Page</th>
-      </tr></thead><tbody>${body || '<tr><td colspan="5">No bulk requirements recorded.</td></tr>'}</tbody></table>
+        <th>Applies to</th><th>Requirement</th><th>Value</th><th>Note</th><th>Page</th><th title="${escapeHtml(CONF_LEGEND)}">Confidence</th>
+      </tr></thead><tbody>${body || '<tr><td colspan="6">No bulk requirements recorded.</td></tr>'}</tbody></table>
     </div>
     <div class="chart-actions"><button type="button" data-role="copy">Copy table</button></div>`;
   const tsv = [['Applies to', 'Requirement', 'Value', 'Note', 'Page'].join('\t'),
