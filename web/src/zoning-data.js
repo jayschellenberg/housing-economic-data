@@ -112,16 +112,76 @@ export function usesSentence(zone, selected, selectedCond = []) {
   return s;
 }
 
-/** "PDF p. 82" / "PDF pp. 67–68, 82" (matches R/cite.R page_ref). */
-export function pageRef(pages) {
-  const p = [...new Set((pages || []).map(Number).filter(Number.isFinite))].sort((a, b) => a - b);
-  if (!p.length) return '';
+const runsText = (nums) => {
   const runs = [];
-  for (const n of p) {
+  for (const n of nums) {
     const last = runs[runs.length - 1];
     if (last && n === last[1] + 1) last[1] = n; else runs.push([n, n]);
   }
-  return `${p.length === 1 ? 'PDF p.' : 'PDF pp.'} ${runs.map(([a, b]) => (a === b ? `${a}` : `${a}–${b}`)).join(', ')}`;
+  return runs.map(([a, b]) => (a === b ? `${a}` : `${a}–${b}`)).join(', ');
+};
+
+/**
+ * "p. 82" / "pp. 67–68, 82" in the page numbers printed on the by-law (`labels`:
+ * muni.page_labels, PDF page -> printed). A page with no printed number is cited by
+ * its position in the PDF: "p. 45; PDF p. 112". Matches R/cite.R page_ref.
+ */
+export function pageRef(pages, labels = {}) {
+  const p = [...new Set((pages || []).map(Number).filter(Number.isFinite))].sort((a, b) => a - b);
+  if (!p.length) return '';
+  const printed = [...new Set(p.filter(n => labels?.[n] != null).map(n => String(labels[n])))];
+  const pdf = p.filter(n => labels?.[n] == null);
+  const out = [];
+  if (printed.length) {
+    const nums = printed.map(Number);
+    const body = nums.every(Number.isInteger) ? runsText([...nums].sort((a, b) => a - b)) : printed.join(', ');
+    out.push(`${printed.length === 1 ? 'p.' : 'pp.'} ${body}`);
+  }
+  if (pdf.length) out.push(`${pdf.length === 1 ? 'PDF p.' : 'PDF pp.'} ${runsText(pdf)}`);
+  return out.join('; ');
+}
+
+/** One page for a table cell: the printed number, else "PDF 112". */
+export function pageText(page, labels = {}) {
+  if (page == null || page === '') return '';
+  return labels?.[page] != null ? String(labels[page]) : `PDF ${page}`;
+}
+
+// --- use categories (R/use_category.R in zoning-narrative) ----------------------
+
+export const USE_CATEGORIES = ['Residential', 'Agricultural', 'Retail', 'Office', 'Services', 'Automotive',
+  'Food & lodging', 'Industrial', 'Institutional & public', 'Recreation & open space', 'Other'];
+
+const catOf = (u) => (USE_CATEGORIES.includes(u.cat) ? u.cat : 'Other');
+
+/** Categories present in a use list, in USE_CATEGORIES order, with counts. */
+export function categoryCounts(list) {
+  const n = new Map();
+  for (const u of list || []) n.set(catOf(u), (n.get(catOf(u)) || 0) + 1);
+  return USE_CATEGORIES.filter(c => n.has(c)).map(c => ({ cat: c, n: n.get(c) }));
+}
+
+/** Categories that have at least one of the named uses. */
+export function categoriesOf(list, names) {
+  const sel = new Set(names || []);
+  return new Set((list || []).filter(u => sel.has(u.name)).map(catOf));
+}
+
+/**
+ * Uses to name for the ticked categories: taken in turn from each category, most
+ * common across the parsed by-laws first (uses found in nearly every zone, such as
+ * public utilities, last), up to `cap` in all.
+ */
+export function pickByCategory(list, cats, cap = 12) {
+  const want = new Set(cats);
+  const rank = (a, b) => (a.generic === b.generic ? 0 : a.generic ? 1 : -1) || (b.freq || 0) - (a.freq || 0) || a.name.localeCompare(b.name);
+  const pools = USE_CATEGORIES.filter(c => want.has(c))
+    .map(c => (list || []).filter(u => catOf(u) === c).sort(rank));
+  const out = [];
+  for (let i = 0; out.length < cap && pools.some(p => i < p.length); i++) {
+    for (const p of pools) if (i < p.length && out.length < cap) out.push(p[i].name);
+  }
+  return out;
 }
 
 /**
@@ -148,13 +208,13 @@ export function usesPages(zone, selected, selectedCond = []) {
  * (R/cite.R, via export) — the uses sentence's pages are worked out here since
  * that sentence is recomposed from the ticked uses.
  */
-export function narrativeParagraphs(zone, selected, selectedCond = [], { cite = false } = {}) {
+export function narrativeParagraphs(zone, selected, selectedCond = [], { cite = false, labels = {} } = {}) {
   const n = zone?.narrative || {};
   const parts = [['intent', n.intent], ['uses', usesSentence(zone, selected, selectedCond)],
     ['bulk', n.bulk], ['parking', n.parking], ['overlay', n.overlay]].filter(([, t]) => t);
   if (!cite) return parts.map(([, t]) => t);
   return parts.map(([k, t]) => {
-    const ref = pageRef(k === 'uses' ? usesPages(zone, selected, selectedCond) : zone?.cites?.[k]?.pages);
+    const ref = pageRef(k === 'uses' ? usesPages(zone, selected, selectedCond) : zone?.cites?.[k]?.pages, labels);
     return ref ? `${t} (${ref})` : t;
   });
 }
@@ -162,7 +222,7 @@ export function narrativeParagraphs(zone, selected, selectedCond = [], { cite = 
 /** Closing source line for a cited narrative. */
 export function sourceLine(muni) {
   if (!muni?.bylaw_no) return '';
-  return `Source: ${muni.label} Zoning By-law ${muni.bylaw_no}${muni.consolidated_to ? ` (consolidated to ${muni.consolidated_to})` : ''}; page references are to the by-law PDF.`;
+  return `Source: ${muni.label} Zoning By-law ${muni.bylaw_no}${muni.consolidated_to ? ` (consolidated to ${muni.consolidated_to})` : ''}.`;
 }
 
 /** Narrative parts with a number the faithfulness check could not find in the zone's table. */
