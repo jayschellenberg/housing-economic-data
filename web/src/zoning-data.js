@@ -217,10 +217,15 @@ export function pickByCategory(list, cats, cap = 12) {
  * PDF pages behind the uses sentence: the pages of the uses it names; a bare
  * "several conditional uses" mention cites where the conditional uses start.
  */
+// the uses the uses paragraph names (ticked permitted + ticked conditional)
+function namedUses(zone, selected, selectedCond = []) {
+  return (zone?.uses || []).filter(u => (u.status === 'P' && !u.qualifier && selected.includes(u.name)) ||
+    (u.status === 'C' && !u.qualifier && selectedCond.includes(u.name)));
+}
+
 export function usesPages(zone, selected, selectedCond = []) {
   const uses = zone?.uses || [];
-  const named = uses.filter(u => (u.status === 'P' && !u.qualifier && selected.includes(u.name)) ||
-    (u.status === 'C' && !u.qualifier && selectedCond.includes(u.name)));
+  const named = namedUses(zone, selected, selectedCond);
   const pages = named.map(u => u.page);
   if (!named.some(u => u.status === 'C')) {
     const cond = uses.filter(u => u.status === 'C' && u.qualifier !== 'accessory_only').map(u => u.page).filter(Number.isFinite);
@@ -255,6 +260,49 @@ export function sourceLine(muni) {
 }
 
 /** Narrative parts with a number the faithfulness check could not find in the zone's table. */
+// --- Confidence (zoning-narrative R/confidence.R) ------------------------------
+// Rows carry conf 'M' / 'L' (+ conf_why "reason; reason"); no conf = High. A zone whose
+// rows all share one label carries it once as zone.conf = { conf, why: [] }. Each
+// paragraph's label is in zone.cites[part].conf / .why (the lowest of its rows).
+export const CONF_LABELS = { H: 'High', M: 'Medium', L: 'Low' };
+export const CONF_LEGEND = 'High: found on its cited page in the by-law’s text. '
+  + 'Medium: read by eye from a scanned page, or the by-law has a misprint here; check the page before quoting it. '
+  + 'Low: flagged for verification, unclear or contradictory in the by-law, not found on its page, or a newer by-law is in force; verify before relying on it.';
+const CONF_RANK = { H: 0, M: 1, L: 2 };
+
+export function rowConfidence(row, zone) {
+  const level = row?.conf || zone?.conf?.conf || 'H';
+  const why = level === 'H' ? [] : row?.conf
+    ? String(row.conf_why || '').split('; ').filter(Boolean)
+    : (zone?.conf?.why || []);
+  return { level, label: CONF_LABELS[level] || 'High', why };
+}
+
+// the lowest of several { level, why } with the reasons at that level
+export function worstConfidence(items) {
+  const lv = items.reduce((w, c) => (CONF_RANK[c.level] > CONF_RANK[w] ? c.level : w), 'H');
+  const why = [...new Set(items.filter(c => c.level === lv).flatMap(c => c.why || []))];
+  return { level: lv, label: CONF_LABELS[lv], why };
+}
+
+// one { part, level, label, why } per paragraph of the narrative, in order. The uses
+// paragraph follows the uses actually ticked; the others come from the export.
+export function paragraphConfidence(zone, selected, selectedCond = []) {
+  const n = zone?.narrative || {};
+  const parts = [['intent', n.intent], ['uses', usesSentence(zone, selected, selectedCond)],
+    ['bulk', n.bulk], ['parking', n.parking], ['overlay', n.overlay]].filter(([, t]) => t);
+  return parts.map(([part]) => {
+    const c = zone?.cites?.[part];
+    const fromExport = c?.conf ? { level: c.conf, why: c.why || [] } : rowConfidence(null, zone);
+    if (part !== 'uses') return { part, ...worstConfidence([fromExport]) };
+    const named = namedUses(zone, selected, selectedCond);
+    const fromRows = named.map(u => rowConfidence(u, zone));
+    // figures in the uses paragraph that are not in the table still lower it
+    const untraced = c?.untraced?.length ? [{ level: 'L', why: ['a figure not found in the table'] }] : [];
+    return { part, ...worstConfidence(named.length ? [...fromRows, ...untraced] : [fromExport]) };
+  });
+}
+
 export function untracedParts(zone) {
   return Object.entries(zone?.cites || {}).filter(([, c]) => c?.untraced?.length).map(([k, c]) => ({ part: k, numbers: c.untraced }));
 }
