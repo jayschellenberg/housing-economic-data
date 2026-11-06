@@ -18,7 +18,7 @@
 import { escapeHtml } from './escape.js';
 import { getPref, setPref } from './prefs.js';
 import {
-  nameableUses, nameableConditional, narrativeParagraphs, bulkRows, formatValue, ATTRIBUTE_LABELS,
+  nameableUses, nameableConditional, narrativeParagraphs, sourceLine, untracedParts, bulkRows, formatValue, ATTRIBUTE_LABELS,
   currencyVerdict, currencyMessage, currencyQueryUrl, zoneShortName, zoneDescription, verifyApplies, muniPickerLabel,
 } from './zoning-data.js';
 import {
@@ -320,6 +320,8 @@ function renderZone() {
       <header class="chart-title">Zoning narrative</header>
       <p class="chart-sub">Ticking uses in the sidebar rewrites the permitted-uses sentence. Edit freely before copying.</p>
       ${verifyApplies(m, z.code) ? verifyBanner(m.note) : ''}
+      <label class="flex items-center gap-2 text-sm mb-2"><input type="checkbox" data-role="cite"${ui.prefs.cite === false ? '' : ' checked'}> Include by-law page references</label>
+      ${untracedNote(z)}
       <textarea data-role="text" rows="12" class="w-full border border-neutral-300 rounded p-2 text-sm leading-relaxed font-serif"></textarea>
       <p class="text-xs text-neutral-500" data-role="edited-note" hidden>Edited by hand — use selections no longer update the text. <button type="button" class="underline" data-role="regen">Regenerate</button></p>
       <div class="chart-actions">
@@ -351,6 +353,10 @@ function wireNarrative() {
   const $text = $card.querySelector('[data-role="text"]');
   const $note = $card.querySelector('[data-role="edited-note"]');
   $text.addEventListener('input', () => { ui.edited = true; $note.hidden = false; });
+  $card.querySelector('[data-role="cite"]').addEventListener('change', (e) => {
+    ui.prefs = savePrefs({ cite: e.target.checked });
+    renderNarrative();
+  });
   $card.querySelector('[data-role="regen"]').addEventListener('click', () => { ui.edited = false; $note.hidden = true; renderNarrative(); });
   const $copy = $card.querySelector('[data-role="copy"]');
   $copy.addEventListener('click', async () => {
@@ -367,7 +373,20 @@ function renderNarrative() {
   const z = currentZone();
   const $text = ui.$main.querySelector('[data-role="narrative"] [data-role="text"]');
   if (!z || !$text || ui.edited) return;
-  $text.value = narrativeParagraphs(z, selectedUses(), selectedCond()).join('\n\n');
+  const cite = ui.prefs.cite !== false;
+  const paras = narrativeParagraphs(z, selectedUses(), selectedCond(), { cite });
+  if (cite && sourceLine(currentMuni())) paras.push(sourceLine(currentMuni()));
+  $text.value = paras.join('\n\n');
+}
+
+// A figure in the narrative that the faithfulness check (zoning-narrative R/cite.R)
+// could not find in the zone's table: say so, so it gets checked against the by-law.
+function untracedNote(z) {
+  const bad = untracedParts(z);
+  if (!bad.length) return '';
+  const label = { intent: 'intent', uses: 'uses', bulk: 'site requirements', parking: 'parking', overlay: 'overlay' };
+  return `<p class="text-sm my-2 rounded border border-amber-300 bg-amber-50 text-amber-900 px-2 py-1" data-role="untraced">
+    <strong>Check against the by-law:</strong> ${bad.map(b => `${escapeHtml(b.numbers.join(', '))} in the ${escapeHtml(label[b.part] || b.part)} paragraph`).join('; ')} could not be traced to the zone's table.</p>`;
 }
 
 function useList(list) {

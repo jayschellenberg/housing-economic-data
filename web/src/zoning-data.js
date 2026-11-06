@@ -112,10 +112,62 @@ export function usesSentence(zone, selected, selectedCond = []) {
   return s;
 }
 
-/** Full narrative as paragraphs: intent, uses, bulk, parking, overlay. */
-export function narrativeParagraphs(zone, selected, selectedCond = []) {
+/** "PDF p. 82" / "PDF pp. 67–68, 82" (matches R/cite.R page_ref). */
+export function pageRef(pages) {
+  const p = [...new Set((pages || []).map(Number).filter(Number.isFinite))].sort((a, b) => a - b);
+  if (!p.length) return '';
+  const runs = [];
+  for (const n of p) {
+    const last = runs[runs.length - 1];
+    if (last && n === last[1] + 1) last[1] = n; else runs.push([n, n]);
+  }
+  return `${p.length === 1 ? 'PDF p.' : 'PDF pp.'} ${runs.map(([a, b]) => (a === b ? `${a}` : `${a}–${b}`)).join(', ')}`;
+}
+
+/**
+ * PDF pages behind the uses sentence: the pages of the uses it names; a bare
+ * "several conditional uses" mention cites where the conditional uses start.
+ */
+export function usesPages(zone, selected, selectedCond = []) {
+  const uses = zone?.uses || [];
+  const named = uses.filter(u => (u.status === 'P' && !u.qualifier && selected.includes(u.name)) ||
+    (u.status === 'C' && !u.qualifier && selectedCond.includes(u.name)));
+  const pages = named.map(u => u.page);
+  if (!named.some(u => u.status === 'C')) {
+    const cond = uses.filter(u => u.status === 'C' && u.qualifier !== 'accessory_only').map(u => u.page).filter(Number.isFinite);
+    if (cond.length) pages.push(Math.min(...cond));
+  }
+  // nothing named and no conditional uses: the use table itself
+  if (!pages.length) pages.push(...uses.map(u => u.page).filter(Number.isFinite).slice(0, 1));
+  return pages;
+}
+
+/**
+ * Full narrative as paragraphs: intent, uses, bulk, parking, overlay.
+ * With `cite`, each paragraph ends with its by-law PDF page(s) from zone.cites
+ * (R/cite.R, via export) — the uses sentence's pages are worked out here since
+ * that sentence is recomposed from the ticked uses.
+ */
+export function narrativeParagraphs(zone, selected, selectedCond = [], { cite = false } = {}) {
   const n = zone?.narrative || {};
-  return [n.intent, usesSentence(zone, selected, selectedCond), n.bulk, n.parking, n.overlay].filter(Boolean);
+  const parts = [['intent', n.intent], ['uses', usesSentence(zone, selected, selectedCond)],
+    ['bulk', n.bulk], ['parking', n.parking], ['overlay', n.overlay]].filter(([, t]) => t);
+  if (!cite) return parts.map(([, t]) => t);
+  return parts.map(([k, t]) => {
+    const ref = pageRef(k === 'uses' ? usesPages(zone, selected, selectedCond) : zone?.cites?.[k]?.pages);
+    return ref ? `${t} (${ref})` : t;
+  });
+}
+
+/** Closing source line for a cited narrative. */
+export function sourceLine(muni) {
+  if (!muni?.bylaw_no) return '';
+  return `Source: ${muni.label} Zoning By-law ${muni.bylaw_no}${muni.consolidated_to ? ` (consolidated to ${muni.consolidated_to})` : ''}; page references are to the by-law PDF.`;
+}
+
+/** Narrative parts with a number the faithfulness check could not find in the zone's table. */
+export function untracedParts(zone) {
+  return Object.entries(zone?.cites || {}).filter(([, c]) => c?.untraced?.length).map(([k, c]) => ({ part: k, numbers: c.untraced }));
 }
 
 // --- bulk table ---------------------------------------------------------------

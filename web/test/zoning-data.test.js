@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  oxford, useList, usesSentence, narrativeParagraphs, nameableConditional, formatValue, bulkRows,
+  oxford, useList, usesSentence, narrativeParagraphs, nameableConditional, pageRef, usesPages, sourceLine, untracedParts, formatValue, bulkRows,
   currencyVerdict, currencyMessage, currencyQueryUrl, normBylaw, zoneShortName, zoneDescription, verifyApplies, muniPickerLabel,
 } from '../src/zoning-data.js';
 
@@ -57,6 +57,41 @@ describe('narrativeParagraphs', () => {
     const p = narrativeParagraphs(z, ['Hotel / Motel']);
     expect(p).toHaveLength(4);
     expect(p[3]).toMatch(/^Off-street parking/);
+  });
+});
+
+describe('page citations', () => {
+  const z = {
+    narrative: { intent: 'This zoning provides for commerce.', bulk: 'The minimum lot area is 15,000 square feet.' },
+    cites: { intent: { pages: [74] }, bulk: { pages: [77, 78, 80] } },
+    uses: [
+      { name: 'Hotel / Motel', prose: 'hotel/motel', status: 'P', qualifier: null, page: 75 },
+      { name: 'Retail Store', prose: 'retail store', status: 'P', qualifier: null, page: 76 },
+      { name: 'Car Wash', prose: 'car wash', status: 'C', qualifier: null, page: 76 },
+    ],
+  };
+  it('formats single pages, runs and gaps', () => {
+    expect(pageRef([82])).toBe('PDF p. 82');
+    expect(pageRef([68, 67, 82, 67])).toBe('PDF pp. 67–68, 82');
+    expect(pageRef([])).toBe('');
+  });
+  it('cites the named uses and where the conditional uses start', () => {
+    expect(usesPages(z, ['Hotel / Motel'])).toEqual([75, 76]);
+  });
+  it('appends page references only when asked', () => {
+    expect(narrativeParagraphs(z, ['Hotel / Motel'])[0]).toBe('This zoning provides for commerce.');
+    const p = narrativeParagraphs(z, ['Hotel / Motel'], [], { cite: true });
+    expect(p[0]).toBe('This zoning provides for commerce. (PDF p. 74)');
+    expect(p[1]).toMatch(/hotel\/motel.*\(PDF pp\. 75–76\)$/);
+    expect(p[2]).toBe('The minimum lot area is 15,000 square feet. (PDF pp. 77–78, 80)');
+  });
+  it('names the by-law in the source line', () => {
+    expect(sourceLine({ label: 'RM of Macdonald', bylaw_no: '10/25' }))
+      .toBe('Source: RM of Macdonald Zoning By-law 10/25; page references are to the by-law PDF.');
+  });
+  it('lists parts with untraced numbers', () => {
+    expect(untracedParts(z)).toEqual([]);
+    expect(untracedParts({ cites: { bulk: { pages: [1], untraced: ['42'] } } })).toEqual([{ part: 'bulk', numbers: ['42'] }]);
   });
 });
 
