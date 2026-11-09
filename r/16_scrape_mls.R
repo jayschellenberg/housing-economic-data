@@ -5,7 +5,7 @@
 #      + peak/trough commentary numbers.   (reliable; predictable URL)
 #   2. WRREB monthly release + CREA board page -> headline figures (sales,
 #      active listings, SFD/SFA/condo average prices vs prior-year + 5-yr-avg).
-#      (fragile prose/HTML scrape — best effort.)
+#      (tables in the monthly release PDF — best effort.)
 #
 # Graceful degradation: the committed JSONs under web/public/data/economy/ ARE
 # the last-good cache. Every network step is wrapped so a failure keeps the
@@ -212,91 +212,142 @@ if (!is.null(bench)) {
 # =============================================================================
 # 2. Headline figures (sales / listings / average prices) — best effort
 # =============================================================================
-# WRREB publishes these only as a monthly prose news release (URL + slug change
-# every month) and the CREA board page is JS-rendered, so a robust unattended
-# parse is not guaranteed. We attempt a light fetch; if we cannot CONFIDENTLY
-# extract a full, sane figure set we keep the committed last-good values and
-# leave stale=TRUE. (Seeded cache already holds the most recent known release.)
+# WRREB publishes a monthly release (URL + slug change every month). Since the
+# 2026-09 release the web prose carries only percentages ("up 3% from 2025") --
+# the figures live in the attached "<Month> <Year> Market Release.pdf", whose
+# tables give every value we need plus prior-year and 5-year-average columns:
+#
+#   October 2026 – All Residential Detached
+#                    October 2026      vs. 2025            vs. 5-Year Average
+#   Active Listings     1,926      +20% ▲  (1,603)      +5% ▲   (1,832)
+#   Sales                 853       -7% ▼    (912)      +2% ▲     (840)
+#   Average Price    $455,860       +3% ▲ ($441,981)    +8% ▲ ($420,224)
+#
+# We read the monthly (non-YTD) region-wide tables: All MLS® (sales, active
+# listings), All Residential Detached / Attached / Condominium (average price).
+# Anything not parsed keeps its last-good sub-object; if the month or fewer
+# than 3 of the 5 headline fields parse we stop() -> last-good, stale=TRUE.
+wrreb_pdf_url <- function(article_html, base) {
+  hrefs <- rvest::html_attr(rvest::html_elements(article_html, "a"), "href")
+  pdf <- grep("\\.pdf$", hrefs, value = TRUE, ignore.case = TRUE)
+  pdf <- pdf[grepl("market", pdf, ignore.case = TRUE) & grepl("release", pdf, ignore.case = TRUE)]
+  if (!length(pdf)) return(NA_character_)
+  # WRREB writes Windows-style paths with spaces ("/uploads/public\photos\...
+  # October%202026 Market Release.pdf"): normalise to a valid URL.
+  u <- utils::URLdecode(pdf[1])
+  u <- utils::URLencode(u)                 # spaces -> %20
+  u <- gsub("\\\\", "%5C", u)              # backslashes -> %5C (what the server expects)
+  if (!grepl("^https?://", u)) u <- paste0(base, u)
+  u
+}
+
+# Parse one table block. `lines` = PDF text lines; `title` = regex for the
+# block's title remainder (after "<Month> <Year> – "). Returns a named list of
+# rows, each list(value, vsPriorYearPct, priorYearValue, vs5yrAvgPct, fiveYrAvg).
+wrreb_table <- function(lines, month_rx, title) {
+  # Title must be the WHOLE line (so "All Residential Detached – Winnipeg" and
+  # "YTD October 2026 – All ..." are excluded).
+  hdr <- grep(sprintf("^\\s*%s\\s+[–—-]\\s+%s\\s*$", month_rx, title), lines, perl = TRUE)
+  if (!length(hdr)) return(NULL)
+  blk <- lines[seq(hdr[1] + 1, min(length(lines), hdr[1] + 6))]
+  n <- function(s) if (is.null(s) || is.na(s) || !nzchar(s)) NA_real_ else as.numeric(gsub("[^0-9.]", "", s))
+  p <- function(s) if (is.null(s) || is.na(s) || !nzchar(s)) NA_real_ else as.numeric(sub("^\\+", "", s))
+  row_rx <- paste0(
+    "^\\s*(Active Listings|New Listings|Sales|Average Price|Dollar Volume)\\s+",
+    "\\$?([0-9][0-9,]*)\\s+",                         # this month
+    "([+-]?[0-9]+)%\\s*\\S?\\s*\\(\\$?([0-9][0-9,]*)\\)", # vs prior year (+ prior value)
+    "(?:\\s+([+-]?[0-9]+)%\\s*\\S?\\s*\\(\\$?([0-9][0-9,]*)\\))?") # vs 5-yr avg (absent = N/A*)
+  out <- list()
+  for (ln in blk) {
+    m <- regmatches(ln, regexec(row_rx, ln, perl = TRUE))[[1]]
+    if (!length(m)) next
+    key <- m[2]
+    if (!is.null(out[[key]])) next
+    out[[key]] <- list(value = n(m[3]), vsPriorYearPct = p(m[4]), priorYearValue = n(m[5]),
+                       vs5yrAvgPct = p(m[6]), fiveYrAvg = n(m[7]))
+  }
+  if (length(out)) out else NULL
+}
+
 scrape_headline <- function() {
+  if (!requireNamespace("pdftools", quietly = TRUE)) stop("pdftools not installed")
   ua <- add_headers(`User-Agent` = "Mozilla/5.0 (compatible; housing-economic-data/1.0)")
-  # Find the latest WRREB market-release article from the listing page.
-  listing <- "https://www.winnipegregionalrealestatenews.com/market-statistics/market-releases"
+  base <- "https://www.winnipegregionalrealestatenews.com"
+  # Latest release article from the listing page (newest first).
+  listing <- paste0(base, "/market-statistics/market-releases")
   pg <- tryCatch(rvest::read_html(GET(listing, ua, timeout(45))), error = function(e) NULL)
   if (is.null(pg)) stop("listing page unreachable")
   hrefs <- rvest::html_attr(rvest::html_elements(pg, "a"), "href")
   art <- grep("/market-releases/article/", hrefs, value = TRUE)
   if (!length(art)) stop("no release article link found")
   url <- art[1]
-  if (!grepl("^https?://", url)) url <- paste0("https://www.winnipegregionalrealestatenews.com", url)
+  if (!grepl("^https?://", url)) url <- paste0(base, url)
   doc <- tryCatch(rvest::read_html(GET(url, ua, timeout(45))), error = function(e) NULL)
   if (is.null(doc)) stop("article unreachable")
-  txt <- rvest::html_text2(doc)
 
-  # Release month, e.g. "August 2026". The article page also carries WRREB's
-  # release archive back to 2010, so the FIRST "Month YYYY" on the page is not
-  # the release month (from 2026-08-24 it was "May 2014", written out as
-  # current with stale=FALSE). Take every match, keep those within the last 14
-  # months, use the latest; none -> not confident -> keep last-good.
-  mons <- regmatches(txt, gregexpr("(January|February|March|April|May|June|July|August|September|October|November|December)\\s+20[0-9]{2}", txt))[[1]]
-  mdates <- as.Date(paste("1", mons), format = "%d %B %Y")
-  recent <- !is.na(mdates) & mdates <= today & mdates >= seq(today, by = "-14 months", length.out = 2)[2]
-  as_of <- if (any(recent)) format(max(mdates[recent]), "%B %Y") else NA_character_
+  pdf_url <- wrreb_pdf_url(doc, base)
+  if (is.na(pdf_url)) stop("no market-release PDF linked from the article")
+  dest <- file.path(tempdir(), "wrreb_release.pdf")
+  r <- tryCatch(GET(pdf_url, ua, timeout(60), write_disk(dest, overwrite = TRUE)), error = function(e) NULL)
+  if (is.null(r) || status_code(r) != 200) stop(sprintf("release PDF download failed (%s)", pdf_url))
+  txt <- tryCatch(suppressMessages(paste(pdftools::pdf_text(dest), collapse = "\n")), error = function(e) "")
+  if (!nzchar(txt)) stop("release PDF had no text")
+  lines <- strsplit(txt, "\n", fixed = TRUE)[[1]]
 
-  # Match figures only in sentences that are NOT year-to-date. The release
-  # leads with YTD averages in the same wording as the monthly ones
-  # ("year-to-date (YTD) residential detached average price of $468,679"), and
-  # the 2026-08/09 runs stored those YTD prices as the month's headline.
-  sentences <- strsplit(txt, "(?<=[.!?])\\s+", perl = TRUE)[[1]]
-  txt_monthly <- paste(sentences[!grepl("YTD|year[- ]to[- ]date", sentences, ignore.case = TRUE)], collapse = " ")
-  num <- function(pattern) {
-    # A pattern the runner's PCRE2 rejects must cost one field, not the whole
-    # parse (an invalid regex used to abort every field -> last-good, stale).
-    hit <- tryCatch(regexpr(pattern, txt_monthly, perl = TRUE), error = function(e) {
-      message(sprintf("[16] headline pattern rejected (%s): %s", conditionMessage(e), pattern))
-      NULL
-    })
-    if (is.null(hit)) return(NA_real_)
-    m <- regmatches(txt_monthly, hit)
-    if (!length(m)) return(NA_real_)
-    as.numeric(gsub("[^0-9.]", "", m[1]))
-  }
-  # These patterns are intentionally conservative; if the release wording drifts
-  # they return NA and we fall back to last-good. (\x{00ae} = the ® glyph;
-  # R's PCRE2 rejects the \u escape, so use the \x{...} form.)
-  # WRREB's 2026 wording is "All MLS® sales of 1,326 were down 5% ..." (the ®
-  # may carry a footnote digit: "MLS®1"); the older "1,326 MLS® sales" shape is
-  # kept as the fallback. The optional digit makes the prefix variable-length,
-  # which a lookbehind can't hold on the runner's older PCRE2 (it only worked
-  # locally on 10.47) -- so match the prefix and drop it with \K instead.
-  sales  <- num("All MLS\\x{00ae}[0-9]? sales of \\K[0-9,]+")
-  if (is.na(sales)) sales <- num("[0-9,]+(?=\\s+MLS\\x{00ae} sales)")
-  sfd    <- num("(?<=residential[- ]detached average price of \\$)[0-9,]+")
-  condo  <- num("(?<=condominium average price of \\$)[0-9,]+")
+  # Release month = the month of the monthly "All MLS®" table title. Must be
+  # within the last 14 months (guards against an old/pinned article).
+  months <- "January|February|March|April|May|June|July|August|September|October|November|December"
+  t_rx <- sprintf("^\\s*(%s)\\s+(20[0-9]{2})\\s+[–—-]\\s+All MLS", months)
+  t <- regmatches(lines, regexec(t_rx, lines, perl = TRUE))
+  t <- Filter(length, t)
+  if (!length(t)) stop("no monthly 'All MLS' table in release PDF")
+  as_of_date <- as.Date(paste(1, t[[1]][2], t[[1]][3]), format = "%d %B %Y")
+  if (is.na(as_of_date) || as_of_date > today || as_of_date < seq(today, by = "-14 months", length.out = 2)[2])
+    stop(sprintf("release month %s %s out of range", t[[1]][2], t[[1]][3]))
+  as_of <- format(as_of_date, "%B %Y")
+  month_rx <- paste(t[[1]][2], t[[1]][3])
 
-  # "<Month> 2026 MLS® sales ..." matches the year as the count (every run from
-  # 2026-08-10 wrote sales = 2026). A Winnipeg month is a few hundred to a few
-  # thousand sales; reject anything that equals a nearby year or is out of range.
-  yrs <- as.numeric(format(today, "%Y")) + (-1:0)
-  if (!is.na(sales) && (sales %in% yrs || sales < 100 || sales > 20000)) sales <- NA_real_
-  got <- sum(!is.na(c(sales, sfd, condo)))
-  if (is.na(as_of) || got < 2) stop(sprintf("insufficient confident fields (as_of=%s, got=%d)", as_of, got))
+  all_mls <- wrreb_table(lines, month_rx, "All MLS\\S*")
+  det     <- wrreb_table(lines, month_rx, "All Residential Detached")
+  att     <- wrreb_table(lines, month_rx, "All Residential Attached")
+  condo   <- wrreb_table(lines, month_rx, "All Condominium")
+
+  fields <- list(
+    sales           = all_mls[["Sales"]],
+    active_listings = all_mls[["Active Listings"]],
+    sfd_avg_price   = det[["Average Price"]],
+    sfa_avg_price   = att[["Average Price"]],
+    condo_avg_price = condo[["Average Price"]]
+  )
+  # Sanity: a Winnipeg-region month is a few hundred to a few thousand sales;
+  # average prices sit well inside $100k-$2M. Out-of-range = misparse -> drop.
+  ok <- function(f, lo, hi) !is.null(f) && is.finite(f$value) && f$value >= lo && f$value <= hi
+  if (!ok(fields$sales, 100, 20000))          fields$sales <- NULL
+  if (!ok(fields$active_listings, 100, 50000)) fields$active_listings <- NULL
+  for (k in c("sfd_avg_price", "sfa_avg_price", "condo_avg_price"))
+    if (!ok(fields[[k]], 1e5, 2e6)) fields[k] <- list(NULL)
+  got <- sum(!vapply(fields, is.null, logical(1)))
+  if (got < 3) stop(sprintf("insufficient confident fields (as_of=%s, got=%d of 5)", as_of, got))
 
   prev <- read_json_safe(HEAD_PATH) %||% list()
-  merge_field <- function(name, value) {
-    if (!is.na(value)) list(value = value)
-    else prev[[name]]   # keep last-good sub-object if not parsed this run
-  }
   out <- prev
-  out$asOf   <- as_of
-  out$source <- paste0("Winnipeg Regional Real Estate Board (WRREB) — ", url)
+  out$`_comment` <- NULL   # old hand-entry note; the PDF scrape replaces it
+  out$asOf    <- as_of
+  out$source  <- paste0("Winnipeg Regional Real Estate Board (WRREB) — ", url)
+  out$pdf     <- pdf_url
   out$fetched <- as.character(today)
-  out$stale  <- FALSE
-  if (!is.na(sales)) out$sales$value <- sales
-  if (!is.na(sfd))   out$sfd_avg_price$value <- sfd
-  if (!is.na(condo)) out$condo_avg_price$value <- condo
-  # YoY / 5-yr-avg comparisons are not reliably parseable from prose; mark the
-  # newly-fetched month so r/15 knows the comparisons may lag the headline value.
-  out$comparisonsStale <- TRUE
+  out$stale   <- FALSE
+  for (k in names(fields)) {
+    f <- fields[[k]]
+    if (is.null(f)) next
+    # NA comparison (e.g. "N/A*" 5-yr avg) -> drop the key rather than write null.
+    out[[k]] <- Filter(function(v) !is.na(v), f)
+  }
+  # Fields kept from an earlier month would mix months: flag it.
+  out$comparisonsStale <- got < length(fields)
+  message(sprintf("[16] headline: %s from release PDF, %d/5 fields (sales %s, detached $%s, condo $%s)",
+                  as_of, got, fields$sales$value %||% "-", fields$sfd_avg_price$value %||% "-",
+                  fields$condo_avg_price$value %||% "-"))
   out
 }
 

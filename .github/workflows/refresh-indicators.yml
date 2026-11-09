@@ -68,6 +68,11 @@ jobs:
           echo "date=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
           echo "start=$(date +%s)" >> "$GITHUB_OUTPUT"
 
+      - name: Install system libraries
+        # pdftools (r/16 reads the WRREB release PDF) links libpoppler-cpp; the
+        # PPM binary does not bundle it.
+        run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends libpoppler-cpp-dev
+
       - name: Install R packages
         run: |
           # cmhc: not used by the indicator scrapes themselves, but every script
@@ -95,7 +100,7 @@ jobs:
           }
           cat("[install] repos:\n"); print(getOption("repos"))
           install.packages(c("cmhc", "cansim", "httr", "dplyr", "tidyr",
-                             "purrr", "readr", "jsonlite", "readxl", "rvest"))
+                             "purrr", "readr", "jsonlite", "readxl", "rvest", "pdftools"))
         shell: Rscript {0}
 
       - name: Run indicators pipeline

@@ -1,6 +1,6 @@
 # Housing & Economic Data
 
-Status: Active | Next: tbd | Blocked: none | Updated: 2026-11-01
+Status: Active | Next: confirm WRREB headline reads October 2026 in the next refresh email | Blocked: none | Updated: 2026-11-09
 
 A multi-tab static website of Canadian housing & economic data, built for a commercial real-estate appraiser — CMHC rental market, housing starts, secondary rental, census housing & demographics, affordability, Manitoba rent control, and market indicators — with copy-to-Word, Excel (.xlsx), and PNG exports for appraisal reports. The **Rental Charts** tab shows interactive line charts of CMHC rental and vacancy data, filterable by geography (Province / CMA / CSD / Survey Zone / Neighbourhood), dwelling type (Apartment / Row / All), and a breakdown dimension (Bedroom Type / Year of Construction / Structure Size / Rent Ranges).
 
