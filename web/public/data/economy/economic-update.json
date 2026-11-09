@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated": "2026-11-09T13:29:41Z",
+  "generated": "2026-11-09T17:40:15Z",
   "dataAsOf": "2026-11-09",
   "intro": {
     "censusYear": 2021,
@@ -156,39 +156,43 @@
     }
   },
   "mls": {
-    "asOf": "August 2026",
-    "source": "Winnipeg Regional Real Estate Board (WRREB) — https://www.winnipegregionalrealestatenews.com/market-statistics/market-releases/article/628/august-sees-the-highest-year-to-date-residential-detached-and-condominium-average-prices-on-record",
-    "stale": true,
+    "asOf": "October 2026",
+    "source": "Winnipeg Regional Real Estate Board (WRREB) — https://www.winnipegregionalrealestatenews.com/market-statistics/market-releases/article/630/october-average-prices-reach-record-highs-and-buyer-choice-expands-again",
+    "stale": false,
     "sales": {
-      "value": 1326,
-      "vsPriorYearPct": -4,
-      "vs5yrAvgPct": -3
+      "value": 1192,
+      "vsPriorYearPct": -11,
+      "priorYearValue": 1339,
+      "vs5yrAvgPct": -1,
+      "fiveYrAvg": 1209
     },
     "active_listings": {
-      "value": 2802,
-      "vsPriorYearPct": -10,
-      "vs5yrAvgPct": -4
+      "value": 3985,
+      "vsPriorYearPct": 13,
+      "priorYearValue": 3519,
+      "vs5yrAvgPct": 6,
+      "fiveYrAvg": 3772
     },
     "sfd_avg_price": {
-      "value": 439216,
-      "vsPriorYearPct": 1,
+      "value": 455860,
+      "vsPriorYearPct": 3,
+      "priorYearValue": 441981,
       "vs5yrAvgPct": 8,
-      "priorYearValue": 469832,
-      "fiveYrAvg": 437992
+      "fiveYrAvg": 420224
     },
     "sfa_avg_price": {
-      "value": 393348,
-      "vsPriorYearPct": 5,
-      "vs5yrAvgPct": 8,
-      "priorYearValue": 375785,
-      "fiveYrAvg": 363560
+      "value": 408591,
+      "vsPriorYearPct": 8,
+      "priorYearValue": 379825,
+      "vs5yrAvgPct": 14,
+      "fiveYrAvg": 359458
     },
     "condo_avg_price": {
-      "value": 283715,
-      "vsPriorYearPct": 6,
+      "value": 303348,
+      "vsPriorYearPct": 2,
+      "priorYearValue": 297428,
       "vs5yrAvgPct": 9,
-      "priorYearValue": 277068,
-      "fiveYrAvg": 269656
+      "fiveYrAvg": 277498
     },
     "hpi": {
       "benchmarkLatest": 413600,

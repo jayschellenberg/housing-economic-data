@@ -1,39 +1,43 @@
 {
-  "_comment": "HAND-ENTRY: WRREB MLS headline figures. The auto-scrape (r/16) currently can't parse the WRREB prose reliably, so update this by hand each month: copy the latest monthly release from https://www.winnipegregionalrealestatenews.com/market-statistics/market-releases , fill every value below, set asOf to the new month, set stale to false, then run `npm --prefix web run data:economic` and commit. vsPriorYearPct / vs5yrAvgPct are whole percents (negative = down). Latest complete set found: March 2026 (the May 2026 release reported sales 1,707 (-4% yoy, +1% vs 5yr), listings 3,739 (+2% yoy), detached $477,313 (+4% yoy, +7% vs 5yr), condo -1% yoy/+5% vs 5yr, but did not state attached/condo prices).",
-  "asOf": "August 2026",
-  "source": "Winnipeg Regional Real Estate Board (WRREB) — https://www.winnipegregionalrealestatenews.com/market-statistics/market-releases/article/628/august-sees-the-highest-year-to-date-residential-detached-and-condominium-average-prices-on-record",
-  "fetched": "2026-10-05",
-  "stale": true,
+  "asOf": "October 2026",
+  "source": "Winnipeg Regional Real Estate Board (WRREB) — https://www.winnipegregionalrealestatenews.com/market-statistics/market-releases/article/630/october-average-prices-reach-record-highs-and-buyer-choice-expands-again",
+  "fetched": "2026-11-09",
+  "stale": false,
   "sales": {
-    "value": 1326,
-    "vsPriorYearPct": -4,
-    "vs5yrAvgPct": -3
+    "value": 1192,
+    "vsPriorYearPct": -11,
+    "priorYearValue": 1339,
+    "vs5yrAvgPct": -1,
+    "fiveYrAvg": 1209
   },
   "active_listings": {
-    "value": 2802,
-    "vsPriorYearPct": -10,
-    "vs5yrAvgPct": -4
+    "value": 3985,
+    "vsPriorYearPct": 13,
+    "priorYearValue": 3519,
+    "vs5yrAvgPct": 6,
+    "fiveYrAvg": 3772
   },
   "sfd_avg_price": {
-    "value": 439216,
-    "vsPriorYearPct": 1,
+    "value": 455860,
+    "vsPriorYearPct": 3,
+    "priorYearValue": 441981,
     "vs5yrAvgPct": 8,
-    "priorYearValue": 469832,
-    "fiveYrAvg": 437992
+    "fiveYrAvg": 420224
   },
   "sfa_avg_price": {
-    "value": 393348,
-    "vsPriorYearPct": 5,
-    "vs5yrAvgPct": 8,
-    "priorYearValue": 375785,
-    "fiveYrAvg": 363560
+    "value": 408591,
+    "vsPriorYearPct": 8,
+    "priorYearValue": 379825,
+    "vs5yrAvgPct": 14,
+    "fiveYrAvg": 359458
   },
   "condo_avg_price": {
-    "value": 283715,
-    "vsPriorYearPct": 6,
+    "value": 303348,
+    "vsPriorYearPct": 2,
+    "priorYearValue": 297428,
     "vs5yrAvgPct": 9,
-    "priorYearValue": 277068,
-    "fiveYrAvg": 269656
+    "fiveYrAvg": 277498
   },
-  "comparisonsStale": true
+  "comparisonsStale": false,
+  "pdf": "https://www.winnipegregionalrealestatenews.com/uploads/public%5Cphotos%5CMarketRelease%5C2026%5COctober%5COctober%202026%20Market%20Release.pdf"
 }
