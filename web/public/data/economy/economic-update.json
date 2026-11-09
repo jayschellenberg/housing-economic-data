@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "generated": "2026-11-02T21:28:24Z",
-  "dataAsOf": "2026-11-02",
+  "generated": "2026-11-09T13:29:41Z",
+  "dataAsOf": "2026-11-09",
   "intro": {
     "censusYear": 2021,
     "provincePopulation": 1342153,
@@ -78,10 +78,10 @@
       "stale": false
     },
     "employment": {
-      "value": 751700,
-      "changePct": 1.7,
+      "value": 752500,
+      "changePct": 2.2,
       "direction": "up",
-      "period": "September 2026",
+      "period": "October 2026",
       "comparison": "year-over-year",
       "source": "Statistics Canada",
       "stale": false
@@ -97,17 +97,17 @@
     },
     "unemployment_rate": {
       "value": 5,
-      "changePP": -1.2,
-      "period": "September 2026",
+      "changePP": -0.9,
+      "period": "October 2026",
       "comparison": "year-over-year",
       "source": "Statistics Canada (Labour Force Survey)",
       "stale": false
     },
     "exports": {
-      "value": 12310543000,
-      "ytdChangePct": -6.8,
+      "value": 13842884000,
+      "ytdChangePct": -5.8,
       "direction": "down",
-      "period": "year-to-date to August 2026",
+      "period": "year-to-date to September 2026",
       "comparison": "year-to-date change",
       "source": "Statistics Canada (international merchandise trade, table 12-10-0175)",
       "stale": false
@@ -217,8 +217,8 @@
           "units": "persons_thousands",
           "geo": "MB",
           "frequency": "monthly",
-          "latestDate": "2026-09-01",
-          "latestValue": 751700
+          "latestDate": "2026-10-01",
+          "latestValue": 752500
         }
       ],
       "records": [
@@ -626,6 +626,11 @@
           "id": "statscan.employment.manitoba",
           "date": "2026-09-01",
           "value": 751700
+        },
+        {
+          "id": "statscan.employment.manitoba",
+          "date": "2026-10-01",
+          "value": 752500
         }
       ]
     },
