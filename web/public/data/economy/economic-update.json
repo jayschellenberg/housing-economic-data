@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "generated": "2026-11-09T17:40:15Z",
-  "dataAsOf": "2026-11-09",
+  "generated": "2026-11-16T13:30:17Z",
+  "dataAsOf": "2026-11-16",
   "intro": {
     "censusYear": 2021,
     "provincePopulation": 1342153,
@@ -51,31 +51,25 @@
       "stale": false
     },
     "manufacturing_sales": {
-      "value": 2367167000,
-      "changePct": 0.3,
-      "direction": "up",
-      "period": "August 2026",
+      "value": 2362305000,
+      "changePct": -0.8,
+      "direction": "down",
+      "period": "September 2026",
       "comparison": "month-to-month, seasonally adjusted",
       "source": "Statistics Canada",
       "stale": false
     },
     "wholesale_trade": {
-      "value": 4295669000,
-      "changePct": 6.4,
-      "direction": "up",
-      "period": "August 2026",
+      "value": 4164663000,
+      "changePct": -3,
+      "direction": "down",
+      "period": "September 2026",
       "comparison": "month-to-month, seasonally adjusted",
       "source": "Statistics Canada",
       "stale": false
     },
     "cpi": {
-      "value": 172.2,
-      "changePct": 4.4,
-      "direction": "up",
-      "period": "September 2026",
-      "comparison": "year-over-year",
-      "source": "Statistics Canada",
-      "stale": false
+      "stale": true
     },
     "employment": {
       "value": 752500,
@@ -146,10 +140,10 @@
       "stale": false
     },
     "building_permits": {
-      "value": 291052000,
-      "changePct": 35.2,
-      "direction": "up",
-      "period": "August 2026",
+      "value": 237562000,
+      "changePct": -17.6,
+      "direction": "down",
+      "period": "September 2026",
       "comparison": "month-to-month, seasonally adjusted",
       "source": "Statistics Canada",
       "stale": false
