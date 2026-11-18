@@ -119,7 +119,10 @@ jobs:
           Rscript r/16_scrape_mls.R
           Rscript r/15_build_economic_update.R
           Rscript r/19_scrape_rtb.R
-          Rscript r/23_scrape_population_estimates.R   # annual CSD/province population estimates (Census Profile chart)
+          # r/23 is the only step that needs a FULL-TABLE StatCan download (get_cansim 17-10-0155). StatCan began
+          # blocking programmatic full-table downloads in 2026-11 (vector/coordinate calls still work), so a block
+          # must not sink the whole CMHC refresh: on failure keep the committed population estimates.
+          Rscript r/23_scrape_population_estimates.R || echo "::warning::r/23 population estimates skipped (StatCan full-table download failed) - keeping the committed data"   # annual CSD/province population estimates (Census Profile chart)
           # Winnipeg address -> neighbourhood/cluster/community-area index for the Census Profile
           # "Find by address" box. The City refreshes its address file monthly, so this rides the
           # monthly cron. It runs the FAST path: fresh addresses joined to the committed
