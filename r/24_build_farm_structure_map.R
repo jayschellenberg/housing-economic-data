@@ -8,7 +8,8 @@
 # its output is committed and only regenerated when a new census lands (~2027).
 #   npm --prefix web run data:farmmap   (or: Rscript r/24_build_farm_structure_map.R)
 #
-# Sources (StatsCan WDS via cansim):
+# Sources (StatsCan WDS, read cell by cell via r/lib/statcan_wds.R — full-table
+# downloads have been blocked for scripts since 2026-11):
 #   32-10-0249  Land use, 2021        -> total farm area (acres) + farm count -> avg size
 #   32-10-0381  Operator characteristics, 2021 -> average operator age
 #   32-10-0231  Farms by farm type, 2021 -> dominant (most common) farm type
@@ -25,13 +26,37 @@
 }
 ROOT <- normalizePath(file.path(.this_dir, ".."), winslash = "/", mustWork = FALSE)
 
-suppressPackageStartupMessages({
-  if (!requireNamespace("cansim", quietly = TRUE)) install.packages("cansim", repos = "https://cloud.r-project.org")
-  library(cansim); library(dplyr); library(tidyr)
-})
+suppressPackageStartupMessages({ library(dplyr); library(tidyr) })
+source(file.path(.this_dir, "lib", "statcan_wds.R"))
 
 CCS_RE <- "^(46|47|48|59)[0-9]{5}$"   # 7-digit CCSUID in MB/SK/AB/BC
-ccs_rows <- function(d) dplyr::filter(d, grepl(CCS_RE, GeoUID))
+
+# Western CCS members of a table's Geography dimension (position 1): memberId + CCSUID.
+ccs_members <- function(meta) {
+  g <- wds_members(meta, 1)
+  g <- g[!is.na(g$code) & grepl(CCS_RE, g$code), c("memberId", "code")]
+  if (anyDuplicated(g$code)) stop("[24] duplicate CCS codes in table metadata — aborting")
+  names(g) <- c("geo", "uid")
+  g
+}
+# The member id of the one member whose name matches `pattern` in dimension `position`.
+member_id <- function(meta, position, pattern, fixed = FALSE) {
+  m <- wds_members(meta, position)
+  hit <- m$memberId[if (fixed) m$name == pattern else grepl(pattern, m$name)]
+  if (length(hit) != 1L)
+    stop(sprintf("[24] expected exactly one member matching '%s' in dimension %d, found %d — table layout changed",
+                 pattern, position, length(hit)))
+  hit
+}
+# Fetch a grid of geography x other-dimension members; returns uid + the member
+# ids + value. Suppressed cells come back as NA.
+fetch_grid <- function(pid, geo, grid) {
+  req <- merge(geo, grid, by = NULL)
+  req$coordinate <- do.call(wds_coordinate, unname(as.list(req[, c("geo", names(grid)), drop = FALSE])))
+  got <- wds_fetch_coords(pid, req$coordinate, latest_n = 1L, tag = "24")
+  got <- got[!duplicated(got$coordinate), c("coordinate", "value")]
+  merge(req, got, by = "coordinate", all.x = TRUE)
+}
 
 # The mutually-exclusive NAICS farm types (they sum to the total), mapped to the
 # short labels the map legend uses. Anything not listed folds into "Other".
@@ -49,32 +74,43 @@ TYPE_LABEL <- c(
   "Other animal production"                          = "Other animal"
 )
 
-message("[24] downloading 32-10-0249 (land use, 2021)")
-lu <- ccs_rows(get_cansim("32-10-0249"))
+message("[24] fetching 32-10-0249 (land use, 2021)")
+m <- wds_cube_metadata(32100249)
+lu <- fetch_grid(32100249, ccs_members(m), expand.grid(
+  landuse = member_id(m, 2, "Total farm area", fixed = TRUE),
+  uom     = c(farms = member_id(m, 3, "Number of farms reporting", fixed = TRUE),
+              acres = member_id(m, 3, "Acres", fixed = TRUE))))
+uom_farms <- member_id(m, 3, "Number of farms reporting", fixed = TRUE)
 size_df <- lu |>
-  filter(`Land use` == "Total farm area", `Unit of measure` %in% c("Acres", "Number of farms reporting")) |>
-  transmute(uid = GeoUID,
-            metric = ifelse(`Unit of measure` == "Acres", "acres", "farms"),
-            value = suppressWarnings(as.numeric(VALUE))) |>
+  transmute(uid, metric = ifelse(uom == uom_farms, "farms", "acres"), value) |>
   pivot_wider(names_from = metric, values_from = value) |>
   transmute(uid,
             farms = farms,
             size  = ifelse(!is.na(acres) & !is.na(farms) & farms > 0, round(acres / farms), NA_real_))
 
-message("[24] downloading 32-10-0381 (operator age, 2021)")
-age_df <- ccs_rows(get_cansim("32-10-0381")) |>
-  filter(grepl("All farms", `Farms according to the number of operators reported`),
-         grepl("Age - average", Characteristics)) |>
-  transmute(uid = GeoUID, age = round(suppressWarnings(as.numeric(VALUE)), 1)) |>
+message("[24] fetching 32-10-0381 (operator age, 2021)")
+m <- wds_cube_metadata(32100381)
+age_df <- fetch_grid(32100381, ccs_members(m), expand.grid(
+  nops = member_id(m, 2, "All farms"),
+  char = member_id(m, 3, "Age - average"))) |>
+  transmute(uid, age = round(value, 1)) |>
   distinct(uid, .keep_all = TRUE)
 
-message("[24] downloading 32-10-0231 (farms by type, 2021)")
-type_col <- "North American Industry Classification System (NAICS)"
-dom_df <- ccs_rows(get_cansim("32-10-0231")) |>
-  mutate(naics = as.character(.data[[type_col]])) |>   # column is a factor — use strings, not level codes
-  filter(naics %in% names(TYPE_LABEL)) |>
-  transmute(uid = GeoUID, naics, n = suppressWarnings(as.numeric(VALUE))) |>
+message("[24] fetching 32-10-0231 (farms by type, 2021)")
+m <- wds_cube_metadata(32100231)
+# A few farm-type names appear twice in the NAICS list (a group and its only child
+# share a name, e.g. "Hog and pig farming", with identical counts) — take the
+# first, which is the group. Note "Dairy cattle and milk production" sits under
+# "Cattle ranching and farming"; both are kept, as the map legend always has.
+types <- wds_members(m, 2)
+types <- types[types$name %in% names(TYPE_LABEL), ]
+types <- types[!duplicated(types$name), ]
+if (nrow(types) != length(TYPE_LABEL))
+  stop(sprintf("[24] found %d of %d farm types in 32-10-0231 — table layout changed", nrow(types), length(TYPE_LABEL)))
+dom_df <- fetch_grid(32100231, ccs_members(m), expand.grid(naics_id = types$memberId)) |>
+  transmute(uid, naics_id, naics = types$name[match(naics_id, types$memberId)], n = value) |>
   filter(!is.na(n), n > 0) |>
+  arrange(uid, naics_id) |>          # table order, so ties resolve as the full-table read did
   group_by(uid) |>
   slice_max(order_by = n, n = 1, with_ties = FALSE) |>
   ungroup() |>

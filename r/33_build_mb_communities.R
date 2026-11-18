@@ -53,6 +53,7 @@ geo_dir   <- file.path(repo_root, "web", "public", "data", "geo")
 out_dir   <- file.path(repo_root, "web", "scripts", "data")
 dir.create(file.path(cache_dir, "cgndb"), recursive = TRUE, showWarnings = FALSE)
 dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
+source(file.path(repo_root, "r", "lib", "statcan_wds.R"))     # cell-by-cell StatsCan reads
 source(file.path(repo_root, "r", "lib", "statcan_places.R"))
 source(file.path(repo_root, "r", "lib", "mb_schools.R"))
 
