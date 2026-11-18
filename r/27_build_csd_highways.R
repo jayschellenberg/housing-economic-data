@@ -49,6 +49,7 @@ repo_root <- normalizePath(file.path(this_dir, ".."), mustWork = FALSE)
 cache_dir <- file.path(repo_root, "r", "lib", "cache", "geo")
 geo_dir   <- file.path(repo_root, "web", "public", "data", "geo")
 dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
+source(file.path(repo_root, "r", "lib", "statcan_wds.R"))     # cell-by-cell StatsCan reads
 source(file.path(repo_root, "r", "lib", "statcan_places.R"))
 
 ROADS_URL  <- "https://geoportal.gov.mb.ca/api/download/v1/items/cb0d37e639ff4382be1033dfdfa962a8/geojson?layers=0"
