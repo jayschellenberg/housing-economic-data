@@ -28,7 +28,7 @@
  *
  * To repin: push the shards, then set this to the new commit SHA.
  */
-export const SHARDS_REVISION = '1d43c9ea6de2f6334e73acdfe53f3f2969f94c81';
+export const SHARDS_REVISION = 'f956b76c57fdfbcf3baf95cb1ddf1581be8b9858';
 
 const SHARDS_BASE = `/gh-data/housing-economic-shards/${SHARDS_REVISION}`;
 
