@@ -27,7 +27,7 @@ under it, and every tab keeps its `#hash` link):
 - **Local Data** (tabs whose data comes from folders on the viewer's disk):
   Cap Rates · Cap Rates vs Interest · Market Discount Rates ·
   **Multifamily** (Yardi Rental, Rentals.ca, Rent Comparison by Source, Rental Dashboard) ·
-  **Commercial** (Johnson Report, Altus Costs, Brokerage Reports, Commercial Dashboard) ·
+  **Commercial** (Johnson Report, Altus Costs, Brokerage Reports) · Commercial Dashboard ·
   FCC Farmland · Parade of Homes · Zoning. Stand-alone tabs sit on the bar as plain `cmhc-tab` buttons.
   Market Discount Rates and Altus Costs are the exceptions: their figures are
   published, so they ship with the site.
