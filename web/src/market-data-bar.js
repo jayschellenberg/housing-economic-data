@@ -103,7 +103,7 @@ function paintFlags() {
     else if (btn.title?.startsWith('A newer file')) btn.removeAttribute('title');
   }
   for (const menu of document.querySelectorAll('#nav-local .cmhc-menu')) {
-    const on = Boolean(menu.querySelector('.md-stale'));
+    const on = Boolean(menu.querySelector('[data-tab].md-stale'));
     menu.querySelector('.cmhc-menu-trigger')?.classList.toggle('md-stale', on);
   }
   const $link = document.getElementById('group-link-local');
