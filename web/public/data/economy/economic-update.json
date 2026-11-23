@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "generated": "2026-11-18T22:46:17Z",
-  "dataAsOf": "2026-11-18",
+  "generated": "2026-11-23T15:34:19Z",
+  "dataAsOf": "2026-11-23",
   "intro": {
     "censusYear": 2021,
     "provincePopulation": 1342153,
@@ -42,10 +42,10 @@
   },
   "indicators": {
     "retail_trade": {
-      "value": 2530270000,
-      "changePct": 1.6,
-      "direction": "up",
-      "period": "August 2026",
+      "value": 2483055000,
+      "changePct": -1.6,
+      "direction": "down",
+      "period": "September 2026",
       "comparison": "month-to-month, seasonally adjusted",
       "source": "Statistics Canada",
       "stale": false
