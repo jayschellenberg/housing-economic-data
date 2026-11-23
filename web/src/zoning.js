@@ -18,7 +18,7 @@
 import { escapeHtml } from './escape.js';
 import { getPref, setPref } from './prefs.js';
 import {
-  nameableUses, nameableConditional, narrativeParagraphs, sourceLine, untracedParts, pageText,
+  nameableUses, nameableConditional, narrativeText, untracedParts, pageText,
   categoryCounts, categoriesOf, pickByCategory, bulkRows, formatValue, ATTRIBUTE_LABELS,
   currencyVerdict, currencyMessage, currencyQueryUrl, zoneShortName, zoneDescription, verifyApplies, muniPickerLabel, pendingChip,
   rowConfidence, worstConfidence, paragraphConfidence, CONF_LEGEND,
@@ -354,7 +354,7 @@ function renderZone() {
     </section>
     <section class="chart-card cmhc-indicator-card" data-role="narrative">
       <header class="chart-title">Zoning narrative</header>
-      <p class="chart-sub">Ticking uses in the sidebar rewrites the permitted-uses sentence. Edit freely before copying.</p>
+      <p class="chart-sub">One paragraph, ready to paste into a single Excel cell. Ticking uses in the sidebar rewrites the permitted-uses sentence. Edit freely before copying.</p>
       ${verifyApplies(m, z.code) ? verifyBanner(m.note) : ''}
       <label class="flex items-center gap-2 text-sm mb-2"><input type="checkbox" data-role="cite"${ui.prefs.cite === false ? '' : ' checked'}> Include by-law page references</label>
       ${untracedNote(z)}
@@ -411,9 +411,8 @@ function renderNarrative() {
   const $text = ui.$main.querySelector('[data-role="narrative"] [data-role="text"]');
   if (!z || !$text || ui.edited) return;
   const cite = ui.prefs.cite !== false;
-  const paras = narrativeParagraphs(z, selectedUses(), selectedCond(), { cite, labels: currentMuni()?.page_labels });
-  if (cite && sourceLine(currentMuni())) paras.push(sourceLine(currentMuni()));
-  $text.value = paras.join('\n\n');
+  // one paragraph, no line breaks, no source line: pastes into a single Excel cell
+  $text.value = narrativeText(z, selectedUses(), selectedCond(), { cite, labels: currentMuni()?.page_labels });
   renderConfidence(z);
 }
 

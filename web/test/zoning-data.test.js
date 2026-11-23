@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  oxford, useList, usesSentence, narrativeParagraphs, nameableConditional, pageRef, pageText, usesPages, sourceLine, untracedParts, categoryCounts, categoriesOf, pickByCategory, formatValue, bulkRows,
+  oxford, useList, usesSentence, narrativeParagraphs, narrativeText, citeInline, nameableConditional, pageRef, pageText, usesPages, sourceLine, untracedParts, categoryCounts, categoriesOf, pickByCategory, formatValue, bulkRows,
   currencyVerdict, currencyMessage, currencyQueryUrl, normBylaw, zoneShortName, zoneDescription, verifyApplies, muniPickerLabel, formatPartialDate, pendingChip,
   rowConfidence, worstConfidence, paragraphConfidence,
 } from '../src/zoning-data.js';
@@ -82,9 +82,21 @@ describe('page citations', () => {
   it('appends page references only when asked', () => {
     expect(narrativeParagraphs(z, ['Hotel / Motel'])[0]).toBe('This zoning provides for commerce.');
     const p = narrativeParagraphs(z, ['Hotel / Motel'], [], { cite: true });
-    expect(p[0]).toBe('This zoning provides for commerce. (PDF p. 74)');
-    expect(p[1]).toMatch(/hotel\/motel.*\(PDF pp\. 75–76\)$/);
-    expect(p[2]).toBe('The minimum lot area is 15,000 square feet. (PDF pp. 77–78, 80)');
+    expect(p[0]).toBe('This zoning provides for commerce (PDF p. 74).');
+    expect(p[1]).toMatch(/hotel\/motel.* \(PDF pp\. 75–76\)\.$/);
+    expect(p[2]).toBe('The minimum lot area is 15,000 square feet (PDF pp. 77–78, 80).');
+  });
+  it('puts the reference before the closing period', () => {
+    expect(citeInline('Off-street parking is 1 space per 5 employees.', 'p. 111')).toBe('Off-street parking is 1 space per 5 employees (p. 111).');
+    expect(citeInline('He said "go."', 'p. 2')).toBe('He said "go (p. 2)."');
+    expect(citeInline('No period', 'p. 3')).toBe('No period (p. 3).');
+    expect(citeInline('Unchanged.', '')).toBe('Unchanged.');
+  });
+  it('joins the narrative into one Excel-ready paragraph with no source line', () => {
+    const t = narrativeText(z, ['Hotel / Motel'], [], { cite: true });
+    expect(t).not.toMatch(/\n/);
+    expect(t).not.toMatch(/Source:/);
+    expect(t).toMatch(/^This zoning provides for commerce \(PDF p\. 74\)\. .*square feet \(PDF pp\. 77–78, 80\)\.$/);
   });
   it('names the by-law in the source line', () => {
     expect(sourceLine({ label: 'RM of Macdonald', bylaw_no: '10/25' }))
@@ -98,7 +110,7 @@ describe('page citations', () => {
     expect(pageText(77, labels)).toBe('71');
     expect(pageText(112, labels)).toBe('PDF 112');
     const p = narrativeParagraphs(z, ['Hotel / Motel'], [], { cite: true, labels: { 74: '68' } });
-    expect(p[0]).toBe('This zoning provides for commerce. (p. 68)');
+    expect(p[0]).toBe('This zoning provides for commerce (p. 68).');
   });
   it('lists parts with untraced numbers', () => {
     expect(untracedParts(z)).toEqual([]);
