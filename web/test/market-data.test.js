@@ -96,6 +96,8 @@ describe('syncSource', () => {
   });
   it('does not re-import a tab that already has data', async () => {
     const store = fakeStore({ data: { old: true } });
+    expect(await syncSource(src(store), [amd])).toEqual({ status: 'loaded', newFolder: true });
+    // a second visit, folder already saved: nothing to announce
     expect(await syncSource(src(store), [amd])).toEqual({ status: 'loaded' });
     expect(store.saved).toBe(capRates);
     expect(store.imported).toBe(0);
@@ -106,7 +108,7 @@ describe('syncSource', () => {
     expect(store.imported).toBe(1);
   });
   it('treats an empty changed-file list as unchanged', async () => {
-    const store = fakeStore({ data: { old: true }, update: { changed: [], count: 0 } });
+    const store = fakeStore({ data: { old: true }, update: { changed: [], count: 0 }, saved: capRates });
     expect(await syncSource(src(store), [amd])).toEqual({ status: 'loaded' });
     expect(store.imported).toBe(0);
     const multi = fakeStore({ data: { old: true }, update: { changed: ['2026-10.json'], count: 1 } });
@@ -147,6 +149,22 @@ describe('syncSource', () => {
   it('reports not-shared, or locked while a folder awaits Allow', async () => {
     expect((await syncSource(src(fakeStore(), 'FCCFarmland'), [amd])).status).toBe('not-shared');
     expect((await syncSource(src(fakeStore(), 'FCCFarmland'), [amd], { anyLocked: true })).status).toBe('locked');
+  });
+  it('flags a newer file in a folder picked on the tab, without importing', async () => {
+    const own = dir('CapRates', [file('cap_rates.json')]);
+    const store = fakeStore({ saved: own, data: { old: true }, update: { changed: true } });
+    expect(await syncSource(src(store), [amd])).toEqual({ status: 'own-folder', stale: true });
+    expect(store.imported).toBe(0);
+    // also when no connected folder holds the source at all
+    const lone = fakeStore({ saved: own, data: { old: true }, update: { changed: ['a.json'], count: 1 } });
+    expect(await syncSource(src(lone, 'FCCFarmland'), [])).toEqual({ status: 'own-folder', stale: true });
+    const fresh = fakeStore({ saved: own, data: { old: true }, update: { changed: false } });
+    expect(await syncSource(src(fresh, 'FCCFarmland'), [])).toEqual({ status: 'own-folder', stale: false });
+  });
+  it('marks a tab folder awaiting Allow as unchecked', async () => {
+    const own = dir('Zoning', [], { perm: 'prompt' });
+    const store = fakeStore({ saved: own, data: { old: true }, update: { changed: true } });
+    expect(await syncSource(src(store, 'Zoning'), [])).toEqual({ status: 'own-folder', unchecked: true });
   });
   it('reports an import failure without throwing', async () => {
     const res = await syncSource(src(fakeStore({ fail: 'bad file' })), [amd]);

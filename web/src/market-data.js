@@ -186,7 +186,17 @@ export async function syncSource(src, roots, { anyLocked = false } = {}) {
     try { sub = await findSourceFolder(r, src.folder); } catch { sub = null; }
     if (sub) break;
   }
-  if (!sub) return { status: anyLocked ? 'locked' : 'not-shared' };
+
+  if (!sub) {
+    // No connected folder holds it, but the tab may have its own folder pick:
+    // say so, and whether that folder has a newer file than the tab holds.
+    const store = await src.load();
+    const saved = await store.getSavedDirectory();
+    if (saved && (await directoryPermission(saved)) !== 'denied' && await stillExists(saved)) {
+      return ownFolderStatus(src, store, saved);
+    }
+    return { status: anyLocked ? 'locked' : 'not-shared' };
+  }
 
   const store = await src.load();
   const saved = await store.getSavedDirectory();
@@ -195,19 +205,51 @@ export async function syncSource(src, roots, { anyLocked = false } = {}) {
     // the viewer's choice; if Chrome has lost it outright, or the folder was
     // moved away (AppMarketData's split into tier folders), take ours.
     if ((await directoryPermission(saved)) !== 'denied' && await stillExists(saved)) {
-      return { status: 'own-folder' };
+      return ownFolderStatus(src, store, saved);
     }
   }
-  if (!saved || !(await sameEntry(saved, sub))) await store.saveDirectory(sub);
+  const newFolder = !saved || !(await sameEntry(saved, sub));
+  if (newFolder) await store.saveDirectory(sub);
   // Data already held is re-read only when the folder's file has changed
   // since (a republish); reconnecting used to keep the stale copy.
-  if (await src.hasData(store) && !fileChanged(await store.checkForUpdates?.(sub))) return { status: 'loaded' };
+  if (await src.hasData(store) && !fileChanged(await store.checkForUpdates?.(sub))) {
+    return newFolder ? { status: 'loaded', newFolder } : { status: 'loaded' };
+  }
   try {
     await store.importFromDirectory(sub);
     return { status: 'loaded', imported: true };
   } catch (err) {
     return { status: 'error', message: err?.message || String(err) };
   }
+}
+
+/**
+ * A tab reading a folder picked on the tab itself. Nothing is imported here:
+ * the tab re-reads a changed file when it is opened (the dashboards offer a
+ * Reload), so this only flags it. `stale` is true when the folder holds a
+ * newer file than the tab last read; `unchecked` when Chrome wants a click on
+ * the tab before that folder can be read this visit.
+ */
+async function ownFolderStatus(src, store, saved) {
+  if ((await directoryPermission(saved)) !== 'granted') return { status: 'own-folder', unchecked: true };
+  if (!(await src.hasData(store))) return { status: 'own-folder' };
+  return { status: 'own-folder', stale: fileChanged(await store.checkForUpdates?.(saved)) };
+}
+
+/**
+ * Does the tab's saved folder hold a newer file than the tab last read?
+ * Stats files only. False when it cannot tell (no folder, no access, no data).
+ */
+export async function sourceIsStale(id) {
+  const src = SOURCES.find((s) => s.id === id);
+  if (!src) return false;
+  try {
+    const store = await src.load();
+    const saved = await store.getSavedDirectory();
+    if (!saved || (await directoryPermission(saved)) !== 'granted') return false;
+    if (!(await src.hasData(store))) return false;
+    return fileChanged(await store.checkForUpdates?.(saved));
+  } catch { return false; }
 }
 
 /**
@@ -224,15 +266,22 @@ export async function syncSources({ request = false } = {}) {
 
   const sources = [];
   const imported = [];
+  const touched = [];
   for (const src of SOURCES) {
     let res;
     try { res = await syncSource(src, open, { anyLocked }); }
     catch (err) { res = { status: 'error', message: err?.message || String(err) }; }
     if (res.imported) imported.push(src.id);
-    sources.push({ id: src.id, label: src.label, folder: src.folder, status: res.status, message: res.message });
+    if (res.imported || res.newFolder) touched.push(src.id);
+    sources.push({
+      id: src.id, label: src.label, folder: src.folder, status: res.status, message: res.message,
+      stale: Boolean(res.stale), unchecked: Boolean(res.unchecked), imported: Boolean(res.imported),
+    });
   }
   // Announce every source we touched: an import, or a newly saved folder a
   // tab that is already open should now re-check with this visit's access.
-  announceSources(sources.filter((s) => s.status === 'loaded').map((s) => s.id));
+  // Nothing else: the strip re-runs this on every window focus, and an
+  // announcement makes the open tab reload what it shows.
+  announceSources(touched);
   return { permission, sources, imported };
 }

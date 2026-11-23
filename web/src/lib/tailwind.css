@@ -1070,3 +1070,18 @@
 .ac-lines td { text-align: left !important; }
 .ac-lines td.num { text-align: right !important; }
 #ac-table sup, #ac-summary sup { color: #8a1c14; margin-left: 1px; }
+
+/* Local Data: a tab whose folder holds a newer file than the tab last read
+   (market-data-bar.js). An amber dot ahead of the label, also on the menu
+   holding the tab and on the Local Data header link. */
+.md-stale::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 5px;
+  border-radius: 9999px;
+  background: #f59e0b;
+  vertical-align: middle;
+  transform: translateY(-1px);
+}
