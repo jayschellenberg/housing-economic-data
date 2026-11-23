@@ -55,6 +55,13 @@ which Dropbox puts at the top of their Dropbox. On later visits Chrome needs
 one "Allow" on the connected folder, which covers everything inside it. Open
 tabs and the two dashboards reload through `web/src/market-data-channel.js`
 (a BroadcastChannel). `SalesData` is not in `SOURCES` and is never opened.
+On every page load (and when the window regains focus) the strip also checks
+each tab's folder, including folders picked on the tab itself, against what
+the tab last read. A tab whose folder holds a newer file gets an amber dot on
+its button, its menu and the Local Data header link, and a line in the
+strip's list. Opening the tab loads the file (the dashboards need Reload
+folder), and the dot clears once the tab holds it. A folder still waiting for
+Chrome's "Allow" cannot be checked until it is re-opened.
 A new folder-backed tab needs a `SOURCES` entry, a `saveDirectory` export on
 its store, and an `onSourcesUpdated` listener.
 `TAB_GROUP` in `web/src/main.js` says which tabs belong to Local Data; every
