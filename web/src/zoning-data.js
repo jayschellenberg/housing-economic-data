@@ -237,10 +237,23 @@ export function usesPages(zone, selected, selectedCond = []) {
 }
 
 /**
+ * Put a page reference inside the paragraph's last sentence, before its closing
+ * period: "... within the Municipality (PDF p. 138)." A paragraph with no closing
+ * period gets the reference and a period added.
+ */
+export function citeInline(text, ref) {
+  const t = String(text || '').trimEnd();
+  if (!ref) return t;
+  const m = t.match(/^([\s\S]*)([.!?]["'”’)]*)$/);
+  return m ? `${m[1]} (${ref})${m[2]}` : `${t} (${ref}).`;
+}
+
+/**
  * Full narrative as paragraphs: intent, uses, bulk, parking, overlay.
- * With `cite`, each paragraph ends with its by-law PDF page(s) from zone.cites
- * (R/cite.R, via export) — the uses sentence's pages are worked out here since
- * that sentence is recomposed from the ticked uses.
+ * With `cite`, each paragraph's last sentence carries its by-law page(s) from
+ * zone.cites (R/cite.R, via export) before its closing period — the uses
+ * sentence's pages are worked out here since that sentence is recomposed from
+ * the ticked uses.
  */
 export function narrativeParagraphs(zone, selected, selectedCond = [], { cite = false, labels = {} } = {}) {
   const n = zone?.narrative || {};
@@ -249,8 +262,17 @@ export function narrativeParagraphs(zone, selected, selectedCond = [], { cite = 
   if (!cite) return parts.map(([, t]) => t);
   return parts.map(([k, t]) => {
     const ref = pageRef(k === 'uses' ? usesPages(zone, selected, selectedCond) : zone?.cites?.[k]?.pages, labels);
-    return ref ? `${t} (${ref})` : t;
+    return citeInline(t, ref);
   });
+}
+
+/**
+ * The narrative as one flowing paragraph with no line breaks, so it pastes into a
+ * single Excel cell.
+ */
+export function narrativeText(zone, selected, selectedCond = [], opts = {}) {
+  return narrativeParagraphs(zone, selected, selectedCond, opts)
+    .map(t => t.replace(/\s+/g, ' ').trim()).filter(Boolean).join(' ');
 }
 
 /** Closing source line for a cited narrative. */
