@@ -353,7 +353,7 @@ function renderCharts() {
   const firmsChart = ($cards, id, label, points, description) => {
     const input = toCardInput(id, points, { lineOrder: FIRM_ORDER });
     const card = buildIndicatorCard($cards, {
-      chartId: id, fileStem: id, title: `Winnipeg ${label} Cap Rates`, sourceLabel: SOURCE, table: true, zeroBased: true,
+      chartId: id, fileStem: id, title: `Winnipeg ${label} Capitalization Rates`, sourceLabel: SOURCE, table: true, zeroBased: true,
       // "Source: …" alone, bottom-right of the caption and out of the
       // subtitle; no company name on any Cap Rates figure — they reproduce
       // the brokerages' published figures (Jason, 2026-09-30). 10 pt in print.
@@ -389,14 +389,14 @@ function renderCharts() {
       // pair (Jason, 2026-09-30)…
       const office = officeTotalsTable(rows, quarter);
       if (office) {
-        tableCard($cards, 'caprate_office_table', `Winnipeg Office Cap Rates — ${quarter}`,
+        tableCard($cards, 'caprate_office_table', `Winnipeg Office Capitalization Rates — ${quarter}`,
           'Downtown and Suburban: average of each brokerage’s published class ranges', office);
       }
       // …and the same by class: the workbook's office table, Downtown and
       // Suburban over Class A / Class B over Low / High.
       const officeClasses = officeByClassTable(rows, quarter);
       if (officeClasses) {
-        tableCard($cards, 'caprate_office_classes_table', `Winnipeg Office Cap Rates by Class — ${quarter}`,
+        tableCard($cards, 'caprate_office_classes_table', `Winnipeg Office Capitalization Rates by Class — ${quarter}`,
           'Downtown and Suburban: published Low–High range by brokerage and class', officeClasses);
       }
       $grid.appendChild(section);
@@ -409,7 +409,7 @@ function renderCharts() {
     // The quarter's table, a Low / High pair per class. Downtown and Suburban
     // office too: by class, not one all-class range (Jason, 2026-10-21 — the
     // totals live on in the Office section's table).
-    tableCard($cards, `caprate_${slug(type)}_table`, `Winnipeg ${type} Cap Rates — ${quarter}`,
+    tableCard($cards, `caprate_${slug(type)}_table`, `Winnipeg ${type} Capitalization Rates — ${quarter}`,
       'Published Low–High range by brokerage', quarterTable(rows, type, quarter));
     $grid.appendChild(section);
     drawnSections.push({ id: section.id, label: type });
@@ -593,7 +593,7 @@ async function exportData() {
       const office = officeTotalsTable(rows, quarter);
       if (office) sheets.push(['Office', office]);
       const officeClasses = officeByClassTable(rows, quarter);
-      if (officeClasses) sheets.push(['Office by class', officeClasses, `Winnipeg Office Cap Rates by Class — ${quarter}`]);
+      if (officeClasses) sheets.push(['Office by class', officeClasses, `Winnipeg Office Capitalization Rates by Class — ${quarter}`]);
     }
     sheets.push([type, quarterTable(rows, type, quarter)]);
   }
@@ -603,7 +603,7 @@ async function exportData() {
   const frac = (v) => (v == null || !Number.isFinite(v) ? null : Math.round(v * 1e4) / 1e6);
   const raw = (v) => (v == null || !Number.isFinite(v) ? null : Math.round(v * 1e6) / 1e6);
   const fmtPct = (row, from) => row.eachCell((c, i) => { if (i >= from && typeof c.value === 'number') c.numFmt = PCT; });
-  for (const [type, t, title = `Winnipeg ${type} Cap Rates — ${quarter}`] of sheets) {
+  for (const [type, t, title = `Winnipeg ${type} Capitalization Rates — ${quarter}`] of sheets) {
     const ws = wb.addWorksheet(`${type} ${quarter}`.slice(0, 31));
     ws.addRow([title]).font = { bold: true };
     ws.addRow([`Source: ${SOURCE}`]);
