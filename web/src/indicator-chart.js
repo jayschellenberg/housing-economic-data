@@ -404,6 +404,7 @@ const FRESHNESS_DAYS = {
 // 15 days covers the normal weekly cadence (warns only if a refresh truly broke).
 const FRESHNESS_OVERRIDE_DAYS = {
   mortgage_rates:     15,
+  gic_deposit_rates:  15,   // same weekly BoC posting cycle as mortgage_rates
   goc_yields:         15,
   cap_rate_pressure:  15,   // derived from the 5-yr GoC yield — same weekly cadence
   // Annual-average inflation is dated Jan 1 of the year it describes and only
