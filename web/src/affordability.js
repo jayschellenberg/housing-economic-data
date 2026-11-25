@@ -15,7 +15,7 @@
  */
 
 import * as Plot from '@observablehq/plot';
-import { themed, frameMark, PALETTE, plotFitted } from './plot-theme.js';
+import { themed, frameMark, PALETTE, plotFitted, BAR_TIP } from './plot-theme.js';
 import { downloadCard } from './chart.js';
 import { mapCard } from './map.js';
 import { provinceGeo, hasProvinceGeo } from './geo.js';
@@ -320,7 +320,8 @@ export async function initAffordability() {
       y: { label: null, domain: data.slice().sort((a, b) => a.value - b.value).map(d => d.area) },
       marks: [
         Plot.gridX({ stroke: '#e5e7eb' }),
-        Plot.barX(data, { x: 'value', y: 'area', fill: PALETTE[0], sort: { y: '-x' } }),
+        Plot.barX(data, { x: 'value', y: 'area', fill: PALETTE[0], sort: { y: '-x' },
+                          title: d => `${d.area}: ${d.value.toFixed(1)}% of income`, ...BAR_TIP }),
         Plot.ruleX([AFFORD_LINE], { stroke: '#dc2626', strokeDasharray: '4,3' }),
         frameMark(),
       ],

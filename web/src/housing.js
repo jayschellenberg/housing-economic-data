@@ -14,7 +14,7 @@
  */
 
 import * as Plot from '@observablehq/plot';
-import { themed, frameMark, PALETTE, plotFitted } from './plot-theme.js';
+import { themed, frameMark, PALETTE, plotFitted, BAR_TIP } from './plot-theme.js';
 import { downloadCard } from './chart.js';
 import { mapCard, quantileChoropleth } from './map.js';
 import { provinceGeo, hasProvinceGeo } from './geo.js';
@@ -304,7 +304,8 @@ export async function initHousing() {
         x: { type: 'band', label: null },
         y: { label: 'Occupied dwellings', tickFormat: v => Number(v).toLocaleString() },
         color: { domain: DT_SHORT, range: PALETTE, legend: true },
-        marks: [Plot.barY(data, { x: 'year', y: 'value', fill: 'type', order: DT_SHORT }), frameMark()],
+        marks: [Plot.barY(data, { x: 'year', y: 'value', fill: 'type', order: DT_SHORT,
+          title: d => `${d.year} · ${d.type}: ${fmtN(d.value)}`, ...BAR_TIP }), frameMark()],
       }));
       appendCard('Dwelling type mix', `${name} — occupied dwellings by structural type`, svg);
     }
@@ -340,7 +341,8 @@ export async function initHousing() {
         color: { legend: false },
         marks: [
           Plot.gridX({ stroke: '#d4d4d8', strokeDasharray: '3,3' }),
-          Plot.barX(data, { x: 'value', y: 'type', fill: PALETTE[0], sort: { y: '-x' } }),
+          Plot.barX(data, { x: 'value', y: 'type', fill: PALETTE[0], sort: { y: '-x' },
+            title: d => `${d.type}: ${fmtN(d.value)} (${fmtP(share(d.value))})`, ...BAR_TIP }),
           frameMark(),
         ],
       }));
@@ -417,7 +419,8 @@ export async function initHousing() {
         x: { type: 'band', label: null },
         y: { label: 'Occupied dwellings', tickFormat: v => Number(v).toLocaleString() },
         color: { domain: COMMON_AGE, range: PALETTE, legend: true },
-        marks: [Plot.barY(ageData, { x: 'year', y: 'value', fill: 'band', order: COMMON_AGE }), frameMark()],
+        marks: [Plot.barY(ageData, { x: 'year', y: 'value', fill: 'band', order: COMMON_AGE,
+          title: d => `${d.year} · ${d.band}: ${fmtN(d.value)}`, ...BAR_TIP }), frameMark()],
       }));
       appendCard('Age mix', `${name} — occupied dwellings by period of construction`, ageChart);
       const ageRows = COMMON_AGE.map((lbl, i) => {
@@ -532,7 +535,8 @@ export async function initHousing() {
       fx: { label: null }, x: { axis: null, label: null },
       y: { label: '% of dwellings', tickFormat: v => `${v}%`, domain: [0, maxV * 1.15] },
       color: { domain: areas.map(a => a.name), range: PALETTE, legend: true },
-      marks: [Plot.barY(data, { fx: 'cat', x: 'area', y: 'value', fill: 'area' }), frameMark()],
+      marks: [Plot.barY(data, { fx: 'cat', x: 'area', y: 'value', fill: 'area',
+        title: d => `${d.area} · ${d.cat}: ${fmtP(d.value)}`, ...BAR_TIP }), frameMark()],
     }));
     appendCard(title, sub, svg);
   }

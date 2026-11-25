@@ -14,7 +14,7 @@
 
 import * as Plot from '@observablehq/plot';
 import { themed, fmt, PALETTE, gridMarks, frameMark, mirrorYMarks, percentTickFormat, MIRROR_Y_MARGIN,
-         plotWidth, plotHeight, fitPlotWidth, plotFitted, yearTipMarks } from './plot-theme.js';
+         plotWidth, plotHeight, fitPlotWidth, plotFitted, yearTipMarks, BAR_TIP } from './plot-theme.js';
 import { escapeHtml } from './escape.js';
 import { downloadCardPng, setExportRedraw } from './png-export.js';
 
@@ -350,7 +350,7 @@ export function buildBarCard(container, { title }) {
       marks: [
         ...gridMarks(),
         Plot.barY(data, { fx: 'cat', x: 'area', y: 'value', fill: 'area',
-          title: (d) => `${d.area} · ${d.cat}: ${yFmt(d.value)}` }),
+          title: (d) => `${d.area} · ${d.cat}: ${yFmt(d.value)}`, ...BAR_TIP }),
         frameMark(),
       ],
     }));

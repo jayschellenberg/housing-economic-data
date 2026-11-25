@@ -13,7 +13,7 @@
  */
 
 import * as Plot from '@observablehq/plot';
-import { themed, gridMarks, frameMark, mirrorYMarks, MIRROR_Y_MARGIN, PALETTE, plotFitted, GRID_STROKE, GRID_DASHARRAY, yearTipMarks } from './plot-theme.js';
+import { themed, gridMarks, frameMark, mirrorYMarks, MIRROR_Y_MARGIN, PALETTE, plotFitted, GRID_STROKE, GRID_DASHARRAY, yearTipMarks, BAR_TIP } from './plot-theme.js';
 import { populationGrowth, formatGrowth, centreOnBand } from './census-growth.js';
 import { downloadCard } from './chart.js';
 import { mapCard, quantileChoropleth } from './map.js';
@@ -699,7 +699,8 @@ export async function initCensus() {
           marks: [
             Plot.gridY({ stroke: GRID_STROKE, strokeDasharray: GRID_DASHARRAY }),
             Plot.ruleY([0], { stroke: '#52525b', strokeWidth: 0.8 }),
-            Plot.barY(growth, { fx: 'period', x: 'region', y: 'value', fill: 'region' }),
+            Plot.barY(growth, { fx: 'period', x: 'region', y: 'value', fill: 'region',
+                                title: d => `${d.region} · ${d.period}: ${formatGrowth(d.value)}`, ...BAR_TIP }),
             // The rate on each bar, centred on it: above a rise, below a fall.
             ...[[d => d.value >= 0, 'bottom', -3], [d => d.value < 0, 'top', 3]].map(([keep, lineAnchor, dy]) =>
               Plot.text(growth.filter(keep), {
@@ -772,7 +773,8 @@ export async function initCensus() {
         y: { label: 'Occupied dwellings', tickFormat: v => Number(v).toLocaleString() },
         color: { domain: typeOrder, range: categorical(typeOrder.length), legend: true },
         marks: [
-          Plot.barY(barData, { x: 'year', y: 'value', fill: 'type', order: typeOrder }),
+          Plot.barY(barData, { x: 'year', y: 'value', fill: 'type', order: typeOrder,
+                               title: d => `${d.year} · ${d.type}: ${Number(d.value).toLocaleString()}`, ...BAR_TIP }),
           frameMark(),
         ],
       }));
@@ -812,7 +814,8 @@ export async function initCensus() {
       y: { label: yLabel, tickFormat: v => `${v}%`, domain: [0, maxV * 1.15] },
       color: { domain: regionNames, range: PALETTE, legend: true },
       marks: [
-        Plot.barY(rows, { fx: 'cat', x: 'region', y: 'value', fill: 'region' }),
+        Plot.barY(rows, { fx: 'cat', x: 'region', y: 'value', fill: 'region',
+                          title: d => `${d.region} · ${d.cat}: ${d.value.toFixed(1)}%`, ...BAR_TIP }),
         frameMark(),
       ],
     }));

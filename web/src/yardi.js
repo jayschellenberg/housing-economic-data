@@ -19,7 +19,7 @@
 
 import * as Plot from '@observablehq/plot';
 import { buildIndicatorCard, readOpenPanels } from './indicator-chart.js';
-import { themed, PALETTE, gridMarks, frameMark, plotWidth, plotHeight, fitPlotWidth, unitLineStyle, plotFitted } from './plot-theme.js';
+import { themed, PALETTE, gridMarks, frameMark, plotWidth, plotHeight, fitPlotWidth, unitLineStyle, plotFitted, BAR_TIP } from './plot-theme.js';
 import { downloadCardPng, setExportRedraw, setExportCropHeight, EXPORT_W, EXPORT_H, EXPORT_DPI } from './png-export.js';
 import { escapeHtml } from './escape.js';
 import { getPref, setPref } from './prefs.js';
@@ -712,7 +712,7 @@ function buildExpenseBarCard(container, { id, title, subtitle, rows, highlight, 
       marks: [
         ...gridMarks(),
         Plot.barY(rows, { x: 'prov', y: 'value', fill: (d) => colour(d.prov),
-          title: (d) => `${d.prov}: $${Math.round(d.value).toLocaleString('en-CA')}` }),
+          title: (d) => `${d.prov}: $${Math.round(d.value).toLocaleString('en-CA')}`, ...BAR_TIP }),
         Plot.text(rows, { x: 'prov', y: 'value', text: (d) => `$${Math.round(d.value).toLocaleString('en-CA')}`, dy: -7, fontSize: 10 }),
         frameMark(),
       ],

@@ -373,6 +373,14 @@ export function yearTipMarks(rows, { x = 'year', y = 'value', z, format, order }
   }))];
 }
 
+/**
+ * Hover tip for a bar mark: spread into the bar's options alongside a `title`
+ * that names the bar and its formatted value — `Plot.barY(data, { ...,
+ * title: d => `${d.area} · ${d.cat}: ${fmt(d.value)}`, ...BAR_TIP })`. Same
+ * look as the line-chart tips; only shows on hover, so PNG exports are clean.
+ */
+export const BAR_TIP = { tip: { fontSize: 11, lineHeight: 1.3 } };
+
 /* --- Fitting a plot to its card ------------------------------------------- */
 
 /*
