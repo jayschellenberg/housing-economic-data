@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "generated": "2026-11-23T15:34:19Z",
-  "dataAsOf": "2026-11-23",
+  "generated": "2026-11-25T14:30:39Z",
+  "dataAsOf": "2026-11-25",
   "intro": {
     "censusYear": 2021,
     "provincePopulation": 1342153,
@@ -114,8 +114,8 @@
     },
     "farm_cash_receipts": {
       "period": "2025",
-      "totalChangePct": 6,
-      "cropChangePct": 0.5,
+      "totalChangePct": 6.1,
+      "cropChangePct": 0.7,
       "livestockChangePct": 15.5,
       "totalDirection": "up",
       "source": "Statistics Canada (table 32-10-0045)",
