@@ -13,7 +13,7 @@
  */
 
 import * as Plot from '@observablehq/plot';
-import { themed, gridMarks, frameMark, mirrorYMarks, MIRROR_Y_MARGIN, PALETTE, plotFitted, GRID_STROKE, GRID_DASHARRAY } from './plot-theme.js';
+import { themed, gridMarks, frameMark, mirrorYMarks, MIRROR_Y_MARGIN, PALETTE, plotFitted, GRID_STROKE, GRID_DASHARRAY, yearTipMarks } from './plot-theme.js';
 import { populationGrowth, formatGrowth, centreOnBand } from './census-growth.js';
 import { downloadCard } from './chart.js';
 import { mapCard, quantileChoropleth } from './map.js';
@@ -674,6 +674,7 @@ export async function initCensus() {
           Plot.lineY(popRows, { x: 'year', y: 'value', stroke: 'region', strokeWidth: 1.8 }),
           Plot.dot(popRows,  { x: 'year', y: 'value', fill: 'region', r: 3 }),
           frameMark(),
+          ...yearTipMarks(popRows, { z: 'region', format: v => Number(v).toLocaleString(), order: popRegions }),
         ],
       }));
       appendCard('Population trend', `${loY}–${hiY} — ${regionNames.join(' vs ')}`, svg);
@@ -745,6 +746,7 @@ export async function initCensus() {
             ...mirrorYMarks(v => Number(v).toLocaleString(), { label: 'Population', labelOffset: 72 }),
             Plot.lineY(estRows, { x: 'year', y: 'value', stroke: 'region', strokeWidth: 1.8 }),
             frameMark(),
+            ...yearTipMarks(estRows, { z: 'region', format: v => Number(v).toLocaleString(), order: estRegions }),
           ],
         }));
         appendCard('Population — annual estimates',

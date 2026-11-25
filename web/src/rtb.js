@@ -11,7 +11,7 @@
  */
 
 import * as Plot from '@observablehq/plot';
-import { themed, gridMarks, frameMark, mirrorYMarks, percentTickFormat, MIRROR_Y_MARGIN, PALETTE, plotFitted } from './plot-theme.js';
+import { themed, gridMarks, frameMark, mirrorYMarks, percentTickFormat, MIRROR_Y_MARGIN, PALETTE, plotFitted, yearTipMarks } from './plot-theme.js';
 import { downloadCard } from './chart.js';
 import { escapeHtml } from './escape.js';
 import { miss, fUsd, fPct1 as fPct } from './format.js';
@@ -180,6 +180,7 @@ function renderChart($chart, data, cpiByYear) {
       Plot.lineY(rows, { x: 'year', y: 'value', stroke: 'series', strokeWidth: 1.8 }),
       Plot.dot(rows.filter(d => d.series === 'Rent guideline' || d.series === 'Economic adjustment factor'), { x: 'year', y: 'value', fill: 'series', r: 2.5 }),
       frameMark(),
+      ...yearTipMarks(rows, { z: 'series', format: v => `${Number(v).toFixed(1)}%`, order: series }),
     ],
   }));
   const card = document.createElement('section');

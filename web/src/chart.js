@@ -14,7 +14,7 @@
 
 import * as Plot from '@observablehq/plot';
 import { themed, fmt, PALETTE, gridMarks, frameMark, mirrorYMarks, percentTickFormat, MIRROR_Y_MARGIN,
-         plotWidth, plotHeight, fitPlotWidth, plotFitted } from './plot-theme.js';
+         plotWidth, plotHeight, fitPlotWidth, plotFitted, yearTipMarks } from './plot-theme.js';
 import { escapeHtml } from './escape.js';
 import { downloadCardPng, setExportRedraw } from './png-export.js';
 
@@ -214,9 +214,9 @@ export function buildChartCard(container, { series }) {
           fill: 'category',
           stroke: 'category',
           r: 2.6,
-          title: (d) => `${d.category}\n${d.year}: ${yFormatter(d.value)}`,
         }),
         frameMark(),
+        ...yearTipMarks(rows, { z: 'category', format: yFormatter, order: colorDomain }),
       ],
     });
 

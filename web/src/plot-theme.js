@@ -330,6 +330,49 @@ export const fmt = {
   pctChange: (v) => `${Number(v).toFixed(1)}%`,
 };
 
+/* --- Hover tooltip for year-based line charts ------------------------------ */
+
+/**
+ * A hover tip for a line chart keyed on a numeric year: hovering anywhere in a
+ * year reads out every line's value at that year ("2023 / Total: $1,412 /
+ * 1 Bedroom: $1,250"), the same behaviour as the Market Indicators charts
+ * (indicator-chart.js buildTipRows). Lines are listed in `order` when given,
+ * else in first-seen order. Returns an array of marks (empty when no rows) so
+ * callers can spread it into `marks`.
+ *
+ * @param {Array<object>} rows   plotted rows
+ * @param {object} o
+ * @param {string} [o.x='year']  numeric year field
+ * @param {string} [o.y='value'] value field
+ * @param {string} o.z           series field (line label)
+ * @param {(v:number)=>string} o.format  value formatter ($ / % / count)
+ * @param {string[]} [o.order]   series order for the tip rows
+ */
+export function yearTipMarks(rows, { x = 'year', y = 'value', z, format, order } = {}) {
+  const byYear = new Map();
+  for (const r of rows || []) {
+    const yr = Number(r[x]);
+    const v = Number(r[y]);
+    if (!Number.isFinite(yr) || r[y] == null || !Number.isFinite(v)) continue;
+    if (!byYear.has(yr)) byYear.set(yr, []);
+    byYear.get(yr).push({ label: r[z], value: v });
+  }
+  if (!byYear.size) return [];
+  const rank = (lab) => { const i = order ? order.indexOf(lab) : -1; return i < 0 ? Infinity : i; };
+  const tipRows = [...byYear.entries()].sort((a, b) => a[0] - b[0]).map(([yr, entries]) => {
+    entries.sort((a, b) => rank(a.label) - rank(b.label));
+    const nums = entries.map(e => e.value);
+    return {
+      year: yr,
+      anchor: (Math.min(...nums) + Math.max(...nums)) / 2,
+      text: [String(yr), ...entries.map(e => `${e.label}: ${format(e.value)}`)].join('\n'),
+    };
+  });
+  return [Plot.tip(tipRows, Plot.pointerX({
+    x: 'year', y: 'anchor', title: 'text', fontSize: 11, lineHeight: 1.3,
+  }))];
+}
+
 /* --- Fitting a plot to its card ------------------------------------------- */
 
 /*
