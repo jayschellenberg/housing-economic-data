@@ -5,8 +5,8 @@
     {
       "group": "mortgage_market",
       "file": "mortgage_market.json",
-      "seriesCount": 10,
-      "recordCount": 12396,
+      "seriesCount": 12,
+      "recordCount": 13156,
       "latestDate": "2026-11-24"
     },
     {
@@ -122,6 +122,6 @@
       "latestDate": "2026-09-01"
     }
   ],
-  "totalSeries": 528,
-  "totalRecords": 186531
+  "totalSeries": 530,
+  "totalRecords": 187291
 }

@@ -114,6 +114,7 @@ jobs:
             Rscript r/11_scrape_statscan.R
             Rscript r/17_scrape_osb.R
             Rscript r/22_scrape_cmhc_arrears.R
+            Rscript r/34_scrape_cba_arrears.R || echo "::warning::r/34 CBA mortgage arrears skipped - keeping the committed data"
             Rscript r/28_scrape_investment_context.R
             Rscript r/14_build_indicators.R
             Rscript r/16_scrape_mls.R

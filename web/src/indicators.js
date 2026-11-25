@@ -25,6 +25,7 @@ const PROVIDER_LABEL = {
   statscan: 'Statistics Canada (WDS)',
   cmhc_arrears: 'CMHC Mortgage Delinquency Data Tables (Equifax)',
   osb:      'Office of the Superintendent of Bankruptcy (Open Government)',
+  cba_arrears: 'Canadian Bankers Association (monthly mortgage arrears)',
   cmhc:     'CMHC Rental Market Survey',
   derived:  'computed from source series',
 };
