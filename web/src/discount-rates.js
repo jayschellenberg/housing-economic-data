@@ -15,7 +15,7 @@
 
 import * as Plot from '@observablehq/plot';
 import { buildIndicatorCard, readOpenPanels } from './indicator-chart.js';
-import { themed, PALETTE, gridMarks, frameMark, plotWidth, plotHeight, fitPlotWidth, plotFitted } from './plot-theme.js';
+import { themed, PALETTE, gridMarks, frameMark, plotWidth, plotHeight, fitPlotWidth, plotFitted, BAR_TIP } from './plot-theme.js';
 import { downloadCardPng, setExportRedraw, setExportCropHeight, EXPORT_W, EXPORT_H, EXPORT_DPI } from './png-export.js';
 import { escapeHtml } from './escape.js';
 import { getPref, setPref } from './prefs.js';
@@ -535,6 +535,7 @@ function buildStackCard(container, { id, title, source }) {
         Plot.barY(data, Plot.stackY({
           x: 'year', y: 'value', fill: 'part', order: BAR_SERIES.map(s => s.label),
           title: (d) => `${d.year} · ${d.part}: ${fmtPct(d.value)} (required return ${fmtPct(d.total)})`,
+          ...BAR_TIP,
         })),
         // The survey's required return to equity printed above each bar, to
         // match the table and line chart (Jason, 2026-10-13). It can differ

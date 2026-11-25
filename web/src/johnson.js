@@ -24,7 +24,7 @@
 
 import * as Plot from '@observablehq/plot';
 import { buildIndicatorCard, readOpenPanels } from './indicator-chart.js';
-import { themed, PALETTE, gridMarks, frameMark, plotWidth, plotHeight, fitPlotWidth, sfTickFormat, plotFitted } from './plot-theme.js';
+import { themed, PALETTE, gridMarks, frameMark, plotWidth, plotHeight, fitPlotWidth, sfTickFormat, plotFitted, BAR_TIP } from './plot-theme.js';
 import { downloadCardPng, setExportRedraw, EXPORT_W, EXPORT_H, EXPORT_DPI } from './png-export.js';
 import { escapeHtml } from './escape.js';
 import { indicatorFmt } from './format.js';
@@ -709,7 +709,7 @@ function buildBarCard(container, { chart, source }) {
       marks: [
         ...gridMarks(),
         Plot.barY(data, { fx: 'district', x: 'period', y: 'value', fill: 'period',
-          title: (d) => `${d.district} · ${d.period}: ${isPct ? d.value + '%' : fmtV(d.value)}` }),
+          title: (d) => `${d.district} · ${d.period}: ${isPct ? d.value + '%' : fmtV(d.value)}`, ...BAR_TIP }),
         frameMark(),
       ],
     }));
