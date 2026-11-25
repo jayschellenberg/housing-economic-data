@@ -758,7 +758,7 @@ function buildChartSections(catalog, shards) {
 // compound annual change for the window in the latest-value chips, and whose
 // charts drop the legend when one line is drawn (its name moves to the
 // subtitle). Rate charts (YoY %, inflation) get no annualised figure.
-const TREND_GROUPS = new Set(['prices', 'construction_cost', 'commercial_leasing']);
+const TREND_GROUPS = new Set(['prices', 'inflation', 'construction_cost', 'commercial_leasing']);
 function trendOpts(chartCfg, seriesMeta) {
   if (!TREND_GROUPS.has(chartCfg?.displayGroup)) return {};
   return {
