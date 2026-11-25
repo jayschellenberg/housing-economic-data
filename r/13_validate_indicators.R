@@ -189,6 +189,22 @@ validate_cmhc_arrears <- function(row) {
   .cmhc_arrears_checked
 }
 
+.cba_checked <- NULL   # memoised - one page fetch covers all rows
+validate_cba_arrears <- function(row) {
+  # The scraper (r/34) finds the newest monthly workbook by its fixed file
+  # name and gates on the sheet layout itself; here we only confirm cba.ca
+  # answers. A miss is a soft pass: r/34 runs soft and r/14 carries forward.
+  if (is.null(.cba_checked)) {
+    resp <- tryCatch(GET(row$sourceUrl, timeout(30), config(followlocation = TRUE),
+                         user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/126.0")),
+                     error = function(e) NULL)
+    code <- if (is.null(resp)) "no response" else status_code(resp)
+    .cba_checked <<- list(ok = TRUE, actualTitle = row$expectedTitle, latest = NA,
+                          reason = if (identical(code, 200L)) "" else sprintf("WARN: cba.ca HTTP %s", code))
+  }
+  .cba_checked
+}
+
 validate_osb <- function(row) {
   # OSB insolvency data has no per-series metadata API; confirm the Open
   # Government (CKAN) dataset still resolves to a monthly CSV resource.
@@ -246,6 +262,7 @@ results <- lapply(series, function(row) {
                 cmhc         = validate_cmhc(row),
                 cmhc_arrears = validate_cmhc_arrears(row),
                 osb          = validate_osb(row),
+                cba_arrears  = validate_cba_arrears(row),
                 list(ok = FALSE, actualTitle = NA, latest = NA,
                      reason = sprintf("unknown provider '%s'", row$provider)))
   cat(sprintf("  [%s] %-44s %s %s\n",

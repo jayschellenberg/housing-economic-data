@@ -56,6 +56,10 @@ const OTHER_SOURCES = {
     short: 'CMHC Mortgage Delinquency Data Tables',
     citation: 'CMHC — Mortgage delinquency rate, Canada, provinces and CMAs (CMHC data tables; Equifax Canada)',
   },
+  cba_arrears: {
+    short: 'Canadian Bankers Association',
+    citation: 'Canadian Bankers Association — Number of residential mortgages in arrears (monthly, CBA member banks)',
+  },
   cmhc: {
     short: 'CMHC Rental Market Survey',
     citation: 'CMHC Rental Market Survey — average rent, October survey (Housing Market Information Portal)',
