@@ -54,8 +54,8 @@ export const CAP_RATES_UPDATED_EVENT = 'hed:cap-rates-updated';
 // v1 key held the parsed CSV itself and is simply ignored now.
 const PREF_KEY = 'capVsInterest.v2';
 
-// Always drawn, in this order. Series ids are what the committed BoC shard
-// (mortgage_market) uses; chartLabel overrides the catalog's terse labels,
+// Always drawn, in this order. Series ids are what the committed BoC shards
+// (mortgage_market for the policy rate, investments for the bond yields) use; chartLabel overrides the catalog's terse labels,
 // which read fine under "Government of Canada bond yields" but not next to
 // "Office CR".
 const RATE_LINES = [
@@ -63,7 +63,9 @@ const RATE_LINES = [
   { id: 'boc.goc_5yr',       label: '5-Year Bond Yield' },
   { id: 'boc.goc_10yr',      label: '10-Year Bond Yield' },
 ];
-const RATE_SHARD = 'mortgage_market';
+// The policy rate lives in the Interest Rates & Mortgages shard and the bond
+// yields in Investment Yields; the chart reads both as one.
+export const RATE_SHARDS = ['mortgage_market', 'investments'];
 
 // Colours from the reference chart's SOURCE_STYLE, as close as the web can get
 // to the R colour names it uses. They are not decorative: an appraiser reading
@@ -417,7 +419,11 @@ export function buildCapVsInterest(shards, rangeRef, { container = '#cvi-grid', 
   const $grid = document.querySelector(container);
   if (!$grid) return;
 
-  const shard = shards?.[RATE_SHARD];
+  const parts = RATE_SHARDS.map(g => shards?.[g]).filter(Boolean);
+  const shard = parts.length ? {
+    series: parts.flatMap(p => p.series || []),
+    records: parts.flatMap(p => p.records || []),
+  } : null;
   // Without the BoC shard there is no chart to draw and nothing the cap rates
   // could rescue — skip the section entirely rather than render an empty frame.
   if (!shard?.records?.length) return;

@@ -10,9 +10,8 @@
  * draws its rate lines from, and a date range.
  */
 
-import { buildCapVsInterest, rerenderCapVsInterest } from './cap-vs-interest.js';
+import { buildCapVsInterest, rerenderCapVsInterest, RATE_SHARDS } from './cap-vs-interest.js';
 
-const RATE_SHARD = 'mortgage_market';
 
 // Same default window as Market Indicators: five years back from "to"
 // (or from the current month when "to" is blank), until "from" is set by hand.
@@ -36,12 +35,14 @@ export async function initCapVsInterestTab() {
   const $grid = document.getElementById('cvi-grid');
   if (!$grid) return;
 
-  let shard = null;
-  try {
-    const r = await fetch(`./data/indicators/${RATE_SHARD}.json`);
-    shard = r.ok ? await r.json() : null;
-  } catch { shard = null; }
-  if (!shard?.records?.length) {
+  const shards = {};
+  await Promise.all(RATE_SHARDS.map(async g => {
+    try {
+      const r = await fetch(`./data/indicators/${g}.json`);
+      if (r.ok) shards[g] = await r.json();
+    } catch { /* missing shard: handled below */ }
+  }));
+  if (!Object.values(shards).some(sh => sh?.records?.length)) {
     $grid.innerHTML = '<p class="text-sm text-red-700">Bank of Canada rate data not found. Re-run the indicators refresh.</p>';
     return;
   }
@@ -51,7 +52,7 @@ export async function initCapVsInterestTab() {
   const $to = document.getElementById('cvi-month-to');
   if ($from) $from.value = state.monthFrom;
 
-  buildCapVsInterest({ [RATE_SHARD]: shard }, state, { container: '#cvi-grid', controls: '#cvi-controls' });
+  buildCapVsInterest(shards, state, { container: '#cvi-grid', controls: '#cvi-controls' });
 
   $from?.addEventListener('change', () => {
     if ($from.value) { state.monthFrom = $from.value; state.monthFromLocked = true; }
