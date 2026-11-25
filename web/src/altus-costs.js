@@ -13,7 +13,7 @@
  */
 
 import * as Plot from '@observablehq/plot';
-import { themed, gridMarks, frameMark, PALETTE, plotFitted } from './plot-theme.js';
+import { themed, gridMarks, frameMark, PALETTE, plotFitted, yearTipMarks } from './plot-theme.js';
 import { downloadCard } from './chart.js';
 import { escapeHtml } from './escape.js';
 import { getPref, setPref } from './prefs.js';
@@ -56,6 +56,8 @@ const INFRA_UNITS = [
 let ui = null;
 
 const fmtUsd = (v) => (v == null ? '**' : `$${v.toLocaleString('en-CA')}`);
+// Hover-tip value: dollars to the cent where the data has them ($/sf), else whole.
+const altusDollar = (v) => `$${Number(v).toLocaleString('en-CA', { maximumFractionDigits: 2 })}`;
 const mid = (lo, hi) => {
   if (hi == null) return null;
   return (lo == null ? hi : (lo + hi) / 2);
@@ -307,6 +309,7 @@ function buildCategoryCard({ section, category, chartRows, cities, from, to, det
                                 sort: { channel: 'x' } }),
         Plot.dot(chartRows, { x: 'year', y: 'value', fill: 'city', r: 2.8 }),
         frameMark(),
+        ...yearTipMarks(chartRows, { z: 'city', format: altusDollar, order: activeDomain }),
       ],
     }));
   }
@@ -492,6 +495,7 @@ function buildInfraCard({ title, unit, chartRows, geos, from, to }) {
                               sort: { channel: 'x' } }),
       Plot.dot(chartRows, { x: 'year', y: 'value', fill: 'geo', r: 2.8 }),
       frameMark(),
+      ...yearTipMarks(chartRows, { z: 'geo', format: altusDollar, order: activeDomain }),
     ],
   }));
   card.querySelector('[data-role="plot"]').appendChild(plot);
