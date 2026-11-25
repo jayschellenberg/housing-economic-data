@@ -284,17 +284,26 @@ compute_mortgage_payment <- function(s) {
 }
 
 # per_capita: numerator series ÷ population series × multiplier (e.g.
-# ×1000 for "per thousand people"). Date join is inner; for a monthly
-# numerator and a quarterly population, only the months that align with
-# population quarters survive. Acceptable resolution for a directional
-# indicator.
+# ×1000 for "per thousand people"). Population is quarterly (17-10-0009) and
+# lands a quarter or more after the numerator's months, so each numerator
+# month is divided by the latest population estimate on or before it ("as-of"
+# join), held for at most POP_MAX_AGE_DAYS. The old inner join kept only the
+# quarter months and cut the series off at the last population quarter, which
+# left the per-100k insolvency charts two-plus months behind the raw counts.
+POP_MAX_AGE_DAYS <- 200
 compute_per_capita <- function(s) {
   ids <- unlist(s$derivedFrom)
   if (length(ids) != 2) return(NULL)
   num <- all_obs %>% filter(id == ids[1]) %>% select(date, vn = value) %>% arrange(date)
-  pop <- all_obs %>% filter(id == ids[2]) %>% select(date, vp = value) %>% arrange(date)
+  pop <- all_obs %>% filter(id == ids[2]) %>% select(date, vp = value) %>%
+    filter(!is.na(vp)) %>% arrange(date)
   if (nrow(num) == 0 || nrow(pop) == 0) return(NULL)
-  joined <- inner_join(num, pop, by = "date") %>% arrange(date)
+  nd <- as.Date(num$date); pd <- as.Date(pop$date)
+  k <- findInterval(as.numeric(nd), as.numeric(pd))
+  ok <- k > 0
+  ok[ok] <- as.numeric(nd[ok] - pd[k[ok]]) <= POP_MAX_AGE_DAYS
+  joined <- num[ok, , drop = FALSE]
+  joined$vp <- pop$vp[k[ok]]
   if (nrow(joined) == 0) return(NULL)
   mult <- as.numeric(s$multiplier %||% 1)
   v <- joined$vn / joined$vp * mult
