@@ -2112,9 +2112,11 @@
     <!-- ============================================================
          Altus Costs tab — $ per square foot construction cost ranges
          published annually by Altus Group for the nine Canadian urban
-         centres (plus provincial LRT/highway rows). Figures ship with
-         the site; scripts/altus_cost_guide.py builds the data JSON from
-         extract_altus.py's long-format CSV. altus-costs.js.
+         centres (plus provincial LRT/highway rows). Altus Group
+         copyright, so the figures do NOT ship with the site: they load
+         from AppMarketData-External\AltusCostGuide via the Local Data
+         strip (altus-store.js). scripts/altus_cost_guide.py builds that
+         JSON from extract_altus.py's long-format CSV. altus-costs.js.
          ============================================================ -->
     <div id="tab-panel-altus" class="grid md:grid-cols-[320px_1fr] min-h-[calc(100vh-110px)]" role="tabpanel" aria-labelledby="tab-btn-altus" hidden>
       <aside class="bg-white border-r border-neutral-200 p-4 space-y-4 overflow-y-auto" aria-label="Altus Cost Guide filters">
