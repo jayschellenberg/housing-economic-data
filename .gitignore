@@ -50,3 +50,6 @@ Desktop.ini
 /web/public/data/starts/
 
 .vercel
+
+# Local scheduled-task logs (scripts/wrreb_monthly.ps1)
+/logs/

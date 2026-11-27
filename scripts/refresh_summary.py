@@ -5,9 +5,10 @@ Summary tab.
 Run by .github/workflows/refresh-indicators.yml after the pipeline and the
 sanity check, before the data is committed. Compares the freshly built
 web/public/data/indicators-manifest.json against the copy on HEAD (saved to
-<tmp>/manifest.prev.json by the workflow), reports the MLS scrape's as-of and
-stale state, and pulls out pipeline log lines that signal a soft failure -- a
-scrape that fell back to last-good data, a series that could not be computed.
+<tmp>/manifest.prev.json by the workflow), reports the CREA HPI scrape's
+as-of and stale state, and pulls out pipeline log lines that signal a soft
+failure -- a scrape that fell back to last-good data, a series that could not
+be computed. (WRREB figures are scraped on Jason's PC, not in the workflow.)
 
     python3 scripts/refresh_summary.py <tmp-dir> <run-start-epoch-seconds>
 
@@ -26,7 +27,6 @@ from datetime import date
 
 MANIFEST = "web/public/data/indicators-manifest.json"
 BENCH = "web/public/data/economy/mls_benchmark.json"
-HEADLINE = "web/public/data/economy/mls_winnipeg.json"
 DEMAND = "web/public/data/indicators/demand.json"
 
 # The weekly run has no CMHC rent history (historical_rental.csv), so r/14
@@ -113,7 +113,6 @@ def main(tmp, start):
     headline = f"{len(advanced)} of {len(rows)} groups advanced, {total_delta:+d} records"
 
     bench = load(BENCH, {})
-    head = load(HEADLINE, {})
     zipname = os.path.basename(str(bench.get("source", "")).split(" ")[-1])
 
     log_path = os.path.join(tmp, "pipeline.log")
@@ -145,7 +144,6 @@ def main(tmp, start):
     out += [
         "",
         f"CREA HPI benchmark: {bench.get('asOf', '-')} (stale={str(bench.get('stale', '?')).lower()}, {zipname or 'no zip'})",
-        f"WRREB headline:     {head.get('asOf', '-')} (stale={str(head.get('stale', '?')).lower()})",
         "",
         "Pipeline notes (soft failures / last-good fallbacks):"
         if notes else "Pipeline notes: none - every scrape returned fresh data.",

@@ -1,6 +1,6 @@
 # Housing & Economic Data
 
-Status: Active | Next: merge census-summary-feed so the parcel-search reports can read /data/housing/census-summary.json; then confirm CBA arrears lines update when CBA posts September 2026 (late Nov); confirm WRREB headline reads October 2026 in the next refresh email | Blocked: none | Updated: 2026-11-27
+Status: Active | Next: merge wrreb-internal (WRREB figures off the public site) and register the housing-economic-wrreb-monthly task; merge census-summary-feed; confirm CBA arrears lines update when CBA posts September 2026 (late Nov) | Blocked: none | Updated: 2026-11-27
 
 A multi-tab static website of Canadian housing & economic data, built for a commercial real-estate appraiser — CMHC rental market, housing starts, secondary rental, census housing & demographics, affordability, Manitoba rent control, and market indicators — with copy-to-Word, Excel (.xlsx), and PNG exports for appraisal reports. The **Rental Charts** tab shows interactive line charts of CMHC rental and vacancy data, filterable by geography (Province / CMA / CSD / Survey Zone / Neighbourhood), dwelling type (Apartment / Row / All), and a breakdown dimension (Bedroom Type / Year of Construction / Structure Size / Rent Ranges).
 
@@ -90,7 +90,7 @@ other tab is Housing.
 | Zoning | Appraisal zoning narratives per municipality and zone (intent, permitted uses chosen by the appraiser, bulk requirements) with the full use lists and bulk table cited to PDF pages, a live by-law currency check against Manitoba Zoning By-Laws open data, Copy / Word export; read from `SharedInfo\AppMarketData\AppMarketData-Internal\Zoning` on the user's own disk (shared only with chosen users; nothing published) | `zoning-narrative/R/export.R` (separate project) |
 | Neighbourhood (Expt) | Pre-written neighbourhood and community narratives in two layers — Winnipeg neighbourhood cluster → neighbourhood, and Manitoba municipality → community (Blumenort, Kleefeld …, from the town and village map sheets) — one editable box per section, Copy / Word; saved edits go back into the folder's `edits/` subfolder for everyone using it; read from `SharedInfo\AppMarketData\AppMarketData-Internal\Neighbourhood` (nothing published) | `r/27`, `r/33`, then `web/scripts/build-neighbourhood.mjs` (see below) |
 | Parade of Homes | Winnipeg (and all-Manitoba) new-home listings distilled from MHBA Parade of Homes magazines, 2012–present: median base price, $/sq ft by style, home size, upgrade spend and a Parade-vs-CPI index chart, with nominal / real dollar and scope toggles. Local Data: read from `AppMarketData-External\ParadeOfHomes\parade_of_homes.json` on the viewer's disk (nothing shipped with the site); see [`docs/parade-of-homes.md`](docs/parade-of-homes.md). | `Parade-Of-Homes` project (`run_pipeline.sh` → `publish_shared.py`) |
-| MB Economic Update | Auto narrative report (economy + HPI + outlook) — **parked, hidden from the nav** (see Parked features) | `r/15`, `r/16` |
+| MB Economic Update | Auto narrative report (economy + HPI + outlook) — **parked, hidden from the nav** (see Parked features). WRREB figures are Local Data only (see below) | `r/15`, `r/16`; WRREB from `r/16b` (local) |
 
 The Tables tab generates appraisal-ready comparison tables (vacancy / median rent by bedroom type, rent range, year built) with copy-to-clipboard (rich HTML for pasting into Word), Word (.docx), and Excel (.xlsx) export — this replaces the retired CMHC-VacancyMedianRents Shiny tool. It is **province-scoped** (pick a province — always the first row, default Manitoba — then the second–fourth areas are centres within it; no cross-province comparison), and each table has a grouped-bar chart card beside it (same chrome as the Rental Charts cards — title, subtitle, right-side legend, Download PNG). The **Compare Areas** tab is the multi-area counterpart to Rental Charts: it overlays several areas *within one province* as time-series lines for a fixed breakdown category (e.g. pre-1960 stock across MB centres), with a matching areas × years table beside each chart — one chart+table pair per metric (median rent, average rent, vacancy, avg rent change). The pipeline also pulls the Secondary Rental Market Survey (Srms — condo rental data) into `web/public/data/secondary.json`, replacing the retired "CMHC Rental Data Scrape" project. Both retired projects are archived under `$Projects in Progress\old projects maybe`.
 
@@ -304,6 +304,34 @@ Three options:
    commit and push, then set `SHARDS_REVISION` in `web/src/shards.js` to the new
    commit SHA and push here. Until that pin moves, production keeps serving the
    previous shards.
+
+### WRREB market figures (local, internal only)
+
+The MB Economic Update's Winnipeg resale figures (MLS® sales, active listings,
+detached / attached / condominium average prices, each vs the prior year and
+the 5-year average) come from the Winnipeg Regional Real Estate Board's
+monthly release. WRREB's website terms allow private, non-commercial use only,
+ban scraping into a database and forbid publishing the data in any form, so
+**the site does not ship them** and the GitHub workflows do not scrape them.
+
+- `r/16b_scrape_wrreb.R` runs on Jason's PC only (it refuses to run when
+  `GITHUB_ACTIONS` or `CI` is set). It reads the latest release PDF and writes
+  `wrreb_market.json` to `<Dropbox>\SharedInfo\AppMarketData\AppMarketData-Internal\WRREBMarket\`
+  (Dropbox root found from the script's own path; `--out` overrides). A failed
+  scrape keeps the last-good figures with `stale: true` and exits 2.
+- `scripts/wrreb_monthly.ps1` is the Task Scheduler wrapper: it runs r/16b,
+  logs to `logs\wrreb-<stamp>.log`, and sends a failure alert (email + ntfy
+  topic `hed-wrreb-monthly-jks`, via `mb-parcelsearch\alert-lib.ps1`) when the
+  scrape fails, comes back stale, or has not advanced to last month's release.
+  `-TestAlert` sends one test alert.
+- `scripts/schedule_wrreb_monthly.ps1` registers the task
+  `housing-economic-wrreb-monthly` (12th of each month 10:15; run it elevated
+  for S4U, then `_scheduled-tasks\export-all.ps1`).
+- In the browser, `web/src/wrreb-store.js` is a Local Data source (`wrreb`,
+  folder `WRREBMarket`) filled by the Local Data strip. `economic-update.js`
+  merges the figures into the Residential Real Estate section when the store
+  holds them, and otherwise says they are internal and how staff load them.
+  The CREA MLS® HPI benchmark (r/16) is still public.
 
 ### Census Profile tab (run-once, separate from `data:all`)
 
@@ -561,8 +589,8 @@ workflow itself still runs and (on failure) opens a GitHub issue.
 
 The indicators success email carries a summary built by
 `scripts/refresh_summary.py` (also written to the run's Summary tab): which
-indicator groups advanced and by how many records, the CREA HPI and WRREB
-as-of months with their stale flags, and any pipeline lines that signal a
+indicator groups advanced and by how many records, the CREA HPI as-of
+month with its stale flag, and any pipeline lines that signal a
 scrape fell back to last-good data. The `Commit` link is the data commit the
 run pushed. The same summary goes out under a "no new data" subject when
 nothing changed, since a scrape that keeps falling back to last-good data

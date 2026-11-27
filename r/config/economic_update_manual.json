@@ -1,5 +1,5 @@
 {
-  "_comment": "Manually-maintained inputs for the MB Economic Update tab. Edit this file when these values change, then run `npm --prefix web run data:economic` (or let the monthly workflow rebuild) and commit. Numbers that auto-refresh from StatsCan/CMHC/CREA are NOT here. The WRREB MLS headline figures (sales/listings/average prices) are a SEPARATE hand-entry file: web/public/data/economy/mls_winnipeg.json.",
+  "_comment": "Manually-maintained inputs for the MB Economic Update tab. Edit this file when these values change, then run `npm --prefix web run data:economic` (or let the monthly workflow rebuild) and commit. Numbers that auto-refresh from StatsCan/CMHC/CREA are NOT here. The WRREB MLS headline figures (sales/listings/average prices) are NOT published: r/16b_scrape_wrreb.R scrapes them on Jason's PC into AppMarketData-Internal/WRREBMarket, and the tab reads them through the Local Data strip.",
   "_howToUpdate": {
     "minimumWage": "Province of Manitoba indexes it every Oct 1. Update value/effective when it changes; nextValue/nextEffective are informational.",
     "realGdp": "Manitoba Bureau of Statistics preliminary estimate (no clean API). Update growthPct/period/asOf when a new estimate is released, e.g. in the provincial Budget or economic highlights.",

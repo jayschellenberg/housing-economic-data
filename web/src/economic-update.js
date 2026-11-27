@@ -5,8 +5,12 @@
  * Prose templates live HERE (pure `(metric) => string` functions) so the
  * wording is editable in one place; the numbers + the editorial Outlook text
  * come from web/public/data/economy/economic-update.json (built by
- * r/15_build_economic_update.R from StatsCan/CMHC + scraped MLS/CREA + the
- * manual config). Two supporting charts (employment, HPI benchmark) are
+ * r/15_build_economic_update.R from StatsCan/CMHC + the CREA HPI + the
+ * manual config). The WRREB market-release figures (sales, listings, average
+ * prices) are NOT in that public file: WRREB's terms forbid publishing them.
+ * They load in the browser from AppMarketData-Internal\WRREBMarket through
+ * the Local Data strip (wrreb-store.js, written by r/16b_scrape_wrreb.R), and
+ * the tab says they are internal when they are absent. Two supporting charts (employment, HPI benchmark) are
  * mounted via the Market Indicators chart card. Copy + Word export let the
  * appraiser drop the report straight into their document.
  *
@@ -17,6 +21,8 @@
 import { buildIndicatorCard } from './indicator-chart.js';
 import { captureNodes } from './doc-image-export.js';
 import { escapeHtml } from './escape.js';
+import * as wrrebStore from './wrreb-store.js';
+import { onSourcesUpdated } from './market-data-channel.js';
 
 // --- Formatters --------------------------------------------------------------
 const fmt0 = (v) => (v == null || isNaN(v)) ? '—' : Math.round(Number(v)).toLocaleString();
@@ -106,28 +112,23 @@ const T = {
   },
 };
 
-// --- Module entry ------------------------------------------------------------
-export async function initEconomicUpdate() {
-  const $body = document.getElementById('eu-body');
-  const $asof = document.getElementById('eu-asof');
-  if (!$body) return;
+// --- Sections (pure: data + optional WRREB figures -> [{heading, paras, ...}]) ---
+// `notice` is shown on screen only; it never goes into the Copy / Word export.
+export const WRREB_ABSENT_NOTICE = 'WRREB market-release figures (MLS® sales, active listings and average prices) '
+  + 'are for internal use only and are not published on this site. Staff: connect the AppMarketData folder '
+  + 'in the Local Data strip (open any Local Data tab) to add them here; they load from the WRREBMarket '
+  + 'folder in AppMarketData-Internal.';
+export const WRREB_LOADED_NOTICE = 'WRREB figures loaded from your AppMarketData-Internal folder. '
+  + 'Internal use only; WRREB does not permit publishing them.';
 
-  const data = await fetch('./data/economy/economic-update.json')
-    .then(r => r.ok ? r.json() : null).catch(() => null);
-  if (!data) {
-    $body.innerHTML = '<p class="text-sm text-red-700">Economic update data not found. Run <code>npm --prefix web run data:economic</code> (r/16 + r/15).</p>';
-    return;
-  }
-
-  if ($asof) $asof.textContent = data.dataAsOf ? `Data as of ${data.dataAsOf}` : '';
-
+export function buildSections(data, wrreb = null) {
   const ind = data.indicators || {};
   const hou = data.housing || {};
   const mls = data.mls || {};
   const intro = data.intro || {};
   const outlook = data.outlook || {};
+  const w = wrreb && typeof wrreb === 'object' ? wrreb : null;
 
-  // ---- Build the narrative HTML ----
   const sections = [];   // {heading, paras:[html]}  — also used to build clipboard + word
 
   // Overview
@@ -166,20 +167,24 @@ export async function initEconomicUpdate() {
   pushLine(houParas, indLine(hou.building_permits, T.permits, 'Building permits'));
   if (houParas.length) sections.push({ heading: 'Housing & Construction', paras: houParas, figure: 'employment' });
 
-  // Residential Real Estate
+  // Residential Real Estate: WRREB figures from the Local Data store (internal),
+  // CREA HPI from the public file.
   const mlsParas = [];
-  if (mls.sales) mlsParas.push(T.mlsSales(mls));
-  if (mls.sfd_avg_price) mlsParas.push(T.mlsPrice('single-family detached', mls.sfd_avg_price));
-  if (mls.sfa_avg_price) mlsParas.push(T.mlsPrice('single-family attached', mls.sfa_avg_price));
-  if (mls.condo_avg_price) mlsParas.push(T.mlsPrice('condominium', mls.condo_avg_price));
+  if (w) {
+    if (w.sales) mlsParas.push(T.mlsSales(w));
+    if (w.sfd_avg_price) mlsParas.push(T.mlsPrice('single-family detached', w.sfd_avg_price));
+    if (w.sfa_avg_price) mlsParas.push(T.mlsPrice('single-family attached', w.sfa_avg_price));
+    if (w.condo_avg_price) mlsParas.push(T.mlsPrice('condominium', w.condo_avg_price));
+  }
   const hpiSentence = T.hpi(mls.hpi);
-  if (mlsParas.length || hpiSentence) {
+  if (mlsParas.length || hpiSentence || !w) {
     sections.push({
-      heading: 'Residential Real Estate (WRREB / CREA)',
+      heading: w ? 'Residential Real Estate (WRREB / CREA)' : 'Residential Real Estate (CREA)',
       paras: mlsParas,
-      banner: mls.stale ? `MLS® figures could not be refreshed this cycle — showing the last available data${mls.asOf ? ` (as of ${escapeHtml(mls.asOf)})` : ''}.` : null,
+      banner: w?.stale ? `WRREB figures could not be refreshed this cycle; showing the last available data${w.asOf ? ` (as of ${escapeHtml(w.asOf)})` : ''}.` : null,
+      notice: w ? WRREB_LOADED_NOTICE : WRREB_ABSENT_NOTICE,
       figure: 'hpi',
-      afterFigure: hpiSentence ? [hpiSentence] : [],
+      afterFigure: hpiSentence ? [hpiSentence + staleNote(mls, mls.asOf)] : [],
     });
   }
 
@@ -191,13 +196,16 @@ export async function initEconomicUpdate() {
       note: outlook.source ? `Source: ${escapeHtml(outlook.source)}${outlook.published ? `, published ${escapeHtml(outlook.published)}` : ''}.` : null,
     });
   }
+  return sections;
+}
 
-  // ---- Render to DOM ----
+export function sectionsHtml(sections) {
   let html = `<h2 class="cmhc-eu-title">Province of Manitoba — Overview &amp; Economic Outlook</h2>`;
   for (const s of sections) {
     html += `<section class="cmhc-eu-section">`;
     html += `<h3 class="cmhc-eu-heading">${escapeHtml(s.heading)}</h3>`;
     if (s.banner) html += `<div class="cmhc-stale-warning" style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:6px;padding:8px 10px;margin-bottom:8px;font-size:0.85rem">${s.banner}</div>`;
+    if (s.notice) html += `<p class="cmhc-eu-notice text-xs text-neutral-500" style="border-left:3px solid #d4d4d4;padding-left:8px">${escapeHtml(s.notice)}</p>`;
     for (const p of s.paras) html += `<p class="cmhc-eu-para">${p}</p>`;
     if (s.figure === 'employment') html += `<div id="eu-fig-employment" class="cmhc-eu-figure"></div>`;
     if (s.figure === 'hpi') html += `<div id="eu-fig-hpi" class="cmhc-eu-figure"></div>`;
@@ -205,10 +213,51 @@ export async function initEconomicUpdate() {
     if (s.note) html += `<p class="cmhc-eu-note text-xs text-neutral-500">${s.note}</p>`;
     html += `</section>`;
   }
-  $body.innerHTML = html;
+  return html;
+}
 
-  // ---- Mount charts ----
-  const charts = data.charts || {};
+// The WRREB figures from the Local Data store, re-read first when the saved
+// folder (already open this visit) holds a newer file. null when absent.
+async function loadWrreb() {
+  try {
+    if (!wrrebStore.storeAvailable()) return null;
+    const saved = await wrrebStore.getSavedDirectory();
+    if (saved && (await wrrebStore.directoryPermission(saved)) === 'granted') {
+      const upd = await wrrebStore.checkForUpdates(saved);
+      if (upd?.changed) await wrrebStore.importFromDirectory(saved).catch(() => null);
+    }
+    return (await wrrebStore.getData()) || null;
+  } catch { return null; }
+}
+
+// --- Module entry ------------------------------------------------------------
+export async function initEconomicUpdate() {
+  const $body = document.getElementById('eu-body');
+  const $asof = document.getElementById('eu-asof');
+  if (!$body) return;
+
+  const data = await fetch('./data/economy/economic-update.json')
+    .then(r => r.ok ? r.json() : null).catch(() => null);
+  if (!data) {
+    $body.innerHTML = '<p class="text-sm text-red-700">Economic update data not found. Run <code>npm --prefix web run data:economic</code> (r/16 + r/15).</p>';
+    return;
+  }
+
+  if ($asof) $asof.textContent = data.dataAsOf ? `Data as of ${data.dataAsOf}` : '';
+
+  const state = { sections: [], cards: {} };
+  const render = async () => {
+    state.sections = buildSections(data, await loadWrreb());
+    $body.innerHTML = sectionsHtml(state.sections);
+    state.cards = mountCharts(data.charts || {});
+  };
+  wireExports(() => state.sections, () => state.cards, data);
+  // Refill when the Local Data strip loads the WRREBMarket folder.
+  onSourcesUpdated(['wrreb'], () => render());
+  await render();
+}
+
+function mountCharts(charts) {
   let empCard = null, hpiCard = null;
   if (charts.employment && document.getElementById('eu-fig-employment')) {
     empCard = buildIndicatorCard(document.getElementById('eu-fig-employment'), {
@@ -220,15 +269,13 @@ export async function initEconomicUpdate() {
   }
   if (charts.hpi_benchmark && document.getElementById('eu-fig-hpi')) {
     hpiCard = buildIndicatorCard(document.getElementById('eu-fig-hpi'), {
-      chartId: 'eu-hpi', title: 'Figure 3 — WRREB single-family benchmark price',
+      chartId: 'eu-hpi', title: 'Figure 3 — Winnipeg single-family benchmark price',
       sourceLabel: 'CREA MLS® Home Price Index (Winnipeg board)', description: null,
     });
     hpiCard.render(charts.hpi_benchmark.records || [], charts.hpi_benchmark.series || [],
       { subtitle: 'Single-family benchmark, monthly', yearFrom: yearsAgo(5) });
   }
-
-  // ---- Exports ----
-  wireExports(sections, () => ({ emp: empCard?.card, hpi: hpiCard?.card }), data);
+  return { emp: empCard?.card, hpi: hpiCard?.card };
 }
 
 function yearsAgo(n) { return new Date().getFullYear() - n; }
@@ -259,12 +306,12 @@ function copyHtml(html) {
   } catch { navigator.clipboard?.writeText(text); }
 }
 
-function wireExports(sections, getCards, data) {
+function wireExports(getSections, getCards, data) {
   const copyBtn = document.getElementById('eu-copy');
   const wordBtn = document.getElementById('eu-download-docx');
 
   copyBtn?.addEventListener('click', () => {
-    copyHtml(buildClipboardHtml(sections, data));
+    copyHtml(buildClipboardHtml(getSections(), data));
     const orig = copyBtn.textContent;
     copyBtn.textContent = 'Copied!';
     setTimeout(() => { copyBtn.textContent = orig; }, 1500);
@@ -284,7 +331,7 @@ function wireExports(sections, getCards, data) {
       // Build ordered blocks for the Word document.
       const blocks = [{ type: 'title', text: 'Province of Manitoba — Overview & Economic Outlook' }];
       if (data.dataAsOf) blocks.push({ type: 'meta', text: `Data as of ${data.dataAsOf}` });
-      for (const s of sections) {
+      for (const s of getSections()) {
         blocks.push({ type: 'heading', text: s.heading });
         for (const p of s.paras) blocks.push({ type: 'para', text: stripHtml(p) });
         if (s.figure && capByKey[s.figure]) blocks.push({ type: 'image', capture: capByKey[s.figure] });

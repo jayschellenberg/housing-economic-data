@@ -845,6 +845,8 @@
          and Economic Outlook" document. Prose + 2 figures (employment,
          HPI benchmark) + Copy / Word export. Data:
          web/public/data/economy/economic-update.json (r/15 + r/16).
+         WRREB figures are internal-only: they load from
+         AppMarketData-Internal\WRREBMarket (r/16b, wrreb-store.js).
          ============================================================ -->
     <div id="tab-panel-economic" class="p-4 space-y-4" role="tabpanel" aria-labelledby="tab-btn-economic" hidden>
       <div class="flex flex-wrap gap-2 items-center justify-between">
@@ -863,7 +865,7 @@
       <section class="cmhc-eu-wrap max-w-4xl">
         <div id="eu-body" class="space-y-4"></div>
         <footer class="text-xs text-neutral-500 pt-4 mt-4 border-t border-neutral-200">
-          Sources: Statistics Canada Web Data Service (retail, manufacturing, wholesale trade, farm cash receipts, CPI, employment, building permits, housing starts — contains information licensed under the Statistics Canada Open Licence); Canada Mortgage and Housing Corporation; the Winnipeg Regional Real Estate Board (WRREB); and the Canadian Real Estate Association MLS&reg; Home Price Index. Real GDP, minimum wage, and the Economic Outlook commentary are maintained manually (see <code>r/config/economic_update_manual.json</code>). This product is not affiliated with or endorsed by any of these organizations.
+          Sources: Statistics Canada Web Data Service (retail, manufacturing, wholesale trade, farm cash receipts, CPI, employment, building permits, housing starts — contains information licensed under the Statistics Canada Open Licence); Canada Mortgage and Housing Corporation; and the Canadian Real Estate Association MLS&reg; Home Price Index. Winnipeg Regional Real Estate Board (WRREB) market-release figures are not published on this site; staff see them only when they load them from the firm's internal AppMarketData folder. Real GDP, minimum wage, and the Economic Outlook commentary are maintained manually (see <code>r/config/economic_update_manual.json</code>). This product is not affiliated with or endorsed by any of these organizations.
         </footer>
       </section>
     </div>
@@ -2665,7 +2667,7 @@
         <a class="underline" href="https://www.bankofcanada.ca/valet/docs" rel="noopener" target="_blank">Bank of Canada Valet API</a>, the
         <a class="underline" href="https://www.statcan.gc.ca/en/developers" rel="noopener" target="_blank">Statistics Canada Web Data Service</a>, the
         <a class="underline" href="https://open.canada.ca/data/en/dataset/eaee474c-4b7f-4940-8d48-59123d0da436" rel="noopener" target="_blank">Office of the Superintendent of Bankruptcy Canada</a>
-        (insolvency statistics, via Open Government), the Canadian Real Estate Association MLS&reg; Home Price Index, and the Winnipeg Regional Real Estate Board.
+        (insolvency statistics, via Open Government), and the Canadian Real Estate Association MLS&reg; Home Price Index.
         The RTB (MB) tab reproduces the Manitoba Residential Tenancies Branch rent increase guideline — an unofficial reproduction for reference, not legal advice; the official publication governs.
         Statistics Canada data contains information licensed under the
         <a class="underline" href="https://www.statcan.gc.ca/en/reference/licence" rel="noopener" target="_blank">Statistics Canada Open Licence</a>; Open Government data under the Open Government Licence – Canada.
