@@ -342,5 +342,6 @@ function tableHtml(tbl) {
     <div class="cmhc-chart-table-scroll"><table class="cmhc-table cmhc-table-compact">
       <thead><tr><th></th>${tbl.columns.map(c => `<th>${escapeHtml(c)}</th>`).join('')}</tr></thead>
       <tbody>${tbl.rows.map(r => `<tr><td>${escapeHtml(r.area)}</td>${r.values.map(v => `<td>${escapeHtml(v)}</td>`).join('')}</tr>`).join('')}</tbody>
-    </table></div>`;
+    </table></div>
+    ${tbl.note ? `<p class="text-sm mt-1 rounded border border-amber-300 bg-amber-50 text-amber-900 px-2 py-1">${escapeHtml(tbl.note)}</p>` : ''}`;
 }

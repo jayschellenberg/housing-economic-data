@@ -40,6 +40,27 @@ export const GROWTH_CLASSES = [
 // Subject minus benchmark annual rate (percentage points) → faster / in line / slower.
 export const RELATIVE_BAND = 0.5;
 
+// Small Winnipeg neighbourhoods (Jason, 2026-11-27: Logan-C.P.R. read "grown
+// strongly" off 240 → 1,023 residents). Below SMALL_POP residents at the latest
+// census, the prose drops the growth wording and every benchmark comparison:
+// figures for so few households swing from census to census. A one-period
+// change beyond JUMP_UP / JUMP_DOWN % gets a check-this note under the table.
+// A neighbourhood that had fewer than SMALL_POP at an earlier census (Logan-C.P.R.:
+// 240 in 2016, 1,023 in 2021) keeps its comparisons but gets no growth sentence.
+export const SMALL_POP = 1000;
+export const JUMP_UP = 100;
+export const JUMP_DOWN = -50;
+
+// Mainly industrial: OurWinnipeg Employment Lands over most of the area, or
+// mostly industrial zoning (r/29–r/31 context).
+export function isIndustrialArea(ctx) {
+  const st = ctx?.character?.structure;
+  const lu = ctx?.landuse?.shares;
+  const emp = st && !Array.isArray(st) ? (st.employment || 0) : 0;
+  const ind = lu && !Array.isArray(lu) ? (lu.ind || 0) : 0;
+  return emp >= 0.5 || ind >= 0.5;
+}
+
 // Location quotient = subject share ÷ provincial share. A sector is named as a
 // standout when it is both concentrated (LQ ≥ LQ_MIN) and material (share ≥
 // LQ_SHARE_MIN %), so a 1%-of-labour-force sector never headlines.
@@ -130,6 +151,7 @@ export function regionStats(region, { years, period }) {
   return {
     name: proseName(region?.name),
     pop: pop(lastY), popYear: lastY,
+    popMin: popYears.length ? Math.min(...popYears.map(pop)) : null,
     chg5: chg(prevY, lastY), chg5From: prevY,
     chg15: chg(firstY, lastY), chg15From: firstY,
     // Annualised rates for the prose: long run (earliest → latest census) and
@@ -359,10 +381,20 @@ function ageSentence(s, benchmarks) {
 // Incomes, home values and rents vs the benchmarks, then the housing mix.
 // Winnipeg mode opens with the population trend and age (Location there is
 // purely where the area sits), as in Jason's demographic comments.
-function housingIncomePara(s, benchmarks, { wpg = false, vintage = null } = {}) {
+function housingIncomePara(s, benchmarks, { wpg = false, vintage = null, small = false, industrial = false } = {}) {
   const parts = [];
-  if (wpg) for (const t of [growthSentence(s, benchmarks), ageSentence(s, benchmarks)]) if (t) parts.push(t);
-  const metrics = [
+  if (wpg && small) {
+    parts.push(industrial ? `${s.name} is mainly industrial, with a small resident population.`
+      : `${s.name} has a small resident population.`);
+    parts.push('Census figures for so few households can shift sharply from one census to the next, so they are best read as indicative.');
+  } else if (wpg) {
+    if (industrial) parts.push(`${s.name} is mainly industrial; the census figures describe its residential areas.`);
+    // Growth off a small base (an earlier census under SMALL_POP) is a ratio of
+    // tiny numbers, or a tabulation change: no growth sentence; the table note flags it.
+    const smallBase = s.popMin != null && s.popMin < SMALL_POP;
+    for (const t of [smallBase ? null : growthSentence(s, benchmarks), ageSentence(s, benchmarks)]) if (t) parts.push(t);
+  }
+  const metrics = small ? [] : [
     { key: 'hhIncome',    noun: 'household incomes', v: s.hhIncome },
     { key: 'dwellingVal', noun: 'home values',       v: s.dwellingVal },
     { key: 'rent',        noun: 'rents',             v: s.rent },
@@ -444,8 +476,8 @@ export const WPG_COMMUTE_KM = 60;       // "largely toward Winnipeg" only within
 // The local economy, in words: leading sectors, the standout drivers vs the
 // province, a service-centre read, where residents work, and named employers
 // when the appraiser has supplied them.
-function economyPara(s, ind, benchmarks, { hw = null, employers = [], wpg = false } = {}) {
-  if (wpg) return wpgEmploymentPara(ind, benchmarks);
+function economyPara(s, ind, benchmarks, { hw = null, employers = [], wpg = false, small = false } = {}) {
+  if (wpg) return wpgEmploymentPara(ind, small ? [] : benchmarks);
   const parts = [];
   if (ind) {
     const top = ind.shares.slice().sort((a, b) => b.share - a.share).slice(0, 3);
@@ -673,12 +705,19 @@ export const DEV_BANDS = [[15, 'Residential construction has been very active'],
 export const DEV_MIX_MIN = 10;        // fewer new units = no "mainly …" clause
 export const DEV_NONRES = 3;          // new non-residential buildings worth a sentence
 const DEV_TYPE = { sf: 'single-family homes', semi: 'row housing and duplexes', apt: 'apartment buildings' };
-export function developmentPara(pm, households) {
+// Small areas (under SMALL_POP residents or SMALL_HOUSEHOLDS households): a few
+// dozen units would read "very active" against the tiny stock (Logan-C.P.R.: 52
+// units, 300 households), so the wording follows the unit count instead.
+export const SMALL_HOUSEHOLDS = 400;
+export function developmentPara(pm, households, { small = false } = {}) {
   if (!pm?.units || !households) return null;
   const u = pm.units;
   const created = (u.sf || 0) + (u.semi || 0) + (u.apt || 0) + (u.other || 0);
   const rate = created / households * 100;
-  const band = DEV_BANDS.find(([min]) => rate >= min);
+  const band = small || households < SMALL_HOUSEHOLDS
+    ? (created >= DEV_MIX_MIN ? [0, 'There has been some new residential construction']
+      : created > 0 ? [0, 'There has been limited new residential construction'] : null)
+    : DEV_BANDS.find(([min]) => rate >= min);
   const parts = [];
   let lead = band ? `${band[1]} over the past five years` : 'There has been little new residential construction over the past five years';
   if (band && created >= DEV_MIX_MIN) {
@@ -738,16 +777,18 @@ export function buildCensusNarrative({ subject, benchmarks = [], years, period, 
   const push = (heading, text) => { if (text) blocks.push({ type: 'heading', text: heading }, { type: 'para', text }); };
   push(isWpg ? 'Location' : 'Location and growth', locationGrowthPara(s, bm, sHw, wpgText, isWpg));
   const ch = sCtx?.character ?? null;
-  push(isWpg ? 'Demographics and housing' : 'Housing and income', housingIncomePara(s, bm, { wpg: isWpg, vintage: ch?.vintage }));
+  const small = subject?.level === 'WPG_Nbhd' && s.pop != null && s.pop < SMALL_POP;
+  const industrial = isWpg && isIndustrialArea(sCtx);
+  push(isWpg ? 'Demographics and housing' : 'Housing and income', housingIncomePara(s, bm, { wpg: isWpg, vintage: ch?.vintage, small, industrial }));
   push('Development plan and life cycle', isWpg ? planPara(s.name, ch, subject.level) : null);
   const luText = isWpg ? landUsePara(s.name, sCtx?.landuse, subject.level) : null;
   push('Land use', luText);
-  push('Recent development', isWpg ? developmentPara(sCtx?.permits, s.households) : null);
+  push('Recent development', isWpg ? developmentPara(sCtx?.permits, s.households, { small }) : null);
   const schoolText = isWpg ? schoolsHealthPara(ch, subject.level) : null;
   push('Schools and health care', schoolText);
   // Named employers are local knowledge the appraiser types in (Local inputs).
   const employers = isWpg ? [] : (services?.employers || []).map(e => String(e).trim()).filter(Boolean);
-  push(isWpg ? 'Employment' : 'Local economy', economyPara(s, sInd, bm, { hw: sHw, employers, wpg: isWpg }));
+  push(isWpg ? 'Employment' : 'Local economy', economyPara(s, sInd, bm, { hw: sHw, employers, wpg: isWpg, small }));
   // Services come from the appraiser's checklist (service-tier.js rubric), not data.
   const svcText = !isWpg && services?.checked?.length ? servicesPara(s.name, services.checked, services.nearest, { pop: s.pop }) : null;
   push('Services and amenities', svcText);
@@ -790,6 +831,13 @@ export function buildCensusNarrative({ subject, benchmarks = [], years, period, 
       row('Dwellings built after 2000', c => pct0(c.post2000)),
     ],
   };
+  // A one-census swing this large in a Winnipeg area is as likely a change in
+  // how the census was tabulated as real growth: say so under the table, not in prose.
+  if (isWpg && s.chg5 != null && (s.chg5 >= JUMP_UP || s.chg5 <= JUMP_DOWN)) {
+    table.note = `Verify: the population ${s.chg5 > 0 ? 'more than doubled' : 'fell by more than half'} between the ` +
+      `${s.chg5From} and ${s.popYear} censuses${s.chg5 > 0 && s.popMin < SMALL_POP ? ', from a small base' : ''}. Check whether this reflects ` +
+      `${s.chg5 > 0 ? 'new housing' : 'demolitions'} or a change in how the census was tabulated before relying on the trend.`;
+  }
 
   // Labour force by sector, subject vs benchmarks, sorted by the subject's
   // share — only when the subject has industry data for this period.
