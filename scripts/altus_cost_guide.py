@@ -3,7 +3,9 @@ nine Canadian urban centres across residential, commercial, industrial,
 institutional and civic buildings, plus a mixed-unit Infrastructure section.
 
 Reads the long-format CSV built by extract_altus.py in Jason's cost-guide
-folder and writes web/public/data/economy/altus_cost_guide.json. The two
+folder and writes altus_cost_guide.json to the firm's
+AppMarketData-External/AltusCostGuide folder (not the public site: the guide is Altus Group copyright, all rights
+reserved, so it is read only by the Local Data tab). The two
 scripts are decoupled: run extract_altus.py whenever a new year's PDF ships,
 then re-run this one to publish the figures.
 
@@ -19,7 +21,11 @@ import sys
 DEFAULT_CSV = pathlib.Path(
     r"D:\Dropbox\Appraisal\GeneralData\Industry Reports\Altus"
     r"\Cost Guide\altus_cost_guide.csv")
-OUT = pathlib.Path(__file__).resolve().parent.parent / "web/public/data/economy/altus_cost_guide.json"
+# <Dropbox>/SharedInfo/AppMarketData/AppMarketData-External/AltusCostGuide, with
+# the Dropbox root found from this file's location (ClaudeCode sits in it),
+# so the drive letter is never hard-coded. --out overrides.
+DROPBOX = pathlib.Path(__file__).resolve().parents[3]
+OUT = DROPBOX / "SharedInfo/AppMarketData/AppMarketData-External/AltusCostGuide/altus_cost_guide.json"
 
 # 9-city order used in the PDFs' Private / Public / Servicing tables.
 CITIES = ["Vancouver", "Calgary", "Edmonton", "Winnipeg", "GTA",
@@ -36,6 +42,7 @@ def to_int(s):
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--csv", type=pathlib.Path, default=DEFAULT_CSV)
+    ap.add_argument("--out", type=pathlib.Path, default=OUT)
     args = ap.parse_args()
     if not args.csv.exists():
         sys.exit(f"Missing {args.csv} — run extract_altus.py first.")
@@ -72,9 +79,10 @@ def main():
         "built": dt.date.today().isoformat(),
         "rows": rows,
     }
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(data) + "\n", encoding="utf-8")
-    print(f"Wrote {len(rows)} rows ({min(years)}–{max(years)}) to {OUT}")
+    out = args.out
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(data) + "\n", encoding="utf-8")
+    print(f"Wrote {len(rows)} rows ({min(years)}–{max(years)}) to {out}")
 
 
 if __name__ == "__main__":

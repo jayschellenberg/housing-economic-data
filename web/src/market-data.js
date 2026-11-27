@@ -37,6 +37,7 @@ import * as johnsonStore from './johnson-store.js';
 import * as yardiStore from './yardi-store.js';
 import * as rentalsCaStore from './rentalsca-store.js';
 import * as fccStore from './fcc-store.js';
+import * as altusStore from './altus-store.js';
 import * as wrrebStore from './wrreb-store.js';
 import * as paradeStore from './parade-store.js';
 import * as brokerageStore from './brokerage-store.js';
@@ -70,6 +71,8 @@ export const SOURCES = [
     load: async () => rentalsCaStore, hasData: hasFolderData },
   { id: 'fcc',        label: 'FCC Farmland', folder: 'FCCFarmland',
     load: async () => fccStore, hasData: hasFolderData },
+  { id: 'altus',      label: 'Altus Costs', folder: 'AltusCostGuide',
+    load: async () => altusStore, hasData: hasFolderData },
   { id: 'wrreb',      label: 'WRREB market figures (MB Economic Update)', folder: 'WRREBMarket',
     load: async () => wrrebStore, hasData: hasFolderData },
   { id: 'parade',     label: 'Parade of Homes', folder: 'ParadeOfHomes',
