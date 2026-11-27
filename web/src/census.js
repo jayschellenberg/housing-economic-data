@@ -396,7 +396,7 @@ export async function initCensus() {
       <table class="cmhc-table">
         <thead><tr><th></th>${tbl.columns.map(c => `<th>${escapeHtml(c)}</th>`).join('')}</tr></thead>
         <tbody>${tbl.rows.map(r => `<tr><td>${escapeHtml(r.area)}</td>${r.values.map(v => `<td>${escapeHtml(v)}</td>`).join('')}</tr>`).join('')}</tbody>
-      </table>`).join('');
+      </table>${tbl.note ? `<p class="text-sm mt-1 rounded border border-amber-300 bg-amber-50 text-amber-900 px-2 py-1">${escapeHtml(tbl.note)}</p>` : ''}`).join('');
 
     $narr.innerHTML = `
       <section class="cmhc-table-block">
@@ -420,6 +420,7 @@ export async function initCensus() {
       // survive in Word (same workaround as rtb.js).
       const wblocks = lastNarrative.blocks.map(b => b.type === 'bullet' ? { type: 'para', text: `•  ${b.text}` } : b);
       wblocks.push({ type: 'heading', text: 'Supporting figures' }, { type: 'table', table: lastNarrative.table });
+      if (lastNarrative.table.note) wblocks.push({ type: 'para', text: lastNarrative.table.note });
       if (lastNarrative.industryTable)
         wblocks.push({ type: 'heading', text: 'Labour force by industry' }, { type: 'table', table: lastNarrative.industryTable });
       const slug = subject.name.replace(/[^A-Za-z0-9]+/g, '_').replace(/^_|_$/g, '');

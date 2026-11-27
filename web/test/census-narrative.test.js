@@ -344,6 +344,50 @@ describe('buildCensusNarrative — Winnipeg mode', () => {
     expect(t).toMatch(/The local population is slightly younger than Winnipeg( and the province)?/);
     expect(t).toContain('The housing stock is generally older, with most homes built in 1960 or earlier.');
   });
+
+  // Logan-C.P.R. (2026-11-27): 240 -> 1,023 residents read "grown strongly".
+  describe('small and industrial neighbourhoods', () => {
+    const logan = { ...dm, uid: 'WPG_NB:Logan', name: 'Logan', trends: { '2006': trend(300), '2016': trend(240), '2021': trend(1023) } };
+    const ind = (over = {}) => ({ areas: { 'WPG_NB:Logan': {
+      character: { structure: { employment: 0.9 } }, landuse: { shares: { ind: 0.7, sf: 0.2 } },
+      permits: { units: { apt: 52 }, lost: 1, nonres: 0 }, ...over } } });
+    const after = (nar, h) => nar.blocks[nar.blocks.findIndex(b => b.text === h) + 1]?.text;
+
+    const smallOne = { ...logan, trends: { '2016': trend(800), '2021': trend(900) },
+      demo: { '2021': { ...dm.demo['2021'], tenure_total: 300 } } };
+    it('drops growth and benchmark comparisons under 1,000 residents', () => {
+      const nar = build({ subject: smallOne, wpgContext: { areas: {} } });
+      const t = after(nar, 'Demographics and housing');
+      expect(t).toMatch(/^Logan has a small resident population\. Census figures for so few households/);
+      expect(t).not.toMatch(/grown|declined|than the|province|incomes/);
+      expect(after(nar, 'Employment')).not.toMatch(/Compared with/);
+    });
+    it('says mainly industrial for Employment Lands / industrial zoning', () => {
+      expect(after(build({ subject: smallOne, wpgContext: ind() }), 'Demographics and housing'))
+        .toMatch(/^Logan is mainly industrial, with a small resident population\./);
+      const big = { ...logan, trends: { '2016': trend(4000), '2021': trend(4100) } };
+      expect(after(build({ subject: big, wpgContext: ind() }), 'Demographics and housing'))
+        .toMatch(/^Logan is mainly industrial; the census figures describe its residential areas\. Between the last two censuses/);
+    });
+    it('no growth sentence when an earlier census had under 1,000 (Logan-C.P.R. 240 -> 1,023)', () => {
+      const t = after(build({ subject: logan, wpgContext: ind() }), 'Demographics and housing');
+      expect(t).toMatch(/^Logan is mainly industrial; the census figures describe its residential areas\./);
+      expect(t).not.toMatch(/grown|population has/);
+    });
+    it('notes a doubling under the supporting figures, not in the prose', () => {
+      const nar = build({ subject: logan, wpgContext: ind() });
+      expect(nar.table.note).toMatch(/^Verify: the population more than doubled between the 2016 and 2021 censuses, from a small base\./);
+      expect(paras(nar.blocks)).not.toMatch(/doubled/);
+      expect(build({ subject: { ...dm, trends: { '2016': trend(9000), '2021': trend(9500) } } }).table.note).toBeUndefined();
+    });
+    it('words construction by unit count when the housing stock is small', () => {
+      const nar = build({ subject: smallOne, wpgContext: ind() });
+      expect(after(nar, 'Recent development')).toBe('There has been some new residential construction over the past five years, mostly apartment buildings.');
+      expect(developmentPara({ units: { apt: 52 } }, 300)).toBe('There has been some new residential construction over the past five years, mostly apartment buildings.');
+      expect(developmentPara({ units: { apt: 5 } }, 300)).toBe('There has been limited new residential construction over the past five years.');
+      expect(developmentPara({ units: { apt: 300 } }, 1000)).toMatch(/^Residential construction has been very active/);
+    });
+  });
 });
 
 describe('landUsePara (Winnipeg zoning)', () => {
