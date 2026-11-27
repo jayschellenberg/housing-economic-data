@@ -1,6 +1,6 @@
 # Housing & Economic Data
 
-Status: Active | Next: merge census-summary-feed so the parcel-search reports can read /data/housing/census-summary.json; then confirm CBA arrears lines update when CBA posts September 2026 (late Nov); confirm WRREB headline reads October 2026 in the next refresh email | Blocked: none | Updated: 2026-11-27
+Status: Active | Next: review the Winnipeg census open-data switch (branch wpg-census-open-data) and open its PR; merge census-summary-feed so the parcel-search reports can read /data/housing/census-summary.json; then confirm CBA arrears lines update when CBA posts September 2026 (late Nov); confirm WRREB headline reads October 2026 in the next refresh email | Blocked: none | Updated: 2026-11-27
 
 A multi-tab static website of Canadian housing & economic data, built for a commercial real-estate appraiser — CMHC rental market, housing starts, secondary rental, census housing & demographics, affordability, Manitoba rent control, and market indicators — with copy-to-Word, Excel (.xlsx), and PNG exports for appraisal reports. The **Rental Charts** tab shows interactive line charts of CMHC rental and vacancy data, filterable by geography (Province / CMA / CSD / Survey Zone / Neighbourhood), dwelling type (Apartment / Row / All), and a breakdown dimension (Bedroom Type / Year of Construction / Structure Size / Rent Ranges).
 
@@ -413,27 +413,34 @@ renders these as a "Population — annual estimates" chart, giving a
 between-censuses trend for any selected province or municipality.
 
 A companion script, `r/12b_wpg_city_history.R`, then **appends earlier-census
-history (2006/2011/2016) to the Winnipeg clusters + community areas** from the
-City of Winnipeg's published census profiles (Community Social Data Strategy
-custom tabulation) — CensusMapper DA-aggregation only yields 2021 for those
-virtual geos. It needs **no API key** (downloads from `legacy.winnipeg.ca`,
-cached under `r/lib/cache/`, gitignored) and uses the crawled neighbourhood→
-cluster→CA manifest `r/lib/wpg_city_neighbourhoods.csv`. 2016 comes from the
-clean per-cluster/per-CA `.xlsx`; 2011/2006 are summed from per-neighbourhood
-`.xls` (counts only — medians aren't aggregatable, so they're dropped for 2011,
-and 2006 is trends-only). It also pulls **dwelling condition** (% needing major
-repairs, incl. a City 2021 pass since CensusMapper has no condition vector) so
-the **Housing Stock** tab can offer the Winnipeg clusters/CAs alongside the
-standard geographies. It also grafts the City's **2006/2011/2016 per-
-neighbourhood** profiles onto the WPG_Nbhd geos (matched by name — ~175–180 of
-211; the rest are industrial/zero-population areas with no City profile, plus a
-few that changed names/boundaries between censuses), giving neighbourhoods a
-2006→2021 trend (2006 trends-only) + 2011/2016 demographics. Run it after `r/12`
-(`census-refresh.bat` does both):
+history (2006/2011/2016) to the Winnipeg neighbourhoods, clusters and community
+areas** from the **City of Winnipeg Open Data portal** (data.winnipeg.ca,
+Community Social Data Strategy tabulation of Statistics Canada Census data,
+Open Government Licence – Winnipeg). CensusMapper DA-aggregation only yields
+2021 for those virtual geos. It needs **no API key**; portal responses are
+cached under `r/lib/cache/wpg_open_data/` (gitignored) so re-runs are offline.
+2011 and 2016 come from the long "Census Values" dataset (`ckim-fid6`), which
+publishes neighbourhoods, clusters and community areas directly, so cluster/CA
+medians are real values; 2006 comes from the wide `bfic-t43j` (population) and
+`cem6-ktqa` (dwelling) datasets and is trends-only. It also carries **dwelling
+condition** so the **Housing Stock** tab can offer the Winnipeg clusters/CAs
+alongside the standard geographies; 2021 condition is not on the portal, so the
+cluster/CA 2021 condition still comes from the City's legacy 2021 per-cluster/CA
+`.xlsx` (cached under `r/lib/cache/wpg_city/`). Neighbourhoods match by name
+(~176–181 of 211; the rest are industrial/zero-population areas with no City
+profile, plus a few that changed names/boundaries between censuses). Every run
+prints an old-vs-new comparison of the values already in `census_profile.json`
+(exact matches, differences, newly filled, lost) and writes the full table to
+`data/12b_compare.csv`. Run it after `r/12` (`census-refresh.bat` does both):
 
 ```pwsh
-Rscript r/12b_wpg_city_history.R   # no key; appends WPG cluster/CA 2006–2016
+Rscript r/12b_wpg_city_history.R            # no key; appends WPG 2006–2016
+Rscript r/12b_wpg_city_history.R --dry-run  # comparison only, JSON untouched
 ```
+
+Until Nov 2026 this script read the City's legacy.winnipeg.ca census
+spreadsheets, which fall under City website copyright; the portal carries the
+same tabulation under an open licence.
 
 Coverage: all Manitoba PR / CMA-CA / CD / CSD geographies, plus the City of
 Winnipeg virtual geographies (Community Area / Cluster / Neighbourhood,

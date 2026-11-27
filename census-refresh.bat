@@ -9,7 +9,7 @@ REM Rebuilds, then commits + pushes web/public/data so Vercel redeploys:
 REM   - Housing Stock  : census_housing.json  (age + condition, r/07-09)   [StatsCan WDS, no key]
 REM   - Dwelling type  : dwelling_types.json  (structural type, r/10+10b/c/d) [StatsCan WDS, no key]
 REM   - Census Profile : census_profile.json  (r/12)                         [CensusMapper key]
-REM   - WPG cluster/CA history : census_profile.json  (r/12b, appends 2006-2016)  [no key — City of Winnipeg downloads]
+REM   - WPG cluster/CA history : census_profile.json  (r/12b, appends 2006-2016)  [no key, City of Winnipeg Open Data portal]
 
 setlocal
 cd /d "%~dp0"
