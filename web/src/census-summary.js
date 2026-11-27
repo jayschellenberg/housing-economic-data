@@ -23,6 +23,15 @@ function keepRegion(r) {
   return true;                                              // Winnipeg community areas, clusters, neighbourhoods
 }
 
+// StatCan names a CMA with its type code ("Winnipeg (B)"), which reads as
+// noise in a report column; say "Winnipeg CMA" instead. Other levels keep
+// their StatCan names, whose type codes (CY, RM, MU...) the parcel sites use
+// to match municipalities.
+export function displayName(r) {
+  if (r.level !== 'CMA') return r.name;
+  return `${String(r.name).replace(/\s*\([A-Z]\)\s*$/, '')} CMA`;
+}
+
 export function summarizeRegion(r, censusYears) {
   const years = censusYears.filter((y) => r.trends?.[y]);
   const latest = years.at(-1);
@@ -34,7 +43,7 @@ export function summarizeRegion(r, censusYears) {
   const t = r.trends?.[latest] || {};
   return {
     uid: r.uid,
-    name: r.name,
+    name: displayName(r),
     level: r.level,
     year: latest ?? null,
     population: popNow,
