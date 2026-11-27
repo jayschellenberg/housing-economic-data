@@ -4,7 +4,8 @@
 #   - StatsCan economic indicators from data/statscan_indicators.csv
 #     (retail / manufacturing / wholesale / farm cash / CPI / employment /
 #      building permits / housing starts) — compute MoM / YoY / YTD deltas
-#   - Winnipeg MLS headline + benchmark from web/public/data/economy/*.json (r/16)
+#   - CREA MLS HPI Winnipeg benchmark from web/public/data/economy/mls_benchmark.json (r/16)
+#     (no WRREB figures: those are internal-only, see r/16b_scrape_wrreb.R)
 #   - Manual config (census intro, minimum wage, GDP, outlook prose)
 # Output: web/public/data/economy/economic-update.json
 # Depends on r/11 (statscan CSV) and r/16 (MLS) having run first.
@@ -130,27 +131,17 @@ if (!is.null(emp)) {
   )
 }
 
-# --- MLS (from r/16 outputs) -------------------------------------------------
+# --- MLS (from r/16's CREA HPI output) --------------------------------------
+# WRREB market-release figures (sales, listings, average prices) are NOT put in
+# this public file: WRREB's terms forbid publishing them. r/16b writes them to
+# AppMarketData-Internal and the tab merges them in the browser (wrreb-store.js).
 read_json_safe <- function(p) if (file.exists(p)) tryCatch(jsonlite::read_json(p, simplifyVector = TRUE), error = function(e) NULL) else NULL
 bench <- read_json_safe(file.path(ECON_DIR, "mls_benchmark.json"))
-head_mls <- read_json_safe(file.path(ECON_DIR, "mls_winnipeg.json"))
 
 mls <- list()
-if (!is.null(head_mls)) {
-  mls <- list(
-    asOf = head_mls$asOf, source = head_mls$source,
-    stale = isTRUE(head_mls$stale),
-    sales = head_mls$sales, active_listings = head_mls$active_listings,
-    sfd_avg_price = head_mls$sfd_avg_price, sfa_avg_price = head_mls$sfa_avg_price,
-    condo_avg_price = head_mls$condo_avg_price
-  )
-}
 if (!is.null(bench)) {
-  mls$hpi <- bench$hpi
+  mls <- list(hpi = bench$hpi, asOf = bench$asOf, stale = isTRUE(bench$stale))
   charts$hpi_benchmark <- list(series = bench$series, records = bench$records)
-  if (is.null(head_mls)) mls$stale <- TRUE
-} else {
-  if (length(mls)) mls$hpi <- NULL
 }
 
 # --- Manual config (intro / minimum wage / GDP / outlook) -------------------
@@ -199,6 +190,6 @@ message(sprintf("[15]   retail MoM %s | mfg %s | wholesale %s | CPI YoY %s | emp
 message(sprintf("[15]   starts YTD %s | permits MoM %s | farm total %s",
                 fmtpc(housing$starts$ytdChangePct), fmtpc(housing$building_permits$changePct),
                 fmtpc(indicators$farm_cash_receipts$totalChangePct)))
-message(sprintf("[15]   MLS asOf %s (stale=%s) | HPI benchmark %s",
+message(sprintf("[15]   HPI asOf %s (stale=%s) | benchmark %s",
                 mls$asOf %||% "—", isTRUE(mls$stale),
                 if (!is.null(mls$hpi)) paste0("$", format(mls$hpi$benchmarkLatest, big.mark=",")) else "—"))

@@ -156,44 +156,6 @@
     }
   },
   "mls": {
-    "asOf": "October 2026",
-    "source": "Winnipeg Regional Real Estate Board (WRREB) — https://www.winnipegregionalrealestatenews.com/market-statistics/market-releases/article/630/october-average-prices-reach-record-highs-and-buyer-choice-expands-again",
-    "stale": false,
-    "sales": {
-      "value": 1192,
-      "vsPriorYearPct": -11,
-      "priorYearValue": 1339,
-      "vs5yrAvgPct": -1,
-      "fiveYrAvg": 1209
-    },
-    "active_listings": {
-      "value": 3985,
-      "vsPriorYearPct": 13,
-      "priorYearValue": 3519,
-      "vs5yrAvgPct": 6,
-      "fiveYrAvg": 3772
-    },
-    "sfd_avg_price": {
-      "value": 455860,
-      "vsPriorYearPct": 3,
-      "priorYearValue": 441981,
-      "vs5yrAvgPct": 8,
-      "fiveYrAvg": 420224
-    },
-    "sfa_avg_price": {
-      "value": 408591,
-      "vsPriorYearPct": 8,
-      "priorYearValue": 379825,
-      "vs5yrAvgPct": 14,
-      "fiveYrAvg": 359458
-    },
-    "condo_avg_price": {
-      "value": 303348,
-      "vsPriorYearPct": 2,
-      "priorYearValue": 297428,
-      "vs5yrAvgPct": 9,
-      "fiveYrAvg": 277498
-    },
     "hpi": {
       "benchmarkLatest": 412300,
       "benchmarkLatestDate": "October 2026",
@@ -205,7 +167,9 @@
       "recentLowDate": "December 2023",
       "pctFromRecentLow": 19.3,
       "fiveYrChangePct": 19.5
-    }
+    },
+    "asOf": "October 2026",
+    "stale": false
   },
   "outlook": {
     "source": "TD Economics",
