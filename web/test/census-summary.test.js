@@ -29,6 +29,11 @@ describe('census summary feed', () => {
     expect(s.renter_pct).toBe(38.3);
   });
 
+  it('labels the CMA "Winnipeg CMA" and leaves CSD names alone', () => {
+    expect(byUid.get('46602').name).toBe('Winnipeg CMA');
+    expect(byUid.get('4602044').name).toBe('Steinbach (CY)');
+  });
+
   it('turns suppressed {} cells into null, never 0', () => {
     const r = summarizeRegion({ uid: 'x', name: 'x', level: 'CSD', trends: { 2021: { population: 10 } }, demo: { 2021: { median_age: {}, owner: {}, tenure_total: 5 } } }, ['2021']);
     expect(r.median_age).toBeNull();
