@@ -17,8 +17,9 @@ import { themed, gridMarks, frameMark, PALETTE, plotFitted, yearTipMarks } from 
 import { downloadCard } from './chart.js';
 import { escapeHtml } from './escape.js';
 import { getPref, setPref } from './prefs.js';
+import { getData, storeAvailable } from './altus-store.js';
+import { onSourcesUpdated } from './market-data-channel.js';
 
-const DATA_URL = './data/economy/altus_cost_guide.json';
 const PREF_KEY = 'altusCosts.v1';
 
 // Nine-city column order used in every Private / Public page of every edition.
@@ -91,20 +92,36 @@ export async function initAltusCosts() {
     prefs: loadPrefs(),
   };
 
-  let res;
-  try {
-    const r = await fetch(DATA_URL);
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    res = await r.json();
-  } catch (err) {
-    ui.$error.textContent = `Could not load the Altus cost data (${err.message}).`;
-    ui.$error.hidden = false;
+  if (!storeAvailable()) {
+    showMessage('This browser cannot store the Altus data locally (IndexedDB is unavailable).');
     return;
   }
-  ui.data = res;
+  // Refill when the Local Data strip loads this tab from AppMarketData.
+  onSourcesUpdated(['altus'], () => loadFromStore());
+  await loadFromStore();
+}
 
-  wireSidebar();
+// The guide is Altus Group copyright and is not shipped with the site: it
+// loads from the AppMarketData AltusCostGuide folder (altus-store.js).
+let wired = false;
+async function loadFromStore() {
+  const data = await getData().catch(() => null);
+  if (!data) {
+    showMessage('No Altus cost data loaded. Connect your AppMarketData folder in the Local Data strip above '
+      + '(the AltusCostGuide folder, published by scripts/altus_cost_guide.py). The Altus Group Canadian '
+      + 'Cost Guide is copyright Altus Group and is not published on this site.');
+    ui.$main.replaceChildren();
+    return;
+  }
+  showMessage('');
+  ui.data = data;
+  if (!wired) { wireSidebar(); wired = true; }
   render();
+}
+
+function showMessage(text) {
+  ui.$error.textContent = text;
+  ui.$error.hidden = !text;
 }
 
 // ---------------------------------------------------------------------------
