@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sectionsOf, applyEdit, editStatus, editRecord, plainText, wordBlocks, areaGroups, NOTES_HEADING } from '../src/neighbourhood-data.js';
+import { sectionsOf, applyEdit, editStatus, editRecord, plainText, oneParagraph, wordBlocks, areaGroups, NOTES_HEADING } from '../src/neighbourhood-data.js';
 import { editFileName } from '../src/neighbourhood-store.js';
 
 const blocks = [
@@ -52,5 +52,20 @@ describe('neighbourhood sections and edits', () => {
   it('groups areas Winnipeg first', () => {
     const g = areaGroups({ groups: [{ id: '1', kind: 'muni' }, { id: 'W', kind: 'wpg' }] });
     expect(g.map(x => x.areas[0].id)).toEqual(['W', '1']);
+  });
+});
+
+describe('oneParagraph', () => {
+  it('joins every section into one line for a single Excel cell', () => {
+    const out = oneParagraph([
+      { heading: 'Location', text: 'Altona is south of Winnipeg.\n\nIt is served by PTH 30' },
+      { heading: 'Housing', text: 'Homes are\tmostly owner-occupied.' },
+      { heading: NOTES_HEADING, text: '• Character: [general feel]\n• Major employers: Bunge and the school division' },
+    ]);
+    expect(out).toBe('Altona is south of Winnipeg. It is served by PTH 30. Homes are mostly owner-occupied. Major employers: Bunge and the school division.');
+    expect(out).not.toMatch(/[\n\t]/);
+  });
+  it('is empty when nothing is filled in', () => {
+    expect(oneParagraph([{ heading: NOTES_HEADING, text: '• Character: [x]' }])).toBe('');
   });
 });

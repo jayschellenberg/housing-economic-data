@@ -14,7 +14,7 @@
 
 import { escapeHtml } from './escape.js';
 import { getPref, setPref } from './prefs.js';
-import { sectionsOf, applyEdit, editStatus, editRecord, plainText, wordBlocks, areaGroups } from './neighbourhood-data.js';
+import { sectionsOf, applyEdit, editStatus, editRecord, plainText, oneParagraph, wordBlocks, areaGroups } from './neighbourhood-data.js';
 import {
   storeAvailable, fsAccessSupported, pickDirectory, getSavedDirectory, directoryPermission,
   importFromDirectory, importFromFileList, checkForUpdates, getData, getEdits, getManifest,
@@ -273,6 +273,7 @@ function card({ id, title, sub, blocks, flags = [], tables = [], tier = null }) 
       <button type="button" data-role="save">Save edits</button>
       ${edit ? '<button type="button" data-role="revert">Revert to generated</button>' : ''}
       <button type="button" data-role="copy">Copy text</button>
+      <button type="button" data-role="copy-para" title="All sections as one paragraph: no headings or line breaks, so it pastes into a single Excel cell. Unfilled appraiser-note placeholders are left out.">Copy as one paragraph</button>
       <button type="button" data-role="docx">Download Word</button>
     </div>
     ${tables.length ? `<details class="mt-3"><summary class="text-sm cursor-pointer">Supporting figures</summary>${tables.map(tableHtml).join('')}</details>` : ''}`;
@@ -312,6 +313,12 @@ function card({ id, title, sub, blocks, flags = [], tables = [], tier = null }) 
   $copy.addEventListener('click', async () => {
     try { await navigator.clipboard.writeText(plainText(title, sectionsNow())); $copy.textContent = 'Copied'; setTimeout(() => { $copy.textContent = 'Copy text'; }, 1500); }
     catch { $copy.textContent = 'Copy failed'; }
+  });
+  const $copyPara = $card.querySelector('[data-role="copy-para"]');
+  $copyPara.addEventListener('click', async () => {
+    const reset = () => setTimeout(() => { $copyPara.textContent = 'Copy as one paragraph'; }, 1500);
+    try { await navigator.clipboard.writeText(oneParagraph(sectionsNow())); $copyPara.textContent = 'Copied'; reset(); }
+    catch { $copyPara.textContent = 'Copy failed'; reset(); }
   });
   $card.querySelector('[data-role="docx"]').addEventListener('click', async () => {
     try {

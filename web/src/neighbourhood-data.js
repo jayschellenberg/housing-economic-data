@@ -52,6 +52,24 @@ export function plainText(title, sections) {
   return [title, ...sections.map(s => `${s.heading}\n${s.text}`)].filter(Boolean).join('\n\n');
 }
 
+/**
+ * The whole write-up as one paragraph for a single Excel cell: no title, no
+ * headings, no line breaks or tabs (Excel splits pasted text on those). Bullet
+ * lines still holding a "[...]" placeholder (unfilled appraiser notes) are left
+ * out; filled-in ones are kept as sentences.
+ */
+export function oneParagraph(sections) {
+  const parts = [];
+  for (const s of sections) {
+    for (let line of String(s.text || '').split(/\n+/)) {
+      line = line.replace(/^\s*•\s*/, '').replace(/\s+/g, ' ').trim();
+      if (!line || /\[[^\]]*\]/.test(line)) continue;
+      parts.push(/[.!?]["')\]]?$/.test(line) ? line : `${line}.`);
+    }
+  }
+  return parts.join(' ');
+}
+
 /** Word-export blocks (word-export.js has no bullet type: "•" lines stay paras). */
 export function wordBlocks(title, sections, { notes = true } = {}) {
   const blocks = [{ type: 'heading', text: title }];
