@@ -189,7 +189,7 @@ function renderChart($chart, data, cpiByYear) {
     <p class="chart-sub">${loY}–${hiY} — guideline vs the Manitoba All-items CPI change that sets it (change in the 12-month average ending June of the prior year). The guideline = that, capped to 1–3% — except the 2022–23 freezes (0%). The economic adjustment factor (first published for 2024) is shown where available.</p>
     <div data-role="plot" class="cmhc-plot"></div>
     <div class="chart-caption"><span class="chart-caption-left"></span>
-      <span class="chart-source">Source: Manitoba RTB; StatsCan (MB All-Items CPI)</span></div>
+      <span class="chart-source">Source: Manitoba Residential Tenancies Branch (contains information licensed under the OpenMB Information and Data Use Licence); Statistics Canada (MB All-Items CPI)</span></div>
     <div class="chart-actions"><button type="button" data-role="dl-png">Download PNG</button></div>`;
   card.querySelector('[data-role="plot"]').appendChild(svg);
   card.querySelector('[data-role="dl-png"]').onclick = () =>
