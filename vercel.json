@@ -17,6 +17,10 @@
   ],
   "headers": [
     {
+      "source": "/data/housing/census-summary.json",
+      "headers": [{ "key": "Access-Control-Allow-Origin", "value": "*" }]
+    },
+    {
       "source": "/(.*)",
       "headers": [
         { "key": "X-Frame-Options", "value": "SAMEORIGIN" },

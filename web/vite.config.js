@@ -17,8 +17,36 @@ function resolveCommit() {
   }
 }
 
+// /data/housing/census-summary.json: a small Manitoba cut of
+// census_profile.json for the parcel-search sites' property reports
+// (src/census-summary.js). Derived at build so it can never drift from the
+// file the Census Profile tab reads; served from memory in dev.
+function censusSummaryPlugin() {
+  const OUT = 'data/housing/census-summary.json';
+  const build = async () => {
+    const { readFile } = await import('node:fs/promises');
+    const { buildCensusSummary } = await import('./src/census-summary.js');
+    const src = fileURLToPath(new URL('./public/data/housing/census_profile.json', import.meta.url));
+    return JSON.stringify(buildCensusSummary(JSON.parse(await readFile(src, 'utf8'))));
+  };
+  return {
+    name: 'census-summary',
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        if ((req.url || '').split('?')[0] !== `/${OUT}`) return next();
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.end(await build());
+      });
+    },
+    async generateBundle() {
+      this.emitFile({ type: 'asset', fileName: OUT, source: await build() });
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [tailwindcss()],
+  plugins: [tailwindcss(), censusSummaryPlugin()],
   cacheDir: process.env.VITE_CACHE_DIR || 'node_modules/.vite',
   define: {
     __APP_COMMIT__: JSON.stringify(resolveCommit()),
