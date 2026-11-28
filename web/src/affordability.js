@@ -8,8 +8,10 @@
  *
  * Income + rent come from the 2021 Census (census_profile.json) at the province,
  * CMA/CA, municipality (CSD) and Winnipeg-neighbourhood levels. Home prices are
- * MLS HPI (mls_benchmark.json) — currently Winnipeg only, so purchase affordability
- * shows for Winnipeg and "**" elsewhere until more MB prices are added. The
+ * the CREA MLS HPI single-family benchmarks (Winnipeg + six western boards). CREA
+ * needs prior written consent to publish them, so they are NOT on the public site:
+ * they come from the Local Data store (crea-store.js, AppMarketData-Internal\CREAHPI).
+ * Without it every purchase factor shows "**" with a note saying why. The
  * mortgage rate defaults to 4.64% (the Royal LePage 2026 report assumption);
  * the latest Bank of Canada conventional rates are offered as reference.
  */
@@ -24,11 +26,16 @@ import { escapeHtml } from './escape.js';
 import { miss, fUsd, fPct1 as fPct } from './format.js';
 import { PROV_LABEL, provOfUid, cleanName } from './geography.js';
 import { loadCensusProfile } from './census-profile.js';
+import { loadCrea } from './crea-store.js';
+import { onSourcesUpdated } from './market-data-channel.js';
 
 const DEFAULT_RATE = 4.64;     // % — Royal LePage 2026 report assumption (3-yr fixed special)
 const DOWN_PCT     = 20;       // % down payment
 const AMORT_YEARS  = 25;       // amortization
 const AFFORD_LINE  = 30;       // % of income = the affordability threshold
+export const CREA_PRICES_ABSENT = 'Home prices (CREA MLS® Home Price Index) are for internal use only and are not '
+  + 'published on this site, so purchase factors show **. Staff: connect the AppMarketData folder in the Local Data '
+  + 'strip (open any Local Data tab) to load them from AppMarketData-Internal.';
 
 // Monthly payment to amortize `principal` at annual `ratePct` over `years`.
 // Exported for unit testing (pure).
@@ -53,7 +60,7 @@ export async function initAffordability() {
 
   const [profile, mls, mortgage, extra] = await Promise.all([
     loadCensusProfile(),
-    fetch('./data/economy/mls_benchmark.json').then(r => r.ok ? r.json() : null).catch(() => null),
+    loadCrea(),
     fetch('./data/indicators/mortgage_market.json').then(r => r.ok ? r.json() : null).catch(() => null),
     fetch('./data/economy/affordability_extra.json').then(r => r.ok ? r.json() : null).catch(() => null),
   ]);
@@ -124,16 +131,21 @@ export async function initAffordability() {
   // --- Home prices (MLS HPI) keyed onto the matching area uids ----------------
   // Today: Winnipeg single-family benchmark → Winnipeg CMA (46602) + Winnipeg CSD (4611040).
   const priceByUid = new Map();
+  let priceAsOf = null;
   // CREA single-family benchmark series geo → affordability area uid(s).
   const MLS_UID = {
     winnipeg: ['46602', '4611040'], calgary: ['48825'], edmonton: ['48835'],
     saskatoon: ['47725'], regina: ['47705'], vancouver: ['59933'], victoria: ['59935'],
   };
-  for (const s of (mls?.series || [])) {
-    const uids = MLS_UID[String(s.geo || '').toLowerCase()];
-    if (uids && s.latestValue != null) for (const u of uids) priceByUid.set(u, s.latestValue);
-  }
-  const priceAsOf = (mls?.series || []).find(s => /winnipeg/i.test(s.geo))?.latestDate || mls?.asOf;
+  const applyPrices = (bench) => {
+    priceByUid.clear();
+    for (const s of (bench?.series || [])) {
+      const uids = MLS_UID[String(s.geo || '').toLowerCase()];
+      if (uids && s.latestValue != null) for (const u of uids) priceByUid.set(u, s.latestValue);
+    }
+    priceAsOf = (bench?.series || []).find(s => /winnipeg/i.test(s.geo))?.latestDate || bench?.asOf || null;
+  };
+  applyPrices(mls);
 
   // --- Reference mortgage rates (Bank of Canada) ------------------------------
   const latestOf = (id) => {
@@ -362,6 +374,7 @@ export async function initAffordability() {
         <div class="cmhc-table-title">Affordability Factor — ${escapeHtml(PROV_LABEL[sel?.prov] || '')} (ranked, most affordable first)</div>
         <table class="cmhc-table"><thead><tr>${head.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table>
         <p class="text-xs text-neutral-500 mt-2">Income: 2021 Census (2020 income). <strong>Median rent</strong> = 2021 Census median shelter cost (Manitoba + SK/AB/BC municipalities, where reported). <strong>Avg rent (CMHC)</strong> = current CMHC average rent, all bedroom types (centres only). The <strong>rental factor uses CMHC average rent where available</strong> (province + major centres — comparable) and the census median otherwise. Mortgage: ${DOWN_PCT}% down, ${AMORT_YEARS}-yr amortization at ${state.rate.toFixed(2)}%${priceAsOf ? `; price as of ${escapeHtml(String(priceAsOf).slice(0, 7))}` : ''}. Purchase factor shows only where a home-price benchmark exists (Winnipeg, Calgary, Edmonton, Saskatoon, Regina, Vancouver, Victoria). SK/AB/BC outside those centres are census income + median rent.</p>
+        ${priceByUid.size ? '' : `<p class="text-xs text-neutral-500 mt-1" data-role="crea-absent">${escapeHtml(CREA_PRICES_ABSENT)}</p>`}
       </section>`;
   }
 
@@ -374,5 +387,7 @@ export async function initAffordability() {
     state.rate = Number.isFinite(v) && v > 0 ? v : DEFAULT_RATE;
     render();
   });
+  // Refill the prices when the Local Data strip loads the CREAHPI folder.
+  onSourcesUpdated(['crea'], async () => { applyPrices(await loadCrea()); render(); });
   render();
 }

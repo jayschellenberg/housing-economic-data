@@ -5,10 +5,10 @@ Summary tab.
 Run by .github/workflows/refresh-indicators.yml after the pipeline and the
 sanity check, before the data is committed. Compares the freshly built
 web/public/data/indicators-manifest.json against the copy on HEAD (saved to
-<tmp>/manifest.prev.json by the workflow), reports the CREA HPI scrape's
-as-of and stale state, and pulls out pipeline log lines that signal a soft
-failure -- a scrape that fell back to last-good data, a series that could not
-be computed. (WRREB figures are scraped on Jason's PC, not in the workflow.)
+<tmp>/manifest.prev.json by the workflow), and pulls out pipeline log lines
+that signal a soft failure -- a scrape that fell back to last-good data, a
+series that could not be computed. (The CREA HPI and WRREB figures are scraped
+on Jason's PC, not in the workflow.)
 
     python3 scripts/refresh_summary.py <tmp-dir> <run-start-epoch-seconds>
 
@@ -26,7 +26,6 @@ import time
 from datetime import date
 
 MANIFEST = "web/public/data/indicators-manifest.json"
-BENCH = "web/public/data/economy/mls_benchmark.json"
 DEMAND = "web/public/data/indicators/demand.json"
 
 # The weekly run has no CMHC rent history (historical_rental.csv), so r/14
@@ -112,9 +111,6 @@ def main(tmp, start):
     total_delta = curr.get("totalRecords", 0) - prev.get("totalRecords", 0)
     headline = f"{len(advanced)} of {len(rows)} groups advanced, {total_delta:+d} records"
 
-    bench = load(BENCH, {})
-    zipname = os.path.basename(str(bench.get("source", "")).split(" ")[-1])
-
     log_path = os.path.join(tmp, "pipeline.log")
     notes = []
     if os.path.exists(log_path):
@@ -142,8 +138,6 @@ def main(tmp, start):
     for group, was, now, delta, moved in rows:
         out.append(f"{group:<20}{was:<12}{now:<12}{delta:>+8d}{'  <- advanced' if moved else ''}")
     out += [
-        "",
-        f"CREA HPI benchmark: {bench.get('asOf', '-')} (stale={str(bench.get('stale', '?')).lower()}, {zipname or 'no zip'})",
         "",
         "Pipeline notes (soft failures / last-good fallbacks):"
         if notes else "Pipeline notes: none - every scrape returned fresh data.",

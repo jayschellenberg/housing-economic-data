@@ -39,6 +39,7 @@ import * as rentalsCaStore from './rentalsca-store.js';
 import * as fccStore from './fcc-store.js';
 import * as altusStore from './altus-store.js';
 import * as wrrebStore from './wrreb-store.js';
+import * as creaStore from './crea-store.js';
 import * as paradeStore from './parade-store.js';
 import * as brokerageStore from './brokerage-store.js';
 import * as zoningStore from './zoning-store.js';
@@ -75,6 +76,8 @@ export const SOURCES = [
     load: async () => altusStore, hasData: hasFolderData },
   { id: 'wrreb',      label: 'WRREB market figures (MB Economic Update)', folder: 'WRREBMarket',
     load: async () => wrrebStore, hasData: hasFolderData },
+  { id: 'crea',       label: 'CREA MLS® HPI (MB Economic Update, Affordability)', folder: 'CREAHPI',
+    load: async () => creaStore, hasData: hasFolderData },
   { id: 'parade',     label: 'Parade of Homes', folder: 'ParadeOfHomes',
     load: async () => paradeStore, hasData: hasFolderData },
   { id: 'brokerage',  label: 'Brokerage Reports', folder: 'BrokerageReports',
