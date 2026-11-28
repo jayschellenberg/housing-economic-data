@@ -352,6 +352,24 @@ does not ship them** and the GitHub workflows do not scrape them.
   folder `CREAHPI`). Without it the Economic Update says the HPI is internal,
   and the Affordability tab shows purchase factors as `**` with a note.
 
+### Market returns, XIC & ZFL (local, internal only)
+
+The Market Discount Rates tab's growth-of-$100 chart and narrative compare
+inflation with the S&P/TSX total return (iShares XIC.TO) and long Government of
+Canada bonds (BMO ZFL.TO), using Yahoo Finance adjusted closes. Yahoo grants no
+licence to republish its prices, so since 2026-11-27 **the site ships only the
+CPI line and the GIC rates** (`r/28_scrape_investment_context.R`, weekly in CI).
+
+- `r/28b_scrape_market_returns.R` runs on Jason's PC only (same CI guard) and
+  writes `market_returns.json` to
+  `<Dropbox>\SharedInfo\AppMarketData\AppMarketData-Internal\MarketReturns\`
+  (`--out` overrides). A failed fetch keeps the last-good series with
+  `stale: true` and exits 2. `npm --prefix web run data:returns` runs it on demand.
+- `scripts/wrreb_monthly.ps1` runs it monthly after r/16 and alerts on failure.
+- In the browser, `web/src/market-returns-store.js` is a Local Data source
+  (`returns`, folder `MarketReturns`). Without it the tab compares inflation
+  only and says why.
+
 ### Census Profile tab (run-once, separate from `data:all`)
 
 The **Census Profile** tab (Population & Dwelling Trends 2006–2021 + a
