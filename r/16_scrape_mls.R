@@ -1,26 +1,32 @@
 # =============================================================================
-# r/16_scrape_mls.R
-# Winnipeg residential resale data for the MB Economic Update tab:
+# r/16_scrape_mls.R  (LOCAL ONLY: never run in GitHub Actions)
+# CREA MLS(R) Home Price Index for the MB Economic Update and Affordability tabs:
 #   CREA MLS HPI ZIP -> Winnipeg single-family benchmark history (Figure 3)
 #   + peak/trough commentary numbers, plus other cities' single-family
 #   benchmarks for the Affordability tab.
 #
-# The WRREB monthly market-release figures (sales, listings, average prices)
-# are NOT scraped here any more: WRREB's terms forbid publishing them, so they
-# come from r/16b_scrape_wrreb.R, which runs only on Jason's PC and writes to
-# AppMarketData-Internal for the Local Data strip.
+# Why local: CREA's terms (crea.ca/legal) allow private, non-commercial use and
+# need CREA's prior written consent to publish HPI values or charts, so the
+# public site ships none of it. This writes to AppMarketData-Internal and the
+# tabs read it in the browser through the Local Data strip (web/src/crea-store.js).
+# The WRREB market-release figures come from r/16b_scrape_wrreb.R the same way.
 #
-# Graceful degradation: the committed JSON under web/public/data/economy/ IS
-# the last-good cache. Every network step is wrapped so a failure keeps the
-# previous values and sets a `stale` flag instead of aborting. NEVER stop().
-# Output:
-#   web/public/data/economy/mls_benchmark.json   (benchmark series + hpi summary)
+# Graceful degradation: the previous output IS the last-good cache. A failed
+# scrape keeps it with stale = TRUE and exits 2, so the scheduled-task wrapper
+# (scripts/wrreb_monthly.ps1) raises an alert. Exit 1 = setup problem.
+# Output (--out overrides):
+#   <Dropbox>/SharedInfo/AppMarketData/AppMarketData-Internal/CREAHPI/mls_benchmark.json
 # =============================================================================
+
+if (identical(Sys.getenv("GITHUB_ACTIONS"), "true") || nzchar(Sys.getenv("CI"))) {
+  message("[16] refusing to run in CI: CREA HPI figures are internal-only (see file header)")
+  quit(status = 1)
+}
 
 .this_dir <- {
   args <- commandArgs(trailingOnly = FALSE)
   m <- sub("^--file=", "", grep("^--file=", args, value = TRUE))
-  if (length(m)) dirname(normalizePath(m[1], winslash = "/")) else "r"
+  if (length(m)) dirname(normalizePath(m[1], winslash = "/")) else normalizePath("r", winslash = "/")
 }
 source(file.path(.this_dir, "lib", "cmhc_helpers.R"))
 suppressPackageStartupMessages({
@@ -30,9 +36,19 @@ suppressPackageStartupMessages({
 })
 `%||%` <- function(a, b) if (is.null(a) || length(a) == 0 || (length(a) == 1 && is.na(a))) b else a
 
-ECON_DIR <- file.path(WEB_DATA, "economy")
-dir.create(ECON_DIR, recursive = TRUE, showWarnings = FALSE)
-BENCH_PATH <- file.path(ECON_DIR, "mls_benchmark.json")
+# r/ -> housing-economic-data/ -> ClaudeCode/ -> Dropbox root
+DROPBOX <- dirname(dirname(dirname(.this_dir)))
+AMD     <- file.path(DROPBOX, "SharedInfo", "AppMarketData")
+DEFAULT_OUT <- file.path(AMD, "AppMarketData-Internal", "CREAHPI", "mls_benchmark.json")
+cli <- commandArgs(trailingOnly = TRUE)
+oi  <- match("--out", cli)
+BENCH_PATH <- if (!is.na(oi) && oi < length(cli)) cli[oi + 1] else DEFAULT_OUT
+if (identical(BENCH_PATH, DEFAULT_OUT) && !dir.exists(AMD)) {
+  # Never invent the tier tree somewhere else (a different Dropbox layout).
+  message(sprintf("[16] %s not found: is this the Dropbox ClaudeCode tree? Use --out to write elsewhere.", AMD))
+  quit(status = 1)
+}
+dir.create(dirname(BENCH_PATH), recursive = TRUE, showWarnings = FALSE)
 today <- Sys.Date()
 
 read_json_safe <- function(p) if (file.exists(p)) tryCatch(jsonlite::read_json(p, simplifyVector = TRUE), error = function(e) NULL) else NULL
@@ -176,6 +192,7 @@ scrape_benchmark <- function() {
                      units = "dollar", geo = "Winnipeg", frequency = "monthly",
                      latestDate = as.character(dates[latest_i]), latestValue = sf[latest_i])
   list(
+    kind = "crea-hpi", version = 1,
     series = c(list(win_series), extra_series),
     records = do.call(rbind, c(list(records), extra_records)),
     hpi = list(
@@ -206,7 +223,8 @@ if (!is.null(bench)) {
                   BENCH_PATH, if (is.data.frame(bench$records)) nrow(bench$records) else length(bench$records),
                   bench$asOf %||% "?", bench$stale))
 } else {
-  message("[16] no benchmark data and no last-good cache — Figure 3 will be empty")
+  message("[16] no benchmark data and no last-good cache")
 }
 
 message("[16] done.")
+if (is.null(bench) || isTRUE(bench$stale)) quit(status = 2)

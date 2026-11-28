@@ -4,11 +4,11 @@
 #   - StatsCan economic indicators from data/statscan_indicators.csv
 #     (retail / manufacturing / wholesale / farm cash / CPI / employment /
 #      building permits / housing starts) — compute MoM / YoY / YTD deltas
-#   - CREA MLS HPI Winnipeg benchmark from web/public/data/economy/mls_benchmark.json (r/16)
-#     (no WRREB figures: those are internal-only, see r/16b_scrape_wrreb.R)
+#   (no CREA HPI or WRREB figures: those are internal-only, see r/16_scrape_mls.R
+#    and r/16b_scrape_wrreb.R)
 #   - Manual config (census intro, minimum wage, GDP, outlook prose)
 # Output: web/public/data/economy/economic-update.json
-# Depends on r/11 (statscan CSV) and r/16 (MLS) having run first.
+# Depends on r/11 (statscan CSV) having run first.
 # =============================================================================
 
 .this_dir <- {
@@ -116,7 +116,7 @@ housing <- list(
   building_permits = metric_mom("statscan.permits.residential.manitoba")
 )
 
-# --- Charts (employment + HPI benchmark) ------------------------------------
+# --- Charts (employment; the HPI benchmark chart is internal) -------------
 emp <- series_df("statscan.employment.manitoba")
 charts <- list()
 if (!is.null(emp)) {
@@ -131,18 +131,12 @@ if (!is.null(emp)) {
   )
 }
 
-# --- MLS (from r/16's CREA HPI output) --------------------------------------
-# WRREB market-release figures (sales, listings, average prices) are NOT put in
-# this public file: WRREB's terms forbid publishing them. r/16b writes them to
-# AppMarketData-Internal and the tab merges them in the browser (wrreb-store.js).
+# --- Residential real estate: none in this public file ----------------------
+# Neither the WRREB market-release figures nor the CREA MLS(R) HPI benchmark go
+# in here: WRREB's terms forbid publishing them and CREA needs prior written
+# consent. r/16b and r/16 write them to AppMarketData-Internal on Jason's PC and
+# the tab merges them in the browser (wrreb-store.js, crea-store.js).
 read_json_safe <- function(p) if (file.exists(p)) tryCatch(jsonlite::read_json(p, simplifyVector = TRUE), error = function(e) NULL) else NULL
-bench <- read_json_safe(file.path(ECON_DIR, "mls_benchmark.json"))
-
-mls <- list()
-if (!is.null(bench)) {
-  mls <- list(hpi = bench$hpi, asOf = bench$asOf, stale = isTRUE(bench$stale))
-  charts$hpi_benchmark <- list(series = bench$series, records = bench$records)
-}
 
 # --- Manual config (intro / minimum wage / GDP / outlook) -------------------
 manual <- read_json_safe(file.path(ROOT, "r", "config", "economic_update_manual.json"))
@@ -172,7 +166,6 @@ payload <- list(
   intro     = intro,
   indicators = indicators,
   housing   = housing,
-  mls       = mls,
   outlook   = manual$outlook,
   charts    = charts
 )
@@ -190,6 +183,4 @@ message(sprintf("[15]   retail MoM %s | mfg %s | wholesale %s | CPI YoY %s | emp
 message(sprintf("[15]   starts YTD %s | permits MoM %s | farm total %s",
                 fmtpc(housing$starts$ytdChangePct), fmtpc(housing$building_permits$changePct),
                 fmtpc(indicators$farm_cash_receipts$totalChangePct)))
-message(sprintf("[15]   HPI asOf %s (stale=%s) | benchmark %s",
-                mls$asOf %||% "—", isTRUE(mls$stale),
-                if (!is.null(mls$hpi)) paste0("$", format(mls$hpi$benchmarkLatest, big.mark=",")) else "—"))
+

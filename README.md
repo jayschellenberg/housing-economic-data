@@ -1,6 +1,6 @@
 # Housing & Economic Data
 
-Status: Active | Next: merge census-summary-feed; check the first housing-economic-wrreb-monthly run on Dec 12 (WRREB figures are now internal only); confirm CBA arrears lines update when CBA posts September 2026 (late Nov) | Blocked: none | Updated: 2026-11-27
+Status: Active | Next: merge census-summary-feed and crea-local-data; check the first housing-economic-wrreb-monthly run on Dec 12 (WRREB and CREA HPI figures are now internal only); confirm CBA arrears lines update when CBA posts September 2026 (late Nov) | Blocked: none | Updated: 2026-11-27
 
 A multi-tab static website of Canadian housing & economic data, built for a commercial real-estate appraiser — CMHC rental market, housing starts, secondary rental, census housing & demographics, affordability, Manitoba rent control, and market indicators — with copy-to-Word, Excel (.xlsx), and PNG exports for appraisal reports. The **Rental Charts** tab shows interactive line charts of CMHC rental and vacancy data, filterable by geography (Province / CMA / CSD / Survey Zone / Neighbourhood), dwelling type (Apartment / Row / All), and a breakdown dimension (Bedroom Type / Year of Construction / Structure Size / Rent Ranges).
 
@@ -76,7 +76,7 @@ other tab is Housing.
 | Housing Starts | CMHC Scss starts / completions | `r/05` |
 | Housing Stock | Census dwelling type / age / condition + choropleth map | `r/07`–`r/10`, `r/12b`, `r/20` |
 | Census Profile | Population & dwelling trends + annual estimates + demographics + community-profile narrative + choropleth map | `r/12`, `r/12b`, `r/20`, `r/26`, `r/27`, `r/29`, `r/30`, `r/31`, `r/32` (run-once); `r/23` (monthly) |
-| Affordability | Royal-LePage-style affordability factor + choropleth map | `r/16`, `r/18`, census, `r/20` |
+| Affordability | Royal-LePage-style affordability factor + choropleth map. Purchase factors need the CREA HPI from Local Data | `r/18`, census, `r/20`; CREA HPI from `r/16` (local) |
 | Current Snapshot / Market Indicators | BoC / StatsCan / OSB economic indicators, incl. CPI inflation (headline, core, shelter, annual average), (Cap vs Interest moved to its own Local Data tab) | `r/10`,`r/11`,`r/13`,`r/14`,`r/17` |
 | Cap Rates vs Interest | The Cap vs Interest chart — BoC overnight target and GoC yields with Winnipeg cap-rate overlays from the Cap Rates tab's local data (Local Data group) | BoC shard + `Cap-Rates` project |
 | Market Discount Rates | Canada's market risk-free rate, market risk premium and required return to equity from Pablo Fernandez's annual surveys (2010 on; RF and Km from 2017, plus 2013 and 2015): headline tiles for the last year in range, the workbook's table, line and stacked-bar charts (Local Data group, but the data ships with the site in `web/public/data/economy/market_discount_rates.json`). After a new survey, add its row to `Market Risk Premium Survey Chart.xlsx` beside the study PDFs and run the script, which cross-checks the newest PDF and records each study's title/authors/date. Below that, a "Comparison to other investments" section: growth of $100 in XIC (S&P/TSX total return), ZFL (long federal bonds) and CPI over an adjustable window (effective date, years back), a summary table, and an auto-written discount-rate narrative (Copy / Word) citing the newest survey and Steinbach / Access Credit Union 5-year GIC rates — refreshed weekly | `scripts/market_discount_rates.py`; `r/28` (weekly, refresh-indicators) |
@@ -90,7 +90,7 @@ other tab is Housing.
 | Zoning | Appraisal zoning narratives per municipality and zone (intent, permitted uses chosen by the appraiser, bulk requirements) with the full use lists and bulk table cited to PDF pages, a live by-law currency check against Manitoba Zoning By-Laws open data, Copy / Word export; read from `SharedInfo\AppMarketData\AppMarketData-Internal\Zoning` on the user's own disk (shared only with chosen users; nothing published) | `zoning-narrative/R/export.R` (separate project) |
 | Neighbourhood (Expt) | Pre-written neighbourhood and community narratives in two layers — Winnipeg neighbourhood cluster → neighbourhood, and Manitoba municipality → community (Blumenort, Kleefeld …, from the town and village map sheets) — one editable box per section, Copy / Word; saved edits go back into the folder's `edits/` subfolder for everyone using it; read from `SharedInfo\AppMarketData\AppMarketData-Internal\Neighbourhood` (nothing published) | `r/27`, `r/33`, then `web/scripts/build-neighbourhood.mjs` (see below) |
 | Parade of Homes | Winnipeg (and all-Manitoba) new-home listings distilled from MHBA Parade of Homes magazines, 2012–present: median base price, $/sq ft by style, home size, upgrade spend and a Parade-vs-CPI index chart, with nominal / real dollar and scope toggles. Local Data: read from `AppMarketData-External\ParadeOfHomes\parade_of_homes.json` on the viewer's disk (nothing shipped with the site); see [`docs/parade-of-homes.md`](docs/parade-of-homes.md). | `Parade-Of-Homes` project (`run_pipeline.sh` → `publish_shared.py`) |
-| MB Economic Update | Auto narrative report (economy + HPI + outlook) — **parked, hidden from the nav** (see Parked features). WRREB figures are Local Data only (see below) | `r/15`, `r/16`; WRREB from `r/16b` (local) |
+| MB Economic Update | Auto narrative report (economy + HPI + outlook) — **parked, hidden from the nav** (see Parked features). WRREB and CREA HPI figures are Local Data only (see below) | `r/15`; CREA HPI from `r/16` and WRREB from `r/16b` (both local) |
 
 The Tables tab generates appraisal-ready comparison tables (vacancy / median rent by bedroom type, rent range, year built) with copy-to-clipboard (rich HTML for pasting into Word), Word (.docx), and Excel (.xlsx) export — this replaces the retired CMHC-VacancyMedianRents Shiny tool. It is **province-scoped** (pick a province — always the first row, default Manitoba — then the second–fourth areas are centres within it; no cross-province comparison), and each table has a grouped-bar chart card beside it (same chrome as the Rental Charts cards — title, subtitle, right-side legend, Download PNG). The **Compare Areas** tab is the multi-area counterpart to Rental Charts: it overlays several areas *within one province* as time-series lines for a fixed breakdown category (e.g. pre-1960 stock across MB centres), with a matching areas × years table beside each chart — one chart+table pair per metric (median rent, average rent, vacancy, avg rent change). The pipeline also pulls the Secondary Rental Market Survey (Srms — condo rental data) into `web/public/data/secondary.json`, replacing the retired "CMHC Rental Data Scrape" project. Both retired projects are archived under `$Projects in Progress\old projects maybe`.
 
@@ -331,7 +331,26 @@ ban scraping into a database and forbid publishing the data in any form, so
   folder `WRREBMarket`) filled by the Local Data strip. `economic-update.js`
   merges the figures into the Residential Real Estate section when the store
   holds them, and otherwise says they are internal and how staff load them.
-  The CREA MLS® HPI benchmark (r/16) is still public.
+
+### CREA MLS® HPI benchmarks (local, internal only)
+
+The MB Economic Update's HPI sentence and Figure 3, and the Affordability tab's
+purchase factor, use CREA's MLS® Home Price Index single-family benchmarks
+(Winnipeg, Calgary, Edmonton, Saskatoon, Regina, Vancouver, Victoria). CREA's
+terms (crea.ca/legal) allow private, non-commercial use and need CREA's prior
+written consent to publish HPI values or charts, so since 2026-11-27 **the site
+does not ship them** and the GitHub workflows do not scrape them.
+
+- `r/16_scrape_mls.R` runs on Jason's PC only (same CI guard as r/16b) and
+  writes `mls_benchmark.json` to
+  `<Dropbox>\SharedInfo\AppMarketData\AppMarketData-Internal\CREAHPI\`
+  (`--out` overrides). A failed scrape keeps the last-good file with
+  `stale: true` and exits 2.
+- `scripts/wrreb_monthly.ps1` (task `housing-economic-wrreb-monthly`) runs r/16
+  after r/16b and alerts the same way when it fails or comes back stale.
+- In the browser, `web/src/crea-store.js` is a Local Data source (`crea`,
+  folder `CREAHPI`). Without it the Economic Update says the HPI is internal,
+  and the Affordability tab shows purchase factors as `**` with a note.
 
 ### Census Profile tab (run-once, separate from `data:all`)
 

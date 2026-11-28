@@ -1,10 +1,16 @@
-# wrreb_monthly.ps1 - monthly WRREB market-release scrape (Task Scheduler entry point).
+# wrreb_monthly.ps1 - monthly WRREB market-release + CREA MLS HPI scrape (Task Scheduler entry point).
 #
 # Runs r\16b_scrape_wrreb.R, which reads the latest Winnipeg Regional Real Estate Board
 # market release and writes the figures to
 #   <Dropbox>\SharedInfo\AppMarketData\AppMarketData-Internal\WRREBMarket\wrreb_market.json
 # for the MB Economic Update tab's Local Data store. Internal only: WRREB's terms forbid
 # publishing the figures, so this runs on Jason's PC, never in GitHub Actions.
+#
+# Then runs r\16_scrape_mls.R, which reads CREA's MLS HPI workbook and writes
+#   <Dropbox>\SharedInfo\AppMarketData\AppMarketData-Internal\CREAHPI\mls_benchmark.json
+# for the Economic Update (HPI sentence, Figure 3) and Affordability tabs. Internal only too:
+# CREA needs prior written consent to publish HPI values. A CREA failure or stale result sends
+# its own alert ("CREA HPI scrape FAILED") and does not stop the WRREB checks.
 #
 # A failed run, a stale result (scrape fell back to last-good) or a release month that has
 # not advanced (expected: last month's release by the run day) sends a failure alert
@@ -21,6 +27,7 @@ $dropbox = Split-Path (Split-Path $repo -Parent) -Parent       # Dropbox root (n
 $mbps    = Join-Path $dropbox 'ClaudeCode\MBOpenData\mb-parcelsearch'
 $topic   = 'hed-wrreb-monthly-jks'
 $out     = Join-Path $dropbox 'SharedInfo\AppMarketData\AppMarketData-Internal\WRREBMarket\wrreb_market.json'
+$creaOut = Join-Path $dropbox 'SharedInfo\AppMarketData\AppMarketData-Internal\CREAHPI\mls_benchmark.json'
 $stamp   = Get-Date -Format 'yyyyMMdd-HHmm'
 $logDir  = Join-Path $repo 'logs'
 New-Item -ItemType Directory -Force $logDir | Out-Null
@@ -58,7 +65,29 @@ $rscript = (Get-Command Rscript -ErrorAction Stop).Source
 Push-Location $repo
 try {
   $code = Invoke-Logged $rscript @('r/16b_scrape_wrreb.R')
+  $creaCode = Invoke-Logged $rscript @('r/16_scrape_mls.R')
 } finally { Pop-Location }
+
+# CREA HPI: alert without exiting, so the WRREB checks below still run. CREA posts each
+# release around the middle of the month, so by the 12th the newest data month can be the
+# month before last; only a failure, a stale result or older data is flagged.
+function Test-Crea {
+  if ($creaCode -eq 2) { return 'r/16 could not read the latest CREA HPI workbook; the last-good file was kept (stale).' }
+  if ($creaCode -ne 0) { return "r/16 exit $creaCode." }
+  if (-not (Test-Path $creaOut)) { return "No output at $creaOut." }
+  $c = Get-Content $creaOut -Raw -Encoding UTF8 | ConvertFrom-Json
+  if ($c.stale -or $c.fetched -ne (Get-Date -Format 'yyyy-MM-dd')) { return "mls_benchmark.json fetched $($c.fetched), stale=$($c.stale)." }
+  $cAsOf = [datetime]::ParseExact("1 $($c.asOf)", 'd MMMM yyyy', [Globalization.CultureInfo]::InvariantCulture)
+  $cWant = (Get-Date -Day 1).Date.AddMonths(-2)
+  if ($cAsOf -lt $cWant) { return "Latest CREA HPI month is $($c.asOf); expected $($cWant.ToString('MMMM yyyy')) or later." }
+  Write-Log "mls_benchmark.json: $($c.asOf)"
+  return $null
+}
+$creaProblem = Test-Crea
+if ($creaProblem) {
+  Send-FailureAlert $mbps $topic 'CREA HPI scrape FAILED' "$creaProblem Log: $log" | Out-Null
+  Write-Log "FAILED: CREA HPI: $creaProblem"
+}
 
 if ($code -eq 2) { Fail 'WRREB scrape FAILED' 'r/16b could not read the latest release; the last-good figures were kept (stale).' }
 if ($code -ne 0) { Fail 'WRREB scrape FAILED' "r/16b exit $code." }
@@ -77,5 +106,6 @@ if ($asOf -lt $want) {
 if ($j.comparisonsStale) { Write-Log 'note: some fields kept from an earlier month (comparisonsStale)' }
 
 Write-Log "wrreb_market.json: $($j.asOf)"
+if ($creaProblem) { exit 1 }
 Write-Log 'COMPLETE'
 exit 0

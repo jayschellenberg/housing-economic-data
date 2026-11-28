@@ -112,7 +112,6 @@ jobs:
             Rscript r/34_scrape_cba_arrears.R || echo "::warning::r/34 CBA mortgage arrears skipped - keeping the committed data"
             Rscript r/28_scrape_investment_context.R
             Rscript r/14_build_indicators.R
-            Rscript r/16_scrape_mls.R
             Rscript r/15_build_economic_update.R
           } 2>&1 | tee "$RUNNER_TEMP/pipeline.log"
 
@@ -126,10 +125,9 @@ jobs:
 
       - name: Summarize refresh
         # What actually changed, for the email and the run's Summary tab:
-        # per-group latest date and record count vs the manifest on HEAD, the
-        # MLS scrape's as-of/stale state, and any pipeline lines that signal a
-        # soft failure (a scrape that kept last-good data, a series that could
-        # not be computed). Bare "pushed new data" told Jason nothing.
+        # per-group latest date and record count vs the manifest on HEAD, and
+        # any pipeline lines that signal a soft failure (a scrape that kept
+        # last-good data, a series that could not be computed). Bare "pushed new data" told Jason nothing.
         id: summary
         shell: bash
         run: |

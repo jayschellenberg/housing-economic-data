@@ -5,12 +5,13 @@
  * Prose templates live HERE (pure `(metric) => string` functions) so the
  * wording is editable in one place; the numbers + the editorial Outlook text
  * come from web/public/data/economy/economic-update.json (built by
- * r/15_build_economic_update.R from StatsCan/CMHC + the CREA HPI + the
- * manual config). The WRREB market-release figures (sales, listings, average
- * prices) are NOT in that public file: WRREB's terms forbid publishing them.
- * They load in the browser from AppMarketData-Internal\WRREBMarket through
- * the Local Data strip (wrreb-store.js, written by r/16b_scrape_wrreb.R), and
- * the tab says they are internal when they are absent. Two supporting charts (employment, HPI benchmark) are
+ * r/15_build_economic_update.R from StatsCan/CMHC + the manual config).
+ * The residential real estate figures are NOT in that public file: WRREB's
+ * terms forbid publishing its market-release figures, and CREA needs prior
+ * written consent to publish the MLS® HPI. Both load in the browser from
+ * AppMarketData-Internal through the Local Data strip (wrreb-store.js from
+ * r/16b_scrape_wrreb.R, crea-store.js from r/16_scrape_mls.R), and the tab
+ * says they are internal when they are absent. Two supporting charts (employment, HPI benchmark) are
  * mounted via the Market Indicators chart card. Copy + Word export let the
  * appraiser drop the report straight into their document.
  *
@@ -22,6 +23,7 @@ import { buildIndicatorCard } from './indicator-chart.js';
 import { captureNodes } from './doc-image-export.js';
 import { escapeHtml } from './escape.js';
 import * as wrrebStore from './wrreb-store.js';
+import { loadCrea } from './crea-store.js';
 import { onSourcesUpdated } from './market-data-channel.js';
 
 // --- Formatters --------------------------------------------------------------
@@ -112,22 +114,34 @@ const T = {
   },
 };
 
-// --- Sections (pure: data + optional WRREB figures -> [{heading, paras, ...}]) ---
+// --- Sections (pure: data + optional internal figures -> [{heading, paras, ...}]) ---
 // `notice` is shown on screen only; it never goes into the Copy / Word export.
+const CONNECT_HINT = 'Staff: connect the AppMarketData folder in the Local Data strip (open any Local Data tab) '
+  + 'to add them here; they load from AppMarketData-Internal.';
 export const WRREB_ABSENT_NOTICE = 'WRREB market-release figures (MLS® sales, active listings and average prices) '
-  + 'are for internal use only and are not published on this site. Staff: connect the AppMarketData folder '
-  + 'in the Local Data strip (open any Local Data tab) to add them here; they load from the WRREBMarket '
-  + 'folder in AppMarketData-Internal.';
+  + 'are for internal use only and are not published on this site. ' + CONNECT_HINT;
 export const WRREB_LOADED_NOTICE = 'WRREB figures loaded from your AppMarketData-Internal folder. '
   + 'Internal use only; WRREB does not permit publishing them.';
+export const CREA_ABSENT_NOTICE = 'The CREA MLS® Home Price Index benchmark (sentence and Figure 3) is for internal '
+  + 'use only and is not published on this site. ' + CONNECT_HINT;
+export const CREA_LOADED_NOTICE = 'CREA MLS® HPI loaded from your AppMarketData-Internal folder. '
+  + 'Internal use only; CREA must give written consent before HPI values are published.';
+export const BOTH_ABSENT_NOTICE = 'WRREB market-release figures (MLS® sales, active listings and average prices) and '
+  + 'the CREA MLS® Home Price Index benchmark are for internal use only and are not published on this site. ' + CONNECT_HINT;
 
-export function buildSections(data, wrreb = null) {
+function residentialNotice(w, c) {
+  if (!w && !c) return BOTH_ABSENT_NOTICE;
+  return [w ? WRREB_LOADED_NOTICE : WRREB_ABSENT_NOTICE, c ? CREA_LOADED_NOTICE : CREA_ABSENT_NOTICE].join(' ');
+}
+
+export function buildSections(data, wrreb = null, crea = null) {
   const ind = data.indicators || {};
   const hou = data.housing || {};
-  const mls = data.mls || {};
   const intro = data.intro || {};
   const outlook = data.outlook || {};
   const w = wrreb && typeof wrreb === 'object' ? wrreb : null;
+  const c = crea && typeof crea === 'object' ? crea : null;
+  const mls = c || {};
 
   const sections = [];   // {heading, paras:[html]}  — also used to build clipboard + word
 
@@ -167,8 +181,8 @@ export function buildSections(data, wrreb = null) {
   pushLine(houParas, indLine(hou.building_permits, T.permits, 'Building permits'));
   if (houParas.length) sections.push({ heading: 'Housing & Construction', paras: houParas, figure: 'employment' });
 
-  // Residential Real Estate: WRREB figures from the Local Data store (internal),
-  // CREA HPI from the public file.
+  // Residential Real Estate: WRREB figures and the CREA HPI, both from the
+  // Local Data stores (internal).
   const mlsParas = [];
   if (w) {
     if (w.sales) mlsParas.push(T.mlsSales(w));
@@ -177,13 +191,14 @@ export function buildSections(data, wrreb = null) {
     if (w.condo_avg_price) mlsParas.push(T.mlsPrice('condominium', w.condo_avg_price));
   }
   const hpiSentence = T.hpi(mls.hpi);
-  if (mlsParas.length || hpiSentence || !w) {
+  {
+    const src = [w && 'WRREB', c && 'CREA'].filter(Boolean).join(' / ');
     sections.push({
-      heading: w ? 'Residential Real Estate (WRREB / CREA)' : 'Residential Real Estate (CREA)',
+      heading: src ? `Residential Real Estate (${src})` : 'Residential Real Estate',
       paras: mlsParas,
       banner: w?.stale ? `WRREB figures could not be refreshed this cycle; showing the last available data${w.asOf ? ` (as of ${escapeHtml(w.asOf)})` : ''}.` : null,
-      notice: w ? WRREB_LOADED_NOTICE : WRREB_ABSENT_NOTICE,
-      figure: 'hpi',
+      notice: residentialNotice(w, c),
+      figure: c ? 'hpi' : null,
       afterFigure: hpiSentence ? [hpiSentence + staleNote(mls, mls.asOf)] : [],
     });
   }
@@ -247,13 +262,16 @@ export async function initEconomicUpdate() {
 
   const state = { sections: [], cards: {} };
   const render = async () => {
-    state.sections = buildSections(data, await loadWrreb());
+    const crea = await loadCrea();
+    state.sections = buildSections(data, await loadWrreb(), crea);
     $body.innerHTML = sectionsHtml(state.sections);
-    state.cards = mountCharts(data.charts || {});
+    const charts = { ...(data.charts || {}) };
+    if (crea?.series && crea?.records) charts.hpi_benchmark = { series: crea.series, records: crea.records };
+    state.cards = mountCharts(charts);
   };
   wireExports(() => state.sections, () => state.cards, data);
-  // Refill when the Local Data strip loads the WRREBMarket folder.
-  onSourcesUpdated(['wrreb'], () => render());
+  // Refill when the Local Data strip loads the WRREBMarket or CREAHPI folder.
+  onSourcesUpdated(['wrreb', 'crea'], () => render());
   await render();
 }
 
