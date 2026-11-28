@@ -64,11 +64,11 @@ write_json <- function(obj, p) writeLines(jsonlite::toJSON(obj, auto_unbox = TRU
 # the figures live in the attached "<Month> <Year> Market Release.pdf", whose
 # tables give every value we need plus prior-year and 5-year-average columns:
 #
-#   October 2026 - All Residential Detached
-#                    October 2026      vs. 2025            vs. 5-Year Average
-#   Active Listings     1,926      +20% ▲  (1,603)      +5% ▲   (1,832)
-#   Sales                 853       -7% ▼    (912)      +2% ▲     (840)
-#   Average Price    $455,860       +3% ▲ ($441,981)    +8% ▲ ($420,224)
+#   March 2020 - All Residential Detached      (layout only; made-up numbers)
+#                    March 2020        vs. 2019            vs. 5-Year Average
+#   Active Listings     2,000      +10% ▲  (1,818)      +5% ▲   (1,905)
+#   Sales                 500       -5% ▼    (526)      +2% ▲     (490)
+#   Average Price    $400,000       +4% ▲ ($384,615)    +7% ▲ ($373,832)
 #
 # We read the monthly (non-YTD) region-wide tables: All MLS® (sales, active
 # listings), All Residential Detached / Attached / Condominium (average price).

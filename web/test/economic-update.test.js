@@ -2,13 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-// A synthetic Local Data store: what r/16b writes to AppMarketData-Internal.
+// A synthetic Local Data store shaped like r/16b's output. Made-up numbers:
+// real WRREB figures must never be committed to this public repo.
 const WRREB = {
-  kind: 'wrreb-market-release', version: 1, asOf: 'October 2026', fetched: '2026-11-27', stale: false,
-  sales: { value: 1192, vsPriorYearPct: -11, priorYearValue: 1339, vs5yrAvgPct: -1, fiveYrAvg: 1209 },
-  active_listings: { value: 3985, vsPriorYearPct: 13, priorYearValue: 3519, vs5yrAvgPct: 6, fiveYrAvg: 3772 },
-  sfd_avg_price: { value: 455860, vsPriorYearPct: 3, priorYearValue: 441981, vs5yrAvgPct: 8, fiveYrAvg: 420224 },
-  condo_avg_price: { value: 303348, vsPriorYearPct: 2, priorYearValue: 297428, vs5yrAvgPct: 9, fiveYrAvg: 277498 },
+  kind: 'wrreb-market-release', version: 1, asOf: 'March 2020', fetched: '2020-04-10', stale: false,
+  sales: { value: 1000, vsPriorYearPct: -10, priorYearValue: 1111, vs5yrAvgPct: -2, fiveYrAvg: 1020 },
+  active_listings: { value: 4000, vsPriorYearPct: 10, priorYearValue: 3636, vs5yrAvgPct: 5, fiveYrAvg: 3810 },
+  sfd_avg_price: { value: 400000, vsPriorYearPct: 4, priorYearValue: 384615, vs5yrAvgPct: 7, fiveYrAvg: 373832 },
+  condo_avg_price: { value: 250000, vsPriorYearPct: 1, priorYearValue: 247525, vs5yrAvgPct: 6, fiveYrAvg: 235849 },
 };
 
 const storeState = { data: null };
@@ -56,15 +57,15 @@ describe('buildSections', () => {
     const r = residential(buildSections(publicData, WRREB));
     expect(r.heading).toBe('Residential Real Estate (WRREB / CREA)');
     expect(r.notice).toBe(WRREB_LOADED_NOTICE);
-    expect(r.paras[0]).toContain('1,192 MLS® sales in October 2026 (down 11% from a year earlier');
-    expect(r.paras[1]).toContain('single-family detached price was $455,860');
+    expect(r.paras[0]).toContain('1,000 MLS® sales in March 2020 (down 10% from a year earlier');
+    expect(r.paras[1]).toContain('single-family detached price was $400,000');
     expect(r.paras.some((p) => /attached/.test(p))).toBe(false);   // no sfa_avg_price in the store
     expect(r.banner).toBeNull();
   });
 
   it('flags stale store figures', () => {
     const r = residential(buildSections(publicData, { ...WRREB, stale: true }));
-    expect(r.banner).toMatch(/could not be refreshed.*October 2026/);
+    expect(r.banner).toMatch(/could not be refreshed.*March 2020/);
   });
 });
 
@@ -82,14 +83,14 @@ describe('initEconomicUpdate (synthetic store)', () => {
     await initEconomicUpdate();
     const html = document.getElementById('eu-body').innerHTML;
     expect(html).toContain('for internal use only');
-    expect(html).not.toContain('1,192');
+    expect(html).not.toContain('1,000 MLS');
   });
 
   it('renders the WRREB figures with the store', async () => {
     storeState.data = WRREB;
     await initEconomicUpdate();
     const text = document.getElementById('eu-body').textContent;
-    expect(text).toContain('1,192 MLS® sales in October 2026');
+    expect(text).toContain('1,000 MLS® sales in March 2020');
     expect(text).toContain('Internal use only');
   });
 });
@@ -97,7 +98,7 @@ describe('initEconomicUpdate (synthetic store)', () => {
 describe('wrreb-store validate', () => {
   it('accepts r/16b output', () => expect(() => validate(WRREB)).not.toThrow());
   it('rejects other files', () => {
-    expect(() => validate({ asOf: 'October 2026' })).toThrow(/not a WRREB/);
+    expect(() => validate({ asOf: 'March 2020' })).toThrow(/not a WRREB/);
     expect(() => validate({ sales: { value: 1 } })).toThrow(/not a WRREB/);
   });
 });
