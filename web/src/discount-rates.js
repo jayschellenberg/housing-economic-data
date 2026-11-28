@@ -19,14 +19,33 @@ import { themed, PALETTE, gridMarks, frameMark, plotWidth, plotHeight, fitPlotWi
 import { downloadCardPng, setExportRedraw, setExportCropHeight, EXPORT_W, EXPORT_H, EXPORT_DPI } from './png-export.js';
 import { escapeHtml } from './escape.js';
 import { getPref, setPref } from './prefs.js';
+import { loadMarketReturns } from './market-returns-store.js';
+import { onSourcesUpdated } from './market-data-channel.js';
 
 const PREF_KEY = 'discountRates.v1';
 const DATA_URL = './data/economy/market_discount_rates.json';
-// Growth-of-$100 series + GIC rates, refreshed weekly by
-// r/28_scrape_investment_context.R.
+// CPI line + GIC rates, refreshed weekly by r/28_scrape_investment_context.R.
+// The equity and bond lines (XIC, ZFL from Yahoo Finance) are internal only:
+// Yahoo grants no licence to republish its prices, so they come from the
+// Local Data store (market-returns-store.js, r/28b) and are merged in here.
 const INVEST_URL = './data/economy/investment_context.json';
 const DEFAULT_YEARS_BACK = 5;
-const PERF_SOURCE = 'Yahoo Finance (XIC, ZFL adjusted close) & Statistics Canada (CPI)';
+const PERF_SOURCE_FULL = 'Yahoo Finance (XIC, ZFL adjusted close) & Statistics Canada (CPI)';
+const PERF_SOURCE_CPI = 'Statistics Canada (CPI)';
+export const RETURNS_ABSENT_NOTICE = 'The equity and bond lines (S&P/TSX and long Government of Canada bond total returns, '
+  + 'from Yahoo Finance) are for internal use only and are not published on this site, so only inflation is compared here. '
+  + 'Staff: connect the AppMarketData folder in the Local Data strip (open any Local Data tab) to load them from AppMarketData-Internal.';
+const perfSource = () => (ui?.marketLoaded ? PERF_SOURCE_FULL : PERF_SOURCE_CPI);
+
+/**
+ * The public investment context with the internal market series (when the
+ * store holds them) put in front of the CPI line. Pure; exported for tests.
+ */
+export function mergeInvest(pub, returns) {
+  if (!pub) return null;
+  const market = Array.isArray(returns?.series) ? returns.series.filter(s => s && s.id !== 'cpi') : [];
+  return { ...pub, series: [...market, ...(pub.series || []).filter(s => !market.some(m => m.id === s.id))] };
+}
 // Narrative wording per credit union; anything new falls back to its own
 // institution + product names.
 const GIC_PHRASE = {
@@ -95,11 +114,20 @@ export async function initDiscountRates() {
     return;
   }
   ui.data = survey.value;
-  if (invest.status === 'fulfilled') ui.invest = invest.value;
+  if (invest.status === 'fulfilled') ui.publicInvest = invest.value;
   else console.error('[discount-rates] investment context', invest.reason);
+  await applyReturns();
   wireControls();
   renderYearPickers();
   render();
+  // Refill when the Local Data strip loads the MarketReturns folder.
+  onSourcesUpdated(['returns'], async () => { await applyReturns(); render(); });
+}
+
+async function applyReturns() {
+  const returns = await loadMarketReturns();
+  ui.invest = mergeInvest(ui.publicInvest, returns);
+  ui.marketLoaded = Boolean(ui.invest?.series?.some(s => s.frequency === 'daily'));
 }
 
 // --- Sidebar -----------------------------------------------------------------
@@ -255,9 +283,10 @@ const longDate = (iso) => new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-CA
 const shortDate = (iso, monthly = false) => (!iso ? '**' : new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-CA', { year: 'numeric', month: 'short', timeZone: 'UTC', ...(monthly ? {} : { day: 'numeric' }) }));
 const fmtAnnual = (v) => (v == null || !Number.isFinite(v) ? '**' : `${(v * 100).toFixed(1)}%`);
 
-/** The latest date every market series has data for. */
+/** The latest date every market series has data for (the CPI's when only it is loaded). */
 function latestMarketDate() {
-  const market = ui.invest.series.filter(s => s.frequency === 'daily');
+  const daily = ui.invest.series.filter(s => s.frequency === 'daily');
+  const market = daily.length ? daily : ui.invest.series;
   return market.map(s => s.dates[s.dates.length - 1]).sort()[0];
 }
 
@@ -318,13 +347,14 @@ function renderPerformance() {
   if (ui.prefs.effDate && ui.invest.gic?.length && daysBetween(ui.prefs.effDate, ui.invest.built) > 31) {
     warnings.push('The GIC rates are the credit unions\' current rates, not rates as of the effective date.');
   }
+  if (!ui.marketLoaded) warnings.unshift(RETURNS_ABSENT_NOTICE);
   if (warnings.length) { ui.$perfWarn.textContent = warnings.join(' '); ui.$perfWarn.hidden = false; }
 
   // 1. Growth of $100.
   {
     const id = 'investment_performance';
     const card = buildIndicatorCard($grid, {
-      chartId: id, fileStem: id, title: 'Investment Performance Comparison', sourceLabel: PERF_SOURCE,
+      chartId: id, fileStem: id, title: 'Investment Performance Comparison', sourceLabel: perfSource(),
       sourceInCaption: true, captionPt: 10, mirrorY: false,
       description: 'Growth of $100 invested at the start of the window. Equities are the iShares Core S&P/TSX Capped Composite ETF (XIC) ' +
         'and long Government of Canada bonds the BMO Long Federal Bond Index ETF (ZFL), both at adjusted closes so distributions are reinvested ' +
@@ -345,7 +375,7 @@ function renderPerformance() {
     const id = 'investment_performance_table';
     const card = buildTableCard($grid, {
       id, title: 'Investment Performance Summary', subtitle: `Growth of $100 — ${longDate(perf.start)} to ${longDate(perf.end)}`,
-      source: PERF_SOURCE,
+      source: perfSource(),
       head: ['Benchmark', 'Start', 'End', 'Value of $100', 'Annualized'],
       rows: perf.series.map(s => [s.label, shortDate(s.startDate, s.frequency === 'monthly'), shortDate(s.endDate, s.frequency === 'monthly'),
         s.endValue == null ? '**' : `$${s.endValue.toFixed(2)}`, fmtAnnual(s.annual)]),
@@ -658,7 +688,7 @@ async function exportData() {
     const perf = performance();
     const ps = wb.addWorksheet('Investment Performance');
     ps.addRow([`Investment Performance — growth of $100, ${perf.start} to ${perf.end}`]).font = { bold: true };
-    ps.addRow([`Source: ${PERF_SOURCE}`]);
+    ps.addRow([`Source: ${perfSource()}`]);
     ps.addRow([]);
     ps.addRow(['Benchmark', 'Start', 'End', 'Value of $100', 'Annualized return']).font = { bold: true };
     for (const s of perf.series) {

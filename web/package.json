@@ -27,6 +27,7 @@
     "data:indicators": "Rscript ../r/13_validate_indicators.R && Rscript ../r/10_scrape_boc.R && Rscript ../r/11_scrape_statscan.R && Rscript ../r/17_scrape_osb.R && Rscript ../r/14_build_indicators.R",
     "data:census": "Rscript ../r/12_census_profile.R",
     "data:mls": "Rscript ../r/16_scrape_mls.R",
+    "data:returns": "Rscript ../r/28b_scrape_market_returns.R",
     "data:economic": "Rscript ../r/15_build_economic_update.R",
     "data:rtb": "Rscript ../r/19_scrape_rtb.R",
     "data:geo": "Rscript ../r/20_build_boundaries.R",

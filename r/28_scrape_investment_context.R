@@ -3,19 +3,19 @@
 # Discount-rate context for the Market Discount Rates tab. Writes
 # web/public/data/economy/investment_context.json with:
 #   - series : growth-of-$100 inputs, each { id, label, dates[], values[] }
-#       xic  S&P/TSX total return  — iShares Core S&P/TSX Capped Composite
-#            ETF (XIC.TO), Yahoo adjusted close (dividends reinvested), daily
-#       zfl  Govt bonds (10yr+) TR — BMO Long Federal Bond Index ETF (ZFL.TO),
-#            Yahoo adjusted close, daily
 #       cpi  Canada All-items CPI (2002=100), StatsCan 18-10-0004 v41690973, monthly
+#     The equity and bond lines (XIC.TO, ZFL.TO adjusted closes from Yahoo
+#     Finance) are NOT in this public file: Yahoo grants no licence to
+#     republish its prices. r/28b_scrape_market_returns.R fetches them on
+#     Jason's PC into AppMarketData-Internal, and the tab merges them in the
+#     browser (market-returns-store.js).
 #   - gic    : current 5-year GIC rates, { id, institution, product, rate,
 #              updated (the page's "last updated" date), checked, url }
 #       scu  Steinbach Credit Union, 60-month GIC, $250K and over
 #       acu  Access Credit Union, 60-month GIC (annual interest; one tier)
 #
-# Replaces the Yahoo/cansim fetch in the "$ Investment Return Charts" Quarto
-# project (which used VCN.TO and XGB.TO; XIC and ZFL match the labels).
-# Weekly, in refresh-indicators.yml. Each part is independent: one that
+# Replaces the cansim fetch in the "$ Investment Return Charts" Quarto
+# project. Weekly, in refresh-indicators.yml. Each part is independent: one that
 # fails keeps its last-good values from the committed file and logs
 # "keeping last-good", which the refresh email lists as a soft failure.
 # =============================================================================
@@ -42,34 +42,6 @@ prev_part <- function(kind, id) {
   NULL
 }
 `%||%` <- function(a, b) if (is.null(a)) b else a
-
-# --- Yahoo adjusted closes ---------------------------------------------------
-
-yahoo_series <- function(id, symbol, label, note) {
-  url <- sprintf("https://query1.finance.yahoo.com/v8/finance/chart/%s", symbol)
-  res <- tryCatch({
-    r <- GET(url, user_agent(UA), timeout(60), query = list(
-      period1 = as.integer(as.POSIXct(FROM, tz = "UTC")),
-      period2 = as.integer(Sys.time()) + 86400L,
-      interval = "1d", events = "div,split"))
-    stop_for_status(r)
-    j <- fromJSON(content(r, "text", encoding = "UTF-8"), simplifyVector = TRUE)
-    out <- j$chart$result
-    ts  <- out$timestamp[[1]]
-    adj <- out$indicators$adjclose[[1]]$adjclose[[1]]
-    tz  <- out$meta$exchangeTimezoneName %||% "America/Toronto"
-    d <- data.frame(date = format(as.POSIXct(ts, origin = "1970-01-01", tz = tz), "%Y-%m-%d"),
-                    value = as.numeric(adj))
-    d <- d[is.finite(d$value), ]
-    d <- d[!duplicated(d$date, fromLast = TRUE), ]
-    if (nrow(d) < 250) stop("only ", nrow(d), " observations")
-    d
-  }, error = function(e) { message(sprintf("[investment] %s fetch failed (%s) — keeping last-good", symbol, conditionMessage(e))); NULL })
-  if (is.null(res)) return(prev_part("series", id))
-  message(sprintf("[investment] %s: %d days, %s to %s", symbol, nrow(res), res$date[1], res$date[nrow(res)]))
-  list(id = id, label = label, symbol = symbol, note = note, frequency = "daily",
-       dates = res$date, values = round(res$value, 4))
-}
 
 # --- CPI ---------------------------------------------------------------------
 
@@ -126,12 +98,7 @@ gic_rate <- function(id, institution, product, url, rate_re, updated_re) {
   res
 }
 
-series <- Filter(Negate(is.null), list(
-  yahoo_series("xic", "XIC.TO", "S&P/TSX Total Return",
-               "iShares Core S&P/TSX Capped Composite Index ETF (XIC), adjusted close with distributions reinvested"),
-  yahoo_series("zfl", "ZFL.TO", "Govt Bonds (10yr+) TR",
-               "BMO Long Federal Bond Index ETF (ZFL), adjusted close with distributions reinvested"),
-  cpi_series()))
+series <- Filter(Negate(is.null), list(cpi_series()))
 
 gic <- Filter(Negate(is.null), list(
   gic_rate("scu", "Steinbach Credit Union", "5-year GIC (deposits of $250,000 and over)",

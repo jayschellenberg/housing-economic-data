@@ -1,4 +1,5 @@
-# wrreb_monthly.ps1 - monthly WRREB market-release + CREA MLS HPI scrape (Task Scheduler entry point).
+# wrreb_monthly.ps1 - monthly internal market data scrape: WRREB market release, CREA MLS HPI and
+# Yahoo Finance market returns (Task Scheduler entry point).
 #
 # Runs r\16b_scrape_wrreb.R, which reads the latest Winnipeg Regional Real Estate Board
 # market release and writes the figures to
@@ -11,6 +12,12 @@
 # for the Economic Update (HPI sentence, Figure 3) and Affordability tabs. Internal only too:
 # CREA needs prior written consent to publish HPI values. A CREA failure or stale result sends
 # its own alert ("CREA HPI scrape FAILED") and does not stop the WRREB checks.
+#
+# Then runs r\28b_scrape_market_returns.R, which reads the XIC.TO and ZFL.TO adjusted closes
+# from Yahoo Finance and writes
+#   <Dropbox>\SharedInfo\AppMarketData\AppMarketData-Internal\MarketReturns\market_returns.json
+# for the Market Discount Rates tab's equity and bond lines. Internal only: Yahoo grants no
+# licence to republish its prices. A failure or stale result sends its own alert too.
 #
 # A failed run, a stale result (scrape fell back to last-good) or a release month that has
 # not advanced (expected: last month's release by the run day) sends a failure alert
@@ -28,6 +35,7 @@ $mbps    = Join-Path $dropbox 'ClaudeCode\MBOpenData\mb-parcelsearch'
 $topic   = 'hed-wrreb-monthly-jks'
 $out     = Join-Path $dropbox 'SharedInfo\AppMarketData\AppMarketData-Internal\WRREBMarket\wrreb_market.json'
 $creaOut = Join-Path $dropbox 'SharedInfo\AppMarketData\AppMarketData-Internal\CREAHPI\mls_benchmark.json'
+$retOut  = Join-Path $dropbox 'SharedInfo\AppMarketData\AppMarketData-Internal\MarketReturns\market_returns.json'
 $stamp   = Get-Date -Format 'yyyyMMdd-HHmm'
 $logDir  = Join-Path $repo 'logs'
 New-Item -ItemType Directory -Force $logDir | Out-Null
@@ -66,6 +74,7 @@ Push-Location $repo
 try {
   $code = Invoke-Logged $rscript @('r/16b_scrape_wrreb.R')
   $creaCode = Invoke-Logged $rscript @('r/16_scrape_mls.R')
+  $retCode  = Invoke-Logged $rscript @('r/28b_scrape_market_returns.R')
 } finally { Pop-Location }
 
 # CREA HPI: alert without exiting, so the WRREB checks below still run. CREA posts each
@@ -89,6 +98,24 @@ if ($creaProblem) {
   Write-Log "FAILED: CREA HPI: $creaProblem"
 }
 
+# Market returns (Yahoo): same pattern. Daily prices should reach within a week of the run.
+function Test-Returns {
+  if ($retCode -eq 2) { return 'r/28b could not fetch XIC or ZFL from Yahoo Finance; the last-good series were kept (stale).' }
+  if ($retCode -ne 0) { return "r/28b exit $retCode." }
+  if (-not (Test-Path $retOut)) { return "No output at $retOut." }
+  $r = Get-Content $retOut -Raw -Encoding UTF8 | ConvertFrom-Json
+  if ($r.stale -or $r.built -ne (Get-Date -Format 'yyyy-MM-dd')) { return "market_returns.json built $($r.built), stale=$($r.stale)." }
+  $lastDates = @($r.series | ForEach-Object { $_.dates[-1] } | Sort-Object)
+  if (-not $lastDates.Count -or [datetime]$lastDates[0] -lt (Get-Date).Date.AddDays(-7)) { return "Oldest series ends $($lastDates[0]); expected within the last week." }
+  Write-Log "market_returns.json: to $($lastDates[0])"
+  return $null
+}
+$retProblem = Test-Returns
+if ($retProblem) {
+  Send-FailureAlert $mbps $topic 'Market returns scrape FAILED' "$retProblem Log: $log" | Out-Null
+  Write-Log "FAILED: market returns: $retProblem"
+}
+
 if ($code -eq 2) { Fail 'WRREB scrape FAILED' 'r/16b could not read the latest release; the last-good figures were kept (stale).' }
 if ($code -ne 0) { Fail 'WRREB scrape FAILED' "r/16b exit $code." }
 if (-not (Test-Path $out)) { Fail 'WRREB scrape FAILED' "No output at $out." }
@@ -106,6 +133,6 @@ if ($asOf -lt $want) {
 if ($j.comparisonsStale) { Write-Log 'note: some fields kept from an earlier month (comparisonsStale)' }
 
 Write-Log "wrreb_market.json: $($j.asOf)"
-if ($creaProblem) { exit 1 }
+if ($creaProblem -or $retProblem) { exit 1 }
 Write-Log 'COMPLETE'
 exit 0
